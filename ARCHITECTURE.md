@@ -132,9 +132,9 @@ flowchart TD
     Build --> Live["Publish the public website"]
 ```
 
-The private [GitHub repository](https://github.com/jaboc83/wolves-and-friends) and the Sites source repository are separate repositories. GitHub currently has no automatic deployment pipeline to Sites.
+The private [GitHub repository](https://github.com/jaboc83/wolves-and-friends) and the Sites source repository are separate repositories. A ChatGPT cloud automation watches merged pull requests and deploys eligible changes merged into `main`. It is not a GitHub Actions deployment workflow, and direct pushes do not trigger it. See [Automatic deployment](DEPLOYMENT.md).
 
-When you request a deployment, the workflow is to inspect the latest requested GitHub branch, preserve owner edits, bring its changes into the existing Sites checkout, run appropriate checks/builds, save the matching Sites version, and publish it. Do not blindly force-push one repository's history over the other. A documentation-only GitHub commit does not require republishing the website.
+For automatic or requested manual deployments, the workflow is to inspect the latest requested GitHub branch, preserve owner edits, bring its changes into the existing Sites checkout, run appropriate checks/builds, save the matching Sites version, and publish it. Do not blindly force-push one repository's history over the other. A documentation-only GitHub commit does not require republishing the website.
 
 See [README.md](README.md) for local setup commands. A clean clone defaults to the portable execution profile; checkout-local runtime configuration is intentionally excluded from GitHub.
 

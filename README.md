@@ -4,7 +4,7 @@ A public sports hub for Wolves, Wild, Vikings, Twins, Loons, Crystal Palace, Dis
 
 Live website: https://wolves-and-friends-hub.tastyfir6.chatgpt.site
 
-This private repository is the shared source code. The live website is hosted through Sites; a GitHub commit does **not** automatically publish a new website version.
+This private repository is the shared source code. The live website is hosted through Sites. A cloud automation deploys validated changes after a pull request is merged into `main`; direct pushes do not trigger deployment. See [Automatic deployment](DEPLOYMENT.md).
 
 ## Understand the architecture
 
@@ -43,7 +43,7 @@ pnpm build
 
 Make changes in this repository so both the owner and the authorized GitHub connection can inspect them. Check the latest `main` branch before changing files to avoid overwriting the other person's work. Keep changes in commits or pull requests with a short description and relevant checks.
 
-Publish to the existing Sites project using the Sites workflow after applying the reviewed source changes. Preserve its hosting identity and public audience. The Sites source repository and this GitHub repository are separate; automatic syncing and GitHub-triggered deployment are not configured.
+Merge a reviewed pull request into `main` to trigger the deployment task. It checks the current source, preserves the privacy rules, validates and builds the app, then publishes through the existing Sites project. Failed checks leave the live version untouched. Direct pushes and merges into other branches do not trigger publishing. Documentation-only changes do not require an app deployment. Read [DEPLOYMENT.md](DEPLOYMENT.md) for the workflow and recovery details. The GitHub and Sites repositories remain separate; the task synchronizes them explicitly.
 
 Imported from Sites source commit `50e3e8436546613f408d60418e28eaf6817eccbb` on October 15, 2026. Generated archives, installed dependencies, credentials, and checkout-local runtime state are excluded.
 

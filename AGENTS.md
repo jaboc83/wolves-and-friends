@@ -13,3 +13,8 @@ The owner requires this site to remain free of personal-data collection. Apply t
 - Before making changes, inspect the latest GitHub main branch for owner edits. Preserve those edits and avoid replacing the branch with an older Sites snapshot.
 - Keep source changes and relevant validation in GitHub commits or pull requests.
 - The live website is still published with Sites. GitHub pushes alone do not deploy it; keep the two source copies synchronized explicitly when publishing.
+
+## Automatic deployment
+- Merged pull requests targeting GitHub main trigger a cloud deployment task; see DEPLOYMENT.md. Direct pushes do not trigger it.
+- Verify the pinned GitHub source, privacy constraints, type check, and production build before publishing. Preserve the current live version on failure.
+- .openai/github-deployment.json is a Sites-only deployed-source checkpoint; do not push it back to GitHub or mistake an unpublished candidate for the live checkpoint.
