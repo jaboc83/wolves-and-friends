@@ -632,7 +632,9 @@ export default function Home() {
                     ? "Latest posts for your teams · Bluesky"
                     : active === "wolves"
                       ? "Wolves posts from the Canis Hoopus starter pack"
-                      : team?.name + " posts · " + socialTags[active]}
+                      : team?.name +
+                        " posts · " +
+                        socialTags[active]?.join(" / ")}
                 </p>
                 {socialPosts.length ? (
                   socialPosts.map(story)
@@ -656,19 +658,21 @@ export default function Home() {
                           socialTags[t.id] &&
                           (active === "all" || active === t.id),
                       )
-                      .map((t) => (
-                        <a
-                          key={t.id}
-                          href={
-                            "https://bsky.app/search?q=" +
-                            encodeURIComponent(socialTags[t.id])
-                          }
-                          target="_blank"
-                          rel="noreferrer"
-                        >
-                          {t.short} {socialTags[t.id]} ↗
-                        </a>
-                      ))}
+                      .flatMap((t) =>
+                        socialTags[t.id].map((tag) => (
+                          <a
+                            key={`${t.id}-${tag}`}
+                            href={
+                              "https://bsky.app/search?q=" +
+                              encodeURIComponent(tag)
+                            }
+                            target="_blank"
+                            rel="noreferrer"
+                          >
+                            {t.short} {tag} ↗
+                          </a>
+                        )),
+                      )}
                   </div>
                 )}
                 {(active === "all" || active === "wolves") && (

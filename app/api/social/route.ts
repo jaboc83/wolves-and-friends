@@ -16,25 +16,40 @@ export async function GET() {
     wolvesBluesky(3, false)
       .then((s) => posts.push(...s))
       .catch(() => unavailable.push("wolves")),
-    ...Object.entries(socialTags).map(async ([team, tag]) => {
-      try {
-        const r = await fetch(
-          "https://api.bsky.app/xrpc/app.bsky.feed.searchPosts?q=" +
-            encodeURIComponent(tag) +
-            "&sort=latest&limit=20",
-          { signal: AbortSignal.timeout(10000) },
-        );
-        if (!r.ok) throw Error();
-        const d = (await r.json()) as any;
-        const parsed = parseBlueskyFeed(
-          { feed: (d.posts || []).map((post: any) => ({ post })) },
-          team,
-          new RegExp(tag.replace("#", ""), "i"),
-        ).slice(0, 3);
-        posts.push(...parsed);
-      } catch {
+    ...Object.entries(socialTags).map(async ([team, tags]) => {
+      const results = await Promise.allSettled(
+        tags.map(async (tag) => {
+          const r = await fetch(
+            "https://api.bsky.app/xrpc/app.bsky.feed.searchPosts?q=" +
+              encodeURIComponent(tag) +
+              "&sort=latest&limit=20",
+            { signal: AbortSignal.timeout(10000) },
+          );
+          if (!r.ok) throw Error();
+          const d = (await r.json()) as any;
+          const parsed = parseBlueskyFeed(
+            { feed: (d.posts || []).map((post: any) => ({ post })) },
+            team,
+            new RegExp(
+              tag.replace(/^#/, "").replace(/[.*+?^${}()|[\]\\]/g, "\\$&"),
+              "i",
+            ),
+          );
+          return parsed;
+        }),
+      );
+      if (results.some((result) => result.status === "rejected"))
         unavailable.push(team);
-      }
+      // Keep successful tags when another fails, and apply the team limit
+      // after merging so posts carrying both tags appear only once.
+      const teamPosts = results.flatMap((result) =>
+        result.status === "fulfilled" ? result.value : [],
+      );
+      posts.push(
+        ...[...new Map(teamPosts.map((post) => [post.url, post])).values()]
+          .sort((a, b) => Date.parse(b.date) - Date.parse(a.date))
+          .slice(0, 3),
+      );
     }),
   ]);
   const merged = new Map<string, Story>();
