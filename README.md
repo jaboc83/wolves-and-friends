@@ -39,6 +39,23 @@ pnpm exec tsc --noEmit
 pnpm build
 ```
 
+## Formatting and linting
+
+Use Prettier's default formatting and the standard Next.js Core Web Vitals and
+TypeScript ESLint rules. `eslint-config-prettier` disables conflicting formatting
+rules so Prettier owns code style.
+
+```sh
+pnpm format        # Format supported project files
+pnpm format:check  # Check formatting without changing files
+pnpm lint          # Check code quality
+pnpm lint:fix      # Apply available ESLint fixes
+```
+
+Generated files, local runtime state, and third-party styles/licenses are excluded
+from formatting. These tools run during development and add no browser requests
+or visitor-data collection.
+
 ## Collaboration and publishing
 
 Make changes in this repository so both the owner and the authorized GitHub connection can inspect them. Check the latest `main` branch before changing files to avoid overwriting the other person's work. Keep changes in commits or pull requests with a short description and relevant checks.

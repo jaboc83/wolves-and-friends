@@ -1,4 +1,28 @@
-import {fetchTeamInfo,type TeamInfo} from '../../../lib/team-info';
-import seed from '../../../lib/team-info-initial.json';
-let cached:TeamInfo[]=seed as TeamInfo[],checked=0;let inflight:Promise<TeamInfo[]>|null=null;
-export async function GET(){if(Date.now()-checked<900000)return Response.json(cached,{headers:{'Cache-Control':'no-store'}});if(!inflight)inflight=fetchTeamInfo().then(data=>{cached=data.map(t=>{const old=cached.find(x=>x.id===t.id);return {...t,tables:t.tables.length?t.tables:old?.tables||[],depth:t.depth||old?.depth,season:t.season||old?.season}});checked=Date.now();return cached}).finally(()=>inflight=null);return Response.json(await inflight,{headers:{'Cache-Control':'no-store'}})}
+import { fetchTeamInfo, type TeamInfo } from "../../../lib/team-info";
+import seed from "../../../lib/team-info-initial.json";
+let cached: TeamInfo[] = seed as TeamInfo[],
+  checked = 0;
+let inflight: Promise<TeamInfo[]> | null = null;
+export async function GET() {
+  if (Date.now() - checked < 900000)
+    return Response.json(cached, { headers: { "Cache-Control": "no-store" } });
+  if (!inflight)
+    inflight = fetchTeamInfo()
+      .then((data) => {
+        cached = data.map((t) => {
+          const old = cached.find((x) => x.id === t.id);
+          return {
+            ...t,
+            tables: t.tables.length ? t.tables : old?.tables || [],
+            depth: t.depth || old?.depth,
+            season: t.season || old?.season,
+          };
+        });
+        checked = Date.now();
+        return cached;
+      })
+      .finally(() => (inflight = null));
+  return Response.json(await inflight, {
+    headers: { "Cache-Control": "no-store" },
+  });
+}
