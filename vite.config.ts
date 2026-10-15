@@ -66,7 +66,11 @@ export default defineConfig(async ({ command }) => {
       connectorPreview(),
       cloudflare({
         viteEnvironment: { name: "rsc", childEnvironments: ["ssr"] },
-        inspectorPort: false,
+        // Opt in only for local VS Code debugging; builds keep it disabled.
+        inspectorPort:
+          command === "serve" && process.env.WF_DEBUG_WORKER === "true"
+            ? 9229
+            : false,
         config: {
           ...localBindingConfig,
           ...(command === "serve"

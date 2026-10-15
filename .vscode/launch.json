@@ -1,0 +1,46 @@
+{
+  "version": "0.2.0",
+  "configurations": [
+    {
+      "name": "Wolves: browser (Brave)",
+      "type": "chrome",
+      "request": "launch",
+      "runtimeExecutable": "C:/Program Files/BraveSoftware/Brave-Browser/Application/brave.exe",
+      "url": "http://127.0.0.1:5173",
+      "webRoot": "${workspaceFolder}",
+      "preLaunchTask": "Wolves: dev"
+    },
+    {
+      "name": "Wolves: browser (Edge)",
+      "type": "msedge",
+      "request": "launch",
+      "url": "http://127.0.0.1:5173",
+      "webRoot": "${workspaceFolder}",
+      "preLaunchTask": "Wolves: dev"
+    },
+    {
+      "name": "Wolves: server (Worker)",
+      "type": "node",
+      "request": "attach",
+      "websocketAddress": "ws://127.0.0.1:9229/site-creator-vinext-starter",
+      "attachExistingChildren": false,
+      "autoAttachChildProcesses": false,
+      "resolveSourceMapLocations": null,
+      "sourceMaps": true,
+      "preLaunchTask": "Wolves: dev",
+      "timeout": 30000
+    }
+  ],
+  "compounds": [
+    {
+      "name": "Wolves: full stack (Brave)",
+      "configurations": ["Wolves: browser (Brave)", "Wolves: server (Worker)"],
+      "stopAll": true
+    },
+    {
+      "name": "Wolves: full stack (Edge)",
+      "configurations": ["Wolves: browser (Edge)", "Wolves: server (Worker)"],
+      "stopAll": true
+    }
+  ]
+}
