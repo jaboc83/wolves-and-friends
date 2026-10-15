@@ -1,4 +1,4 @@
-import { teams } from "../../../lib/teams";
+import { scoreboardLeagues } from "../../../lib/competitions";
 import { mergeLiveScoreboard, type Game } from "../../../lib/feeds";
 let cached: { checked: string; games: Game[]; unavailable: string[] } | null =
   null;
@@ -8,7 +8,6 @@ export async function GET() {
   const checked = new Date().toISOString(),
     games: Game[] = [],
     unavailable: string[] = [];
-  const leagues = [...new Set(teams.map((t) => t.league).filter(Boolean))];
   const date = new Intl.DateTimeFormat("en-CA", {
     timeZone: "America/Chicago",
     year: "numeric",
@@ -18,7 +17,7 @@ export async function GET() {
     .format(new Date())
     .replace(/-/g, "");
   await Promise.all(
-    leagues.map(async (league) => {
+    scoreboardLeagues.map(async (league) => {
       try {
         const r = await fetch(
           "https://site.api.espn.com/apis/site/v2/sports/" +

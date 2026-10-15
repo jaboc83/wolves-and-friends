@@ -12,6 +12,11 @@ import {
   mergeOfficial,
 } from "./official-schedules";
 import { teams } from "./teams";
+import {
+  palaceCompetitions,
+  scoreboardLeagues,
+  teamPlaysCompetition,
+} from "./competitions";
 import { parseZalgiris } from "./zalgiris";
 import { enrichOdds } from "./odds";
 import type { Odds } from "./odds";
@@ -231,7 +236,7 @@ export function parseGames(json: any, team: string, sport: string): Game[] {
     .filter((g: Game) => g.date && g.competitors.length);
 }
 export function mergeLiveScoreboard(games: Game[], json: any, league: string) {
-  for (const t of teams.filter((t) => t.league === league)) {
+  for (const t of teams.filter((t) => teamPlaysCompetition(t.id, league))) {
     const events = (json.events || []).filter((e: any) =>
       e.competitions?.[0]?.competitors?.some(
         (p: any) =>
@@ -239,7 +244,12 @@ export function mergeLiveScoreboard(games: Game[], json: any, league: string) {
           p.team?.abbreviation?.toLowerCase() === t.espn,
       ),
     );
-    for (const fresh of parseGames({ events }, t.id, t.sport)) {
+    for (const fresh of parseGames(
+      { events },
+      t.id,
+      palaceCompetitions[league] || t.sport,
+    )) {
+      if (palaceCompetitions[league]) fresh.league = palaceCompetitions[league];
       const index = games.findIndex(
         (g) =>
           g.id === fresh.id ||
@@ -565,6 +575,19 @@ export async function collect(): Promise<HubData> {
     return parsed.length;
   });
   await Promise.all([
+    ...Object.entries(palaceCompetitions).map(([league, name]) =>
+      task("ESPN Palace schedule · " + name, ["palace"], async () => {
+        const json = await (
+          await get(
+            "https://site.api.espn.com/apis/site/v2/sports/" +
+              league +
+              "/teams/384/schedule",
+          )
+        ).json();
+        mergeLiveScoreboard(games, json, league);
+        return (json as any).events?.length || 0;
+      }),
+    ),
     task("Official Palace schedule", ["palace"], async () => {
       const parsed = parsePalace(
         await (await get("https://www.cpfc.co.uk/matches/")).text(),
@@ -645,11 +668,13 @@ export async function collect(): Promise<HubData> {
     ),
   ];
   await Promise.all(
-    sports.flatMap((league) =>
+    scoreboardLeagues.flatMap((league) =>
       scoreDates.map((date) =>
         task(
           "ESPN live scoreboard · " + league + " · " + date,
-          teams.filter((t) => t.league === league).map((t) => t.id),
+          teams
+            .filter((t) => teamPlaysCompetition(t.id, league))
+            .map((t) => t.id),
           async () => {
             const json = await (
               await get(
