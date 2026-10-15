@@ -6,6 +6,10 @@ Live website: https://wolves-and-friends-hub.tastyfir6.chatgpt.site
 
 This private repository is the shared source code. The live website is hosted through Sites; a GitHub commit does **not** automatically publish a new website version.
 
+## Understand the architecture
+
+Read the [Architecture overview](ARCHITECTURE.md) for a plain-English guide to the data flow, main files, caching, privacy boundaries, and publishing workflow.
+
 ## Browse the code
 
 - `app/page.tsx`: page layout, team filters, read/saved stories, and refresh behavior.
