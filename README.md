@@ -39,6 +39,54 @@ pnpm exec tsc --noEmit
 pnpm build
 ```
 
+## Run and debug in VS Code
+
+Open the repository folder in VS Code. Install dependencies with
+`pnpm install --frozen-lockfile` first, and make sure Node.js is on VS Code's PATH
+(restart VS Code after installing Node or changing its version).
+
+- **Build:** press Ctrl+Shift+B to run the default `Wolves: build` task.
+- **Run:** choose Terminal → Run Task → `Wolves: dev`, then open
+  http://127.0.0.1:5173.
+- **Debug:** choose `Wolves: full stack (Brave)` or `Wolves: full stack (Edge)`
+  in Run and Debug, then press F5.
+  This starts the development server, opens your selected browser with debugging, and
+  attaches to the local Worker for API/server breakpoints. Individual browser
+  and Worker configurations are also available. Brave uses VS Code's Chrome
+  debugger with its executable at the standard Windows system installation path.
+  If Brave is installed elsewhere, update `runtimeExecutable` in
+  `.vscode/launch.json` to its `brave.exe` path.
+- **Type check:** choose Terminal → Run Task → `Wolves: typecheck`.
+
+Set browser breakpoints in `app/page.tsx` or components, and server breakpoints
+in `app/api/` or feed modules in `lib/`. Trigger an API request from the browser
+to hit a server breakpoint; cached feeds may bypass provider-fetch code.
+The Worker attachment follows the
+[Cloudflare Vite debugging configuration](https://developers.cloudflare.com/workers/vite-plugin/reference/debugging/).
+
+The development task stays running after debugging stops. Use Terminal →
+Terminate Task → `Wolves: dev` when finished. Stop an existing `pnpm dev` before
+starting this task: ports 5173 and 9229 must be free. The task enables the local
+Worker inspector with `WF_DEBUG_WORKER=true`; normal development and production
+builds keep it disabled. No application logging or collection is added.
+
+## Formatting and linting
+
+Use Prettier's default formatting and the standard Next.js Core Web Vitals and
+TypeScript ESLint rules. `eslint-config-prettier` disables conflicting formatting
+rules so Prettier owns code style.
+
+```sh
+pnpm format        # Format supported project files
+pnpm format:check  # Check formatting without changing files
+pnpm lint          # Check code quality
+pnpm lint:fix      # Apply available ESLint fixes
+```
+
+Generated files, local runtime state, and third-party styles/licenses are excluded
+from formatting. These tools run during development and add no browser requests
+or visitor-data collection.
+
 ## Collaboration and publishing
 
 Make changes in this repository so both the owner and the authorized GitHub connection can inspect them. Check the latest `main` branch before changing files to avoid overwriting the other person's work. Keep changes in commits or pull requests with a short description and relevant checks.

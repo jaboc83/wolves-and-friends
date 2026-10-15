@@ -1,0 +1,22 @@
+# Respect repository exclusions, including local tools, dependencies, and builds.
+.sites-runtime/
+.agents/
+.codex/
+.aws/
+node_modules/
+.next/
+.vinext/
+.wrangler/
+dist/
+out/
+coverage/
+outputs/
+work/
+next-env.d.ts
+pnpm-lock.yaml
+*.tsbuildinfo
+site.tar.gz
+
+# Third-party styles and licenses retain their original formatting.
+vendor/
+build/*.LICENSE

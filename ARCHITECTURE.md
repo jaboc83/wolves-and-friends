@@ -23,17 +23,17 @@ Headlines link to publishers rather than reproducing full articles. Deliberately
 
 ## 2. The main parts of the repository
 
-| Part | Responsibility | Start here |
-| --- | --- | --- |
-| Page controller | Holds browser state, refreshes feeds, merges data, filters teams, and assembles sections | [app/page.tsx](app/page.tsx) |
-| Shared page shell | Imports styles and defines metadata and the mobile viewport | [app/layout.tsx](app/layout.tsx) |
-| Presentation | Responsive layout, colors, badges, spacing, and team themes | [app/globals.css](app/globals.css), [lib/team-themes.ts](lib/team-themes.ts) |
-| Team configuration | Team IDs, priority order, ESPN identifiers, matching patterns, and source links | [lib/teams.ts](lib/teams.ts) |
-| Feed endpoints | Return public data to the page | [app/api](app/api) |
-| Feed adapters | Convert each provider's JSON, RSS, HTML, or calendar into shared objects | [lib/feeds.ts](lib/feeds.ts) and the specialized modules below |
-| Reusable sections | Game cards, calendar, standings/rosters, and logo groups | [components](components) |
-| Images | Local header and team logos | [public/logos](public/logos) |
-| Hosting | Build and serve the application through Sites | [vite.config.ts](vite.config.ts), [build/sites-worker.ts](build/sites-worker.ts) |
+| Part               | Responsibility                                                                           | Start here                                                                       |
+| ------------------ | ---------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------- |
+| Page controller    | Holds browser state, refreshes feeds, merges data, filters teams, and assembles sections | [app/page.tsx](app/page.tsx)                                                     |
+| Shared page shell  | Imports styles and defines metadata and the mobile viewport                              | [app/layout.tsx](app/layout.tsx)                                                 |
+| Presentation       | Responsive layout, colors, badges, spacing, and team themes                              | [app/globals.css](app/globals.css), [lib/team-themes.ts](lib/team-themes.ts)     |
+| Team configuration | Team IDs, priority order, ESPN identifiers, matching patterns, and source links          | [lib/teams.ts](lib/teams.ts)                                                     |
+| Feed endpoints     | Return public data to the page                                                           | [app/api](app/api)                                                               |
+| Feed adapters      | Convert each provider's JSON, RSS, HTML, or calendar into shared objects                 | [lib/feeds.ts](lib/feeds.ts) and the specialized modules below                   |
+| Reusable sections  | Game cards, calendar, standings/rosters, and logo groups                                 | [components](components)                                                         |
+| Images             | Local header and team logos                                                              | [public/logos](public/logos)                                                     |
+| Hosting            | Build and serve the application through Sites                                            | [vite.config.ts](vite.config.ts), [build/sites-worker.ts](build/sites-worker.ts) |
 
 The app uses **React and TypeScript**, with **Vinext/Vite** providing the Next-style page and API route structure. The production request handler runs as a **Cloudflare Worker** through Sites. Most of the dashboard logic is currently concentrated in `app/page.tsx`; separate components handle its larger reusable pieces.
 
@@ -45,12 +45,12 @@ The app uses **React and TypeScript**, with **Vinext/Vite** providing the Next-s
 4. React updates each section as responses arrive. A separate score feed can update game status without waiting for the larger news refresh.
 5. While the page stays open, timers request updates. The Refresh button also requests fresh endpoint responses, subject to each server cache.
 
-| Endpoint | Data | Browser refresh | Server cache lifetime |
-| --- | --- | --- | --- |
-| `/api/hub` | News, author feeds, schedules, source health, and odds | On load, Refresh, and every 5 minutes | 5 minutes |
-| `/api/scores` | Today's ESPN scoreboard data | On load, Refresh, and every minute | 30 seconds |
-| `/api/social` | Public Bluesky posts and inline avatars | On load, Refresh, and every minute | 1 minute |
-| `/api/team-info` | Standings, rosters, and available season metadata | With the main refresh | 15 minutes |
+| Endpoint         | Data                                                   | Browser refresh                       | Server cache lifetime |
+| ---------------- | ------------------------------------------------------ | ------------------------------------- | --------------------- |
+| `/api/hub`       | News, author feeds, schedules, source health, and odds | On load, Refresh, and every 5 minutes | 5 minutes             |
+| `/api/scores`    | Today's ESPN scoreboard data                           | On load, Refresh, and every minute    | 30 seconds            |
+| `/api/social`    | Public Bluesky posts and inline avatars                | On load, Refresh, and every minute    | 1 minute              |
+| `/api/team-info` | Standings, rosters, and available season metadata      | With the main refresh                 | 15 minutes            |
 
 These are **request-driven, in-memory caches**. They can disappear when a Worker instance is restarted, and different instances need not share them. There is no background scheduler continuously refreshing the site while nobody is viewing it. The server cache lifetime also does not guarantee a provider has published newer information.
 
@@ -65,19 +65,19 @@ The shared types are defined in [lib/feeds.ts](lib/feeds.ts):
 
 A story can belong to several teams. A game belongs to one tracked team. ESPN games normally use an ID such as `wolves-<ESPN event ID>`; official club fixtures can have a different ID format. Matching across providers sometimes therefore requires the team and kickoff time as well as the ID.
 
-| Module | What it does |
-| --- | --- |
-| [feeds.ts](lib/feeds.ts) | Coordinates news and schedule requests, parses RSS/ESPN data, removes duplicates, retains selected cached data on source failures, and adds odds. Wolves schedules explicitly include season phases so the calendar is not limited to preseason. |
-| [official-schedules.ts](lib/official-schedules.ts) | Reads Palace's official fixtures and MNUFC's calendar, then merges compatible fixtures with ESPN schedules. |
-| [zalgiris.ts](lib/zalgiris.ts) | Extracts fixtures, available scores, and competition labels from the official Žalgiris page. Converts Lithuanian local times into timestamps. |
-| [club-news.ts](lib/club-news.ts) | Extracts official Žalgiris/Frost news and handles English headline translation where available. |
-| [bylines.ts](lib/bylines.ts), [byline-status.ts](lib/byline-status.ts) | Check available publisher author-page links and article author metadata, alongside known verification records. A name-search result is not automatically considered a verified byline. |
-| [author-stories.ts](lib/author-stories.ts) | Converts author-feed items into ordinary team headlines. |
-| [odds.ts](lib/odds.ts) | Selects the competition feed and matches fixtures, including official Palace fixtures with different IDs. Produces plain-English favorites and expandable market details. |
-| [bluesky.ts](lib/bluesky.ts), [social-tags.ts](lib/social-tags.ts) | Read the Wolves starter-pack list and other teams' tag searches. Fetch avatars on the server, prefer small thumbnails, validate image bytes, and inline them in the response. |
-| [team-info.ts](lib/team-info.ts) | Parses ESPN tables/rosters and DGPT standings from StatMando. Sorts ranks and adds supported qualification lines; NHL tables separate division places from wild cards. |
-| [event-seed.ts](lib/event-seed.ts) | Supplies explicitly entered, verified DGPT event dates. This is not a complete live disc-golf schedule service. |
-| [content-policy.ts](lib/content-policy.ts), [news-window.ts](lib/news-window.ts) | Remove retired team IDs from cached content and apply the headline age windows. |
+| Module                                                                           | What it does                                                                                                                                                                                                                                     |
+| -------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| [feeds.ts](lib/feeds.ts)                                                         | Coordinates news and schedule requests, parses RSS/ESPN data, removes duplicates, retains selected cached data on source failures, and adds odds. Wolves schedules explicitly include season phases so the calendar is not limited to preseason. |
+| [official-schedules.ts](lib/official-schedules.ts)                               | Reads Palace's official fixtures and MNUFC's calendar, then merges compatible fixtures with ESPN schedules.                                                                                                                                      |
+| [zalgiris.ts](lib/zalgiris.ts)                                                   | Extracts fixtures, available scores, and competition labels from the official Žalgiris page. Converts Lithuanian local times into timestamps.                                                                                                    |
+| [club-news.ts](lib/club-news.ts)                                                 | Extracts official Žalgiris/Frost news and handles English headline translation where available.                                                                                                                                                  |
+| [bylines.ts](lib/bylines.ts), [byline-status.ts](lib/byline-status.ts)           | Check available publisher author-page links and article author metadata, alongside known verification records. A name-search result is not automatically considered a verified byline.                                                           |
+| [author-stories.ts](lib/author-stories.ts)                                       | Converts author-feed items into ordinary team headlines.                                                                                                                                                                                         |
+| [odds.ts](lib/odds.ts)                                                           | Selects the competition feed and matches fixtures, including official Palace fixtures with different IDs. Produces plain-English favorites and expandable market details.                                                                        |
+| [bluesky.ts](lib/bluesky.ts), [social-tags.ts](lib/social-tags.ts)               | Read the Wolves starter-pack list and other teams' tag searches. Fetch avatars on the server, prefer small thumbnails, validate image bytes, and inline them in the response.                                                                    |
+| [team-info.ts](lib/team-info.ts)                                                 | Parses ESPN tables/rosters and DGPT standings from StatMando. Sorts ranks and adds supported qualification lines; NHL tables separate division places from wild cards.                                                                           |
+| [event-seed.ts](lib/event-seed.ts)                                               | Supplies explicitly entered, verified DGPT event dates. This is not a complete live disc-golf schedule service.                                                                                                                                  |
+| [content-policy.ts](lib/content-policy.ts), [news-window.ts](lib/news-window.ts) | Remove retired team IDs from cached content and apply the headline age windows.                                                                                                                                                                  |
 
 Odds lookups are currently limited to eligible games within the next seven days and a bounded set of league/date requests. An unavailable market remains unlabeled. Competition-aware odds do not imply that every cup competition also has complete live-score coverage.
 
@@ -98,13 +98,13 @@ Odds lookups are currently limited to eligible games within the next seven days 
 
 ## 6. Where information is stored
 
-| Storage | Contents | Lifetime / purpose |
-| --- | --- | --- |
-| React state | Current filters, expanded cards, visibility settings, and loaded responses | Current page session |
-| Browser localStorage | `wf-team`, `wf-read`, `wf-saved`, and `wf-archive` | Device-only preferences and saved article snapshots |
-| Browser localStorage | `wf-cache` and `wf-social-cache` | Device-only caches of public feed content and inline avatars |
-| Server module memory | Public feed responses, verification results, and avatar caches | Temporary, shared public-data work within a Worker instance |
-| Bundled JSON | [initial.json](lib/initial.json), [team-info-initial.json](lib/team-info-initial.json), and byline records | Fallback snapshots shipped with the source |
+| Storage              | Contents                                                                                                   | Lifetime / purpose                                           |
+| -------------------- | ---------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------ |
+| React state          | Current filters, expanded cards, visibility settings, and loaded responses                                 | Current page session                                         |
+| Browser localStorage | `wf-team`, `wf-read`, `wf-saved`, and `wf-archive`                                                         | Device-only preferences and saved article snapshots          |
+| Browser localStorage | `wf-cache` and `wf-social-cache`                                                                           | Device-only caches of public feed content and inline avatars |
+| Server module memory | Public feed responses, verification results, and avatar caches                                             | Temporary, shared public-data work within a Worker instance  |
+| Bundled JSON         | [initial.json](lib/initial.json), [team-info-initial.json](lib/team-info-initial.json), and byline records | Fallback snapshots shipped with the source                   |
 
 Clearing browser storage removes local read/saved history and choices. Those preferences do not sync between devices. The snapshots are fallbacks, not continuously updated files. Source-check timestamps and unavailable-feed notices help distinguish cached information from a successful refresh.
 
@@ -140,17 +140,17 @@ See [README.md](README.md) for local setup commands. A clean clone defaults to t
 
 ## 9. Where to make common changes
 
-| Desired change | Likely files |
-| --- | --- |
-| Team order, source links, or team matching | `lib/teams.ts` |
-| Colors, mobile spacing, or layout | `app/globals.css`, `lib/team-themes.ts`, sometimes `app/page.tsx` |
-| Headline age/read/saved behavior | `app/page.tsx`, `lib/news-window.ts` |
-| New news or schedule provider | A parser in `lib/`, then its collection call in `lib/feeds.ts` |
-| Game-card details or score hiding | `components/game-card.tsx` |
-| Competition badges | `lib/game-badges.ts`, `components/game-badges.tsx` |
-| Missing odds | `lib/odds.ts`; check competition, provider availability, and fixture matching |
-| Calendar behavior | `components/match-calendar.tsx`; check schedule coverage upstream too |
-| Missing social posts or avatars | `app/api/social/route.ts`, `lib/bluesky.ts`, browser cache handling in `app/page.tsx` |
-| Standings, qualification lines, or player links | `lib/team-info.ts`, `components/team-insights.tsx` |
+| Desired change                                  | Likely files                                                                          |
+| ----------------------------------------------- | ------------------------------------------------------------------------------------- |
+| Team order, source links, or team matching      | `lib/teams.ts`                                                                        |
+| Colors, mobile spacing, or layout               | `app/globals.css`, `lib/team-themes.ts`, sometimes `app/page.tsx`                     |
+| Headline age/read/saved behavior                | `app/page.tsx`, `lib/news-window.ts`                                                  |
+| New news or schedule provider                   | A parser in `lib/`, then its collection call in `lib/feeds.ts`                        |
+| Game-card details or score hiding               | `components/game-card.tsx`                                                            |
+| Competition badges                              | `lib/game-badges.ts`, `components/game-badges.tsx`                                    |
+| Missing odds                                    | `lib/odds.ts`; check competition, provider availability, and fixture matching         |
+| Calendar behavior                               | `components/match-calendar.tsx`; check schedule coverage upstream too                 |
+| Missing social posts or avatars                 | `app/api/social/route.ts`, `lib/bluesky.ts`, browser cache handling in `app/page.tsx` |
+| Standings, qualification lines, or player links | `lib/team-info.ts`, `components/team-insights.tsx`                                    |
 
 External feeds and HTML layouts can change or become unavailable. Inspect the provider response and source-health information before treating missing content as a layout problem. Preserve accurate unavailable states instead of inventing scores, schedules, authors, rosters, or odds.
