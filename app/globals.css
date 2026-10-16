@@ -1967,32 +1967,24 @@ footer b {
 .game-meta .game-badges { justify-content: flex-end; margin: 0; max-width: 100px; }
 .compact-name > .game-badges { margin-left: auto; }
 
-/* Give today's scheduled games a distinct scoreboard frame on every team page. */
+/* Emphasize today's games with a tinted panel and a simple top rule. */
 .hub[data-team] .today-group.has-games {
   --today-ink: #10283a;
   background: #dce9d1;
-  border: 2px solid var(--today-ink);
-  border-top-width: 6px;
-  box-shadow: 0 5px 14px #10283a1f;
+  border: 0;
+  border-top: 3px solid var(--today-ink);
 }
 .hub:not([data-team="all"]) .today-group.has-games {
   --today-ink: var(--team-primary);
   background: color-mix(in srgb, var(--team-soft) 78%, var(--team-primary));
 }
 .today-group.has-games .today-heading {
-  background: var(--today-ink);
-  color: #fff;
-  margin: -1px -1px 16px;
-  padding: 12px 10px;
-  border: 0;
-  border-radius: 4px;
+  background: transparent;
+  margin: 0 0 16px;
+  padding: 0 0 14px;
 }
 .today-group.has-games .today-heading h2,
 .today-group.has-games .today-heading > span {
-  color: #fff;
-}
-.today-group.has-games .today-heading h2 small {
-  background: #fff;
   color: var(--today-ink);
 }
 .today-group.has-games .game {
