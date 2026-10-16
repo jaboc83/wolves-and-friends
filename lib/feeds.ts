@@ -184,7 +184,14 @@ export function parseGames(json: any, team: string, sport: string): Game[] {
         status: status.type?.shortDetail || status.type?.detail || "Scheduled",
         state: status.type?.completed ? "post" : status.type?.state || "pre",
         league:
-          e.seasonType?.name || (e.season?.type === 1 ? "Preseason" : sport),
+          team === "palace"
+            ? e.league?.name ||
+              json.leagues?.[0]?.name ||
+              (/friendl/i.test(e.seasonType?.name || "")
+                ? e.seasonType.name
+                : sport)
+            : e.seasonType?.name ||
+              (e.season?.type === 1 ? "Preseason" : sport),
         venue: [
           c.venue?.fullName,
           c.venue?.address?.city,
