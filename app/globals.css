@@ -1998,3 +1998,12 @@ footer b {
   background: #fffefb;
   border-color: var(--today-ink);
 }
+
+/* Keep the today heading divider and count consistent with its team-colored panel. */
+.hub[data-team] .today-group.has-games .today-heading {
+  border-bottom-color: var(--today-ink);
+}
+.hub[data-team] .today-group.has-games .today-heading h2 small {
+  background: var(--today-ink);
+  color: #fff;
+}
