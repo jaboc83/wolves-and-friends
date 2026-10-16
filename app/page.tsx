@@ -568,7 +568,7 @@ export default function Home() {
           <a className="brand" href="/">
             <img
               className="brand-emblem"
-              src="/logos/minnesota-sports-hub.png"
+              src="/logos/wolves-friends-heritage.png"
               alt=""
               width={80}
               height={80}
