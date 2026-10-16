@@ -1843,6 +1843,34 @@ footer b {
   color: #1e623b;
   border-color: #9ac9aa;
 }
+.badge-friendly {
+  background: #e8f1f7;
+  color: #285674;
+  border-color: #a7c3d5;
+}
+.badge-premier {
+  background: #eee4f5;
+  color: #522366;
+  border-color: #c7a6d6;
+}
+.results-toggle {
+  display: inline-flex;
+  align-items: center;
+  min-height: 36px;
+  margin: 10px 0 16px;
+  padding: 7px 12px;
+  border: 1px solid #a7b8c2;
+  border-radius: 6px;
+  background: #eef3f5;
+  color: #193346;
+  font-size: 12px;
+  font-weight: 700;
+  cursor: pointer;
+}
+.results-toggle:focus-visible {
+  outline: 2px solid #193346;
+  outline-offset: 3px;
+}
 .compact-name {
   display: flex;
   flex-wrap: wrap;
@@ -1968,19 +1996,42 @@ footer b {
 }
 
 /* Keep competition badges separate from the team name and location. */
-.game-identity { flex: 1; }
-.game-identity-text { min-width: 0; }
-.game-title { display: flex; flex-wrap: wrap; align-items: baseline; column-gap: 4px; }
-.game-meta { display: flex; flex-direction: column; align-items: flex-end; gap: 6px; flex-shrink: 0; font-size: 10px; }
-.game-meta .game-badges { justify-content: flex-end; margin: 0; max-width: 100px; }
-.compact-name > .game-badges { margin-left: auto; }
+.game-identity {
+  flex: 1;
+}
+.game-identity-text {
+  min-width: 0;
+}
+.game-title {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  column-gap: 4px;
+}
+.game-meta {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 6px;
+  flex-shrink: 0;
+  font-size: 10px;
+}
+.game-meta .game-badges {
+  justify-content: flex-end;
+  margin: 0;
+  max-width: 100px;
+}
+.compact-name > .game-badges {
+  margin-left: auto;
+}
 
 /* Emphasize today's games with a tinted panel and a simple top rule. */
 .hub[data-team] .today-group.has-games {
   --today-ink: #10283a;
   background: #dce9d1;
   border: 1px solid color-mix(in srgb, var(--today-ink) 50%, #ffffff);
-  border-top: 3px solid color-mix(in srgb, var(--today-ink) 80%, var(--today-ink));
+  border-top: 3px solid
+    color-mix(in srgb, var(--today-ink) 80%, var(--today-ink));
 }
 .hub:not([data-team="all"]) .today-group.has-games {
   --today-ink: var(--team-primary);
@@ -2024,7 +2075,10 @@ footer b {
 }
 
 /* Past results: a flush corner cap, larger logo, and a separate score. */
-.past-game { position: relative; overflow: hidden; }
+.past-game {
+  position: relative;
+  overflow: hidden;
+}
 .past-game > summary {
   display: grid;
   grid-template-columns: 44px minmax(0, 1fr) auto 12px;
@@ -2033,8 +2087,16 @@ footer b {
   padding: 14px 12px;
   position: relative;
 }
-.past-game > summary > img { width: 44px; height: 44px; }
-.past-game .compact-date { font-size: 10px; white-space: normal; max-width: 112px; line-height: 1.5; }
+.past-game > summary > img {
+  width: 44px;
+  height: 44px;
+}
+.past-game .compact-date {
+  font-size: 10px;
+  white-space: normal;
+  max-width: 112px;
+  line-height: 1.5;
+}
 .past-game.result-shown > summary {
   grid-template-columns: 44px minmax(0, 1fr) auto 12px;
   min-height: 110px;
@@ -2058,18 +2120,65 @@ footer b {
   z-index: 1;
   pointer-events: none;
 }
-.result-cap > span { position: absolute; top: 12px; left: 14px; transform: rotate(-45deg); font-size: 16px; font-weight: 800; line-height: 1.2; }
-.cap-W { background: #286b36; }
-.cap-L { background: #aa3040; }
-.cap-D { background: #266796; }
-.result-score { display: inline-flex; align-items: center; justify-content: center; gap: 4px; font-size: 18px; line-height: 1.3; font-variant-numeric: tabular-nums; white-space: nowrap; color: #62737d; transform: translateY(-3px); }
-.result-score strong { font-weight: 800; color: #193346; }
-.result-score > span { font-weight: 400; }
-.past-game .expand-chevron { font-size: 16px; }
+.result-cap > span {
+  position: absolute;
+  top: 12px;
+  left: 14px;
+  transform: rotate(-45deg);
+  font-size: 16px;
+  font-weight: 800;
+  line-height: 1.2;
+}
+.cap-W {
+  background: #286b36;
+}
+.cap-L {
+  background: #aa3040;
+}
+.cap-D {
+  background: #266796;
+}
+.result-score {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+  font-size: 18px;
+  line-height: 1.3;
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+  color: #62737d;
+  transform: translateY(-3px);
+}
+.result-score strong {
+  font-weight: 800;
+  color: #193346;
+}
+.result-score > span {
+  font-weight: 400;
+}
+.past-game .expand-chevron {
+  font-size: 16px;
+}
 @media (max-width: 380px) {
-  .past-game > summary { grid-template-columns: 38px minmax(0, 1fr) auto 10px; gap: 7px; padding: 12px 10px; }
-  .past-game > summary > img { width: 38px; height: 38px; }
-  .past-game.result-shown > summary { grid-template-columns: 38px minmax(0, 1fr) auto 10px; padding: 32px 10px 14px 17px; }
-  .result-score { font-size: 16px; gap: 2px; }
-  .past-game:not(.result-shown) .compact-date { max-width: 90px; }
+  .past-game > summary {
+    grid-template-columns: 38px minmax(0, 1fr) auto 10px;
+    gap: 7px;
+    padding: 12px 10px;
+  }
+  .past-game > summary > img {
+    width: 38px;
+    height: 38px;
+  }
+  .past-game.result-shown > summary {
+    grid-template-columns: 38px minmax(0, 1fr) auto 10px;
+    padding: 32px 10px 14px 17px;
+  }
+  .result-score {
+    font-size: 16px;
+    gap: 2px;
+  }
+  .past-game:not(.result-shown) .compact-date {
+    max-width: 90px;
+  }
 }
