@@ -1999,11 +1999,11 @@ footer b {
   border-color: var(--today-ink);
 }
 
-/* Keep the today heading divider and count consistent with its team-colored panel. */
+/* Keep the divider in the team color and match the count to the TODAY badges. */
 .hub[data-team] .today-group.has-games .today-heading {
   border-bottom-color: var(--today-ink);
 }
 .hub[data-team] .today-group.has-games .today-heading h2 small {
-  background: var(--today-ink);
+  background: #d1122a;
   color: #fff;
 }
