@@ -70,7 +70,7 @@ export default function Home() {
     [showRead, setShowRead] = useState(false),
     [showOlder, setShowOlder] = useState(false),
     [revealed, setRevealed] = useState<string[]>([]),
-    [hideResults, setHideResults] = useState(false),
+    [hideScores, setHideResults] = useState(false),
     [resultsReady, setResultsReady] = useState(false);
   const pending = useRef(new Map<string, Promise<void>>());
   function once(key: string, work: () => Promise<void>) {
@@ -287,7 +287,7 @@ export default function Home() {
     localStorage.setItem("wf-team", id);
   }
   function toggleResults() {
-    const next = !hideResults;
+    const next = !hideScores;
     setHideResults(next);
     try {
       localStorage.setItem("wf-hide-results", String(next));
@@ -426,7 +426,7 @@ export default function Home() {
         key={g.id}
         game={g}
         compact={compact || g.state === "post"}
-        revealPast={resultsReady && !hideResults}
+        revealPast={resultsReady && !hideScores}
         revealed={revealed.includes(g.id)}
         onReveal={() =>
           setRevealed(
@@ -866,7 +866,7 @@ export default function Home() {
               onClick={toggleResults}
               disabled={!resultsReady}
             >
-              {hideResults ? "Show results" : "Hide results"}
+              {hideScores ? "Show scores" : "Hide scores"}
             </button>
             {results.length ? (
               results.map((g) => game(g, true))
