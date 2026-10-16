@@ -11,7 +11,7 @@ import type { TeamInfo } from "../lib/team-info";
 import TeamLogos from "../components/team-logos";
 import { teamThemes } from "../lib/team-themes";
 import { validAuthorStory } from "../lib/byline-status";
-import { socialTags } from "../lib/social-tags";
+import { socialQueue, unreadSocial } from "../lib/social-queue";
 import { authorStories } from "../lib/author-stories";
 import { communities } from "../lib/communities";
 import { teams, teamPriority } from "../lib/teams";
@@ -60,7 +60,7 @@ export default function Home() {
     [sources, setSources] = useState(false),
     [teamMenuOpen, setTeamMenuOpen] = useState(false),
     [socialData, setSocialData] = useState<Story[]>(
-      (initial.stories as Story[]).filter((s) => s.kind === "social"),
+      socialQueue(initial.stories as Story[]),
     ),
     [socialUnavailable, setSocialUnavailable] = useState<string[]>([]),
     [liveGames, setLiveGames] = useState<Game[]>([]),
@@ -70,7 +70,8 @@ export default function Home() {
     [showRead, setShowRead] = useState(false),
     [showOlder, setShowOlder] = useState(false),
     [revealed, setRevealed] = useState<string[]>([]),
-    [hideResults, setHideResults] = useState(true);
+    [hideResults, setHideResults] = useState(false),
+    [resultsReady, setResultsReady] = useState(false);
   const pending = useRef(new Map<string, Promise<void>>());
   function once(key: string, work: () => Promise<void>) {
     const existing = pending.current.get(key);
@@ -103,12 +104,7 @@ export default function Home() {
         if (!r.ok) throw Error();
         const d = (await r.json()) as { posts: Story[]; unavailable: string[] };
         setSocialData((previous) => {
-          const next = [
-            ...d.posts,
-            ...previous.filter((s) =>
-              s.teams.some((id) => d.unavailable.includes(id)),
-            ),
-          ];
+          const next = socialQueue([...d.posts, ...previous]);
           const merged = retainAvatars(
             { ...initial, stories: activeStories(next) } as HubData,
             { ...initial, stories: previous } as HubData,
@@ -244,6 +240,10 @@ export default function Home() {
   }
   useEffect(() => {
     try {
+      setHideResults(localStorage.getItem("wf-hide-results") === "true");
+    } catch {}
+    setResultsReady(true);
+    try {
       const socialCache = localStorage.getItem("wf-social-cache");
       if (socialCache)
         setSocialData(
@@ -251,7 +251,7 @@ export default function Home() {
             retainAvatars(
               {
                 ...initial,
-                stories: activeStories(JSON.parse(socialCache)),
+                stories: socialQueue(activeStories(JSON.parse(socialCache))),
               } as HubData,
               { ...initial, stories: previous } as HubData,
             ).stories,
@@ -285,6 +285,13 @@ export default function Home() {
     setTeamMenuOpen(false);
     setShowOlder(false);
     localStorage.setItem("wf-team", id);
+  }
+  function toggleResults() {
+    const next = !hideResults;
+    setHideResults(next);
+    try {
+      localStorage.setItem("wf-hide-results", String(next));
+    } catch {}
   }
   function markRead(id: string) {
     const next = readIds.includes(id)
@@ -366,15 +373,7 @@ export default function Home() {
     });
   for (const g of liveGames)
     if (!combinedGames.some((x) => x.id === g.id)) combinedGames.push(g);
-  const socialPosts = socialData
-    .filter(
-      (s) =>
-        s.kind === "social" &&
-        (active === "all" || s.teams.includes(active)) &&
-        !readIds.includes(s.id),
-    )
-    .sort((a, b) => Date.parse(b.date) - Date.parse(a.date))
-    .slice(0, active === "all" ? 2 : 5);
+  const socialPosts = unreadSocial(socialData, active, readIds);
   const teamsPlayingToday = new Set(
     combinedGames
       .filter((g) => day(g.date) === day(new Date().toISOString()))
@@ -427,7 +426,7 @@ export default function Home() {
         key={g.id}
         game={g}
         compact={compact || g.state === "post"}
-        revealPast={!hideResults}
+        revealPast={resultsReady && !hideResults}
         revealed={revealed.includes(g.id)}
         onReveal={() =>
           setRevealed(
@@ -625,9 +624,7 @@ export default function Home() {
         </nav>
         <div className="intro">
           <div>
-            <p className="eyebrow">
-              {team && team.sport.toUpperCase()}
-            </p>
+            <p className="eyebrow">{team && team.sport.toUpperCase()}</p>
             <h1>{team ? team.name : "Your daily catch-up."}</h1>
             <p className="subtitle">
               Latest headlines. Live scores. Social posts. All in one place.
@@ -641,7 +638,8 @@ export default function Home() {
         )}
         {scoreError && (
           <p className="alert">
-            Some live score feeds are unavailable; showing previously loaded games.
+            Some live score feeds are unavailable; showing previously loaded
+            games.
           </p>
         )}
         {error && (
@@ -694,8 +692,7 @@ export default function Home() {
                 <p className="feed-description">
                   {active === "all"
                     ? "Latest posts for your teams · Bluesky"
-                    : team?.name +
-                        " posts"}
+                    : team?.name + " posts"}
                 </p>
                 {socialPosts.length ? (
                   socialPosts.map(story)
@@ -753,9 +750,7 @@ export default function Home() {
                           day: "numeric",
                           year: "numeric",
                         })
-                      : active === "all"
-                        ? "No unread headlines from today."
-                        : "No unread headlines from the last 3 days."}
+                      : "No unread headlines from the last week."}
                 </h3>
                 <p>
                   {olderCount > 0
@@ -769,9 +764,7 @@ export default function Home() {
                 <p>
                   {showOlder
                     ? "Showing older headlines too."
-                    : active === "all"
-                      ? "Today’s headlines · Central Time"
-                      : "Headlines from the last 3 days."}
+                    : "Headlines from the last week."}
                 </p>
                 {(olderCount > 0 || showOlder) && (
                   <button onClick={() => setShowOlder(!showOlder)}>
@@ -867,14 +860,14 @@ export default function Home() {
               <h2>Recent results</h2>
               <span>Latest available</span>
             </div>
-            <label className="reveal-past">
-              <input
-                type="checkbox"
-                checked={hideResults}
-                onChange={(e) => setHideResults(e.target.checked)}
-              />{" "}
-              Hide Results
-            </label>
+            <button
+              type="button"
+              className="results-toggle"
+              onClick={toggleResults}
+              disabled={!resultsReady}
+            >
+              {hideResults ? "Show results" : "Hide results"}
+            </button>
             {results.length ? (
               results.map((g) => game(g, true))
             ) : (
@@ -914,8 +907,8 @@ export default function Home() {
         <footer>
           <b>Wolves & Friends</b>
           <span>
-            Headlines link to their publishers. Feeds can be delayed or
-            unavailable. Read status stays in this browser.
+            Feeds may be delayed or unavailable. Your preferences and read status
+            stay in this browser.
           </span>
         </footer>
       </div>

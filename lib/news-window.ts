@@ -8,12 +8,8 @@ export const chicagoDay = (date: string) =>
   }).format(new Date(date));
 export function recentStories(
   stories: Story[],
-  active: string,
+  _active: string,
   now = Date.now(),
 ) {
-  return stories.filter((s) =>
-    active === "all"
-      ? chicagoDay(s.date) === chicagoDay(new Date(now).toISOString())
-      : Date.parse(s.date) >= now - 3 * 86400000,
-  );
+  return stories.filter((s) => Date.parse(s.date) >= now - 7 * 86400000);
 }
