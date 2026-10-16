@@ -3,6 +3,7 @@ import GameBadges from "./game-badges";
 import { useState } from "react";
 import type { Game } from "../lib/feeds";
 import { teams } from "../lib/teams";
+import { teamLocation } from "../lib/team-location";
 import { teamWikipediaUrl } from "../lib/team-wikipedia";
 const ct = (s: string, o: Intl.DateTimeFormatOptions = {}) =>
   new Date(s).toLocaleString("en-US", { timeZone: "America/Chicago", ...o });
@@ -35,6 +36,10 @@ export function outcome(g: Game) {
   if (!Number.isFinite(a) || !Number.isFinite(b)) return "";
   return a === b ? "D" : a > b ? "W" : "L";
 }
+function Location({ team, name, league, own = false }: { team: string; name: string; league: string; own?: boolean }) {
+  const location = teamLocation(team, name, league, own);
+  return location ? <span style={{ fontSize: "0.8em", fontWeight: 400, opacity: 0.75 }}> · {location}</span> : null;
+}
 export default function GameCard({
   game: g,
   compact = false,
@@ -63,7 +68,7 @@ export default function GameCard({
         <div className="game-identity">
           <img src={logo} alt="" width={36} height={36} />
           <div>
-            <strong>{t.id === "disc" ? t.name : <a href={teamWikipediaUrl(t.id, undefined, true)} target="_blank" rel="noreferrer">{t.name}</a>}</strong>
+            <strong>{t.id === "disc" ? t.name : <a href={teamWikipediaUrl(t.id, undefined, true)} target="_blank" rel="noreferrer">{t.name}</a>}</strong><Location team={g.team} name={t.name} league={g.league} own />
             <GameBadges game={g} />
             <span className="muted">{g.league}</span>
           </div>
@@ -85,7 +90,7 @@ export default function GameCard({
             key={p.name}
           >
             <span>
-              <a href={teamWikipediaUrl(t.id, p.name, p === club)} target="_blank" rel="noreferrer">{p.name}</a>
+              <a href={teamWikipediaUrl(t.id, p.name, p === club)} target="_blank" rel="noreferrer">{p.name}</a><Location team={g.team} name={p.name} league={g.league} own={p === club} />
               {p.record && (!hidden || g.state === "pre") && (
                 <span className="team-record"> ({p.record})</span>
               )}
@@ -199,10 +204,10 @@ export default function GameCard({
         <img src={logo} alt="" width={30} height={30} />
         <span className="compact-match">
           <span className="compact-name">
-            <strong>{t.id === "disc" ? t.short : <a href={teamWikipediaUrl(t.id, undefined, true)} target="_blank" rel="noreferrer" onClick={e => e.stopPropagation()}>{t.short}</a>}</strong>
+            <strong>{t.id === "disc" ? t.short : <a href={teamWikipediaUrl(t.id, undefined, true)} target="_blank" rel="noreferrer" onClick={e => e.stopPropagation()}>{t.short}</a>}</strong><Location team={g.team} name={t.name} league={g.league} own />
             <GameBadges game={g} />
           </span>
-          {g.eventOnly ? <span>{g.name}</span> : <span>vs. <a href={teamWikipediaUrl(t.id, opponent)} target="_blank" rel="noreferrer" onClick={e => e.stopPropagation()}>{opponent}</a></span>}
+          {g.eventOnly ? <span>{g.name}</span> : <span>vs. <a href={teamWikipediaUrl(t.id, opponent)} target="_blank" rel="noreferrer" onClick={e => e.stopPropagation()}>{opponent}</a><Location team={g.team} name={opponent} league={g.league} /></span>}
         </span>
         <span className="compact-date">
           {ct(g.date, { month: "short", day: "numeric" })}
