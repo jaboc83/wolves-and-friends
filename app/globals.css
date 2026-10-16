@@ -795,6 +795,7 @@ footer b {
 }
 .upcoming-heading {
   margin-top: 22px;
+  margin-bottom: 5px;
 }
 .today-group .empty {
   background: #f6f8f2;
@@ -1978,12 +1979,12 @@ footer b {
 .hub[data-team] .today-group.has-games {
   --today-ink: #10283a;
   background: #dce9d1;
-  border: 0;
-  border-top: 3px solid var(--today-ink);
+  border: 1px solid color-mix(in srgb, var(--today-ink) 50%, #ffffff);
+  border-top: 3px solid color-mix(in srgb, var(--today-ink) 80%, var(--today-ink));
 }
 .hub:not([data-team="all"]) .today-group.has-games {
   --today-ink: var(--team-primary);
-  background: color-mix(in srgb, var(--team-soft) 78%, var(--team-primary));
+  background: color-mix(in srgb, var(--team-soft) 90%, var(--team-primary));
 }
 .today-group.has-games .today-heading {
   background: transparent;
@@ -2001,7 +2002,7 @@ footer b {
 
 /* Keep the divider in the team color and match the count to the TODAY badges. */
 .hub[data-team] .today-group.has-games .today-heading {
-  border-bottom-color: var(--today-ink);
+  border-bottom-color: color-mix(in srgb, var(--today-ink) 60%, #ffffff);
 }
 .hub[data-team] .today-group.has-games .today-heading h2 small {
   background: #d1122a;
