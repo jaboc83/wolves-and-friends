@@ -337,12 +337,7 @@ export default function Home() {
         g.state === "post" && day(g.date) !== day(new Date().toISOString()),
     )
     .sort((a, b) => Date.parse(b.date) - Date.parse(a.date))
-    .slice(0, active === "all" ? 8 : 4)
-    .sort(
-      (a, b) =>
-        teamPriority(a.team) - teamPriority(b.team) ||
-        Date.parse(b.date) - Date.parse(a.date),
-    );
+    .slice(0, active === "all" ? 8 : 4);
   const upcoming = visibleGames
     .filter(
       (g) =>
