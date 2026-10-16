@@ -57,11 +57,8 @@ export default function Home() {
     [search, setSearch] = useState(""),
     [loading, setLoading] = useState(true),
     [error, setError] = useState(""),
-    [tab, setTab] = useState("latest"),
-    [saved, setSaved] = useState<string[]>([]),
     [sources, setSources] = useState(false),
     [teamMenuOpen, setTeamMenuOpen] = useState(false),
-    [archive, setArchive] = useState<Story[]>([]),
     [socialData, setSocialData] = useState<Story[]>(
       (initial.stories as Story[]).filter((s) => s.kind === "social"),
     ),
@@ -267,11 +264,7 @@ export default function Home() {
         setData((previous) =>
           retainAvatars(activeHub(JSON.parse(c)), previous),
         );
-      setSaved(JSON.parse(localStorage.getItem("wf-saved") || "[]"));
       setReadIds(JSON.parse(localStorage.getItem("wf-read") || "[]"));
-      setArchive(
-        activeStories(JSON.parse(localStorage.getItem("wf-archive") || "[]")),
-      );
       const previousTeam = localStorage.getItem("wf-team") || "wolves";
       setActive(
         previousTeam === "all" || teams.some((t) => t.id === previousTeam)
@@ -296,32 +289,6 @@ export default function Home() {
     setShowOlder(false);
     localStorage.setItem("wf-team", id);
   }
-  function toggle(id: string) {
-    const n = saved.includes(id)
-      ? saved.filter((x) => x !== id)
-      : [...saved, id];
-    setSaved(n);
-    localStorage.setItem("wf-saved", JSON.stringify(n));
-    const item = [
-      ...(data?.stories || []).filter(
-        (s) =>
-          validAuthorStory(s) &&
-          s.source !== "BasketNews" &&
-          !(
-            s.source === "ESPN" &&
-            /\b(?:game|match|full[- ]game|extended) highlights?\b/i.test(
-              s.title,
-            )
-          ),
-      ),
-      ...authorStories(data?.authors || []),
-      ...socialData,
-    ].find((s) => s.id === id);
-    const next = archive.filter((s) => s.id !== id);
-    if (n.includes(id) && item) next.unshift(item);
-    setArchive(next);
-    localStorage.setItem("wf-archive", JSON.stringify(next));
-  }
   function markRead(id: string) {
     const next = readIds.includes(id)
       ? readIds.filter((x) => x !== id)
@@ -338,36 +305,33 @@ export default function Home() {
       } as CSSProperties)
     : undefined;
   const team = teams.find((t) => t.id === active);
-  const filtered = (
-    tab === "saved"
-      ? archive
-      : [
-          ...new Map(
-            [
-              ...(data?.stories || []).filter(
-                (s) =>
-                  validAuthorStory(s) &&
-                  s.source !== "BasketNews" &&
-                  !(
-                    s.source === "ESPN" &&
-                    /\b(?:game|match|full[- ]game|extended) highlights?\b/i.test(
-                      s.title,
-                    )
-                  ),
-              ),
-              ...authorStories(data?.authors || []),
-            ].map((s) => [s.url, s]),
-          ).values(),
-        ].sort((a, b) => Date.parse(b.date) - Date.parse(a.date))
-  ).filter(
-    (s) =>
-      (tab === "saved" || s.kind !== "social") &&
-      (active === "all" || s.teams.includes(active)) &&
-      s.title.toLowerCase().includes(search.toLowerCase()) &&
-      (tab !== "saved" || saved.includes(s.id)) &&
-      (tab === "saved" || showRead || !readIds.includes(s.id)),
-  );
-  const compactNews = tab === "latest";
+  const filtered = [
+    ...new Map(
+      [
+        ...(data?.stories || []).filter(
+          (s) =>
+            validAuthorStory(s) &&
+            s.source !== "BasketNews" &&
+            !(
+              s.source === "ESPN" &&
+              /\b(?:game|match|full[- ]game|extended) highlights?\b/i.test(
+                s.title,
+              )
+            ),
+        ),
+        ...authorStories(data?.authors || []),
+      ].map((s) => [s.url, s]),
+    ).values(),
+  ]
+    .sort((a, b) => Date.parse(b.date) - Date.parse(a.date))
+    .filter(
+      (s) =>
+        s.kind !== "social" &&
+        (active === "all" || s.teams.includes(active)) &&
+        s.title.toLowerCase().includes(search.toLowerCase()) &&
+        (showRead || !readIds.includes(s.id)),
+    );
+  const compactNews = true;
   const recent = recentStories(filtered, active);
   const displayed = compactNews && !showOlder ? recent : filtered;
   const olderCount = filtered.length - recent.length;
@@ -596,13 +560,6 @@ export default function Home() {
             <button className="read-toggle" onClick={() => markRead(s.id)}>
               {readIds.includes(s.id) ? "Mark unread" : "✓ Mark read"}
             </button>
-            <button
-              className={"save " + (saved.includes(s.id) ? "saved" : "")}
-              onClick={() => toggle(s.id)}
-              aria-label={saved.includes(s.id) ? "Unsave story" : "Save story"}
-            >
-              {saved.includes(s.id) ? "★ Saved" : "☆ Save"}
-            </button>
           </div>
         </div>
       </article>
@@ -825,20 +782,9 @@ export default function Home() {
               </section>
             }
             <div className="section-heading">
-              <div className="tabs">
-                <button
-                  className={tab === "latest" ? "on" : ""}
-                  onClick={() => setTab("latest")}
-                >
-                  Latest stories <small>{displayed.length}</small>
-                </button>
-                <button
-                  className={tab === "saved" ? "on" : ""}
-                  onClick={() => setTab("saved")}
-                >
-                  Saved
-                </button>
-              </div>
+              <h2 className="latest-heading">
+                Latest stories <small>{displayed.length}</small>
+              </h2>
               <label className="show-read">
                 <input
                   type="checkbox"
@@ -866,27 +812,23 @@ export default function Home() {
             ) : (
               <div className="empty">
                 <h3>
-                  {tab === "saved"
-                    ? "No saved stories here yet."
-                    : search
-                      ? "No matching headlines."
-                      : newest && recentStories([newest], active).length === 0
-                        ? "No news since " +
-                          ct(newest.date, {
-                            month: "short",
-                            day: "numeric",
-                            year: "numeric",
-                          })
-                        : active === "all"
-                          ? "No unread headlines from today."
-                          : "No unread headlines from the last 3 days."}
+                  {search
+                    ? "No matching headlines."
+                    : newest && recentStories([newest], active).length === 0
+                      ? "No news since " +
+                        ct(newest.date, {
+                          month: "short",
+                          day: "numeric",
+                          year: "numeric",
+                        })
+                      : active === "all"
+                        ? "No unread headlines from today."
+                        : "No unread headlines from the last 3 days."}
                 </h3>
                 <p>
-                  {tab === "saved"
-                    ? "Save a story to find it here later."
-                    : olderCount > 0
-                      ? "Use View older to catch up on earlier articles."
-                      : "Check the Source desk for more coverage."}
+                  {olderCount > 0
+                    ? "Use View older to catch up on earlier articles."
+                    : "Check the Source desk for more coverage."}
                 </p>
               </div>
             )}
@@ -1042,7 +984,7 @@ export default function Home() {
           <b>Wolves & Friends</b>
           <span>
             Headlines link to their publishers. Feeds can be delayed or
-            unavailable. Saved stories stay in this browser.
+            unavailable. Read status stays in this browser.
           </span>
         </footer>
       </div>
