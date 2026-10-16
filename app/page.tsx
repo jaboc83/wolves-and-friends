@@ -17,6 +17,8 @@ import { communities } from "../lib/communities";
 import { teams, teamPriority } from "../lib/teams";
 import initial from "../lib/initial.json";
 import type { HubData, Story, Game } from "../lib/feeds";
+import SocialImage from "../components/social-image";
+import { isLocalSocialImage } from "../lib/bluesky-images";
 const ct = (s: string, opts: Intl.DateTimeFormatOptions = {}) =>
   new Date(s).toLocaleString("en-US", { timeZone: "America/Chicago", ...opts });
 const day = (s: string) =>
@@ -34,13 +36,13 @@ function retainAvatars(next: HubData, previous?: HubData | null): HubData {
     s.url.split("/profile/")[1]?.split("/post/")[0] || s.source;
   const known = new Map<string, string>(
     [...(initial.stories as Story[]), ...(previous?.stories || [])]
-      .filter((s) => s.kind === "social" && s.avatar?.startsWith("data:image/"))
+      .filter((s) => s.kind === "social" && isLocalSocialImage(s.avatar))
       .map((s) => [key(s), s.avatar!]),
   );
   return {
     ...next,
     stories: next.stories.map((s) =>
-      s.kind === "social" && !s.avatar?.startsWith("data:image/")
+      s.kind === "social" && !isLocalSocialImage(s.avatar)
         ? { ...s, avatar: known.get(key(s)) }
         : s,
     ),
@@ -405,19 +407,17 @@ export default function Home() {
       >
         {s.kind === "social" ? (
           <div className="post-avatar">
-            {s.avatar?.startsWith("data:image/") ? (
-              <img
-                src={s.avatar}
-                alt=""
-                width={40}
-                height={40}
-                loading="lazy"
-              />
-            ) : (
-              <span aria-hidden="true">
-                {s.source.replace("Bluesky · ", "").charAt(0).toUpperCase()}
-              </span>
-            )}
+            <SocialImage
+              src={s.avatar}
+              alt=""
+              width={40}
+              height={40}
+              fallback={
+                <span aria-hidden="true">
+                  {s.source.replace("Bluesky · ", "").charAt(0).toUpperCase()}
+                </span>
+              }
+            />
           </div>
         ) : (
           <TeamLogos teamIds={s.teams} />
@@ -441,6 +441,39 @@ export default function Home() {
               {s.title} <span>↗</span>
             </a>
           </h3>
+          {s.kind === "social" && !!s.images?.length && (
+            <div
+              className={
+                "post-images" +
+                (s.images.length === 1 ? " post-images-single" : "")
+              }
+            >
+              {s.images
+                .slice(0, 4)
+                .filter((image) => isLocalSocialImage(image.src))
+                .map((image, index) => (
+                  <a
+                    key={image.src + index}
+                    href={s.url}
+                    target="_blank"
+                    rel="noreferrer"
+                    aria-label={image.alt || "View photo on Bluesky"}
+                  >
+                    <SocialImage
+                      src={image.src}
+                      alt={image.alt}
+                      width={image.width}
+                      height={image.height}
+                      fallback={
+                        <span className="post-image-fallback">
+                          View photo on Bluesky ↗
+                        </span>
+                      }
+                    />
+                  </a>
+                ))}
+            </div>
+          )}
           <div className="story-bottom">
             <div>
               {s.teams.map((id) => {
