@@ -3,6 +3,7 @@ import GameBadges from "./game-badges";
 import { useState } from "react";
 import type { Game } from "../lib/feeds";
 import { teams } from "../lib/teams";
+import { teamWikipediaUrl } from "../lib/team-wikipedia";
 const ct = (s: string, o: Intl.DateTimeFormatOptions = {}) =>
   new Date(s).toLocaleString("en-US", { timeZone: "America/Chicago", ...o });
 const patterns: Record<string, RegExp> = {
@@ -62,7 +63,7 @@ export default function GameCard({
         <div className="game-identity">
           <img src={logo} alt="" width={36} height={36} />
           <div>
-            <strong>{t.name}</strong>
+            <strong>{t.id === "disc" ? t.name : <a href={teamWikipediaUrl(t.id, undefined, true)} target="_blank" rel="noreferrer">{t.name}</a>}</strong>
             <GameBadges game={g} />
             <span className="muted">{g.league}</span>
           </div>
@@ -84,7 +85,7 @@ export default function GameCard({
             key={p.name}
           >
             <span>
-              {p.name}
+              <a href={teamWikipediaUrl(t.id, p.name, p === club)} target="_blank" rel="noreferrer">{p.name}</a>
               {p.record && (!hidden || g.state === "pre") && (
                 <span className="team-record"> ({p.record})</span>
               )}
@@ -198,10 +199,10 @@ export default function GameCard({
         <img src={logo} alt="" width={30} height={30} />
         <span className="compact-match">
           <span className="compact-name">
-            <strong>{t.short}</strong>
+            <strong>{t.id === "disc" ? t.short : <a href={teamWikipediaUrl(t.id, undefined, true)} target="_blank" rel="noreferrer" onClick={e => e.stopPropagation()}>{t.short}</a>}</strong>
             <GameBadges game={g} />
           </span>
-          {g.eventOnly ? <span>{g.name}</span> : <span>vs. {opponent}</span>}
+          {g.eventOnly ? <span>{g.name}</span> : <span>vs. <a href={teamWikipediaUrl(t.id, opponent)} target="_blank" rel="noreferrer" onClick={e => e.stopPropagation()}>{opponent}</a></span>}
         </span>
         <span className="compact-date">
           {ct(g.date, { month: "short", day: "numeric" })}
