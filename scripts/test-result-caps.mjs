@@ -35,4 +35,13 @@ for (const [a,b,result,label] of [['122','104','W','Win'],['106','128','L','Loss
 }
 assert.doesNotMatch(render(game('','','pre'), true), /past-game|result-cap|result-score/);
 assert.doesNotMatch(render(game('','','post'), true), /result-cap|result-score/);
-console.log('Result cap checks passed: W/L/D, zero-score draw, bold team score, spoiler hiding, missing scores, and upcoming cards.');
+const today = (g, revealPast = true) => renderToStaticMarkup(createElement(Card, { game: g, compact: g.state === 'post', today: true, revealed: false, revealPast, onReveal() {} }));
+const completedToday = today({ ...game('122', '104'), url: 'https://example.com/stats' });
+assert.doesNotMatch(completedToday, /class="game-top"|class="competitor /);
+assert.match(completedToday, /class="result-score"/);
+assert.match(completedToday, /Box score \/ match stats/);
+assert.match(completedToday, /Find full game highlights/);
+assert.doesNotMatch(today(game('122', '104'), false), /result-cap|result-score/);
+assert.match(today(game('', '', 'pre')), /class="game-top"/);
+assert.match(render(game('122', '104'), true), /class="game-top"/);
+console.log('Result cap checks passed, including completed-today deduplication, preserved links, hidden scores, and unchanged upcoming/recent cards.');
