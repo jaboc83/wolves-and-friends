@@ -71,15 +71,12 @@ export default function Home() {
     [showOlder, setShowOlder] = useState(false),
     [revealed, setRevealed] = useState<string[]>([]),
     [hideResults, setHideResults] = useState(true);
-  const [refreshing, setRefreshing] = useState<string[]>([]);
   const pending = useRef(new Map<string, Promise<void>>());
   function once(key: string, work: () => Promise<void>) {
     const existing = pending.current.get(key);
     if (existing) return existing;
-    setRefreshing((keys) => [...keys, key]);
     const request = work().finally(() => {
       pending.current.delete(key);
-      setRefreshing((keys) => keys.filter((value) => value !== key));
     });
     pending.current.set(key, request);
     return request;
@@ -582,33 +579,6 @@ export default function Home() {
               <i>YOUR TEAMS. ONE PLACE.</i>
             </div>
           </a>
-          <div className="mast-right">
-            <span>
-              {data
-                ? "Headlines checked " +
-                  ct(data.checked, { hour: "numeric", minute: "2-digit" }) +
-                  " CT"
-                : "Checking sources…"}
-            </span>
-            <button onClick={refresh} disabled={refreshing.length > 0}>
-              {refreshing.length ? "Refreshing…" : "↻ Refresh"}
-            </button>
-            {refreshing.length > 0 && (
-              <small role="status">
-                Updating{" "}
-                {refreshing
-                  .map((key) =>
-                    key === "news"
-                      ? "headlines"
-                      : key === "info"
-                        ? "team info"
-                        : key,
-                  )
-                  .join(", ")}
-                …
-              </small>
-            )}
-          </div>
         </div>
       </header>
       <div className="shell">
@@ -850,6 +820,16 @@ export default function Home() {
                 )}
               </div>
             )}
+            <p className="panel-note" aria-live="polite">
+              Last update:{" "}
+              {data
+                ? ct(data.checked, {
+                    dateStyle: "medium",
+                    timeStyle: "short",
+                  }) + " CT"
+                : "Not yet updated"}
+              {loading && " · Updating headlines…"}
+            </p>
             <TeamInsights active={active} data={teamInfo} />
             <MatchCalendar games={visibleGames} />
             <section className="community-panel">
