@@ -1443,6 +1443,13 @@ footer b {
   margin: 0;
   border-radius: 0 0 7px 7px;
 }
+.compact-date .result-W,
+.compact-date .result-L,
+.compact-date .result-D {
+  font-size: 14px;
+  line-height: 1.35;
+  margin-top: 7px;
+}
 .compact-date .result-W {
   color: #286b36;
   font-weight: 800;
@@ -1766,7 +1773,7 @@ footer b {
   flex-shrink: 0;
 }
 .compact-score {
-  font-size: 11px;
+  font-size: inherit;
   font-weight: 700;
 }
 
