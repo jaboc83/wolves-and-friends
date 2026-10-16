@@ -8,8 +8,8 @@ export const metadata: Metadata = {
   description:
     "The latest stories, scores and upcoming games for your teams, all in one place.",
   icons: {
-    icon: "/logos/minnesota-sports-hub.png",
-    shortcut: "/logos/minnesota-sports-hub.png",
+    icon: "/logos/wolves-friends-heritage.png",
+    shortcut: "/logos/wolves-friends-heritage.png",
   },
 };
 
