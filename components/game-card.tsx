@@ -37,9 +37,24 @@ export function outcome(g: Game) {
   if (!Number.isFinite(a) || !Number.isFinite(b)) return "";
   return a === b ? "D" : a > b ? "W" : "L";
 }
-function Location({ team, name, league, own = false }: { team: string; name: string; league: string; own?: boolean }) {
+function Location({
+  team,
+  name,
+  league,
+  own = false,
+}: {
+  team: string;
+  name: string;
+  league: string;
+  own?: boolean;
+}) {
   const location = teamLocation(team, name, league, own);
-  return location ? <span style={{ fontSize: "0.8em", fontWeight: 400, opacity: 0.75 }}> · {location}</span> : null;
+  return location ? (
+    <span style={{ fontSize: "0.8em", fontWeight: 400, opacity: 0.75 }}>
+      {" "}
+      · {location}
+    </span>
+  ) : null;
 }
 export default function GameCard({
   game: g,
@@ -70,19 +85,34 @@ export default function GameCard({
         <div className="game-identity">
           <img src={logo} alt="" width={36} height={36} />
           <div className="game-identity-text">
-            <div className="game-title"><strong>{t.id === "disc" ? t.name : <a href={teamWikipediaUrl(t.id, undefined, true)} target="_blank" rel="noreferrer">{t.name}</a>}</strong><Location team={g.team} name={t.name} league={g.league} own /></div>
+            <div className="game-title">
+              <strong>
+                {t.id === "disc" ? (
+                  t.name
+                ) : (
+                  <a
+                    href={teamWikipediaUrl(t.id, undefined, true)}
+                    target="_blank"
+                    rel="noreferrer"
+                  >
+                    {t.name}
+                  </a>
+                )}
+              </strong>
+              <Location team={g.team} name={t.name} league={g.league} own />
+            </div>
             {!hasBadges && <span className="muted">{g.league}</span>}
           </div>
         </div>
         <div className="game-meta">
-        <span className={g.state === "in" ? "live" : ""}>
-          {g.state === "post"
-            ? "FINAL"
-            : g.state === "in"
-              ? "LIVE"
-              : ct(g.date, { month: "short", day: "numeric" })}
-        </span>
-        <GameBadges game={g} />
+          <span className={g.state === "in" ? "live" : ""}>
+            {g.state === "post"
+              ? "FINAL"
+              : g.state === "in"
+                ? "LIVE"
+                : ct(g.date, { month: "short", day: "numeric" })}
+          </span>
+          <GameBadges game={g} />
         </div>
       </div>
       {g.eventOnly ? (
@@ -94,7 +124,19 @@ export default function GameCard({
             key={p.name}
           >
             <span>
-              <a href={teamWikipediaUrl(t.id, p.name, p === club)} target="_blank" rel="noreferrer">{p.name}</a><Location team={g.team} name={p.name} league={g.league} own={p === club} />
+              <a
+                href={teamWikipediaUrl(t.id, p.name, p === club)}
+                target="_blank"
+                rel="noreferrer"
+              >
+                {p.name}
+              </a>
+              <Location
+                team={g.team}
+                name={p.name}
+                league={g.league}
+                own={p === club}
+              />
               {p.record && (!hidden || g.state === "pre") && (
                 <span className="team-record"> ({p.record})</span>
               )}
@@ -199,45 +241,86 @@ export default function GameCard({
   if (!compact) return full;
   return (
     <details
-      className="compact-game"
+      className={
+        "compact-game" +
+        (g.state === "post" ? " past-game" : "") +
+        (g.state === "post" && scoreVisible && result ? " result-shown" : "")
+      }
       onToggle={(e) => {
         if (e.target === e.currentTarget) setExpanded(e.currentTarget.open);
       }}
     >
       <summary>
+        {g.state === "post" && scoreVisible && result && (
+          <span
+            className={"result-cap cap-" + result}
+            aria-label={
+              result === "W" ? "Win" : result === "L" ? "Loss" : "Draw"
+            }
+          >
+            <span>{result}</span>
+          </span>
+        )}
         <img src={logo} alt="" width={30} height={30} />
         <span className="compact-match">
           <span className="compact-name">
-            <strong>{t.id === "disc" ? t.short : <a href={teamWikipediaUrl(t.id, undefined, true)} target="_blank" rel="noreferrer" onClick={e => e.stopPropagation()}>{t.short}</a>}</strong><Location team={g.team} name={t.name} league={g.league} own />
+            <strong>
+              {t.id === "disc" ? (
+                t.short
+              ) : (
+                <a
+                  href={teamWikipediaUrl(t.id, undefined, true)}
+                  target="_blank"
+                  rel="noreferrer"
+                  onClick={(e) => e.stopPropagation()}
+                >
+                  {t.short}
+                </a>
+              )}
+            </strong>
+            <Location team={g.team} name={t.name} league={g.league} own />
             <GameBadges game={g} />
           </span>
-          {g.eventOnly ? <span>{g.name}</span> : <span>vs. <a href={teamWikipediaUrl(t.id, opponent)} target="_blank" rel="noreferrer" onClick={e => e.stopPropagation()}>{opponent}</a><Location team={g.team} name={opponent} league={g.league} /></span>}
+          {g.eventOnly ? (
+            <span>{g.name}</span>
+          ) : (
+            <span>
+              vs.{" "}
+              <a
+                href={teamWikipediaUrl(t.id, opponent)}
+                target="_blank"
+                rel="noreferrer"
+                onClick={(e) => e.stopPropagation()}
+              >
+                {opponent}
+              </a>
+              <Location team={g.team} name={opponent} league={g.league} />
+            </span>
+          )}
         </span>
+        {g.state === "post" && scoreVisible && result && (
+          <span
+            className="result-score"
+            aria-label={`${t.name} ${club?.score}, ${opponent} ${g.competitors.find((p) => p !== club)?.score}`}
+          >
+            <strong>{club?.score}</strong>
+            <span className="score-separator">–</span>
+            <span>{g.competitors.find((p) => p !== club)?.score}</span>
+          </span>
+        )}
         <span className="compact-date">
           {ct(g.date, { month: "short", day: "numeric" })}
-          {!g.dateOnly && (
+          {!g.dateOnly &&
+            (g.state === "post" ? (
+              <> · {ct(g.date, { hour: "numeric", minute: "2-digit" })} CT</>
+            ) : (
+              <small>
+                {ct(g.date, { hour: "numeric", minute: "2-digit" })} CT
+              </small>
+            ))}
+          {g.state === "post" && (!scoreVisible || !result) && (
             <small>
-              {ct(g.date, { hour: "numeric", minute: "2-digit" })} CT
-            </small>
-          )}
-          {g.state === "post" && (
-            <small className={scoreVisible ? "result-" + result : ""}>
-              {scoreVisible ? (
-                result ? (
-                  <>
-                    {result}
-                    <span className="compact-score">
-                      {" "}
-                      · {club?.score}–
-                      {g.competitors.find((p) => p !== club)?.score}
-                    </span>
-                  </>
-                ) : (
-                  "Score unavailable"
-                )
-              ) : (
-                "Result hidden"
-              )}
+              {scoreVisible ? "Score unavailable" : "Result hidden"}
             </small>
           )}
         </span>
