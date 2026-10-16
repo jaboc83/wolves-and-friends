@@ -1,5 +1,5 @@
 "use client";
-import { useEffect, useState, type CSSProperties } from "react";
+import { useEffect, useRef, useState, type CSSProperties } from "react";
 import GameCard from "../components/game-card";
 import MatchCalendar from "../components/match-calendar";
 import TeamInsights from "../components/team-insights";
@@ -74,92 +74,179 @@ export default function Home() {
     [showOlder, setShowOlder] = useState(false),
     [revealed, setRevealed] = useState<string[]>([]),
     [hideResults, setHideResults] = useState(true);
-  async function refreshInfo() {
-    try {
-      const r = await fetch("/api/team-info", {
-        credentials: "omit",
-        referrerPolicy: "no-referrer",
-      });
-      if (r.ok) setTeamInfo((await r.json()) as TeamInfo[]);
-    } catch {}
+  const [refreshing, setRefreshing] = useState<string[]>([]);
+  const pending = useRef(new Map<string, Promise<void>>());
+  function once(key: string, work: () => Promise<void>) {
+    const existing = pending.current.get(key);
+    if (existing) return existing;
+    setRefreshing((keys) => [...keys, key]);
+    const request = work().finally(() => {
+      pending.current.delete(key);
+      setRefreshing((keys) => keys.filter((value) => value !== key));
+    });
+    pending.current.set(key, request);
+    return request;
   }
-  async function refreshSocial() {
-    try {
-      const r = await fetch("/api/social", {
-        credentials: "omit",
-        referrerPolicy: "no-referrer",
-        cache: "no-store",
-      });
-      if (!r.ok) throw Error();
-      const d = (await r.json()) as { posts: Story[]; unavailable: string[] };
-      setSocialData((previous) => {
-        const next = [
-          ...d.posts,
-          ...previous.filter((s) =>
-            s.teams.some((id) => d.unavailable.includes(id)),
-          ),
-        ];
-        const merged = retainAvatars(
-          { ...initial, stories: activeStories(next) } as HubData,
-          { ...initial, stories: previous } as HubData,
-        ).stories;
-        try {
-          localStorage.setItem("wf-social-cache", JSON.stringify(merged));
-        } catch {}
-        return merged;
-      });
-      setSocialUnavailable(d.unavailable);
-    } catch {
-      setSocialUnavailable(teams.map((t) => t.id));
-    }
+  function refreshInfo() {
+    return once("info", async () => {
+      try {
+        const r = await fetch("/api/team-info", {
+          credentials: "omit",
+          referrerPolicy: "no-referrer",
+        });
+        if (r.ok) setTeamInfo((await r.json()) as TeamInfo[]);
+      } catch {}
+    });
   }
-  async function refreshScores() {
-    try {
-      const r = await fetch("/api/scores", {
-        credentials: "omit",
-        referrerPolicy: "no-referrer",
-        cache: "no-store",
-      });
-      if (!r.ok) throw Error();
-      const d = (await r.json()) as {
-        games: Game[];
-        checked: string;
-        unavailable: string[];
-      };
-      setLiveGames(d.games);
-      setScoreCheck(d.checked);
-      setScoreError(d.unavailable.length > 0);
-    } catch {
-      setScoreError(true);
-    }
+  function refreshSocial() {
+    return once("social", async () => {
+      try {
+        const r = await fetch("/api/social", {
+          credentials: "omit",
+          referrerPolicy: "no-referrer",
+          cache: "no-store",
+        });
+        if (!r.ok) throw Error();
+        const d = (await r.json()) as { posts: Story[]; unavailable: string[] };
+        setSocialData((previous) => {
+          const next = [
+            ...d.posts,
+            ...previous.filter((s) =>
+              s.teams.some((id) => d.unavailable.includes(id)),
+            ),
+          ];
+          const merged = retainAvatars(
+            { ...initial, stories: activeStories(next) } as HubData,
+            { ...initial, stories: previous } as HubData,
+          ).stories;
+          try {
+            localStorage.setItem("wf-social-cache", JSON.stringify(merged));
+          } catch {}
+          return merged;
+        });
+        setSocialUnavailable(d.unavailable);
+      } catch {
+        setSocialUnavailable(teams.map((t) => t.id));
+      }
+    });
   }
-  async function refresh() {
+  function refreshScores() {
+    return once("scores", async () => {
+      try {
+        const r = await fetch("/api/scores", {
+          credentials: "omit",
+          referrerPolicy: "no-referrer",
+          cache: "no-store",
+        });
+        if (!r.ok) throw Error();
+        const d = (await r.json()) as {
+          games: Game[];
+          checked: string;
+          unavailable: string[];
+        };
+        setLiveGames(d.games);
+        setScoreCheck(d.checked);
+        setScoreError(d.unavailable.length > 0);
+      } catch {
+        setScoreError(true);
+      }
+    });
+  }
+  function refreshNews() {
+    return once("news", async () => {
+      setLoading(true);
+      setError("");
+      try {
+        const r = await fetch("/api/news", {
+          credentials: "omit",
+          referrerPolicy: "no-referrer",
+        });
+        if (!r.ok) throw Error();
+        const d = activeHub((await r.json()) as HubData);
+        setData((previous) => {
+          const merged = retainAvatars(
+            {
+              ...d,
+              games: previous?.games || [],
+              health: [
+                ...d.health,
+                ...(previous?.health || []).filter(
+                  (h) => !d.health.some((next) => next.name === h.name),
+                ),
+              ],
+            },
+            previous,
+          );
+          try {
+            localStorage.setItem("wf-cache", JSON.stringify(merged));
+          } catch {}
+          return merged;
+        });
+      } catch {
+        setError(
+          "Headlines could not refresh. Previously loaded items are kept below.",
+        );
+      } finally {
+        setLoading(false);
+      }
+    });
+  }
+  const [scheduleError, setScheduleError] = useState(false);
+  const [oddsGames, setOddsGames] = useState<Game[]>([]);
+  function refreshSchedules() {
+    return once("schedules", async () => {
+      try {
+        const r = await fetch("/api/schedules", {
+          credentials: "omit",
+          referrerPolicy: "no-referrer",
+        });
+        if (!r.ok) throw Error();
+        const d = activeHub((await r.json()) as HubData);
+        setData((previous) => {
+          const merged = {
+            ...(previous || d),
+            games: d.games,
+            health: [
+              ...(previous?.health || []).filter(
+                (h) =>
+                  !h.name.includes("schedule") &&
+                  !h.name.includes("scores") &&
+                  !h.name.includes("scoreboard"),
+              ),
+              ...d.health,
+            ],
+          };
+          try {
+            localStorage.setItem("wf-cache", JSON.stringify(merged));
+          } catch {}
+          return merged;
+        });
+        setScheduleError(false);
+        void refreshOdds();
+      } catch {
+        setScheduleError(true);
+      }
+    });
+  }
+  function refreshOdds() {
+    return once("odds", async () => {
+      try {
+        const r = await fetch("/api/odds", {
+          credentials: "omit",
+          referrerPolicy: "no-referrer",
+        });
+        if (!r.ok) return;
+        const d = (await r.json()) as { games: Game[] };
+        setOddsGames(d.games);
+      } catch {}
+    });
+  }
+  function refresh() {
     void refreshInfo();
     void refreshScores();
     void refreshSocial();
-    setLoading(true);
-    setError("");
-    try {
-      const r = await fetch("/api/hub", {
-        credentials: "omit",
-        referrerPolicy: "no-referrer",
-      });
-      if (!r.ok) throw Error();
-      const d = activeHub((await r.json()) as HubData);
-      setData((previous) => {
-        const merged = retainAvatars(d, previous);
-        try {
-          localStorage.setItem("wf-cache", JSON.stringify(merged));
-        } catch {}
-        return merged;
-      });
-    } catch {
-      setError(
-        "Refresh unavailable. Any previously loaded items are kept below.",
-      );
-    } finally {
-      setLoading(false);
-    }
+    void refreshSchedules();
+    void refreshNews();
   }
   useEffect(() => {
     try {
@@ -299,7 +386,9 @@ export default function Home() {
     ),
   ]
     .filter((g) => teams.some((t) => t.id === g.team))
-    .map((g) => {
+    .map((original) => {
+      const odds = oddsGames.find((x) => x.id === original.id)?.odds;
+      const g = odds ? { ...original, odds } : original;
       const fresh = liveGames.find(
         (x) =>
           x.id === g.id ||
@@ -539,14 +628,29 @@ export default function Home() {
           <div className="mast-right">
             <span>
               {data
-                ? "Last checked " +
+                ? "Headlines checked " +
                   ct(data.checked, { hour: "numeric", minute: "2-digit" }) +
                   " CT"
                 : "Checking sources…"}
             </span>
-            <button onClick={refresh} disabled={loading}>
-              {loading ? "Refreshing…" : "↻ Refresh"}
+            <button onClick={refresh} disabled={refreshing.length > 0}>
+              {refreshing.length ? "Refreshing…" : "↻ Refresh"}
             </button>
+            {refreshing.length > 0 && (
+              <small role="status">
+                Updating{" "}
+                {refreshing
+                  .map((key) =>
+                    key === "news"
+                      ? "headlines"
+                      : key === "info"
+                        ? "team info"
+                        : key,
+                  )
+                  .join(", ")}
+                …
+              </small>
+            )}
           </div>
         </div>
       </header>
@@ -603,6 +707,11 @@ export default function Home() {
             </p>
           </div>
         </div>
+        {scheduleError && (
+          <p className="alert">
+            Schedules could not refresh; previously loaded games remain.
+          </p>
+        )}
         {scoreError && (
           <p className="alert">
             Some live score feeds are unavailable; cached games may remain.
