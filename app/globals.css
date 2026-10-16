@@ -793,6 +793,12 @@ footer b {
 .today-group .game {
   border-color: #cbd8bf;
 }
+.today-group > :is(.game, .compact-game) {
+  margin-bottom: 0;
+}
+.today-group > :is(.game, .compact-game) + :is(.game, .compact-game) {
+  margin-top: 14px;
+}
 .upcoming-heading {
   margin-top: 22px;
   margin-bottom: 5px;
