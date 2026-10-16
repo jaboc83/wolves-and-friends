@@ -1,10 +1,6 @@
 import { discEvents } from "./event-seed";
 import { verifyAuthorFeed } from "./bylines";
-import {
-  parseZalgirisNews,
-  parseFrostNews,
-  translateHeadlines,
-} from "./club-news";
+import { parseFrostNews } from "./club-news";
 import { authorStories } from "./author-stories";
 import {
   parsePalace,
@@ -299,11 +295,6 @@ export async function collect(
   }
   if (section !== "schedules") {
     const feeds: [string, string, string[] | undefined][] = [
-      [
-        "EuroLeague · Google News index",
-        "https://news.google.com/rss/search?q=Zalgiris%20site%3Aeuroleaguebasketball.net%20when%3A14d&hl=en-US&gl=US&ceid=US%3Aen",
-        ["zalgiris"],
-      ],
       ["PDGA News", "https://www.pdga.com/rss.xml", ["disc"]],
       ["Canis Hoopus", "https://www.canishoopus.com/rss/index.xml", undefined],
       [
@@ -347,20 +338,6 @@ export async function collect(
       ),
     );
     await Promise.all([
-      task("Official Žalgiris news", ["zalgiris"], async () => {
-        const parsed = parseZalgirisNews(
-          await (
-            await get(
-              "https://zalgiris.lt/naujienos?category=zalgiris&subCategory=naujienos",
-            )
-          ).text(),
-          checked,
-        );
-        if (!parsed.length) throw Error("No club news");
-        await translateHeadlines(parsed);
-        stories.push(...parsed);
-        return parsed.length;
-      }),
       task("Official Minnesota Frost", ["frost"], async () => {
         const parsed = parseFrostNews(
           await (
