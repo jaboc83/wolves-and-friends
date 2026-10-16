@@ -420,11 +420,12 @@ export default function Home() {
       h.status === "unavailable" &&
       (active === "all" || h.teams.includes(active)),
   );
-  function game(g: Game, compact = false) {
+  function game(g: Game, compact = false, today = false) {
     return (
       <GameCard
         key={g.id}
         game={g}
+        today={today}
         compact={compact || g.state === "post"}
         revealPast={resultsReady && !hideResults}
         revealed={revealed.includes(g.id)}
@@ -672,7 +673,7 @@ export default function Home() {
               </span>
             </div>
             {todayGames.length ? (
-              todayGames.map((g) => game(g))
+              todayGames.map((g) => game(g, false, true))
             ) : (
               <div className="empty compact">
                 {loading
