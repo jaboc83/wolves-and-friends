@@ -1958,3 +1958,11 @@ footer b {
     order: 1;
   }
 }
+
+/* Keep competition badges separate from the team name and location. */
+.game-identity { flex: 1; }
+.game-identity-text { min-width: 0; }
+.game-title { display: flex; flex-wrap: wrap; align-items: baseline; column-gap: 4px; }
+.game-meta { display: flex; flex-direction: column; align-items: flex-end; gap: 6px; flex-shrink: 0; font-size: 10px; }
+.game-meta .game-badges { justify-content: flex-end; margin: 0; max-width: 100px; }
+.compact-name > .game-badges { margin-left: auto; }
