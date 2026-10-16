@@ -1,9 +1,5 @@
 import { socialTags } from "../../../lib/social-tags";
-import {
-  parseBlueskyFeed,
-  wolvesBluesky,
-  inlineAvatars,
-} from "../../../lib/bluesky";
+import { parseBlueskyFeed, wolvesBluesky } from "../../../lib/bluesky";
 import type { Story } from "../../../lib/feeds";
 let cached: { posts: Story[]; unavailable: string[]; checked: string } | null =
   null;
@@ -13,7 +9,7 @@ export async function GET() {
   const posts: Story[] = [],
     unavailable: string[] = [];
   await Promise.all([
-    wolvesBluesky(3, false)
+    wolvesBluesky(3)
       .then((s) => posts.push(...s))
       .catch(() => unavailable.push("wolves")),
     ...Object.entries(socialTags).map(async ([team, tags]) => {
@@ -59,7 +55,6 @@ export async function GET() {
     else merged.set(p.url, p);
   }
   const unique = [...merged.values()];
-  await inlineAvatars(unique);
   cached = { posts: unique, unavailable, checked: new Date().toISOString() };
   return Response.json(cached, { headers: { "Cache-Control": "no-store" } });
 }
