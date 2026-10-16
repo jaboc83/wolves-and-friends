@@ -1,5 +1,5 @@
 "use client";
-import { useEffect, useState, type CSSProperties } from "react";
+import { useEffect, useRef, useState, type CSSProperties } from "react";
 import GameCard from "../components/game-card";
 import MatchCalendar from "../components/match-calendar";
 import TeamInsights from "../components/team-insights";
@@ -17,6 +17,8 @@ import { communities } from "../lib/communities";
 import { teams, teamPriority } from "../lib/teams";
 import initial from "../lib/initial.json";
 import type { HubData, Story, Game } from "../lib/feeds";
+import SocialImage from "../components/social-image";
+import { isLocalSocialImage } from "../lib/bluesky-images";
 const ct = (s: string, opts: Intl.DateTimeFormatOptions = {}) =>
   new Date(s).toLocaleString("en-US", { timeZone: "America/Chicago", ...opts });
 const day = (s: string) =>
@@ -34,13 +36,13 @@ function retainAvatars(next: HubData, previous?: HubData | null): HubData {
     s.url.split("/profile/")[1]?.split("/post/")[0] || s.source;
   const known = new Map<string, string>(
     [...(initial.stories as Story[]), ...(previous?.stories || [])]
-      .filter((s) => s.kind === "social" && s.avatar?.startsWith("data:image/"))
+      .filter((s) => s.kind === "social" && isLocalSocialImage(s.avatar))
       .map((s) => [key(s), s.avatar!]),
   );
   return {
     ...next,
     stories: next.stories.map((s) =>
-      s.kind === "social" && !s.avatar?.startsWith("data:image/")
+      s.kind === "social" && !isLocalSocialImage(s.avatar)
         ? { ...s, avatar: known.get(key(s)) }
         : s,
     ),
@@ -55,11 +57,8 @@ export default function Home() {
     [search, setSearch] = useState(""),
     [loading, setLoading] = useState(true),
     [error, setError] = useState(""),
-    [tab, setTab] = useState("latest"),
-    [saved, setSaved] = useState<string[]>([]),
     [sources, setSources] = useState(false),
     [teamMenuOpen, setTeamMenuOpen] = useState(false),
-    [archive, setArchive] = useState<Story[]>([]),
     [socialData, setSocialData] = useState<Story[]>(
       (initial.stories as Story[]).filter((s) => s.kind === "social"),
     ),
@@ -72,92 +71,179 @@ export default function Home() {
     [showOlder, setShowOlder] = useState(false),
     [revealed, setRevealed] = useState<string[]>([]),
     [hideResults, setHideResults] = useState(true);
-  async function refreshInfo() {
-    try {
-      const r = await fetch("/api/team-info", {
-        credentials: "omit",
-        referrerPolicy: "no-referrer",
-      });
-      if (r.ok) setTeamInfo((await r.json()) as TeamInfo[]);
-    } catch {}
+  const [refreshing, setRefreshing] = useState<string[]>([]);
+  const pending = useRef(new Map<string, Promise<void>>());
+  function once(key: string, work: () => Promise<void>) {
+    const existing = pending.current.get(key);
+    if (existing) return existing;
+    setRefreshing((keys) => [...keys, key]);
+    const request = work().finally(() => {
+      pending.current.delete(key);
+      setRefreshing((keys) => keys.filter((value) => value !== key));
+    });
+    pending.current.set(key, request);
+    return request;
   }
-  async function refreshSocial() {
-    try {
-      const r = await fetch("/api/social", {
-        credentials: "omit",
-        referrerPolicy: "no-referrer",
-        cache: "no-store",
-      });
-      if (!r.ok) throw Error();
-      const d = (await r.json()) as { posts: Story[]; unavailable: string[] };
-      setSocialData((previous) => {
-        const next = [
-          ...d.posts,
-          ...previous.filter((s) =>
-            s.teams.some((id) => d.unavailable.includes(id)),
-          ),
-        ];
-        const merged = retainAvatars(
-          { ...initial, stories: activeStories(next) } as HubData,
-          { ...initial, stories: previous } as HubData,
-        ).stories;
-        try {
-          localStorage.setItem("wf-social-cache", JSON.stringify(merged));
-        } catch {}
-        return merged;
-      });
-      setSocialUnavailable(d.unavailable);
-    } catch {
-      setSocialUnavailable(teams.map((t) => t.id));
-    }
+  function refreshInfo() {
+    return once("info", async () => {
+      try {
+        const r = await fetch("/api/team-info", {
+          credentials: "omit",
+          referrerPolicy: "no-referrer",
+        });
+        if (r.ok) setTeamInfo((await r.json()) as TeamInfo[]);
+      } catch {}
+    });
   }
-  async function refreshScores() {
-    try {
-      const r = await fetch("/api/scores", {
-        credentials: "omit",
-        referrerPolicy: "no-referrer",
-        cache: "no-store",
-      });
-      if (!r.ok) throw Error();
-      const d = (await r.json()) as {
-        games: Game[];
-        checked: string;
-        unavailable: string[];
-      };
-      setLiveGames(d.games);
-      setScoreCheck(d.checked);
-      setScoreError(d.unavailable.length > 0);
-    } catch {
-      setScoreError(true);
-    }
+  function refreshSocial() {
+    return once("social", async () => {
+      try {
+        const r = await fetch("/api/social", {
+          credentials: "omit",
+          referrerPolicy: "no-referrer",
+          cache: "no-store",
+        });
+        if (!r.ok) throw Error();
+        const d = (await r.json()) as { posts: Story[]; unavailable: string[] };
+        setSocialData((previous) => {
+          const next = [
+            ...d.posts,
+            ...previous.filter((s) =>
+              s.teams.some((id) => d.unavailable.includes(id)),
+            ),
+          ];
+          const merged = retainAvatars(
+            { ...initial, stories: activeStories(next) } as HubData,
+            { ...initial, stories: previous } as HubData,
+          ).stories;
+          try {
+            localStorage.setItem("wf-social-cache", JSON.stringify(merged));
+          } catch {}
+          return merged;
+        });
+        setSocialUnavailable(d.unavailable);
+      } catch {
+        setSocialUnavailable(teams.map((t) => t.id));
+      }
+    });
   }
-  async function refresh() {
+  function refreshScores() {
+    return once("scores", async () => {
+      try {
+        const r = await fetch("/api/scores", {
+          credentials: "omit",
+          referrerPolicy: "no-referrer",
+          cache: "no-store",
+        });
+        if (!r.ok) throw Error();
+        const d = (await r.json()) as {
+          games: Game[];
+          checked: string;
+          unavailable: string[];
+        };
+        setLiveGames(d.games);
+        setScoreCheck(d.checked);
+        setScoreError(d.unavailable.length > 0);
+      } catch {
+        setScoreError(true);
+      }
+    });
+  }
+  function refreshNews() {
+    return once("news", async () => {
+      setLoading(true);
+      setError("");
+      try {
+        const r = await fetch("/api/news", {
+          credentials: "omit",
+          referrerPolicy: "no-referrer",
+        });
+        if (!r.ok) throw Error();
+        const d = activeHub((await r.json()) as HubData);
+        setData((previous) => {
+          const merged = retainAvatars(
+            {
+              ...d,
+              games: previous?.games || [],
+              health: [
+                ...d.health,
+                ...(previous?.health || []).filter(
+                  (h) => !d.health.some((next) => next.name === h.name),
+                ),
+              ],
+            },
+            previous,
+          );
+          try {
+            localStorage.setItem("wf-cache", JSON.stringify(merged));
+          } catch {}
+          return merged;
+        });
+      } catch {
+        setError(
+          "Headlines could not refresh. Previously loaded items are kept below.",
+        );
+      } finally {
+        setLoading(false);
+      }
+    });
+  }
+  const [scheduleError, setScheduleError] = useState(false);
+  const [oddsGames, setOddsGames] = useState<Game[]>([]);
+  function refreshSchedules() {
+    return once("schedules", async () => {
+      try {
+        const r = await fetch("/api/schedules", {
+          credentials: "omit",
+          referrerPolicy: "no-referrer",
+        });
+        if (!r.ok) throw Error();
+        const d = activeHub((await r.json()) as HubData);
+        setData((previous) => {
+          const merged = {
+            ...(previous || d),
+            games: d.games,
+            health: [
+              ...(previous?.health || []).filter(
+                (h) =>
+                  !h.name.includes("schedule") &&
+                  !h.name.includes("scores") &&
+                  !h.name.includes("scoreboard"),
+              ),
+              ...d.health,
+            ],
+          };
+          try {
+            localStorage.setItem("wf-cache", JSON.stringify(merged));
+          } catch {}
+          return merged;
+        });
+        setScheduleError(false);
+        void refreshOdds();
+      } catch {
+        setScheduleError(true);
+      }
+    });
+  }
+  function refreshOdds() {
+    return once("odds", async () => {
+      try {
+        const r = await fetch("/api/odds", {
+          credentials: "omit",
+          referrerPolicy: "no-referrer",
+        });
+        if (!r.ok) return;
+        const d = (await r.json()) as { games: Game[] };
+        setOddsGames(d.games);
+      } catch {}
+    });
+  }
+  function refresh() {
     void refreshInfo();
     void refreshScores();
     void refreshSocial();
-    setLoading(true);
-    setError("");
-    try {
-      const r = await fetch("/api/hub", {
-        credentials: "omit",
-        referrerPolicy: "no-referrer",
-      });
-      if (!r.ok) throw Error();
-      const d = activeHub((await r.json()) as HubData);
-      setData((previous) => {
-        const merged = retainAvatars(d, previous);
-        try {
-          localStorage.setItem("wf-cache", JSON.stringify(merged));
-        } catch {}
-        return merged;
-      });
-    } catch {
-      setError(
-        "Refresh unavailable. Any previously loaded items are kept below.",
-      );
-    } finally {
-      setLoading(false);
-    }
+    void refreshSchedules();
+    void refreshNews();
   }
   useEffect(() => {
     try {
@@ -178,11 +264,7 @@ export default function Home() {
         setData((previous) =>
           retainAvatars(activeHub(JSON.parse(c)), previous),
         );
-      setSaved(JSON.parse(localStorage.getItem("wf-saved") || "[]"));
       setReadIds(JSON.parse(localStorage.getItem("wf-read") || "[]"));
-      setArchive(
-        activeStories(JSON.parse(localStorage.getItem("wf-archive") || "[]")),
-      );
       const previousTeam = localStorage.getItem("wf-team") || "wolves";
       setActive(
         previousTeam === "all" || teams.some((t) => t.id === previousTeam)
@@ -207,32 +289,6 @@ export default function Home() {
     setShowOlder(false);
     localStorage.setItem("wf-team", id);
   }
-  function toggle(id: string) {
-    const n = saved.includes(id)
-      ? saved.filter((x) => x !== id)
-      : [...saved, id];
-    setSaved(n);
-    localStorage.setItem("wf-saved", JSON.stringify(n));
-    const item = [
-      ...(data?.stories || []).filter(
-        (s) =>
-          validAuthorStory(s) &&
-          s.source !== "BasketNews" &&
-          !(
-            s.source === "ESPN" &&
-            /\b(?:game|match|full[- ]game|extended) highlights?\b/i.test(
-              s.title,
-            )
-          ),
-      ),
-      ...authorStories(data?.authors || []),
-      ...socialData,
-    ].find((s) => s.id === id);
-    const next = archive.filter((s) => s.id !== id);
-    if (n.includes(id) && item) next.unshift(item);
-    setArchive(next);
-    localStorage.setItem("wf-archive", JSON.stringify(next));
-  }
   function markRead(id: string) {
     const next = readIds.includes(id)
       ? readIds.filter((x) => x !== id)
@@ -249,36 +305,33 @@ export default function Home() {
       } as CSSProperties)
     : undefined;
   const team = teams.find((t) => t.id === active);
-  const filtered = (
-    tab === "saved"
-      ? archive
-      : [
-          ...new Map(
-            [
-              ...(data?.stories || []).filter(
-                (s) =>
-                  validAuthorStory(s) &&
-                  s.source !== "BasketNews" &&
-                  !(
-                    s.source === "ESPN" &&
-                    /\b(?:game|match|full[- ]game|extended) highlights?\b/i.test(
-                      s.title,
-                    )
-                  ),
-              ),
-              ...authorStories(data?.authors || []),
-            ].map((s) => [s.url, s]),
-          ).values(),
-        ].sort((a, b) => Date.parse(b.date) - Date.parse(a.date))
-  ).filter(
-    (s) =>
-      (tab === "saved" || s.kind !== "social") &&
-      (active === "all" || s.teams.includes(active)) &&
-      s.title.toLowerCase().includes(search.toLowerCase()) &&
-      (tab !== "saved" || saved.includes(s.id)) &&
-      (tab === "saved" || showRead || !readIds.includes(s.id)),
-  );
-  const compactNews = tab === "latest";
+  const filtered = [
+    ...new Map(
+      [
+        ...(data?.stories || []).filter(
+          (s) =>
+            validAuthorStory(s) &&
+            s.source !== "BasketNews" &&
+            !(
+              s.source === "ESPN" &&
+              /\b(?:game|match|full[- ]game|extended) highlights?\b/i.test(
+                s.title,
+              )
+            ),
+        ),
+        ...authorStories(data?.authors || []),
+      ].map((s) => [s.url, s]),
+    ).values(),
+  ]
+    .sort((a, b) => Date.parse(b.date) - Date.parse(a.date))
+    .filter(
+      (s) =>
+        s.kind !== "social" &&
+        (active === "all" || s.teams.includes(active)) &&
+        s.title.toLowerCase().includes(search.toLowerCase()) &&
+        (showRead || !readIds.includes(s.id)),
+    );
+  const compactNews = true;
   const recent = recentStories(filtered, active);
   const displayed = compactNews && !showOlder ? recent : filtered;
   const olderCount = filtered.length - recent.length;
@@ -297,7 +350,9 @@ export default function Home() {
     ),
   ]
     .filter((g) => teams.some((t) => t.id === g.team))
-    .map((g) => {
+    .map((original) => {
+      const odds = oddsGames.find((x) => x.id === original.id)?.odds;
+      const g = odds ? { ...original, odds } : original;
       const fresh = liveGames.find(
         (x) =>
           x.id === g.id ||
@@ -337,12 +392,7 @@ export default function Home() {
         g.state === "post" && day(g.date) !== day(new Date().toISOString()),
     )
     .sort((a, b) => Date.parse(b.date) - Date.parse(a.date))
-    .slice(0, active === "all" ? 8 : 4)
-    .sort(
-      (a, b) =>
-        teamPriority(a.team) - teamPriority(b.team) ||
-        Date.parse(b.date) - Date.parse(a.date),
-    );
+    .slice(0, active === "all" ? 8 : 4);
   const upcoming = visibleGames
     .filter(
       (g) =>
@@ -410,19 +460,17 @@ export default function Home() {
       >
         {s.kind === "social" ? (
           <div className="post-avatar">
-            {s.avatar?.startsWith("data:image/") ? (
-              <img
-                src={s.avatar}
-                alt=""
-                width={40}
-                height={40}
-                loading="lazy"
-              />
-            ) : (
-              <span aria-hidden="true">
-                {s.source.replace("Bluesky · ", "").charAt(0).toUpperCase()}
-              </span>
-            )}
+            <SocialImage
+              src={s.avatar}
+              alt=""
+              width={40}
+              height={40}
+              fallback={
+                <span aria-hidden="true">
+                  {s.source.replace("Bluesky · ", "").charAt(0).toUpperCase()}
+                </span>
+              }
+            />
           </div>
         ) : (
           <TeamLogos teamIds={s.teams} />
@@ -446,6 +494,39 @@ export default function Home() {
               {s.title} <span>↗</span>
             </a>
           </h3>
+          {s.kind === "social" && !!s.images?.length && (
+            <div
+              className={
+                "post-images" +
+                (s.images.length === 1 ? " post-images-single" : "")
+              }
+            >
+              {s.images
+                .slice(0, 4)
+                .filter((image) => isLocalSocialImage(image.src))
+                .map((image, index) => (
+                  <a
+                    key={image.src + index}
+                    href={s.url}
+                    target="_blank"
+                    rel="noreferrer"
+                    aria-label={image.alt || "View photo on Bluesky"}
+                  >
+                    <SocialImage
+                      src={image.src}
+                      alt={image.alt}
+                      width={image.width}
+                      height={image.height}
+                      fallback={
+                        <span className="post-image-fallback">
+                          View photo on Bluesky ↗
+                        </span>
+                      }
+                    />
+                  </a>
+                ))}
+            </div>
+          )}
           <div className="story-bottom">
             <div>
               {s.teams.map((id) => {
@@ -479,13 +560,6 @@ export default function Home() {
             <button className="read-toggle" onClick={() => markRead(s.id)}>
               {readIds.includes(s.id) ? "Mark unread" : "✓ Mark read"}
             </button>
-            <button
-              className={"save " + (saved.includes(s.id) ? "saved" : "")}
-              onClick={() => toggle(s.id)}
-              aria-label={saved.includes(s.id) ? "Unsave story" : "Save story"}
-            >
-              {saved.includes(s.id) ? "★ Saved" : "☆ Save"}
-            </button>
           </div>
         </div>
       </article>
@@ -511,14 +585,29 @@ export default function Home() {
           <div className="mast-right">
             <span>
               {data
-                ? "Last checked " +
+                ? "Headlines checked " +
                   ct(data.checked, { hour: "numeric", minute: "2-digit" }) +
                   " CT"
                 : "Checking sources…"}
             </span>
-            <button onClick={refresh} disabled={loading}>
-              {loading ? "Refreshing…" : "↻ Refresh"}
+            <button onClick={refresh} disabled={refreshing.length > 0}>
+              {refreshing.length ? "Refreshing…" : "↻ Refresh"}
             </button>
+            {refreshing.length > 0 && (
+              <small role="status">
+                Updating{" "}
+                {refreshing
+                  .map((key) =>
+                    key === "news"
+                      ? "headlines"
+                      : key === "info"
+                        ? "team info"
+                        : key,
+                  )
+                  .join(", ")}
+                …
+              </small>
+            )}
           </div>
         </div>
       </header>
@@ -575,6 +664,11 @@ export default function Home() {
             </p>
           </div>
         </div>
+        {scheduleError && (
+          <p className="alert">
+            Schedules could not refresh; previously loaded games remain.
+          </p>
+        )}
         {scoreError && (
           <p className="alert">
             Some live score feeds are unavailable; cached games may remain.
@@ -688,20 +782,9 @@ export default function Home() {
               </section>
             }
             <div className="section-heading">
-              <div className="tabs">
-                <button
-                  className={tab === "latest" ? "on" : ""}
-                  onClick={() => setTab("latest")}
-                >
-                  Latest stories <small>{displayed.length}</small>
-                </button>
-                <button
-                  className={tab === "saved" ? "on" : ""}
-                  onClick={() => setTab("saved")}
-                >
-                  Saved
-                </button>
-              </div>
+              <h2 className="latest-heading">
+                Latest stories <small>{displayed.length}</small>
+              </h2>
               <label className="show-read">
                 <input
                   type="checkbox"
@@ -729,27 +812,23 @@ export default function Home() {
             ) : (
               <div className="empty">
                 <h3>
-                  {tab === "saved"
-                    ? "No saved stories here yet."
-                    : search
-                      ? "No matching headlines."
-                      : newest && recentStories([newest], active).length === 0
-                        ? "No news since " +
-                          ct(newest.date, {
-                            month: "short",
-                            day: "numeric",
-                            year: "numeric",
-                          })
-                        : active === "all"
-                          ? "No unread headlines from today."
-                          : "No unread headlines from the last 3 days."}
+                  {search
+                    ? "No matching headlines."
+                    : newest && recentStories([newest], active).length === 0
+                      ? "No news since " +
+                        ct(newest.date, {
+                          month: "short",
+                          day: "numeric",
+                          year: "numeric",
+                        })
+                      : active === "all"
+                        ? "No unread headlines from today."
+                        : "No unread headlines from the last 3 days."}
                 </h3>
                 <p>
-                  {tab === "saved"
-                    ? "Save a story to find it here later."
-                    : olderCount > 0
-                      ? "Use View older to catch up on earlier articles."
-                      : "Check the Source desk for more coverage."}
+                  {olderCount > 0
+                    ? "Use View older to catch up on earlier articles."
+                    : "Check the Source desk for more coverage."}
                 </p>
               </div>
             )}
@@ -905,7 +984,7 @@ export default function Home() {
           <b>Wolves & Friends</b>
           <span>
             Headlines link to their publishers. Feeds can be delayed or
-            unavailable. Saved stories stay in this browser.
+            unavailable. Read status stays in this browser.
           </span>
         </footer>
       </div>

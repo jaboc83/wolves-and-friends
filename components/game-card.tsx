@@ -1,8 +1,11 @@
 "use client";
 import GameBadges from "./game-badges";
+import { gameBadges } from "../lib/game-badges";
 import { useState } from "react";
 import type { Game } from "../lib/feeds";
 import { teams } from "../lib/teams";
+import { teamLocation } from "../lib/team-location";
+import { teamWikipediaUrl } from "../lib/team-wikipedia";
 const ct = (s: string, o: Intl.DateTimeFormatOptions = {}) =>
   new Date(s).toLocaleString("en-US", { timeZone: "America/Chicago", ...o });
 const patterns: Record<string, RegExp> = {
@@ -34,6 +37,10 @@ export function outcome(g: Game) {
   if (!Number.isFinite(a) || !Number.isFinite(b)) return "";
   return a === b ? "D" : a > b ? "W" : "L";
 }
+function Location({ team, name, league, own = false }: { team: string; name: string; league: string; own?: boolean }) {
+  const location = teamLocation(team, name, league, own);
+  return location ? <span style={{ fontSize: "0.8em", fontWeight: 400, opacity: 0.75 }}> · {location}</span> : null;
+}
 export default function GameCard({
   game: g,
   compact = false,
@@ -56,17 +63,18 @@ export default function GameCard({
   const logo = "/logos/" + t.id + (t.id === "disc" ? ".svg" : ".png");
   const { club, opponent } = matchup(g);
   const result = outcome(g);
+  const hasBadges = gameBadges(g).length > 0;
   const full = (
     <article className="game">
       <div className="game-top">
         <div className="game-identity">
           <img src={logo} alt="" width={36} height={36} />
-          <div>
-            <strong>{t.name}</strong>
-            <GameBadges game={g} />
-            <span className="muted">{g.league}</span>
+          <div className="game-identity-text">
+            <div className="game-title"><strong>{t.id === "disc" ? t.name : <a href={teamWikipediaUrl(t.id, undefined, true)} target="_blank" rel="noreferrer">{t.name}</a>}</strong><Location team={g.team} name={t.name} league={g.league} own /></div>
+            {!hasBadges && <span className="muted">{g.league}</span>}
           </div>
         </div>
+        <div className="game-meta">
         <span className={g.state === "in" ? "live" : ""}>
           {g.state === "post"
             ? "FINAL"
@@ -74,6 +82,8 @@ export default function GameCard({
               ? "LIVE"
               : ct(g.date, { month: "short", day: "numeric" })}
         </span>
+        <GameBadges game={g} />
+        </div>
       </div>
       {g.eventOnly ? (
         <h3 className="event-name">{g.name}</h3>
@@ -84,7 +94,7 @@ export default function GameCard({
             key={p.name}
           >
             <span>
-              {p.name}
+              <a href={teamWikipediaUrl(t.id, p.name, p === club)} target="_blank" rel="noreferrer">{p.name}</a><Location team={g.team} name={p.name} league={g.league} own={p === club} />
               {p.record && (!hidden || g.state === "pre") && (
                 <span className="team-record"> ({p.record})</span>
               )}
@@ -198,10 +208,10 @@ export default function GameCard({
         <img src={logo} alt="" width={30} height={30} />
         <span className="compact-match">
           <span className="compact-name">
-            <strong>{t.short}</strong>
+            <strong>{t.id === "disc" ? t.short : <a href={teamWikipediaUrl(t.id, undefined, true)} target="_blank" rel="noreferrer" onClick={e => e.stopPropagation()}>{t.short}</a>}</strong><Location team={g.team} name={t.name} league={g.league} own />
             <GameBadges game={g} />
           </span>
-          {g.eventOnly ? <span>{g.name}</span> : <span>vs. {opponent}</span>}
+          {g.eventOnly ? <span>{g.name}</span> : <span>vs. <a href={teamWikipediaUrl(t.id, opponent)} target="_blank" rel="noreferrer" onClick={e => e.stopPropagation()}>{opponent}</a><Location team={g.team} name={opponent} league={g.league} /></span>}
         </span>
         <span className="compact-date">
           {ct(g.date, { month: "short", day: "numeric" })}

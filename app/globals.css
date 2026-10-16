@@ -1017,6 +1017,50 @@ footer b {
   height: 40px;
   object-fit: cover;
 }
+.social-image {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  height: 100%;
+}
+.post-images {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 8px;
+  max-width: 640px;
+  margin: 12px 0;
+}
+.post-images-single {
+  grid-template-columns: minmax(0, 1fr);
+}
+.post-images > a {
+  display: block;
+  min-width: 0;
+  aspect-ratio: 4 / 3;
+  overflow: hidden;
+  border: 1px solid #d5dfe4;
+  border-radius: 8px;
+  background: #f1f4f3;
+}
+.post-images-single > a {
+  aspect-ratio: auto;
+  min-height: 160px;
+}
+.post-images img {
+  width: 100%;
+  height: 100%;
+  max-height: 420px;
+  object-fit: contain;
+}
+.post-images-single img {
+  height: auto;
+}
+.post-image-fallback {
+  padding: 16px;
+  font-size: 12px;
+  color: #42647a;
+}
 .message-feed .message-post {
   display: flex;
   gap: 12px;
@@ -1399,6 +1443,13 @@ footer b {
   margin: 0;
   border-radius: 0 0 7px 7px;
 }
+.compact-date .result-W,
+.compact-date .result-L,
+.compact-date .result-D {
+  font-size: 14px;
+  line-height: 1.35;
+  margin-top: 7px;
+}
 .compact-date .result-W {
   color: #286b36;
   font-weight: 800;
@@ -1722,7 +1773,7 @@ footer b {
   flex-shrink: 0;
 }
 .compact-score {
-  font-size: 11px;
+  font-size: inherit;
   font-weight: 700;
 }
 
@@ -1913,4 +1964,60 @@ footer b {
   .columns > .scores {
     order: 1;
   }
+}
+
+/* Keep competition badges separate from the team name and location. */
+.game-identity { flex: 1; }
+.game-identity-text { min-width: 0; }
+.game-title { display: flex; flex-wrap: wrap; align-items: baseline; column-gap: 4px; }
+.game-meta { display: flex; flex-direction: column; align-items: flex-end; gap: 6px; flex-shrink: 0; font-size: 10px; }
+.game-meta .game-badges { justify-content: flex-end; margin: 0; max-width: 100px; }
+.compact-name > .game-badges { margin-left: auto; }
+
+/* Emphasize today's games with a tinted panel and a simple top rule. */
+.hub[data-team] .today-group.has-games {
+  --today-ink: #10283a;
+  background: #dce9d1;
+  border: 0;
+  border-top: 3px solid var(--today-ink);
+}
+.hub:not([data-team="all"]) .today-group.has-games {
+  --today-ink: var(--team-primary);
+  background: color-mix(in srgb, var(--team-soft) 78%, var(--team-primary));
+}
+.today-group.has-games .today-heading {
+  background: transparent;
+  margin: 0 0 16px;
+  padding: 0 0 14px;
+}
+.today-group.has-games .today-heading h2,
+.today-group.has-games .today-heading > span {
+  color: var(--today-ink);
+}
+.today-group.has-games .game {
+  background: #fffefb;
+  border-color: var(--today-ink);
+}
+
+/* Keep the divider in the team color and match the count to the TODAY badges. */
+.hub[data-team] .today-group.has-games .today-heading {
+  border-bottom-color: var(--today-ink);
+}
+.hub[data-team] .today-group.has-games .today-heading h2 small {
+  background: #d1122a;
+  color: #fff;
+}
+
+.latest-heading {
+  margin: 0;
+  font-size: 14px;
+  font-weight: 700;
+  color: #193346;
+}
+.latest-heading small {
+  font-size: 10px;
+  background: #e5e9e0;
+  border-radius: 4px;
+  padding: 3px 5px;
+  margin-left: 4px;
 }

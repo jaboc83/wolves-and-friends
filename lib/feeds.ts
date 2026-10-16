@@ -23,6 +23,7 @@ import type { Odds } from "./odds";
 import initial from "./initial.json";
 export type Story = {
   avatar?: string;
+  images?: { src: string; alt: string; width?: number; height?: number }[];
   originalTitle?: string;
   dateApproximate?: boolean;
   premium?: boolean;
@@ -90,8 +91,8 @@ export type HubData = {
   health: Health[];
   authors?: AuthorFeed[];
 };
-let cached: HubData | null = null;
-let inflight: Promise<HubData> | null = null;
+const sectionCache: Partial<Record<string, HubData>> = {};
+const sectionInflight: Partial<Record<string, Promise<HubData>>> = {};
 const text = (s: string) =>
   s
     .replace(/<!\[CDATA\[([\s\S]*?)\]\]>/g, "$1")
@@ -268,7 +269,10 @@ export function mergeLiveScoreboard(games: Game[], json: any, league: string) {
     }
   }
 }
-export async function collect(): Promise<HubData> {
+export async function collect(
+  section: "news" | "schedules" | "all" = "all",
+): Promise<HubData> {
+  const cached = sectionCache[section] || null;
   const checked = new Date().toISOString();
   const stories: Story[] = [];
   const games: Game[] = [];
@@ -293,328 +297,336 @@ export async function collect(): Promise<HubData> {
       });
     }
   }
-  const feeds: [string, string, string[] | undefined][] = [
-    [
-      "EuroLeague · Google News index",
-      "https://news.google.com/rss/search?q=Zalgiris%20site%3Aeuroleaguebasketball.net%20when%3A14d&hl=en-US&gl=US&ceid=US%3Aen",
-      ["zalgiris"],
-    ],
-    ["PDGA News", "https://www.pdga.com/rss.xml", ["disc"]],
-    ["Canis Hoopus", "https://www.canishoopus.com/rss/index.xml", undefined],
-    [
-      "Daily Norseman",
-      "https://www.dailynorseman.com/rss/index.xml",
-      ["vikings"],
-    ],
-    ["The Ice Garden", "https://www.theicegarden.com/rss/", undefined],
-    ["Ultiworld Disc Golf", "https://discgolf.ultiworld.com/feed/", ["disc"]],
-    [
-      "Stars and Stripes FC",
-      "https://www.starsandstripesfc.com/rss/index.xml",
-      ["usmnt"],
-    ],
-    [
-      "Howls and Growls",
-      "https://www.youtube.com/feeds/videos.xml?channel_id=UCHQf4fxeaf1MHDz9fW2mhsw",
-      ["wolves"],
-    ],
-  ];
-  await Promise.all(
-    feeds.map(([name, url, ids]) =>
-      task(
-        name,
-        ids ||
-          (name === "Canis Hoopus"
-            ? ["wolves", "lynx"]
-            : name === "The Ice Garden"
-              ? ["frost"]
-              : ["zalgiris"]),
-        async () => {
-          const parsed = parseFeed(await (await get(url)).text(), name, ids);
-          stories.push(
-            ...(name.startsWith("EuroLeague")
-              ? parsed.filter((s) => /zalgiris|žalgiris/i.test(s.title))
-              : parsed),
-          );
-          return parsed.length;
-        },
+  if (section !== "schedules") {
+    const feeds: [string, string, string[] | undefined][] = [
+      [
+        "EuroLeague · Google News index",
+        "https://news.google.com/rss/search?q=Zalgiris%20site%3Aeuroleaguebasketball.net%20when%3A14d&hl=en-US&gl=US&ceid=US%3Aen",
+        ["zalgiris"],
+      ],
+      ["PDGA News", "https://www.pdga.com/rss.xml", ["disc"]],
+      ["Canis Hoopus", "https://www.canishoopus.com/rss/index.xml", undefined],
+      [
+        "Daily Norseman",
+        "https://www.dailynorseman.com/rss/index.xml",
+        ["vikings"],
+      ],
+      ["The Ice Garden", "https://www.theicegarden.com/rss/", undefined],
+      ["Ultiworld Disc Golf", "https://discgolf.ultiworld.com/feed/", ["disc"]],
+      [
+        "Stars and Stripes FC",
+        "https://www.starsandstripesfc.com/rss/index.xml",
+        ["usmnt"],
+      ],
+      [
+        "Howls and Growls",
+        "https://www.youtube.com/feeds/videos.xml?channel_id=UCHQf4fxeaf1MHDz9fW2mhsw",
+        ["wolves"],
+      ],
+    ];
+    await Promise.all(
+      feeds.map(([name, url, ids]) =>
+        task(
+          name,
+          ids ||
+            (name === "Canis Hoopus"
+              ? ["wolves", "lynx"]
+              : name === "The Ice Garden"
+                ? ["frost"]
+                : ["zalgiris"]),
+          async () => {
+            const parsed = parseFeed(await (await get(url)).text(), name, ids);
+            stories.push(
+              ...(name.startsWith("EuroLeague")
+                ? parsed.filter((s) => /zalgiris|žalgiris/i.test(s.title))
+                : parsed),
+            );
+            return parsed.length;
+          },
+        ),
       ),
-    ),
-  );
-  await Promise.all([
-    task("Official Žalgiris news", ["zalgiris"], async () => {
-      const parsed = parseZalgirisNews(
-        await (
-          await get(
-            "https://zalgiris.lt/naujienos?category=zalgiris&subCategory=naujienos",
-          )
-        ).text(),
-        checked,
-      );
-      if (!parsed.length) throw Error("No club news");
-      await translateHeadlines(parsed);
-      stories.push(...parsed);
-      return parsed.length;
-    }),
-    task("Official Minnesota Frost", ["frost"], async () => {
-      const parsed = parseFrostNews(
-        await (
-          await get("https://www.thepwhl.com/en/teams/minnesota-frost/news")
-        ).text(),
-      );
-      if (!parsed.length) throw Error("No club news");
-      stories.push(...parsed);
-      return parsed.length;
-    }),
-  ]);
-  const authorSources = [
-    {
-      name: "Jess Myers",
-      label: "Google News index · bylines unverified",
-      url: "https://www.twincities.com/author/jess-myers/",
-      feed: "https://news.google.com/rss/search?q=%22Jess%20Myers%22%20site%3Atwincities.com%20when%3A14d&hl=en-US&gl=US&ceid=US%3Aen",
-    },
-    {
-      name: "Alec Lewis",
-      label: "Google News index · bylines unverified",
-      url: "https://www.nytimes.com/athletic/author/alec-lewis/",
-      feed: "https://news.google.com/rss/search?q=%22Alec%20Lewis%22%20site%3Anytimes.com%20when%3A14d&hl=en-US&gl=US&ceid=US%3Aen",
-    },
-    {
-      name: "Will Ragatz",
-      label: "Google News index · bylines unverified",
-      url: "https://www.si.com/nfl/vikings/onsi/author/will-ragatz",
-      feed: "https://news.google.com/rss/search?q=%22Will%20Ragatz%22%20site%3Asi.com%20when%3A14d&hl=en-US&gl=US&ceid=US%3Aen",
-    },
-    {
-      name: "Ben Goessling",
-      label: "Google News index · bylines unverified",
-      url: "https://www.startribune.com/author/ben-goessling/6134708",
-      feed: "https://news.google.com/rss/search?q=%22Ben%20Goessling%22%20site%3Astartribune.com%20when%3A14d&hl=en-US&gl=US&ceid=US%3Aen",
-    },
-    {
-      name: "Britt Robson",
-      label: "Google News index · bylines unverified",
-      url: "https://www.minnpost.com/author/britt-robson/",
-      feed: "https://news.google.com/rss/search?q=%22Britt+Robson%22+site%3Aminnpost.com+when%3A14d&hl=en-US&gl=US&ceid=US%3Aen",
-    },
-    {
-      name: "Jon Krawczynski",
-      label: "Google News index · bylines unverified",
-      url: "https://www.nytimes.com/athletic/author/jon-krawczynski/",
-      feed: "https://news.google.com/rss/search?q=%22Jon+Krawczynski%22+when%3A14d&hl=en-US&gl=US&ceid=US%3Aen",
-    },
-  ];
-  await Promise.all(
-    authorSources.map(async (source) => {
-      try {
-        const xml = await (await get(source.feed)).text();
-        let parsed = parseFeed(xml, source.name, ["wolves"]);
-        if (source.name === "Jon Krawczynski")
-          parsed = parsed.filter((s) => / - The New York Times$/.test(s.title));
-        if (source.name === "Britt Robson")
-          parsed = parsed.filter((s) => / - MinnPost$/.test(s.title));
-        if (source.name === "Jess Myers")
-          parsed = parsed.filter((s) => /wild/i.test(s.title));
-        else if (source.name === "Alec Lewis")
-          parsed = parsed.filter(
-            (s) =>
-              /vikings/i.test(s.title) &&
-              / - The New York Times$/.test(s.title),
-          );
-        else if (source.name === "Will Ragatz")
-          parsed = parsed.filter(
-            (s) =>
-              /vikings/i.test(s.title) &&
-              / - Sports Illustrated$/.test(s.title),
-          );
-        else if (source.name === "Ben Goessling")
-          parsed = parsed.filter(
-            (s) =>
-              /vikings/i.test(s.title) &&
-              / - (?:The Minnesota )?Star Tribune$/.test(s.title),
-          );
-        else
-          parsed = parsed.filter((s) =>
-            /timberwolves|wolves|lynx|finch|edwards/i.test(s.title),
-          );
-        authors.push({
-          ...source,
-          items: parsed
-            .slice(0, 4)
-            .map(({ title, url, date }) => ({ title, url, date })),
-          checked,
-          status: "ok",
-        });
-      } catch {
-        const old = (cached?.authors || initial.authors || []).find(
-          (a) => a.name === source.name,
-        );
-        authors.push({
-          ...source,
-          items: old?.items || [],
-          checked: old?.checked || checked,
-          status: "unavailable",
-        });
-      }
-    }),
-  );
-  await Promise.all(authors.map(verifyAuthorFeed));
-  const sports = [...new Set(teams.map((t) => t.league).filter(Boolean))];
-  await Promise.all(
-    sports.map((league) =>
-      task(
-        "ESPN news · " + league.split("/")[1],
-        teams.filter((t) => t.league === league).map((t) => t.id),
-        async () => {
-          const json = (await (
+    );
+    await Promise.all([
+      task("Official Žalgiris news", ["zalgiris"], async () => {
+        const parsed = parseZalgirisNews(
+          await (
             await get(
-              "https://site.api.espn.com/apis/site/v2/sports/" +
-                league +
-                "/news?limit=50",
+              "https://zalgiris.lt/naujienos?category=zalgiris&subCategory=naujienos",
             )
-          ).json()) as any;
-          let n = 0;
-          for (const x of json.articles || []) {
-            const ids = match(x.headline + " " + (x.description || ""));
-            const url = safe(x.links?.web?.href || "");
-            if (ids.length && url && x.published) {
-              stories.push({
-                id: url,
-                title: x.headline,
-                url,
-                date: x.published,
-                source: "ESPN",
-                teams: ids,
-                kind: x.type === "Media" ? "video" : "story",
-              });
-              n++;
+          ).text(),
+          checked,
+        );
+        if (!parsed.length) throw Error("No club news");
+        await translateHeadlines(parsed);
+        stories.push(...parsed);
+        return parsed.length;
+      }),
+      task("Official Minnesota Frost", ["frost"], async () => {
+        const parsed = parseFrostNews(
+          await (
+            await get("https://www.thepwhl.com/en/teams/minnesota-frost/news")
+          ).text(),
+        );
+        if (!parsed.length) throw Error("No club news");
+        stories.push(...parsed);
+        return parsed.length;
+      }),
+    ]);
+    const authorSources = [
+      {
+        name: "Jess Myers",
+        label: "Google News index · bylines unverified",
+        url: "https://www.twincities.com/author/jess-myers/",
+        feed: "https://news.google.com/rss/search?q=%22Jess%20Myers%22%20site%3Atwincities.com%20when%3A14d&hl=en-US&gl=US&ceid=US%3Aen",
+      },
+      {
+        name: "Alec Lewis",
+        label: "Google News index · bylines unverified",
+        url: "https://www.nytimes.com/athletic/author/alec-lewis/",
+        feed: "https://news.google.com/rss/search?q=%22Alec%20Lewis%22%20site%3Anytimes.com%20when%3A14d&hl=en-US&gl=US&ceid=US%3Aen",
+      },
+      {
+        name: "Will Ragatz",
+        label: "Google News index · bylines unverified",
+        url: "https://www.si.com/nfl/vikings/onsi/author/will-ragatz",
+        feed: "https://news.google.com/rss/search?q=%22Will%20Ragatz%22%20site%3Asi.com%20when%3A14d&hl=en-US&gl=US&ceid=US%3Aen",
+      },
+      {
+        name: "Ben Goessling",
+        label: "Google News index · bylines unverified",
+        url: "https://www.startribune.com/author/ben-goessling/6134708",
+        feed: "https://news.google.com/rss/search?q=%22Ben%20Goessling%22%20site%3Astartribune.com%20when%3A14d&hl=en-US&gl=US&ceid=US%3Aen",
+      },
+      {
+        name: "Britt Robson",
+        label: "Google News index · bylines unverified",
+        url: "https://www.minnpost.com/author/britt-robson/",
+        feed: "https://news.google.com/rss/search?q=%22Britt+Robson%22+site%3Aminnpost.com+when%3A14d&hl=en-US&gl=US&ceid=US%3Aen",
+      },
+      {
+        name: "Jon Krawczynski",
+        label: "Google News index · bylines unverified",
+        url: "https://www.nytimes.com/athletic/author/jon-krawczynski/",
+        feed: "https://news.google.com/rss/search?q=%22Jon+Krawczynski%22+when%3A14d&hl=en-US&gl=US&ceid=US%3Aen",
+      },
+    ];
+    await Promise.all(
+      authorSources.map(async (source) => {
+        try {
+          const xml = await (await get(source.feed)).text();
+          let parsed = parseFeed(xml, source.name, ["wolves"]);
+          if (source.name === "Jon Krawczynski")
+            parsed = parsed.filter((s) =>
+              / - The New York Times$/.test(s.title),
+            );
+          if (source.name === "Britt Robson")
+            parsed = parsed.filter((s) => / - MinnPost$/.test(s.title));
+          if (source.name === "Jess Myers")
+            parsed = parsed.filter((s) => /wild/i.test(s.title));
+          else if (source.name === "Alec Lewis")
+            parsed = parsed.filter(
+              (s) =>
+                /vikings/i.test(s.title) &&
+                / - The New York Times$/.test(s.title),
+            );
+          else if (source.name === "Will Ragatz")
+            parsed = parsed.filter(
+              (s) =>
+                /vikings/i.test(s.title) &&
+                / - Sports Illustrated$/.test(s.title),
+            );
+          else if (source.name === "Ben Goessling")
+            parsed = parsed.filter(
+              (s) =>
+                /vikings/i.test(s.title) &&
+                / - (?:The Minnesota )?Star Tribune$/.test(s.title),
+            );
+          else
+            parsed = parsed.filter((s) =>
+              /timberwolves|wolves|lynx|finch|edwards/i.test(s.title),
+            );
+          authors.push({
+            ...source,
+            items: parsed
+              .slice(0, 4)
+              .map(({ title, url, date }) => ({ title, url, date })),
+            checked,
+            status: "ok",
+          });
+        } catch {
+          const old = (cached?.authors || initial.authors || []).find(
+            (a) => a.name === source.name,
+          );
+          authors.push({
+            ...source,
+            items: old?.items || [],
+            checked: old?.checked || checked,
+            status: "unavailable",
+          });
+        }
+      }),
+    );
+    await Promise.all(authors.map(verifyAuthorFeed));
+    const sports = [...new Set(teams.map((t) => t.league).filter(Boolean))];
+    await Promise.all(
+      sports.map((league) =>
+        task(
+          "ESPN news · " + league.split("/")[1],
+          teams.filter((t) => t.league === league).map((t) => t.id),
+          async () => {
+            const json = (await (
+              await get(
+                "https://site.api.espn.com/apis/site/v2/sports/" +
+                  league +
+                  "/news?limit=50",
+              )
+            ).json()) as any;
+            let n = 0;
+            for (const x of json.articles || []) {
+              const ids = match(x.headline + " " + (x.description || ""));
+              const url = safe(x.links?.web?.href || "");
+              if (ids.length && url && x.published) {
+                stories.push({
+                  id: url,
+                  title: x.headline,
+                  url,
+                  date: x.published,
+                  source: "ESPN",
+                  teams: ids,
+                  kind: x.type === "Media" ? "video" : "story",
+                });
+                n++;
+              }
             }
-          }
-          return n;
-        },
+            return n;
+          },
+        ),
       ),
-    ),
-  );
-  await Promise.all(
-    teams
-      .filter((t) => t.league)
-      .map((t) =>
-        task("ESPN scores · " + t.short, [t.id], async () => {
+    );
+  }
+  if (section !== "news") {
+    await Promise.all(
+      teams
+        .filter((t) => t.league)
+        .map((t) =>
+          task("ESPN scores · " + t.short, [t.id], async () => {
+            const json = await (
+              await get(
+                "https://site.api.espn.com/apis/site/v2/sports/" +
+                  t.league +
+                  "/teams/" +
+                  t.espn +
+                  "/schedule" +
+                  (t.id === "twins"
+                    ? "?season=" + new Date().getFullYear() + "&seasontype=2"
+                    : ""),
+              )
+            ).json();
+            const parsed = parseGames(json, t.id, t.sport);
+            if (t.id === "wolves") {
+              const year =
+                (json as any).season?.year ||
+                new Date().getFullYear() + (new Date().getMonth() >= 8 ? 1 : 0);
+              const phases = await Promise.allSettled(
+                [1, 2, 3].map(async (phase) =>
+                  parseGames(
+                    await (
+                      await get(
+                        "https://site.api.espn.com/apis/site/v2/sports/" +
+                          t.league +
+                          "/teams/" +
+                          t.espn +
+                          "/schedule?season=" +
+                          year +
+                          "&seasontype=" +
+                          phase,
+                      )
+                    ).json(),
+                    t.id,
+                    t.sport,
+                  ),
+                ),
+              );
+              for (const phase of phases)
+                if (phase.status === "fulfilled") parsed.push(...phase.value);
+              if (phases.some((p) => p.status === "rejected")) {
+                health.push({
+                  name: "ESPN full-season schedule · Wolves",
+                  teams: ["wolves"],
+                  checked,
+                  status: "unavailable",
+                  count: 0,
+                });
+                parsed.push(
+                  ...(cached || (initial as HubData)).games.filter(
+                    (g) =>
+                      g.team === "wolves" &&
+                      Date.parse(g.date) > Date.now() - 86400000 &&
+                      !parsed.some((p) => p.id === g.id),
+                  ),
+                );
+              }
+            }
+            const unique = [...new Map(parsed.map((g) => [g.id, g])).values()];
+            games.push(...unique);
+            return unique.length;
+          }),
+        ),
+    );
+    await task("Official Žalgiris schedule", ["zalgiris"], async () => {
+      const r = await fetch("https://zalgiris.lt/rungtynes/", {
+        signal: AbortSignal.timeout(12000),
+        headers: { "User-Agent": "Mozilla/5.0", Accept: "text/html" },
+      });
+      if (!r.ok) throw Error("Club schedule unavailable");
+      const parsed = parseZalgiris(await r.text(), checked);
+      games.push(...parsed);
+      return parsed.length;
+    });
+    await Promise.all([
+      ...Object.entries(palaceCompetitions).map(([league, name]) =>
+        task("ESPN Palace schedule · " + name, ["palace"], async () => {
           const json = await (
             await get(
               "https://site.api.espn.com/apis/site/v2/sports/" +
-                t.league +
-                "/teams/" +
-                t.espn +
-                "/schedule" +
-                (t.id === "twins"
-                  ? "?season=" + new Date().getFullYear() + "&seasontype=2"
-                  : ""),
+                league +
+                "/teams/384/schedule",
             )
           ).json();
-          const parsed = parseGames(json, t.id, t.sport);
-          if (t.id === "wolves") {
-            const year =
-              (json as any).season?.year ||
-              new Date().getFullYear() + (new Date().getMonth() >= 8 ? 1 : 0);
-            const phases = await Promise.allSettled(
-              [1, 2, 3].map(async (phase) =>
-                parseGames(
-                  await (
-                    await get(
-                      "https://site.api.espn.com/apis/site/v2/sports/" +
-                        t.league +
-                        "/teams/" +
-                        t.espn +
-                        "/schedule?season=" +
-                        year +
-                        "&seasontype=" +
-                        phase,
-                    )
-                  ).json(),
-                  t.id,
-                  t.sport,
-                ),
-              ),
-            );
-            for (const phase of phases)
-              if (phase.status === "fulfilled") parsed.push(...phase.value);
-            if (phases.some((p) => p.status === "rejected")) {
-              health.push({
-                name: "ESPN full-season schedule · Wolves",
-                teams: ["wolves"],
-                checked,
-                status: "unavailable",
-                count: 0,
-              });
-              parsed.push(
-                ...(cached || (initial as HubData)).games.filter(
-                  (g) =>
-                    g.team === "wolves" &&
-                    Date.parse(g.date) > Date.now() - 86400000 &&
-                    !parsed.some((p) => p.id === g.id),
-                ),
-              );
-            }
-          }
-          const unique = [...new Map(parsed.map((g) => [g.id, g])).values()];
-          games.push(...unique);
-          return unique.length;
+          mergeLiveScoreboard(games, json, league);
+          return (json as any).events?.length || 0;
         }),
       ),
-  );
-  await task("Official Žalgiris schedule", ["zalgiris"], async () => {
-    const r = await fetch("https://zalgiris.lt/rungtynes/", {
-      signal: AbortSignal.timeout(12000),
-      headers: { "User-Agent": "Mozilla/5.0", Accept: "text/html" },
-    });
-    if (!r.ok) throw Error("Club schedule unavailable");
-    const parsed = parseZalgiris(await r.text(), checked);
-    games.push(...parsed);
-    return parsed.length;
-  });
-  await Promise.all([
-    ...Object.entries(palaceCompetitions).map(([league, name]) =>
-      task("ESPN Palace schedule · " + name, ["palace"], async () => {
-        const json = await (
-          await get(
-            "https://site.api.espn.com/apis/site/v2/sports/" +
-              league +
-              "/teams/384/schedule",
-          )
-        ).json();
-        mergeLiveScoreboard(games, json, league);
-        return (json as any).events?.length || 0;
+      task("Official Palace schedule", ["palace"], async () => {
+        const parsed = parsePalace(
+          await (await get("https://www.cpfc.co.uk/matches/")).text(),
+          checked,
+        );
+        if (!parsed.length) throw Error("No fixtures");
+        mergeOfficial(games, parsed);
+        return parsed.length;
       }),
-    ),
-    task("Official Palace schedule", ["palace"], async () => {
-      const parsed = parsePalace(
-        await (await get("https://www.cpfc.co.uk/matches/")).text(),
-        checked,
-      );
-      if (!parsed.length) throw Error("No fixtures");
-      mergeOfficial(games, parsed);
-      return parsed.length;
-    }),
-    task("Official MNUFC calendar", ["loons"], async () => {
-      const parsed = parseLoonsCalendar(
-        await (
-          await get(
-            "https://images.mlssoccer.com/raw/upload/assets/min/calendar/mnufc" +
-              new Date().getFullYear() +
-              ".ics",
-          )
-        ).text(),
-        checked,
-      );
-      mergeOfficial(games, parsed);
-      return parsed.length;
-    }),
-  ]);
-  games.push(
-    ...discEvents.filter((g) => Date.parse(g.endDate || g.date) >= Date.now()),
-  );
+      task("Official MNUFC calendar", ["loons"], async () => {
+        const parsed = parseLoonsCalendar(
+          await (
+            await get(
+              "https://images.mlssoccer.com/raw/upload/assets/min/calendar/mnufc" +
+                new Date().getFullYear() +
+                ".ics",
+            )
+          ).text(),
+          checked,
+        );
+        mergeOfficial(games, parsed);
+        return parsed.length;
+      }),
+    ]);
+    games.push(
+      ...discEvents.filter(
+        (g) => Date.parse(g.endDate || g.date) >= Date.now(),
+      ),
+    );
+  }
   const baseline = cached || (initial as HubData);
   for (const h of health.filter((h) => h.status === "unavailable")) {
     stories.push(
@@ -653,46 +665,48 @@ export async function collect(): Promise<HubData> {
   )) {
     if (!unique.has(s.url)) unique.set(s.url, s);
   }
-  const scoreDates = [
-    ...new Set(
-      [0, -86400000].map((offset) =>
-        new Intl.DateTimeFormat("en-CA", {
-          timeZone: "America/Chicago",
-          year: "numeric",
-          month: "2-digit",
-          day: "2-digit",
-        })
-          .format(new Date(Date.now() + offset))
-          .replace(/-/g, ""),
-      ),
-    ),
-  ];
-  await Promise.all(
-    scoreboardLeagues.flatMap((league) =>
-      scoreDates.map((date) =>
-        task(
-          "ESPN live scoreboard · " + league + " · " + date,
-          teams
-            .filter((t) => teamPlaysCompetition(t.id, league))
-            .map((t) => t.id),
-          async () => {
-            const json = await (
-              await get(
-                "https://site.api.espn.com/apis/site/v2/sports/" +
-                  league +
-                  "/scoreboard?dates=" +
-                  date +
-                  "&limit=100",
-              )
-            ).json();
-            mergeLiveScoreboard(games, json, league);
-            return (json as any).events?.length || 0;
-          },
+  if (section !== "news") {
+    const scoreDates = [
+      ...new Set(
+        [0, -86400000].map((offset) =>
+          new Intl.DateTimeFormat("en-CA", {
+            timeZone: "America/Chicago",
+            year: "numeric",
+            month: "2-digit",
+            day: "2-digit",
+          })
+            .format(new Date(Date.now() + offset))
+            .replace(/-/g, ""),
         ),
       ),
-    ),
-  );
-  await enrichOdds(games, checked);
+    ];
+    await Promise.all(
+      scoreboardLeagues.flatMap((league) =>
+        scoreDates.map((date) =>
+          task(
+            "ESPN live scoreboard · " + league + " · " + date,
+            teams
+              .filter((t) => teamPlaysCompetition(t.id, league))
+              .map((t) => t.id),
+            async () => {
+              const json = await (
+                await get(
+                  "https://site.api.espn.com/apis/site/v2/sports/" +
+                    league +
+                    "/scoreboard?dates=" +
+                    date +
+                    "&limit=100",
+                )
+              ).json();
+              mergeLiveScoreboard(games, json, league);
+              return (json as any).events?.length || 0;
+            },
+          ),
+        ),
+      ),
+    );
+  }
+  if (section === "all") await enrichOdds(games, checked);
   return {
     checked,
     authors,
@@ -711,17 +725,38 @@ export async function collect(): Promise<HubData> {
     health,
   };
 }
-export function hubData() {
+export function hubData(section: "news" | "schedules" | "all" = "all") {
+  const cached = sectionCache[section];
   if (cached && Date.now() - Date.parse(cached.checked) < 300000)
     return Promise.resolve(cached);
-  if (inflight) return inflight;
-  inflight = collect()
-    .then((x) => {
-      cached = x;
-      return x;
+  if (sectionInflight[section]) return sectionInflight[section]!;
+  const request = collect(section)
+    .then((data) => {
+      sectionCache[section] = data;
+      return data;
     })
     .finally(() => {
-      inflight = null;
+      delete sectionInflight[section];
     });
-  return inflight;
+  sectionInflight[section] = request;
+  return request;
+}
+let oddsInflight: Promise<{ games: Game[]; checked: string }> | null = null;
+let oddsCached: { games: Game[]; checked: string } | null = null;
+export function oddsData() {
+  if (oddsCached && Date.now() - Date.parse(oddsCached.checked) < 300000)
+    return Promise.resolve(oddsCached);
+  if (oddsInflight) return oddsInflight;
+  oddsInflight = hubData("schedules")
+    .then(async (data) => {
+      // Odds enrichment mutates games, so never share the schedule cache objects.
+      const games = structuredClone(data.games);
+      const checked = new Date().toISOString();
+      await enrichOdds(games, checked);
+      return (oddsCached = { games, checked });
+    })
+    .finally(() => {
+      oddsInflight = null;
+    });
+  return oddsInflight;
 }

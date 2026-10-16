@@ -1,3 +1,4 @@
+import { enrichEuroleagueOdds } from "./euroleague-odds";
 import { teams } from "./teams";
 import type { Game } from "./feeds";
 export type Odds = {
@@ -121,6 +122,7 @@ export function oddsMatch(g: Game, event: any) {
   );
 }
 export async function enrichOdds(games: Game[], checked: string) {
+  await enrichEuroleagueOdds(games, checked);
   const jobs = new Map<string, { league: string; date: string }>();
   for (const g of games
     .filter(
