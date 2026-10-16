@@ -5,6 +5,12 @@ export function gameBadges(g: Game): GameBadge[] {
     .filter(Boolean)
     .join(" ");
   const badges: GameBadge[] = [];
+  if (g.team === "palace") {
+    if (/\bfriendly\b|\bfriendlies\b/i.test(context))
+      badges.push({ label: "Friendly", tone: "friendly" });
+    else if (/premier league|\bEPL\b|eng\.1/i.test(context))
+      badges.push({ label: "Premier", tone: "premier" });
+  }
   if (/pre[- ]?season/i.test(context))
     badges.push({ label: "Preseason", tone: "preseason" });
   if (/play[- ]?offs?|post[- ]?season|stanley cup|world series/i.test(context))
