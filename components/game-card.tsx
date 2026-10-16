@@ -1,5 +1,6 @@
 "use client";
 import GameBadges from "./game-badges";
+import { gameBadges } from "../lib/game-badges";
 import { useState } from "react";
 import type { Game } from "../lib/feeds";
 import { teams } from "../lib/teams";
@@ -62,17 +63,18 @@ export default function GameCard({
   const logo = "/logos/" + t.id + (t.id === "disc" ? ".svg" : ".png");
   const { club, opponent } = matchup(g);
   const result = outcome(g);
+  const hasBadges = gameBadges(g).length > 0;
   const full = (
     <article className="game">
       <div className="game-top">
         <div className="game-identity">
           <img src={logo} alt="" width={36} height={36} />
-          <div>
-            <strong>{t.id === "disc" ? t.name : <a href={teamWikipediaUrl(t.id, undefined, true)} target="_blank" rel="noreferrer">{t.name}</a>}</strong><Location team={g.team} name={t.name} league={g.league} own />
-            <GameBadges game={g} />
-            <span className="muted">{g.league}</span>
+          <div className="game-identity-text">
+            <div className="game-title"><strong>{t.id === "disc" ? t.name : <a href={teamWikipediaUrl(t.id, undefined, true)} target="_blank" rel="noreferrer">{t.name}</a>}</strong><Location team={g.team} name={t.name} league={g.league} own /></div>
+            {!hasBadges && <span className="muted">{g.league}</span>}
           </div>
         </div>
+        <div className="game-meta">
         <span className={g.state === "in" ? "live" : ""}>
           {g.state === "post"
             ? "FINAL"
@@ -80,6 +82,8 @@ export default function GameCard({
               ? "LIVE"
               : ct(g.date, { month: "short", day: "numeric" })}
         </span>
+        <GameBadges game={g} />
+        </div>
       </div>
       {g.eventOnly ? (
         <h3 className="event-name">{g.name}</h3>
