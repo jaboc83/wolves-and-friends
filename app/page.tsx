@@ -907,8 +907,8 @@ export default function Home() {
         <footer>
           <b>Wolves & Friends</b>
           <span>
-            Headlines link to their publishers. Feeds can be delayed or
-            unavailable. Read status stays in this browser.
+            Feeds may be delayed or unavailable. Your preferences and read status
+            stay in this browser.
           </span>
         </footer>
       </div>
