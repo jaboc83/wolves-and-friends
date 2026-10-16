@@ -2007,3 +2007,17 @@ footer b {
   background: #d1122a;
   color: #fff;
 }
+
+.latest-heading {
+  margin: 0;
+  font-size: 14px;
+  font-weight: 700;
+  color: #193346;
+}
+.latest-heading small {
+  font-size: 10px;
+  background: #e5e9e0;
+  border-radius: 4px;
+  padding: 3px 5px;
+  margin-left: 4px;
+}
