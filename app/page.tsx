@@ -626,22 +626,22 @@ export default function Home() {
         <div className="intro">
           <div>
             <p className="eyebrow">
-              THE SPORTS DESK {team && " / " + team.sport.toUpperCase()}
+              {team && team.sport.toUpperCase()}
             </p>
             <h1>{team ? team.name : "Your daily catch-up."}</h1>
             <p className="subtitle">
-              Latest headlines. Recent results. What’s next.
+              Latest headlines. Live scores. Social posts. All in one place.
             </p>
           </div>
         </div>
         {scheduleError && (
           <p className="alert">
-            Schedules could not refresh; previously loaded games remain.
+            Schedules could not refresh; showing previously loaded games.
           </p>
         )}
         {scoreError && (
           <p className="alert">
-            Some live score feeds are unavailable; cached games may remain.
+            Some live score feeds are unavailable; showing previously loaded games.
           </p>
         )}
         {error && (
@@ -694,11 +694,8 @@ export default function Home() {
                 <p className="feed-description">
                   {active === "all"
                     ? "Latest posts for your teams · Bluesky"
-                    : active === "wolves"
-                      ? "Wolves posts from the Canis Hoopus starter pack"
-                      : team?.name +
-                        " posts · " +
-                        socialTags[active]?.join(" / ")}
+                    : team?.name +
+                        " posts"}
                 </p>
                 {socialPosts.length ? (
                   socialPosts.map(story)
@@ -713,41 +710,6 @@ export default function Home() {
                   <p className="feed-description">
                     Some social feeds are unavailable; cached posts may remain.
                   </p>
-                )}
-                {active !== "wolves" && (
-                  <div className="feed-tag-links">
-                    {teams
-                      .filter(
-                        (t) =>
-                          socialTags[t.id] &&
-                          (active === "all" || active === t.id),
-                      )
-                      .flatMap((t) =>
-                        socialTags[t.id].map((tag) => (
-                          <a
-                            key={`${t.id}-${tag}`}
-                            href={
-                              "https://bsky.app/search?q=" +
-                              encodeURIComponent(tag)
-                            }
-                            target="_blank"
-                            rel="noreferrer"
-                          >
-                            {t.short} {tag} ↗
-                          </a>
-                        )),
-                      )}
-                  </div>
-                )}
-                {(active === "all" || active === "wolves") && (
-                  <a
-                    className="feed-source-link"
-                    href="https://bsky.app/starter-pack/canishoopus.bsky.social/3lal4p6wu5o2a"
-                    target="_blank"
-                    rel="noreferrer"
-                  >
-                    Open starter pack ↗
-                  </a>
                 )}
               </section>
             }
@@ -820,16 +782,6 @@ export default function Home() {
                 )}
               </div>
             )}
-            <p className="panel-note" aria-live="polite">
-              Last update:{" "}
-              {data
-                ? ct(data.checked, {
-                    dateStyle: "medium",
-                    timeStyle: "short",
-                  }) + " CT"
-                : "Not yet updated"}
-              {loading && " · Updating headlines…"}
-            </p>
             <TeamInsights active={active} data={teamInfo} />
             <MatchCalendar games={visibleGames} />
             <section className="community-panel">
@@ -903,7 +855,6 @@ export default function Home() {
           <aside className="scores">
             <div className="rail-heading upcoming-heading">
               <h2>Coming up</h2>
-              <span>After today · CT</span>
             </div>
             {futureGames.length ? (
               futureGames.map((g) => game(g, true))

@@ -5,6 +5,21 @@
       "label": "Wolves: dev",
       "type": "process",
       "command": "node",
+      "windows": {
+        "command": "${env:SystemRoot}/System32/WindowsPowerShell/v1.0/powershell.exe",
+        "args": [
+          "-NoProfile",
+          "-ExecutionPolicy",
+          "Bypass",
+          "-File",
+          "${workspaceFolder}/scripts/vscode-node.ps1",
+          "scripts/run-framework.mjs",
+          "dev",
+          "--host",
+          "127.0.0.1",
+          "--strictPort"
+        ]
+      },
       "args": [
         "scripts/run-framework.mjs",
         "dev",
@@ -39,6 +54,18 @@
       "label": "Wolves: build",
       "type": "process",
       "command": "node",
+      "windows": {
+        "command": "${env:SystemRoot}/System32/WindowsPowerShell/v1.0/powershell.exe",
+        "args": [
+          "-NoProfile",
+          "-ExecutionPolicy",
+          "Bypass",
+          "-File",
+          "${workspaceFolder}/scripts/vscode-node.ps1",
+          "scripts/run-framework.mjs",
+          "build"
+        ]
+      },
       "args": ["scripts/run-framework.mjs", "build"],
       "options": { "cwd": "${workspaceFolder}" },
       "group": { "kind": "build", "isDefault": true },
@@ -48,6 +75,18 @@
       "label": "Wolves: typecheck",
       "type": "process",
       "command": "node",
+      "windows": {
+        "command": "${env:SystemRoot}/System32/WindowsPowerShell/v1.0/powershell.exe",
+        "args": [
+          "-NoProfile",
+          "-ExecutionPolicy",
+          "Bypass",
+          "-File",
+          "${workspaceFolder}/scripts/vscode-node.ps1",
+          "node_modules/typescript/bin/tsc",
+          "--noEmit"
+        ]
+      },
       "args": ["node_modules/typescript/bin/tsc", "--noEmit"],
       "options": { "cwd": "${workspaceFolder}" },
       "problemMatcher": ["$tsc"]

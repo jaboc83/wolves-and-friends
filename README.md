@@ -41,6 +41,11 @@ pnpm build
 
 ## Run and debug in VS Code
 
+On Windows, the tasks use `scripts/vscode-node.ps1` to find Node on PATH,
+then in the fnm installation matching `.node-version`, then in the ignored
+checkout-local portable tools. This also works when VS Code starts without
+an initialized fnm terminal environment.
+
 Open the repository folder in VS Code. Install dependencies with
 `pnpm install --frozen-lockfile` first, and make sure Node.js is on VS Code's PATH
 (restart VS Code after installing Node or changing its version).

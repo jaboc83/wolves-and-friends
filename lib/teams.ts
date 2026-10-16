@@ -135,7 +135,7 @@ export const teams = [
     id: "disc",
     name: "Pro Disc Golf",
     short: "Disc golf",
-    sport: "MPO / FPO",
+    sport: "DGPT / PDGA",
     color: "#d4a84c",
     pattern: "disc golf|usdgc|throw pink",
     league: "",
