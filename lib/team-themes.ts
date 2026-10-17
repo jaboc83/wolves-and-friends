@@ -2,7 +2,8 @@ export const teamThemes: Record<
   string,
   { primary: string; accent: string; soft: string }
 > = {
-  wolves: { primary: "#0c2340", accent: "#78be20", soft: "#eef4e8" },
+  // Icon uniform inspiration: royal blue, green, and crisp white.
+  wolves: { primary: "#21468b", accent: "#009b48", soft: "#edf3fc" },
   wild: { primary: "#154734", accent: "#a6192e", soft: "#edf3ee" },
   vikings: { primary: "#4f2683", accent: "#ffc62f", soft: "#f2eef8" },
   twins: { primary: "#002b5c", accent: "#d31145", soft: "#eef1f6" },

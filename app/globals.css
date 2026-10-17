@@ -1,4 +1,13 @@
 @import "tailwindcss";
+/* Wolves Icon uniform: blue body with a white stripe and green trim. */
+.hub[data-team="wolves"] .mast {
+  box-shadow: inset 0 -3px 0 #ffffff;
+}
+.hub[data-team="wolves"][data-mode="light"] {
+  background: #f2f5fc;
+  --surface: #ffffff;
+  --raised: #e9effa;
+}
 :root {
   font-family: Arial, Helvetica, sans-serif;
   color: var(--ink, #192a3c);
