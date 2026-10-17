@@ -69,6 +69,7 @@ export default function Home() {
     [readIds, setReadIds] = useState<string[]>([]),
     [showRead, setShowRead] = useState(false),
     [showOlder, setShowOlder] = useState(false),
+    [showOlderResults, setShowOlderResults] = useState(false),
     [revealed, setRevealed] = useState<string[]>([]),
     [hideScores, setHideResults] = useState(false),
     [resultsReady, setResultsReady] = useState(false),
@@ -288,6 +289,7 @@ export default function Home() {
     setActive(id);
     setTeamMenuOpen(false);
     setShowOlder(false);
+    setShowOlderResults(false);
     localStorage.setItem("wf-team", id);
   }
   function toggleResults() {
@@ -395,13 +397,18 @@ export default function Home() {
   const visibleGames = combinedGames.filter(
     (g) => active === "all" || g.team === active,
   );
-  const results = visibleGames
+  const availableResults = visibleGames
     .filter(
       (g) =>
         g.state === "post" && day(g.date) !== day(new Date().toISOString()),
     )
-    .sort((a, b) => Date.parse(b.date) - Date.parse(a.date))
-    .slice(0, active === "all" ? 8 : 4);
+    .sort((a, b) => Date.parse(b.date) - Date.parse(a.date));
+  const results =
+    active === "all"
+      ? availableResults.slice(0, 8)
+      : showOlderResults
+        ? availableResults
+        : availableResults.slice(0, 3);
   const upcoming = visibleGames
     .filter(
       (g) =>
@@ -924,6 +931,18 @@ export default function Home() {
                   ? "Checking results…"
                   : "No completed game returned by the available feeds."}
               </div>
+            )}
+            {active !== "all" && availableResults.length > 3 && (
+              <button
+                type="button"
+                className="results-toggle"
+                aria-expanded={showOlderResults}
+                onClick={() => setShowOlderResults(!showOlderResults)}
+              >
+                {showOlderResults
+                  ? "Hide older"
+                  : `Show older (${availableResults.length - 3})`}
+              </button>
             )}
             {(active === "disc" || active === "frost") && (
               <div className="score-note">
