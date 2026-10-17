@@ -2251,10 +2251,34 @@ footer b {
 .color-mode-toggle:hover {
   background: #ffffff20;
 }
-.color-mode-toggle span {
+.color-mode-toggle > span:first-child {
   font-size: 18px;
 }
 .mast-inner {
   gap: 20px;
   flex-wrap: wrap;
+}
+@media (max-width: 680px) {
+  .mast-inner {
+    flex-wrap: nowrap;
+    align-items: flex-start;
+    gap: 12px;
+  }
+  .brand {
+    min-width: 0;
+    font-size: clamp(18px, 5vw, 24px);
+  }
+  .brand > div {
+    min-width: 0;
+  }
+  .color-mode-toggle {
+    width: 40px;
+    height: 40px;
+    padding: 0;
+    justify-content: center;
+    margin-left: auto;
+  }
+  .color-mode-toggle .color-mode-label {
+    display: none;
+  }
 }

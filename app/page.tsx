@@ -602,9 +602,12 @@ export default function Home() {
             onClick={toggleColorMode}
             aria-label="Dark mode"
             aria-pressed={darkMode}
+            title={darkMode ? "Switch to light mode" : "Switch to dark mode"}
           >
             <span aria-hidden="true">{darkMode ? "☀" : "☾"}</span>
-            {darkMode ? "Light mode" : "Dark mode"}
+            <span className="color-mode-label">
+              {darkMode ? "Light mode" : "Dark mode"}
+            </span>
           </button>
         </div>
       </header>
