@@ -1073,7 +1073,7 @@ footer b {
   gap: 12px;
 }
 
-.news > .message-feed {
+.headlines-content > .message-feed {
   margin-top: 0;
   margin-bottom: 24px;
 }
@@ -1922,7 +1922,7 @@ footer b {
     width: 100%;
     min-width: 0;
   }
-  .news > .message-feed {
+  .headlines-content > .message-feed {
     display: block;
     visibility: visible;
     width: 100%;
@@ -1963,7 +1963,7 @@ footer b {
   min-height: 80px;
   content-visibility: visible !important;
 }
-.news > .message-feed {
+.headlines-content > .message-feed {
   position: relative;
   isolation: isolate;
 }
@@ -2280,5 +2280,26 @@ footer b {
   }
   .color-mode-toggle .color-mode-label {
     display: none;
+  }
+}
+/* Let the mobile reading order place team reference panels after results. */
+@media (max-width: 800px) {
+  .columns > .news {
+    display: contents;
+  }
+  .headlines-content {
+    order: 0;
+  }
+  .team-details {
+    order: 2;
+  }
+  .news-resources {
+    order: 3;
+  }
+  .headlines-content,
+  .team-details,
+  .news-resources {
+    width: 100%;
+    min-width: 0;
   }
 }
