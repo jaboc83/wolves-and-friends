@@ -2144,7 +2144,8 @@ footer b {
 .cap-L {
   background: #aa3040;
 }
-.cap-D {
+.cap-D,
+.cap-T {
   background: #266796;
 }
 .result-score {

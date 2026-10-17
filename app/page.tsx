@@ -2,6 +2,7 @@
 import { useEffect, useRef, useState, type CSSProperties } from "react";
 import GameCard from "../components/game-card";
 import MatchCalendar from "../components/match-calendar";
+import { sportTerms } from "../lib/sport-terms";
 import TeamInsights from "../components/team-insights";
 import { recentStories } from "../lib/news-window";
 import { activeHub, activeStories } from "../lib/content-policy";
@@ -324,6 +325,7 @@ export default function Home() {
       } as CSSProperties)
     : undefined;
   const team = teams.find((t) => t.id === active);
+  const terms = sportTerms(active);
   const filtered = [
     ...new Map(
       [
@@ -653,7 +655,10 @@ export default function Home() {
               <span className="dot" style={{ background: t.color }} />
               {t.short}
               {teamsPlayingToday.has(t.id) && (
-                <span className="team-today" title="Game or match today">
+                <span
+                  className="team-today"
+                  title={`${sportTerms(t.id).event} today`}
+                >
                   Today
                 </span>
               )}
@@ -671,13 +676,14 @@ export default function Home() {
         </div>
         {scheduleError && (
           <p className="alert">
-            Schedules could not refresh; showing previously loaded games.
+            Schedules could not refresh; showing previously loaded{" "}
+            {terms.events}.
           </p>
         )}
         {scoreError && (
           <p className="alert">
-            Some live score feeds are unavailable; showing previously loaded
-            games.
+            Some live score feeds are unavailable; showing previously loaded{" "}
+            {terms.events}.
           </p>
         )}
         {error && (
@@ -699,7 +705,7 @@ export default function Home() {
           >
             <div className="rail-heading today-heading">
               <h2>
-                Today’s games <small>{todayGames.length}</small>
+                Today’s {terms.events} <small>{todayGames.length}</small>
               </h2>
               <span>
                 {ct(new Date().toISOString(), {
@@ -715,7 +721,7 @@ export default function Home() {
               <div className="empty compact">
                 {loading
                   ? "Checking today’s schedule…"
-                  : "No games returned for today by the available feeds."}
+                  : `No ${terms.events} returned for today by the available feeds.`}
               </div>
             )}
           </div>
@@ -822,7 +828,7 @@ export default function Home() {
             </div>
             <div className="team-details">
               <TeamInsights active={active} data={teamInfo} />
-              <MatchCalendar games={visibleGames} />
+              <MatchCalendar games={visibleGames} team={active} />
             </div>
             <div className="news-resources">
               <section className="community-panel">
@@ -908,7 +914,7 @@ export default function Home() {
               futureGames.map((g) => game(g, true))
             ) : (
               <div className="empty compact">
-                No future game returned by the available feeds.
+                No upcoming {terms.event} returned by the available feeds.
               </div>
             )}
             <div className="rail-heading results">
@@ -929,7 +935,7 @@ export default function Home() {
               <div className="empty compact">
                 {loading
                   ? "Checking results…"
-                  : "No completed game returned by the available feeds."}
+                  : `No completed ${terms.event} returned by the available feeds.`}
               </div>
             )}
             {active !== "all" && availableResults.length > 3 && (
