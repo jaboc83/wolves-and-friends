@@ -71,7 +71,8 @@ export default function Home() {
     [showOlder, setShowOlder] = useState(false),
     [revealed, setRevealed] = useState<string[]>([]),
     [hideScores, setHideResults] = useState(false),
-    [resultsReady, setResultsReady] = useState(false);
+    [resultsReady, setResultsReady] = useState(false),
+    [darkMode, setDarkMode] = useState(false);
   const pending = useRef(new Map<string, Promise<void>>());
   function once(key: string, work: () => Promise<void>) {
     const existing = pending.current.get(key);
@@ -240,6 +241,9 @@ export default function Home() {
   }
   useEffect(() => {
     try {
+      setDarkMode(localStorage.getItem("wf-color-mode") === "dark");
+    } catch {}
+    try {
       setHideResults(localStorage.getItem("wf-hide-results") === "true");
     } catch {}
     setResultsReady(true);
@@ -293,6 +297,13 @@ export default function Home() {
       localStorage.setItem("wf-hide-results", String(next));
     } catch {}
   }
+  function toggleColorMode() {
+    const next = !darkMode;
+    setDarkMode(next);
+    try {
+      localStorage.setItem("wf-color-mode", next ? "dark" : "light");
+    } catch {}
+  }
   function markRead(id: string) {
     const next = readIds.includes(id)
       ? readIds.filter((x) => x !== id)
@@ -305,7 +316,9 @@ export default function Home() {
     ? ({
         "--team-primary": palette.primary,
         "--team-accent": palette.accent,
-        "--team-soft": palette.soft,
+        "--team-soft": darkMode
+          ? `color-mix(in srgb, ${palette.primary} 35%, #171c24)`
+          : palette.soft,
       } as CSSProperties)
     : undefined;
   const team = teams.find((t) => t.id === active);
@@ -563,7 +576,12 @@ export default function Home() {
     );
   }
   return (
-    <div className="hub" data-team={active} style={themeStyle}>
+    <div
+      className="hub"
+      data-team={active}
+      data-mode={darkMode ? "dark" : "light"}
+      style={themeStyle}
+    >
       <header className="mast">
         <div className="mast-inner">
           <a className="brand" href="/">
@@ -579,6 +597,15 @@ export default function Home() {
               <i>YOUR TEAMS. ONE PLACE.</i>
             </div>
           </a>
+          <button
+            className="color-mode-toggle"
+            onClick={toggleColorMode}
+            aria-label="Dark mode"
+            aria-pressed={darkMode}
+          >
+            <span aria-hidden="true">{darkMode ? "☀" : "☾"}</span>
+            {darkMode ? "Light mode" : "Dark mode"}
+          </button>
         </div>
       </header>
       <div className="shell">
@@ -908,8 +935,8 @@ export default function Home() {
         <footer>
           <b>Wolves & Friends</b>
           <span>
-            Feeds may be delayed or unavailable. Your preferences and read status
-            stay in this browser.
+            Feeds may be delayed or unavailable. Your preferences and read
+            status stay in this browser.
           </span>
         </footer>
       </div>
