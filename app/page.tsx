@@ -596,7 +596,7 @@ export default function Home() {
           <a className="brand" href="/">
             <img
               className="brand-emblem"
-              src="/logos/wolves-friends-heritage.png"
+              src="/logos/wolves-friends-neutral.png"
               alt=""
               width={80}
               height={80}

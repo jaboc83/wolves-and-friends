@@ -8,8 +8,8 @@ export const metadata: Metadata = {
   description:
     "The latest stories, scores and upcoming games for your teams, all in one place.",
   icons: {
-    icon: "/favicon-round.svg",
-    shortcut: "/favicon-round.svg",
+    icon: "/favicon-neutral.svg",
+    shortcut: "/favicon-neutral.svg",
   },
 };
 

@@ -1133,8 +1133,8 @@ footer b {
   height: 80px;
   object-fit: contain;
   flex-shrink: 0;
-  /* Clip inside the artwork's round edge, excluding its off-white canvas. */
-  clip-path: circle(47.5% at 50% 50%);
+  /* The badge asset itself has transparent corners. */
+  border-radius: 50%;
 }
 @media (max-width: 680px) {
   .brand {
