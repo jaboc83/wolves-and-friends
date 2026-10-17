@@ -426,7 +426,7 @@ export default function Home() {
       ? [...nextByTeam.values()].sort(
           (a, b) => teamPriority(a.team) - teamPriority(b.team),
         )
-      : futureCandidates.slice(0, 8);
+      : futureCandidates.slice(0, 3);
   const failed = (data?.health || []).filter(
     (h) =>
       h.name !== "BasketNews" &&
