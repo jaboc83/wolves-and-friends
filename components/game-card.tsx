@@ -6,6 +6,7 @@ import type { Game } from "../lib/feeds";
 import { teams } from "../lib/teams";
 import { teamLocation } from "../lib/team-location";
 import { teamWikipediaUrl } from "../lib/team-wikipedia";
+import { sportTerms } from "../lib/sport-terms";
 const ct = (s: string, o: Intl.DateTimeFormatOptions = {}) =>
   new Date(s).toLocaleString("en-US", { timeZone: "America/Chicago", ...o });
 const patterns: Record<string, RegExp> = {
@@ -35,7 +36,7 @@ export function outcome(g: Game) {
   const a = Number(club.score),
     b = Number(opponent.score);
   if (!Number.isFinite(a) || !Number.isFinite(b)) return "";
-  return a === b ? "D" : a > b ? "W" : "L";
+  return a === b ? sportTerms(g.team).tieCode : a > b ? "W" : "L";
 }
 function Location({
   team,
@@ -80,6 +81,7 @@ export default function GameCard({
   const logo = "/logos/" + t.id + (t.id === "disc" ? ".svg" : ".png");
   const { club, opponent } = matchup(g);
   const result = outcome(g);
+  const terms = sportTerms(g.team);
   const hasBadges = gameBadges(g).length > 0;
   const summaryHasResult = today && compact && g.state === "post";
   const full = (
@@ -178,7 +180,7 @@ export default function GameCard({
             target="_blank"
             rel="noreferrer"
           >
-            {g.state === "pre" ? "Details ↗" : "Box score / match stats ↗"}
+            {g.state === "pre" ? "Details ↗" : `${terms.stats} ↗`}
           </a>
         )}
       </div>
@@ -193,13 +195,13 @@ export default function GameCard({
                 t.name +
                 " " +
                 ct(g.date, { year: "numeric", month: "long", day: "numeric" }) +
-                " full game highlights",
+                ` full ${terms.event} highlights`,
             )
           }
           target="_blank"
           rel="noreferrer"
         >
-          ▷ Find full game highlights on YouTube ↗
+          ▷ Find full {terms.event} highlights on YouTube ↗
         </a>
       )}
       {g.state !== "post" && !g.eventOnly && (
@@ -264,7 +266,7 @@ export default function GameCard({
           <span
             className={"result-cap cap-" + result}
             aria-label={
-              result === "W" ? "Win" : result === "L" ? "Loss" : "Draw"
+              result === "W" ? "Win" : result === "L" ? "Loss" : terms.tieLabel
             }
           >
             <span>{result}</span>

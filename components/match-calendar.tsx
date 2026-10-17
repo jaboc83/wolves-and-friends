@@ -3,6 +3,7 @@ import GameBadges from "./game-badges";
 import { useState } from "react";
 import type { Game } from "../lib/feeds";
 import { teams } from "../lib/teams";
+import { sportTerms } from "../lib/sport-terms";
 const key = (date: string) =>
   new Intl.DateTimeFormat("en-CA", {
     timeZone: "America/Chicago",
@@ -10,7 +11,14 @@ const key = (date: string) =>
     month: "2-digit",
     day: "2-digit",
   }).format(new Date(date));
-export default function MatchCalendar({ games }: { games: Game[] }) {
+export default function MatchCalendar({
+  games,
+  team = "all",
+}: {
+  games: Game[];
+  team?: string;
+}) {
+  const terms = sportTerms(team);
   const today = key(new Date().toISOString());
   const [month, setMonth] = useState(() => today.slice(0, 7)),
     [selected, setSelected] = useState(today);
@@ -31,9 +39,10 @@ export default function MatchCalendar({ games }: { games: Game[] }) {
   const active = matches(selected);
   return (
     <details className="calendar-panel data-panel">
-      <summary>Match calendar</summary>
+      <summary>{terms.calendar}</summary>
       <p className="panel-note">
-        Past and upcoming events · Central Time · available schedule feeds
+        Past and upcoming {terms.events} · Central Time · available schedule
+        feeds
       </p>
       <div className="calendar-controls">
         <button aria-label="Previous month" onClick={() => shift(-1)}>
@@ -76,7 +85,8 @@ export default function MatchCalendar({ games }: { games: Game[] }) {
                 (date < today ? " (past)" : "") +
                 ", " +
                 events.length +
-                " events"
+                " " +
+                (events.length === 1 ? terms.event : terms.events)
               }
               aria-pressed={selected === date}
               onClick={() => setSelected(date)}
@@ -130,7 +140,7 @@ export default function MatchCalendar({ games }: { games: Game[] }) {
             );
           })
         ) : (
-          <p>No event in the available feeds for this day.</p>
+          <p>No {terms.event} in the available feeds for this day.</p>
         )}
       </div>
     </details>

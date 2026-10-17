@@ -2,6 +2,7 @@
 import { Fragment, useState } from "react";
 import { decorateTable } from "../lib/team-info";
 import { teams } from "../lib/teams";
+import { sportTerms } from "../lib/sport-terms";
 import type { TeamInfo } from "../lib/team-info";
 export default function TeamInsights({
   active,
@@ -12,6 +13,8 @@ export default function TeamInsights({
 }) {
   const [selected, setSelected] = useState("wolves");
   const id = active === "all" ? selected : active;
+  const terms = sportTerms(id);
+  const headings = sportTerms(active);
   const t = teams.find((t) => t.id === id);
   const info = data.find((i) => i.id === id);
   const league = t?.league?.split("/")[1];
@@ -48,7 +51,7 @@ export default function TeamInsights({
       )}
       <details className="data-panel">
         <summary>
-          {id === "disc" ? "DGPT season standings" : "Standings / table"}
+          {headings.standings}
           <small>{t?.short}</small>
         </summary>
         {info?.tables.length ? (
@@ -131,9 +134,9 @@ export default function TeamInsights({
           <p className="panel-note">
             {id === "usmnt"
               ? "Friendly matches do not have a league table."
-              : "No table returned by the available feed."}{" "}
+              : `No ${terms.standings.toLowerCase()} returned by the available feed.`}{" "}
             <a href={tableUrl} target="_blank" rel="noreferrer">
-              Open official standings ↗
+              Open official {terms.standings.toLowerCase()} ↗
             </a>
           </p>
         )}
@@ -141,7 +144,8 @@ export default function TeamInsights({
       {id !== "disc" && (
         <details className="data-panel">
           <summary>
-            Roster<small>{t?.short}</small>
+            {headings.roster}
+            <small>{t?.short}</small>
           </summary>
           {info?.depth ? (
             <>
@@ -172,9 +176,10 @@ export default function TeamInsights({
             </>
           ) : (
             <p className="panel-note">
-              A roster is not available from the current feed.{" "}
+              A {terms.roster.toLowerCase()} is not available from the current
+              feed.{" "}
               <a href={rosterUrl} target="_blank" rel="noreferrer">
-                Open team roster ↗
+                Open team {terms.roster.toLowerCase()} ↗
               </a>
             </p>
           )}
