@@ -2313,3 +2313,18 @@ footer b {
     min-width: 0;
   }
 }
+
+/* Keep Wolves dark surfaces on the Icon header's royal-blue hue. */
+.hub[data-team="wolves"][data-mode="dark"] {
+  background: #0c1b37;
+  --surface: #142b55;
+  --raised: #1a386f;
+  --line: #405b8f;
+  --muted: #bacbe6;
+}
+.hub[data-team="wolves"][data-mode="dark"] .mast {
+  background: var(--team-primary);
+}
+.hub[data-team="wolves"][data-mode="dark"] .shell {
+  --team-soft: #1a386f;
+}
