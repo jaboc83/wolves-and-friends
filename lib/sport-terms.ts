@@ -5,14 +5,14 @@ export function sportTerms(team: string) {
   const all = team === "all";
   return {
     event: all
-      ? "game/match/event"
+      ? "event"
       : disc
         ? "tournament"
         : soccer
           ? "match"
           : "game",
     events: all
-      ? "games/matches/events"
+      ? "events"
       : disc
         ? "tournaments"
         : soccer
@@ -27,7 +27,7 @@ export function sportTerms(team: string) {
           : "Standings",
     roster: all ? "Roster/Squad" : team === "palace" ? "Squad" : "Roster",
     calendar: all
-      ? "Game/Match/Event calendar"
+      ? "Event calendar"
       : disc
         ? "Tournament calendar"
         : team === "palace"
