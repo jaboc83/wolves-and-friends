@@ -778,7 +778,9 @@ export default function Home() {
                           day: "numeric",
                           year: "numeric",
                         })
-                      : "No unread headlines from the last week."}
+                      : active === "all"
+                        ? "No unread headlines from today."
+                        : "No unread headlines from the last week."}
                 </h3>
                 <p>
                   {olderCount > 0
@@ -792,7 +794,9 @@ export default function Home() {
                 <p>
                   {showOlder
                     ? "Showing older headlines too."
-                    : "Headlines from the last week."}
+                    : active === "all"
+                      ? "Headlines from today."
+                      : "Headlines from the last week."}
                 </p>
                 {(olderCount > 0 || showOlder) && (
                   <button onClick={() => setShowOlder(!showOlder)}>
