@@ -2328,3 +2328,90 @@ footer b {
 .hub[data-team="wolves"][data-mode="dark"] .shell {
   --team-soft: #1a386f;
 }
+
+/* Desktop logo tabs. The active tab has no divider beneath it. */
+.team-tab-logo {
+  display: none;
+}
+@media (min-width: 681px) {
+  .hub[data-team] .team-nav {
+    display: grid;
+    grid-template-columns: repeat(12, minmax(0, 1fr));
+    gap: 0;
+    padding: 24px 0 0;
+    border: 0;
+    overflow: visible;
+  }
+  .hub[data-team] .team-nav button {
+    flex-direction: column;
+    gap: 9px;
+    height: 102px;
+    min-width: 0;
+    padding: 15px 2px 13px;
+    border: 0;
+    border-top: 3px solid transparent;
+    border-right: 1px solid var(--line, #d3d9d4);
+    border-bottom: 1px solid var(--line, #d3d9d4);
+    border-radius: 0;
+    background: var(--surface, #fffefb);
+    color: var(--muted, #536170);
+    font-size: 11px;
+  }
+  .hub[data-team] .team-nav button:first-child {
+    border-left: 1px solid var(--line, #d3d9d4);
+  }
+  .hub[data-team] .team-nav button .dot {
+    display: none;
+  }
+  .hub[data-team] .team-nav .team-tab-logo {
+    display: block;
+    width: 40px;
+    height: 40px;
+    object-fit: contain;
+    filter: grayscale(1);
+    opacity: .58;
+  }
+  .hub[data-team] .team-nav button:hover {
+    background: var(--raised, #eef1f6);
+  }
+  .hub[data-team] .team-nav button.selected {
+    background: transparent;
+    border-top-color: var(--team-primary, #10283a);
+    border-bottom-color: transparent;
+    color: var(--ink, #192a3c);
+    font-weight: 700;
+  }
+  .hub[data-mode="dark"] .team-nav button.selected {
+    border-top-color: var(--ink-team, #8cd2f4);
+  }
+  .hub[data-team] .team-nav button:is(:hover, .selected) .team-tab-logo {
+    filter: none;
+    opacity: 1;
+  }
+  .hub[data-team] .team-nav button[data-tab-team="twins"] .team-tab-logo {
+    opacity: .9;
+    filter: grayscale(1) drop-shadow(1px 0 0 #e9f1ff) drop-shadow(-1px 0 0 #e9f1ff) drop-shadow(0 1px 0 #e9f1ff) drop-shadow(0 -1px 0 #e9f1ff);
+  }
+  .hub[data-team] .team-nav button[data-tab-team="twins"]:is(:hover, .selected) .team-tab-logo {
+    opacity: 1;
+    filter: drop-shadow(1px 0 0 #e9f1ff) drop-shadow(-1px 0 0 #e9f1ff) drop-shadow(0 1px 0 #e9f1ff) drop-shadow(0 -1px 0 #e9f1ff);
+  }
+  .hub[data-team] .team-nav button .team-today {
+    top: -12px;
+    right: 2px;
+  }
+  .hub[data-team] .team-nav button:focus-visible {
+    z-index: 1;
+    outline-offset: -4px;
+  }
+}
+@media (min-width: 681px) and (max-width: 900px) {
+  .hub[data-team] .team-nav .team-tab-logo {
+    width: 32px;
+    height: 32px;
+  }
+  .hub[data-team] .team-nav button {
+    height: 94px;
+    font-size: 10px;
+  }
+}
