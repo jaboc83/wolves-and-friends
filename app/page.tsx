@@ -643,17 +643,26 @@ export default function Home() {
             className={active === "all" ? "selected" : ""}
             onClick={() => choose("all")}
           >
-            All teams
+            <img className="team-tab-logo" src="/logos/wolves-friends-neutral.png" alt="" width={40} height={40} />
+            <span>All teams</span>
           </button>
           {teams.map((t) => (
             <button
               key={t.id}
+              data-tab-team={t.id}
               aria-pressed={active === t.id}
               className={active === t.id ? "selected" : ""}
               onClick={() => choose(t.id)}
             >
               <span className="dot" style={{ background: t.color }} />
-              {t.short}
+              <img
+                className="team-tab-logo"
+                src={t.id === "disc" ? "/logos/dgpt-tab.png" : t.id === "zalgiris" ? "/logos/zalgiris-tab.svg" : t.id === "usmnt" ? "/logos/usmnt-tab.svg" : `/logos/${t.id}.png`}
+                alt=""
+                width={40}
+                height={40}
+              />
+              <span>{t.short}</span>
               {teamsPlayingToday.has(t.id) && (
                 <span
                   className="team-today"
