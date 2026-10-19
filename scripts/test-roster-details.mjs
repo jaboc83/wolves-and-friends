@@ -230,13 +230,29 @@ globalThis.fetch = async (url, options) => {
     return {
       ok: true,
       json: async () => ({
+        team: { id: "16" },
         athletes: Array.from({ length: 8 }, (_, i) => ({ id: String(i + 1) })),
       }),
     };
   if (url.endsWith("/athletes/2/stats")) throw Error("Unavailable player");
   return {
     ok: true,
-    json: async () => summary("2026 regular season stats", [["PTS", "0"]]),
+    json: async () => ({
+      categories: [
+        {
+          name: "averages",
+          displayName: "Regular Season Averages",
+          labels: ["PTS"],
+          statistics: [
+            {
+              teamId: "16",
+              season: { year: 2026, displayName: "2025-26" },
+              stats: ["20.1"],
+            },
+          ],
+        },
+      ],
+    }),
   };
 };
 try {
@@ -253,7 +269,11 @@ try {
   );
   const payload = await response.json();
   assert.equal(payload.players.length, 6);
-  assert.equal(payload.players[0].stats.values[0].value, "0");
+  assert.equal(payload.players[0].stats.values[0].value, "20.1");
+  assert.equal(
+    payload.players[0].stats.title,
+    "2025-26 · Regular Season Averages",
+  );
   assert.equal(payload.players[1].stats, undefined);
   assert.ok(calls.some((c) => String(c.url).endsWith("/athletes/1/stats")));
   const afterFirst = calls.length;

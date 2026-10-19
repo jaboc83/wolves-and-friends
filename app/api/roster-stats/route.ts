@@ -42,7 +42,7 @@ async function loadManifest() {
                   key: t.league + ":" + a.id,
                   league: t.league,
                   id: String(a.id),
-                  teamId: String(t.espn),
+                  teamId: String(data.team?.id || t.espn),
                 }));
             } catch {
               return [];
