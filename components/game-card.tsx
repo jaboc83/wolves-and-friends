@@ -4,7 +4,7 @@ import { injuryReportUrl, tournamentScoresUrl } from "../lib/game-links";
 import { eventDateLabel } from "../lib/event-time";
 import GameBadges from "./game-badges";
 import { gameBadges } from "../lib/game-badges";
-import { useState } from "react";
+import { useRef, useState } from "react";
 import type { Game } from "../lib/feeds";
 import { teams } from "../lib/teams";
 import { teamLocation } from "../lib/team-location";
@@ -76,6 +76,7 @@ export default function GameCard({
   onReveal: () => void;
 }) {
   const [expanded, setExpanded] = useState(false);
+  const detailsRef = useRef<HTMLDetailsElement>(null);
   const expandReveals = compact && g.state === "post";
   const scoreVisible = expandReveals ? expanded || revealPast : revealed;
   const t = teams.find((t) => t.id === g.team);
@@ -89,6 +90,18 @@ export default function GameCard({
   const summaryHasResult = today && compact && g.state === "post";
   const full = (
     <article className="game">
+      {compact && (
+        <button
+          type="button"
+          className="game-collapse"
+          onClick={() => {
+            detailsRef.current?.removeAttribute("open");
+            setExpanded(false);
+          }}
+        >
+          Hide details ↑
+        </button>
+      )}
       {!summaryHasResult && (
         <>
           <div className="game-top">
@@ -301,6 +314,7 @@ export default function GameCard({
   return (
     <div className="calendar-game">
       <details
+        ref={detailsRef}
         className={
           "compact-game" +
           (g.state === "post" ? " past-game" : "") +
