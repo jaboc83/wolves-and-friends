@@ -23,13 +23,19 @@ function dates(g: Game) {
 }
 export function googleCalendarUrl(g: Game) {
   const [start, end] = dates(g);
+  const details = [
+    g.broadcast ? "Radio / TV: " + g.broadcast : "",
+    g.url ? "Event details: " + g.url : "",
+  ]
+    .filter(Boolean)
+    .join("\n");
   return (
     "https://calendar.google.com/calendar/render?" +
     new URLSearchParams({
       action: "TEMPLATE",
       text: g.name,
       dates: start + "/" + end,
-      details: g.url ? "Event details: " + g.url : "",
+      details,
       location: g.venue || "",
       ctz: "America/Chicago",
     })
@@ -37,7 +43,13 @@ export function googleCalendarUrl(g: Game) {
 }
 export function calendarFile(g: Game, now = new Date()) {
   const [start, end] = dates(g),
-    suffix = g.dateOnly ? ";VALUE=DATE" : "";
+    suffix = g.dateOnly ? ";VALUE=DATE" : "",
+    details = [
+      g.broadcast ? "Radio / TV: " + g.broadcast : "",
+      g.url ? "Event details: " + g.url : "",
+    ]
+      .filter(Boolean)
+      .join("\n");
   const lines = [
     "BEGIN:VCALENDAR",
     "VERSION:2.0",
@@ -51,7 +63,7 @@ export function calendarFile(g: Game, now = new Date()) {
     ...(g.dateOnly || g.endDate ? ["DTEND" + suffix + ":" + end] : []),
     "SUMMARY:" + escape(g.name),
     "LOCATION:" + escape(g.venue || ""),
-    "DESCRIPTION:" + escape(g.url ? "Event details: " + g.url : ""),
+    "DESCRIPTION:" + escape(details),
     "END:VEVENT",
     "END:VCALENDAR",
   ];

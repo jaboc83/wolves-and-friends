@@ -1,6 +1,11 @@
 import { teams } from "./teams";
 import { fetchPostseason, type Postseason } from "./postseason";
 import { rosterDetails, type RosterDetails } from "./roster-details";
+import {
+  parseEuroLeagueStandings,
+  parseZalgirisRoster,
+  parsePwhlRoster,
+} from "./special-team-data";
 export type Table = {
   seasonType?: number;
   name: string;
@@ -303,6 +308,14 @@ export async function fetchTeamInfo() {
     if (!r.ok) throw Error();
     return r.json() as Promise<any>;
   };
+  const getText = async (url: string) => {
+    const r = await fetch(url, {
+      signal: AbortSignal.timeout(10000),
+      headers: { Accept: "text/html" },
+    });
+    if (!r.ok) throw Error(String(r.status));
+    return r.text();
+  };
   return Promise.all(
     teams.map(async (t) => {
       const info: TeamInfo = { id: t.id, tables: [], unavailable: [] };
@@ -419,6 +432,48 @@ export async function fetchTeamInfo() {
           url: "https://www.dgpt.com/schedule/",
           note: "Tour opener through the Powerball Cup.",
         };
+      }
+      if (t.id === "zalgiris") {
+        await Promise.all([
+          (async () => {
+            try {
+              const table = parseEuroLeagueStandings(
+                await getText("https://euroleague-standings.com/"),
+                checked,
+              );
+              if (!table) throw Error("No standings table parsed");
+              info.tables.push(table);
+            } catch {
+              info.unavailable.push("EuroLeague standings");
+            }
+          })(),
+          (async () => {
+            try {
+              info.depth = parseZalgirisRoster(
+                await getText(
+                  "https://www.be-basketball.com/team/zalgiris-kaunas/players",
+                ),
+                checked,
+              );
+              if (!info.depth) throw Error("No roster parsed");
+            } catch {
+              info.unavailable.push("roster");
+            }
+          })(),
+        ]);
+      }
+      if (t.id === "frost") {
+        try {
+          info.depth = parsePwhlRoster(
+            await getText(
+              "https://www.thepwhl.com/en/stats/roster/2/10?league=1",
+            ),
+            checked,
+          );
+          if (!info.depth) throw Error("No roster parsed");
+        } catch {
+          info.unavailable.push("roster");
+        }
       }
       if (t.id === "frost")
         info.season = {

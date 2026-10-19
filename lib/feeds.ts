@@ -16,6 +16,7 @@ import {
   teamPlaysCompetition,
 } from "./competitions";
 import { parseZalgiris } from "./zalgiris";
+import { parsePwhlSchedule } from "./special-team-data";
 import { enrichOdds } from "./odds";
 import type { Odds } from "./odds";
 import initial from "./initial.json";
@@ -592,6 +593,27 @@ export async function collect(
       games.push(...parsed);
       return parsed.length;
     });
+    await task("Official PWHL schedule · Frost", ["frost"], async () => {
+      const primaryUrl =
+        "https://www.thepwhl.com/en/stats/schedule/2/11/all-months/homeaway?league=1";
+      let parsed = parsePwhlSchedule(
+        await (await get(primaryUrl)).text(),
+        checked,
+        primaryUrl,
+      );
+      if (!parsed.length) {
+        const fallbackUrl =
+          "https://www.thepwhl.com/en/teams/minnesota-frost/schedule";
+        parsed = parsePwhlSchedule(
+          await (await get(fallbackUrl)).text(),
+          checked,
+          fallbackUrl,
+        );
+      }
+      if (!parsed.length) throw Error("No PWHL schedule events parsed");
+      games.push(...parsed);
+      return parsed.length;
+    });
     await Promise.all([
       ...Object.entries(palaceCompetitions).map(([league, name]) =>
         task("ESPN Palace schedule · " + name, ["palace"], async () => {
@@ -667,6 +689,7 @@ export async function collect(
       ...baseline.games.filter(
         (g) =>
           (h.name === "Official Žalgiris schedule" && g.team === "zalgiris") ||
+          (h.name === "Official PWHL schedule · Frost" && g.team === "frost") ||
           (h.name === "Official Palace schedule" &&
             g.team === "palace" &&
             g.sourceName === h.name) ||
