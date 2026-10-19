@@ -146,6 +146,7 @@ summary:focus-visible {
   font-weight: 600;
 }
 .bracket-rounds {
+  position: relative;
   display: flex;
   gap: 18px;
   overflow-x: auto;
@@ -199,6 +200,7 @@ summary:focus-visible {
   margin: 26px 0;
 }
 .march-rounds {
+  position: relative;
   display: flex;
   overflow-x: auto;
   gap: 18px;
@@ -225,28 +227,13 @@ summary:focus-visible {
   padding: 12px;
   margin: auto 0;
 }
-.march-round:not(:last-child) .march-game::after,
-.bracket-round:not(:last-child) .bracket-match::after {
-  content: "";
+.bracket-connectors {
   position: absolute;
-  top: 50%;
-  left: 100%;
-  width: 18px;
-  border-top: 2px solid var(--team-accent, #8aa747);
+  top: 0;
+  left: 0;
+  z-index: 2;
   pointer-events: none;
-}
-.march-round:not(:last-child) .march-game::before,
-.bracket-round:not(:last-child) .bracket-match::before {
-  content: "";
-  position: absolute;
-  top: calc(50% - 4px);
-  right: -18px;
-  width: 7px;
-  height: 7px;
-  border-top: 2px solid var(--team-accent, #8aa747);
-  border-right: 2px solid var(--team-accent, #8aa747);
-  transform: rotate(45deg);
-  pointer-events: none;
+  color: var(--team-accent, #8aa747);
 }
 .march-game + .march-game {
   margin-top: 12px;

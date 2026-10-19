@@ -6,6 +6,7 @@ import { sportTerms } from "../lib/sport-terms";
 import type { TeamInfo } from "../lib/team-info";
 import type { PlayerStats } from "../lib/player-stats";
 import { espnTeamLogoUrl } from "../lib/march-madness";
+import BracketConnectors from "./bracket-connectors";
 export default function TeamInsights({
   active,
   data,
@@ -117,6 +118,7 @@ export default function TeamInsights({
                   ))}
                 </section>
               ))}
+              <BracketConnectors key={info.postseason.checked} roundClass="bracket-round" matchClass="bracket-match" />
             </div>
             <p className="panel-note">
               ESPN · checked{" "}
