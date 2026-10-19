@@ -1,0 +1,107 @@
+import { teams } from "../../../lib/teams";
+import { parsePlayerStats, type PlayerStats } from "../../../lib/player-stats";
+const batchSize = 6,
+  ttl = 15 * 60000;
+type Entry = { key: string; league: string; id: string };
+let manifest: Entry[] = [],
+  expires = 0;
+let manifestRequest: Promise<void> | null = null;
+const cache = new Map<string, { expires: number; stats?: PlayerStats }>();
+const inflight = new Map<string, Promise<PlayerStats | undefined>>();
+const get = async (url: string): Promise<any> => {
+  const r = await fetch(url, {
+    credentials: "omit",
+    referrerPolicy: "no-referrer",
+    signal: AbortSignal.timeout(10000),
+  });
+  if (!r.ok) throw Error("Stats unavailable");
+  return r.json();
+};
+async function loadManifest() {
+  if (Date.now() < expires) return;
+  if (!manifestRequest)
+    manifestRequest = (async () => {
+      const entries = await Promise.all(
+        teams
+          .filter((t) => t.league)
+          .map(async (t) => {
+            try {
+              const data = await get(
+                "https://site.api.espn.com/apis/site/v2/sports/" +
+                  t.league +
+                  "/teams/" +
+                  t.espn +
+                  "/roster",
+              );
+              const players = (data.athletes || []).flatMap(
+                (a: any) => a.items || [a],
+              );
+              return players
+                .filter((a: any) => /^\d+$/.test(String(a.id)))
+                .map((a: any) => ({
+                  key: t.league + ":" + a.id,
+                  league: t.league,
+                  id: String(a.id),
+                }));
+            } catch {
+              return [];
+            }
+          }),
+      );
+      const next = [...new Map(entries.flat().map((e) => [e.key, e])).values()];
+      if (!next.length) throw Error("Roster manifest unavailable");
+      manifest = next;
+      expires = Date.now() + ttl;
+    })().finally(() => {
+      manifestRequest = null;
+    });
+  return manifestRequest;
+}
+async function stats(entry: Entry) {
+  const old = cache.get(entry.key);
+  if (old && old.expires > Date.now()) return old.stats;
+  if (!inflight.has(entry.key))
+    inflight.set(
+      entry.key,
+      get(
+        "https://site.web.api.espn.com/apis/common/v3/sports/" +
+          entry.league +
+          "/athletes/" +
+          entry.id,
+      )
+        .then(parsePlayerStats)
+        .catch(() => undefined)
+        .then((stats) => {
+          cache.set(entry.key, { expires: Date.now() + ttl, stats });
+          return stats;
+        })
+        .finally(() => {
+          inflight.delete(entry.key);
+        }),
+    );
+  return inflight.get(entry.key);
+}
+export async function GET(request: Request) {
+  // Public, fixed batches are identical for all visitors; no team preferences,
+  // read state, browser identifiers or visitor headers are accepted/forwarded.
+  const batch = Number(new URL(request.url).searchParams.get("batch") || "0");
+  if (!Number.isInteger(batch) || batch < 0 || batch > 100)
+    return Response.json({ error: "Invalid batch" }, { status: 400 });
+  try {
+    await loadManifest();
+    const players = await Promise.all(
+      manifest
+        .slice(batch * batchSize, (batch + 1) * batchSize)
+        .map(async (entry) => ({ key: entry.key, stats: await stats(entry) })),
+    );
+    return Response.json(
+      { players, totalBatches: Math.ceil(manifest.length / batchSize) },
+      { headers: { "Cache-Control": "no-store" } },
+    );
+  } catch {
+    return Response.json(
+      { error: "Roster stats unavailable" },
+      { status: 503, headers: { "Cache-Control": "no-store" } },
+    );
+  }
+}
