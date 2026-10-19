@@ -754,7 +754,353 @@ export default function Home() {
         {scheduleError && (
           <p className="alert">
             Schedules could not refresh; showing previously loaded{" "}
-            {…3488 tokens truncated…↗
+            {terms.events}.
+          </p>
+        )}
+        {scoreError && (
+          <p className="alert">
+            Some live score feeds are unavailable; showing previously loaded{" "}
+            {terms.events}.
+          </p>
+        )}
+        <div className="columns">
+          <div
+            className={
+              "today-group " + (todayGames.length ? "has-games" : "no-games")
+            }
+          >
+            <div className="rail-heading today-heading">
+              <h2>
+                Today’s {terms.events} <small>{todayGames.length}</small>
+              </h2>
+              <span>
+                {ct(new Date().toISOString(), {
+                  month: "short",
+                  day: "numeric",
+                })}{" "}
+                · CT
+              </span>
+            </div>
+            {todayGames.length ? (
+              todayGames.map((g) => game(g, false, true))
+            ) : (
+              <div className="empty compact">
+                {loading
+                  ? "Checking today’s schedule…"
+                  : `No ${terms.events} returned for today by the available feeds.`}
+              </div>
+            )}
+          </div>
+          <section className="news">
+            <div className="headlines-content">
+              {
+                <section
+                  id="latest-messages"
+                  className="message-feed"
+                  aria-label="Latest Social Media"
+                >
+                  <div className="social-heading">
+                    <h2>Latest Social Media</h2>
+                    <button
+                      type="button"
+                      className="social-refresh"
+                      onClick={() => void refreshSocial(true)}
+                      disabled={socialRefreshing}
+                      aria-label="Refresh latest social media"
+                    >
+                      <span
+                        aria-hidden="true"
+                        className={socialRefreshing ? "refresh-spinning" : ""}
+                      >
+                        ↻
+                      </span>{" "}
+                      {socialRefreshing ? "Refreshing…" : "Refresh"}
+                    </button>
+                  </div>
+                  <p className="feed-description">
+                    {active === "all"
+                      ? "Latest posts for your teams · Bluesky & YouTube"
+                      : team?.name + " posts"}
+                  </p>
+                  {socialRefreshError && (
+                    <p className="feed-description" role="status">
+                      Social posts could not refresh. Try again shortly.
+                    </p>
+                  )}
+                  {youtubeUnavailable.some(
+                    (id) => active === "all" || active === id,
+                  ) && (
+                    <p className="feed-description">
+                      Some official YouTube feeds are temporarily unavailable.
+                    </p>
+                  )}
+                  {socialPosts.length ? (
+                    socialPosts.map(story)
+                  ) : (
+                    <p className="feed-description">
+                      No unread matching posts in the current feed.
+                    </p>
+                  )}
+                  {socialUnavailable.some(
+                    (id) => active === "all" || active === id,
+                  ) && (
+                    <p className="feed-description">
+                      Some social feeds are unavailable; cached posts may
+                      remain.
+                    </p>
+                  )}
+                </section>
+              }
+              <div className="section-heading">
+                <h2 className="latest-heading">
+                  Latest stories <small>{displayed.length}</small>
+                </h2>
+                <label className="show-read">
+                  <input
+                    type="checkbox"
+                    checked={showRead}
+                    onChange={(e) => setShowRead(e.target.checked)}
+                  />{" "}
+                  Show read
+                </label>
+                <label className="search">
+                  <span aria-hidden="true">⌕</span>
+                  <input
+                    value={search}
+                    onChange={(e) => setSearch(e.target.value)}
+                    placeholder="Find a headline"
+                    aria-label="Search headlines"
+                  />
+                </label>
+              </div>
+              {loading && active === "all" && displayed.length > 0 && (
+                <p className="headline-loading" role="status">
+                  <span className="headline-spinner" aria-hidden="true" />
+                  Fetching more headlines…
+                </p>
+              )}
+              {loading && (active !== "all" || !displayed.length) ? (
+                <div
+                  className="empty headline-loading"
+                  role="status"
+                  aria-live="polite"
+                >
+                  <span className="headline-spinner" aria-hidden="true" />
+                  Fetching headlines…
+                </div>
+              ) : newsFailed && !displayed.length ? (
+                <div className="empty" role="status">
+                  Headlines are temporarily unavailable. We’ll try again
+                  automatically.
+                </div>
+              ) : displayed.length ? (
+                displayed.map(story)
+              ) : (
+                <div className="empty">
+                  <h3>
+                    {search
+                      ? "No matching headlines."
+                      : newest && recentStories([newest], active).length === 0
+                        ? "No news since " +
+                          ct(newest.date, {
+                            month: "short",
+                            day: "numeric",
+                            year: "numeric",
+                          })
+                        : active === "all"
+                          ? "No unread headlines from today."
+                          : "No unread headlines from the last week."}
+                  </h3>
+                  <p>
+                    {olderCount > 0
+                      ? "Use View older to catch up on earlier articles."
+                      : "Check the Source desk for more coverage."}
+                  </p>
+                </div>
+              )}
+              {!loading && newsData.checked && (
+                <p className="feed-description">
+                  Last update:{" "}
+                  {ct(newsData.checked, {
+                    dateStyle: "medium",
+                    timeStyle: "short",
+                  })}{" "}
+                  CT
+                </p>
+              )}
+              {!loading && newsFailed && displayed.length > 0 && (
+                <p className="feed-description">
+                  Some headline feeds are unavailable.
+                </p>
+              )}
+              {!loading && compactNews && (
+                <div className="news-more">
+                  <p>
+                    {showOlder
+                      ? "Showing older headlines too."
+                      : active === "all"
+                        ? "Headlines from today."
+                        : "Headlines from the last week."}
+                  </p>
+                  {(olderCount > 0 || showOlder) && (
+                    <button onClick={() => setShowOlder(!showOlder)}>
+                      {showOlder
+                        ? "Hide older"
+                        : "View older (" + olderCount + ")"}
+                    </button>
+                  )}
+                </div>
+              )}
+            </div>
+            <div className="team-details">
+              <TeamInsights
+                active={active}
+                data={teamInfo}
+                revealResults={resultsReady && !hideScores}
+              />
+              <MatchCalendar games={visibleGames} team={active} />
+            </div>
+            <div className="news-resources">
+              <section className="community-panel">
+                <h2>Fan communities</h2>
+                <p>Permanent Reddit links</p>
+                {communities
+                  .filter((c) => active === "all" || active === c.team)
+                  .map((c) => (
+                    <a
+                      key={c.url}
+                      href={c.url}
+                      target="_blank"
+                      rel="noreferrer"
+                    >
+                      <img
+                        src={
+                          "/logos/" +
+                          c.team +
+                          (c.team === "disc" ? ".svg" : ".png")
+                        }
+                        alt=""
+                        width={24}
+                        height={24}
+                      />
+                      <span>{c.name} ↗</span>
+                    </a>
+                  ))}
+              </section>
+              <div className="source-panel">
+                <button
+                  className="source-toggle"
+                  onClick={() => setSources(!sources)}
+                  aria-expanded={sources}
+                >
+                  Source desk <span>{sources ? "−" : "+"}</span>
+                </button>
+                <p>
+                  Direct links to your trusted voices, including sources whose
+                  feeds aren’t available.
+                </p>
+                {sources && (
+                  <div className="source-grid">
+                    {(team ? [team] : teams).map((t) => (
+                      <div key={t.id}>
+                        <h4>{t.short}</h4>
+                        {t.sources.map(([name, url]) => (
+                          <a
+                            key={url}
+                            href={url}
+                            target="_blank"
+                            rel="noreferrer"
+                          >
+                            {name} ↗
+                          </a>
+                        ))}
+                      </div>
+                    ))}
+                  </div>
+                )}
+                {failed.length > 0 && (
+                  <details className="health">
+                    <summary>
+                      {failed.length} feed{failed.length === 1 ? "" : "s"}{" "}
+                      unavailable · cached items may remain
+                    </summary>
+                    {failed.map((h) => (
+                      <p key={h.name}>
+                        {h.name} · checked{" "}
+                        {ct(h.checked, { hour: "numeric", minute: "2-digit" })}{" "}
+                        CT
+                      </p>
+                    ))}
+                  </details>
+                )}
+              </div>
+            </div>
+          </section>
+          <aside className="scores">
+            <div className="rail-heading upcoming-heading">
+              <h2>Coming up</h2>
+            </div>
+            {futureGames.length ? (
+              futureGames.map((g) => game(g, true))
+            ) : (
+              <div className="empty compact">
+                No upcoming {terms.event} returned by the available feeds.
+              </div>
+            )}
+            <div className="rail-heading results">
+              <h2>Recent results</h2>
+              <span>Latest available</span>
+            </div>
+            <button
+              type="button"
+              className="results-toggle"
+              onClick={toggleResults}
+              disabled={!resultsReady}
+            >
+              {hideScores ? "Show scores" : "Hide scores"}
+            </button>
+            {results.length ? (
+              results.map((g) => game(g, true))
+            ) : (
+              <div className="empty compact">
+                {loading
+                  ? "Checking results…"
+                  : `No completed ${terms.event} returned by the available feeds.`}
+              </div>
+            )}
+            {active !== "all" && availableResults.length > 3 && (
+              <button
+                type="button"
+                className="results-toggle"
+                aria-expanded={showOlderResults}
+                onClick={() => setShowOlderResults(!showOlderResults)}
+              >
+                {showOlderResults
+                  ? "Hide older"
+                  : `Show older (${availableResults.length - 3})`}
+              </button>
+            )}
+            {(active === "disc" || active === "frost") && (
+              <div className="score-note">
+                <b>More scoreboards</b>
+                <p>
+                  {team?.short} scoring pages provide additional coverage beyond
+                  the imported schedules.
+                </p>
+                {teams
+                  .filter((t) => active === t.id)
+                  .map((t) => (
+                    <a
+                      key={t.id}
+                      href={
+                        t.sources.find(([name]) =>
+                          /score|Live|schedule|Results/i.test(name),
+                        )?.[1] || t.sources[0][1]
+                      }
+                      target="_blank"
+                      rel="noreferrer"
+                    >
+                      {t.short} scoreboard ↗
                     </a>
                   ))}
               </div>
