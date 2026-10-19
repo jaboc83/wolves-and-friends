@@ -2420,3 +2420,11 @@ footer b {
 .headline-spinner { width: 24px; height: 24px; border: 3px solid var(--line, #d3d9d4); border-top-color: var(--ink-team, #21468b); border-radius: 50%; animation: headline-spin .8s linear infinite; }
 @keyframes headline-spin { to { transform: rotate(360deg); } }
 @media (prefers-reduced-motion: reduce) { .headline-spinner { animation: none; } }
+
+.calendar-game { margin-bottom: 12px; }
+.calendar-game .compact-game { margin-bottom: 0; }
+.add-calendar { font-size: .8rem; padding: 8px 12px; color: var(--ink, #192a3c); }
+.add-calendar > summary { cursor: pointer; width: fit-content; padding: 6px 0; font-weight: 600; }
+.add-calendar > div { display: flex; flex-wrap: wrap; gap: 10px 18px; padding: 8px 0; align-items: center; }
+.add-calendar button { background: var(--surface, #fff); color: inherit; border: 1px solid var(--line, #d3d9d4); border-radius: 6px; padding: 9px 12px; cursor: pointer; }
+.event-details p { font-size: .85rem; margin: 8px 0; }

@@ -1,4 +1,6 @@
 import { discEvents } from "./event-seed";
+import { parseDgptSchedule } from "./dgpt";
+import { eventLifecycle } from "./event-time";
 import { verifyAuthorFeed } from "./bylines";
 import { parseFrostNews } from "./club-news";
 import { authorStories } from "./author-stories";
@@ -32,6 +34,7 @@ export type Story = {
   kind: string;
 };
 export type Game = {
+  eventResults?: { division: string; name: string; score: string }[];
   competitionNote?: string;
   eventOnly?: boolean;
   dateOnly?: boolean;
@@ -626,11 +629,21 @@ export async function collect(
         return parsed.length;
       }),
     ]);
-    games.push(
-      ...discEvents.filter(
-        (g) => Date.parse(g.endDate || g.date) >= Date.now(),
-      ),
-    );
+    await task("DGPT official schedule", ["disc"], async () => {
+      const parsed = parseDgptSchedule(
+        await (await get("https://www.dgpt.com/schedule/")).text(),
+      );
+      if (!parsed.length) throw Error("No DGPT events parsed");
+      games.push(...parsed);
+      return parsed.length;
+    });
+    const fallback = [
+      ...(cached?.games || []).filter((g) => g.team === "disc"),
+      ...discEvents,
+    ];
+    for (const g of fallback)
+      if (!games.some((next) => next.id === g.id))
+        games.push(eventLifecycle(g));
   }
   const baseline = cached || (initial as HubData);
   for (const h of health.filter((h) => h.status === "unavailable")) {

@@ -7,6 +7,7 @@ import TeamInsights from "../components/team-insights";
 import { recentStories } from "../lib/news-window";
 import { activeHub, activeStories } from "../lib/content-policy";
 import { discEvents } from "../lib/event-seed";
+import { eventLifecycle, eventIsToday } from "../lib/event-time";
 import infoSeed from "../lib/team-info-initial.json";
 import type { TeamInfo } from "../lib/team-info";
 import TeamLogos from "../components/team-logos";
@@ -394,14 +395,16 @@ export default function Home() {
     ...(data?.games || []),
     ...discEvents.filter(
       (g) =>
-        Date.parse(g.endDate || g.date) >= Date.now() &&
-        !(data?.games || []).some((x) => x.id === g.id),
+        !(data?.games || []).some(
+          (x) => x.id === g.id || (x.team === "disc" && x.url === g.url),
+        ),
     ),
   ]
     .filter((g) => teams.some((t) => t.id === g.team))
     .map((original) => {
       const odds = oddsGames.find((x) => x.id === original.id)?.odds;
-      const g = odds ? { ...original, odds } : original;
+      const event = eventLifecycle(original);
+      const g = odds ? { ...event, odds } : event;
       const fresh = liveGames.find(
         (x) =>
           x.id === g.id ||
@@ -420,19 +423,17 @@ export default function Home() {
     if (!combinedGames.some((x) => x.id === g.id)) combinedGames.push(g);
   const socialPosts = unreadSocial(socialData, active, readIds);
   const teamsPlayingToday = new Set(
-    combinedGames
-      .filter((g) => day(g.date) === day(new Date().toISOString()))
-      .map((g) => g.team),
+    combinedGames.filter((g) => eventIsToday(g)).map((g) => g.team),
   );
   const visibleGames = combinedGames.filter(
     (g) => active === "all" || g.team === active,
   );
   const availableResults = visibleGames
-    .filter(
-      (g) =>
-        g.state === "post" && day(g.date) !== day(new Date().toISOString()),
-    )
-    .sort((a, b) => Date.parse(b.date) - Date.parse(a.date));
+    .filter((g) => g.state === "post" && !eventIsToday(g))
+    .sort(
+      (a, b) =>
+        Date.parse(b.endDate || b.date) - Date.parse(a.endDate || a.date),
+    );
   const results =
     active === "all"
       ? availableResults.slice(0, 8)
@@ -442,19 +443,18 @@ export default function Home() {
   const upcoming = visibleGames
     .filter(
       (g) =>
-        g.state !== "post" && Date.parse(g.date) > Date.now() - 12 * 3600000,
+        g.state !== "post" &&
+        (eventIsToday(g) || Date.parse(g.date) > Date.now() - 12 * 3600000),
     )
     .sort((a, b) => Date.parse(a.date) - Date.parse(b.date));
   const todayGames = visibleGames
-    .filter((g) => day(g.date) === day(new Date().toISOString()))
+    .filter((g) => eventIsToday(g))
     .sort(
       (a, b) =>
         teamPriority(a.team) - teamPriority(b.team) ||
         Date.parse(a.date) - Date.parse(b.date),
     );
-  const futureCandidates = upcoming.filter(
-    (g) => day(g.date) !== day(new Date().toISOString()),
-  );
+  const futureCandidates = upcoming.filter((g) => !eventIsToday(g));
   const nextByTeam = new Map<string, Game>();
   for (const g of futureCandidates)
     if (!nextByTeam.has(g.team)) nextByTeam.set(g.team, g);
