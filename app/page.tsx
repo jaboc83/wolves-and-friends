@@ -868,6 +868,12 @@ export default function Home() {
                           onClick={() => void refreshSocial(true)}
                           disabled={socialRefreshing}
                           aria-label="Refresh latest social media"
+                          title={
+                            socialRefreshing
+                              ? "Refreshing social posts…"
+                              : "Refresh social posts"
+                          }
+                          aria-busy={socialRefreshing}
                         >
                           <span
                             aria-hidden="true"
@@ -876,8 +882,7 @@ export default function Home() {
                             }
                           >
                             ↻
-                          </span>{" "}
-                          {socialRefreshing ? "Refreshing…" : "Refresh"}
+                          </span>
                         </button>
                       </div>
                       <p className="feed-description">
