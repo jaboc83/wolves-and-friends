@@ -4,14 +4,17 @@ import { decorateTable } from "../lib/team-info";
 import { teams } from "../lib/teams";
 import { sportTerms } from "../lib/sport-terms";
 import type { TeamInfo } from "../lib/team-info";
+import type { PlayerStats } from "../lib/player-stats";
 export default function TeamInsights({
   active,
   data,
   revealResults = true,
+  playerStats = {},
 }: {
   active: string;
   data: TeamInfo[];
   revealResults?: boolean;
+  playerStats?: Record<string, PlayerStats>;
 }) {
   const [selected, setSelected] = useState("wolves");
   const id = active === "all" ? selected : active;
@@ -219,40 +222,32 @@ export default function TeamInsights({
                         <a href={p.url} target="_blank" rel="noreferrer">
                           {p.name} ↗
                         </a>
-                        {(p.age !== undefined || p.joined || p.salary) && (
+                        {p.age !== undefined && (
                           <div className="roster-player-info">
                             {p.age !== undefined && <span>Age {p.age}</span>}
-                            {p.joined && (
-                              <a
-                                href={p.joined.url}
-                                title={p.joined.event + " · official source"}
-                                target="_blank"
-                                rel="noreferrer"
-                              >
-                                Joined{" "}
-                                {new Date(
-                                  p.joined.date + "T12:00:00Z",
-                                ).toLocaleDateString("en-US", {
-                                  timeZone: "UTC",
-                                  month: "short",
-                                  day: "numeric",
-                                  year: "numeric",
-                                })}{" "}
-                                ↗
-                              </a>
-                            )}
-                            {p.salary && (
-                              <span>
-                                Salary ({p.salary.season}):{" "}
-                                {new Intl.NumberFormat("en-US", {
-                                  style: "currency",
-                                  currency: p.salary.currency,
-                                  maximumFractionDigits: 0,
-                                }).format(p.salary.amount)}
-                              </span>
-                            )}
                           </div>
                         )}
+                        {(() => {
+                          const summary =
+                            playerStats[
+                              (t?.league || "") +
+                                ":" +
+                                (p.url.match(/\/_\/id\/(\d+)/)?.[1] || "")
+                            ];
+                          return summary ? (
+                            <div className="roster-season-stats">
+                              <small>{summary.title}</small>
+                              <dl>
+                                {summary.values.map((s) => (
+                                  <div key={s.label} title={s.description}>
+                                    <dt>{s.label}</dt>
+                                    <dd>{s.value}</dd>
+                                  </div>
+                                ))}
+                              </dl>
+                            </div>
+                          ) : null;
+                        })()}
                       </li>
                     ))}
                   </ol>
@@ -262,10 +257,8 @@ export default function TeamInsights({
                 <a href={info.depth.url} target="_blank" rel="noreferrer">
                   {info.depth.source} ↗
                 </a>{" "}
-                · Ages and season salaries from the roster feed. Join dates link
-                to official signing or acquisition sources. Unreported fields
-                are omitted. Salaries are reported season figures, not total
-                contract values or cap hits.
+                · Age and season stats from ESPN. Each summary keeps ESPN’s
+                season and competition label; unavailable stats are omitted.
               </p>
             </>
           ) : (
