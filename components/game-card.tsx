@@ -202,25 +202,28 @@ export default function GameCard({
                   ? "Final · result hidden"
                   : "Live · score hidden"
                 : g.status}
-        {g.url && (
-          <a
-            href={
-              g.eventOnly
-                ? tournamentScoresUrl(g)
+        <span className="game-footer-actions">
+          {g.url && (
+            <a
+              href={
+                g.eventOnly
+                  ? tournamentScoresUrl(g)
+                  : g.state === "pre"
+                    ? g.url
+                    : g.boxUrl || g.url
+              }
+              target="_blank"
+              rel="noreferrer"
+            >
+              {g.eventOnly && g.state !== "pre"
+                ? "Tournament scores & results ↗"
                 : g.state === "pre"
-                  ? g.url
-                  : g.boxUrl || g.url
-            }
-            target="_blank"
-            rel="noreferrer"
-          >
-            {g.eventOnly && g.state !== "pre"
-              ? "Tournament scores & results ↗"
-              : g.state === "pre"
-                ? "Details ↗"
-                : `${terms.stats} ↗`}
-          </a>
-        )}
+                  ? "Details ↗"
+                  : `${terms.stats} ↗`}
+            </a>
+          )}
+          {!compact && g.state === "pre" && <AddToCalendar game={g} />}
+        </span>
       </div>
       {today && injuryReportUrl(g.team) && (
         <p className="injury-report">
@@ -294,13 +297,7 @@ export default function GameCard({
       {g.sourceName && <p className="source-game">{g.sourceName}</p>}
     </article>
   );
-  if (!compact)
-    return (
-      <>
-        {full}
-        {g.state === "pre" && <AddToCalendar game={g} />}
-      </>
-    );
+  if (!compact) return full;
   return (
     <div className="calendar-game">
       <details
@@ -375,39 +372,41 @@ export default function GameCard({
               <span>{g.competitors.find((p) => p !== club)?.score}</span>
             </span>
           )}
-          <span className="compact-date">
-            {eventDateLabel(g)}
-            {!g.dateOnly &&
-              (g.state === "post" ? (
-                <> · {ct(g.date, { hour: "numeric", minute: "2-digit" })} CT</>
-              ) : (
+          <span className="compact-upcoming-actions">
+            <span className="compact-date">
+              {eventDateLabel(g)}
+              {!g.dateOnly &&
+                (g.state === "post" ? (
+                  <>
+                    {" "}
+                    · {ct(g.date, { hour: "numeric", minute: "2-digit" })} CT
+                  </>
+                ) : (
+                  <small>
+                    {ct(g.date, { hour: "numeric", minute: "2-digit" })} CT
+                  </small>
+                ))}
+              {g.state === "post" && g.eventOnly && scoreVisible && (
                 <small>
-                  {ct(g.date, { hour: "numeric", minute: "2-digit" })} CT
-                </small>
-              ))}
-            {g.state === "post" && g.eventOnly && scoreVisible && (
-              <small>
-                <a
-                  href={tournamentScoresUrl(g)}
-                  target="_blank"
-                  rel="noreferrer"
-                  onClick={(e) => e.stopPropagation()}
-                >
-                  Scores & results ↗
-                </a>
-              </small>
-            )}
-            {g.state === "post" &&
-              !g.eventOnly &&
-              (!scoreVisible || !result) && (
-                <small>
-                  {scoreVisible
-                    ? g.eventOnly
-                      ? "Completed · official results"
-                      : "Score unavailable"
-                    : "Result hidden"}
+                  <a
+                    href={tournamentScoresUrl(g)}
+                    target="_blank"
+                    rel="noreferrer"
+                    onClick={(e) => e.stopPropagation()}
+                  >
+                    Scores & results ↗
+                  </a>
                 </small>
               )}
+              {g.state === "post" &&
+                !g.eventOnly &&
+                (!scoreVisible || !result) && (
+                  <small>
+                    {scoreVisible ? "Score unavailable" : "Result hidden"}
+                  </small>
+                )}
+            </span>
+            {g.state === "pre" && <AddToCalendar game={g} compact />}
           </span>
           <span className="expand-chevron" aria-hidden="true">
             ⌄
@@ -415,7 +414,6 @@ export default function GameCard({
         </summary>
         {full}
       </details>
-      {g.state === "pre" && <AddToCalendar game={g} />}
     </div>
   );
 }
