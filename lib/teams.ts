@@ -182,6 +182,18 @@ export const teams = [
         "https://www.euroleaguebasketball.net/en/euroleague/news/carousels/zalgiris-kaunas/?q=%7B%22articleId%22%3A%22%22%2C%22categoryId%22%3A%22%22%2C%22linkedId%22%3A%7B%22sourceSystem%22%3A%22FS_BASKETBALL_TEAM%22%2C%22sourceSystemId%22%3A%22zal%22%2C%22text%22%3A%22%22%7D%7D&carouselTitle=Zalgiris%20Kaunas",
       ],
       [
+        "EuroLeague standings",
+        "https://euroleague-standings.com/",
+      ],
+      [
+        "Eurohoops · Žalgiris",
+        "https://www.eurohoops.net/basket/zalgiris-kaunas/?lang=en",
+      ],
+      [
+        "BeBasket · Žalgiris roster",
+        "https://www.be-basketball.com/team/zalgiris-kaunas/players",
+      ],
+      [
         "EuroLeague scoreboard",
         "https://www.euroleaguebasketball.net/euroleague/game-center/",
       ],
@@ -207,6 +219,14 @@ export const teams = [
         "https://www.thepwhl.com/en/teams/minnesota-frost",
       ],
       ["The Ice Garden", "https://www.theicegarden.com/"],
+      [
+        "Official Frost schedule",
+        "https://www.thepwhl.com/en/stats/schedule/2/11/all-months/homeaway?league=1",
+      ],
+      [
+        "Official Frost roster",
+        "https://www.thepwhl.com/en/stats/roster/2/10?league=1",
+      ],
     ],
   },
   {
