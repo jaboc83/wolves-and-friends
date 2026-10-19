@@ -1,5 +1,6 @@
 "use client";
 import AddToCalendar from "./add-to-calendar";
+import { injuryReportUrl, tournamentScoresUrl } from "../lib/game-links";
 import { eventDateLabel } from "../lib/event-time";
 import GameBadges from "./game-badges";
 import { gameBadges } from "../lib/game-badges";
@@ -138,9 +139,7 @@ export default function GameCard({
                         <b>{r.division}:</b> {r.name} · {r.score}
                       </p>
                     ))
-                  ) : (
-                    <p>Completed · see official results</p>
-                  )
+                  ) : null
                 ) : (
                   <p>Results hidden</p>
                 ))}
@@ -186,27 +185,46 @@ export default function GameCard({
         </button>
       )}
       <div className="game-footer">
-        {g.dateOnly
-          ? g.state === "pre"
-            ? "All-day event · tee times not listed"
-            : g.status
-          : g.state === "pre"
-            ? ct(g.date, { hour: "numeric", minute: "2-digit" }) + " CT"
-            : hidden
-              ? g.state === "post"
-                ? "Final · result hidden"
-                : "Live · score hidden"
-              : g.status}
+        {g.eventOnly && g.state === "post"
+          ? null
+          : g.dateOnly
+            ? g.state === "pre"
+              ? "All-day event · tee times not listed"
+              : g.status
+            : g.state === "pre"
+              ? ct(g.date, { hour: "numeric", minute: "2-digit" }) + " CT"
+              : hidden
+                ? g.state === "post"
+                  ? "Final · result hidden"
+                  : "Live · score hidden"
+                : g.status}
         {g.url && (
           <a
-            href={g.state === "pre" ? g.url : g.boxUrl || g.url}
+            href={
+              g.eventOnly
+                ? tournamentScoresUrl(g)
+                : g.state === "pre"
+                  ? g.url
+                  : g.boxUrl || g.url
+            }
             target="_blank"
             rel="noreferrer"
           >
-            {g.state === "pre" ? "Details ↗" : `${terms.stats} ↗`}
+            {g.eventOnly && g.state !== "pre"
+              ? "Tournament scores & results ↗"
+              : g.state === "pre"
+                ? "Details ↗"
+                : `${terms.stats} ↗`}
           </a>
         )}
       </div>
+      {today && injuryReportUrl(g.team) && (
+        <p className="injury-report">
+          <a href={injuryReportUrl(g.team)} target="_blank" rel="noreferrer">
+            Injury report ↗
+          </a>
+        </p>
+      )}
       {g.state === "post" && !g.eventOnly && (
         <a
           className="game-highlights"
@@ -363,15 +381,29 @@ export default function GameCard({
                   {ct(g.date, { hour: "numeric", minute: "2-digit" })} CT
                 </small>
               ))}
-            {g.state === "post" && (!scoreVisible || !result) && (
+            {g.state === "post" && g.eventOnly && scoreVisible && (
               <small>
-                {scoreVisible
-                  ? g.eventOnly
-                    ? "Completed · official results"
-                    : "Score unavailable"
-                  : "Result hidden"}
+                <a
+                  href={tournamentScoresUrl(g)}
+                  target="_blank"
+                  rel="noreferrer"
+                  onClick={(e) => e.stopPropagation()}
+                >
+                  Scores & results ↗
+                </a>
               </small>
             )}
+            {g.state === "post" &&
+              !g.eventOnly &&
+              (!scoreVisible || !result) && (
+                <small>
+                  {scoreVisible
+                    ? g.eventOnly
+                      ? "Completed · official results"
+                      : "Score unavailable"
+                    : "Result hidden"}
+                </small>
+              )}
           </span>
           <span className="expand-chevron" aria-hidden="true">
             ⌄

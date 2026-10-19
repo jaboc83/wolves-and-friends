@@ -20,6 +20,7 @@ import { enrichOdds } from "./odds";
 import type { Odds } from "./odds";
 import initial from "./initial.json";
 export type Story = {
+  socialPlatform?: "youtube";
   avatar?: string;
   images?: { src: string; alt: string; width?: number; height?: number }[];
   originalTitle?: string;

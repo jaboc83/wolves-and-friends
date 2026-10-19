@@ -116,7 +116,17 @@ const render = (g, revealPast = true) =>
     }),
   );
 assert.ok(
-  render(eventLifecycle(power, now)).includes("Completed · official results"),
+  render(eventLifecycle(power, now)).includes("Scores &amp; results ↗"),
+);
+assert.ok(
+  !render(eventLifecycle(power, now)).includes(
+    "Completed · see official results",
+  ),
+);
+assert.ok(
+  render(eventLifecycle(power, now)).includes(
+    "https://www.dgpt.com/event-scores/?id=96421",
+  ),
 );
 assert.ok(render(eventLifecycle(power, now), false).includes("Results hidden"));
 assert.ok(
@@ -125,6 +135,18 @@ assert.ok(
   ),
 );
 assert.ok(!render(eventLifecycle(power, now)).includes("Add to calendar"));
+const todayCard = renderToStaticMarkup(
+  createElement(Card, {
+    game: { ...power, team: "wolves", eventOnly: false, state: "pre" },
+    today: true,
+    compact: false,
+    revealed: true,
+    onReveal() {},
+  }),
+);
+assert.ok(todayCard.includes("https://www.espn.com/nba/injuries"));
+assert.ok(todayCard.includes("Injury report"));
+assert.ok(!render(eventLifecycle(power, now)).includes("Injury report"));
 console.log(
   "DGPT/calendar checks passed: range boundaries, retained completed events, current-year results, calendar dates/escaping/folding, and card actions.",
 );

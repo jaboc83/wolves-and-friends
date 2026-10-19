@@ -145,13 +145,19 @@ try {
   assert.equal((await taggedBluesky("palace", "#CPFC")).length, 50);
   assert.equal(calls, 2, "pagination fills the queue then stops");
   const routeLoad = loader({
+    "../../../lib/youtube": {
+      officialYoutubePosts: async () => ({ posts: [], unavailable: [] }),
+    },
     "../../../lib/bluesky": {
       wolvesBluesky: async () => posts,
       taggedBluesky: async () => [],
     },
   });
   const { GET } = routeLoad(path.resolve("app/api/social/route.ts"));
-  const [a, b] = await Promise.all([GET(), GET()]);
+  const [a, b] = await Promise.all([
+    GET(new Request("https://local.invalid/api/social")),
+    GET(new Request("https://local.invalid/api/social")),
+  ]);
   assert.equal((await a.json()).posts.length, 50);
   assert.equal((await b.json()).posts.length, 50);
 } finally {
