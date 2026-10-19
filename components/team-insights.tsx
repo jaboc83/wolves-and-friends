@@ -219,6 +219,40 @@ export default function TeamInsights({
                         <a href={p.url} target="_blank" rel="noreferrer">
                           {p.name} ↗
                         </a>
+                        {(p.age !== undefined || p.joined || p.salary) && (
+                          <div className="roster-player-info">
+                            {p.age !== undefined && <span>Age {p.age}</span>}
+                            {p.joined && (
+                              <a
+                                href={p.joined.url}
+                                title={p.joined.event + " · official source"}
+                                target="_blank"
+                                rel="noreferrer"
+                              >
+                                Joined{" "}
+                                {new Date(
+                                  p.joined.date + "T12:00:00Z",
+                                ).toLocaleDateString("en-US", {
+                                  timeZone: "UTC",
+                                  month: "short",
+                                  day: "numeric",
+                                  year: "numeric",
+                                })}{" "}
+                                ↗
+                              </a>
+                            )}
+                            {p.salary && (
+                              <span>
+                                Salary ({p.salary.season}):{" "}
+                                {new Intl.NumberFormat("en-US", {
+                                  style: "currency",
+                                  currency: p.salary.currency,
+                                  maximumFractionDigits: 0,
+                                }).format(p.salary.amount)}
+                              </span>
+                            )}
+                          </div>
+                        )}
                       </li>
                     ))}
                   </ol>
@@ -228,7 +262,10 @@ export default function TeamInsights({
                 <a href={info.depth.url} target="_blank" rel="noreferrer">
                   {info.depth.source} ↗
                 </a>{" "}
-                · Player links open bios and profiles.
+                · Ages and season salaries from the roster feed. Join dates link
+                to official signing or acquisition sources. Unreported fields
+                are omitted. Salaries are reported season figures, not total
+                contract values or cap hits.
               </p>
             </>
           ) : (

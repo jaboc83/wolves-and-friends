@@ -1,5 +1,6 @@
 import { teams } from "./teams";
 import { fetchPostseason, type Postseason } from "./postseason";
+import { rosterDetails, type RosterDetails } from "./roster-details";
 export type Table = {
   seasonType?: number;
   name: string;
@@ -23,7 +24,11 @@ export type Depth = {
   label: string;
   groups: {
     position: string;
-    players: { name: string; url: string; starter?: boolean }[];
+    players: ({
+      name: string;
+      url: string;
+      starter?: boolean;
+    } & RosterDetails)[];
   }[];
   source: string;
   url: string;
@@ -110,14 +115,21 @@ export function parseRoster(
   league: string,
   checked: string,
   url: string,
+  teamId = "",
 ): Depth | undefined {
-  const groups = new Map<string, { name: string; url: string }[]>();
+  const groups = new Map<
+    string,
+    ({ name: string; url: string } & RosterDetails)[]
+  >();
   function add(a: any, group?: string) {
     if (a.items) {
       for (const p of a.items) add(p, a.position || group);
       return;
     }
-    const p = player(a, league);
+    const p = {
+      ...player(a, league),
+      ...rosterDetails(a, league, x.season, checked, teamId),
+    };
     if (!p.name) return;
     const k = a.position?.displayName || a.position?.name || group || "Roster";
     if (!groups.has(k)) groups.set(k, []);
@@ -334,6 +346,7 @@ export async function fetchTeamInfo() {
                   t.league.split("/")[1] +
                   "/team/roster/_/name/" +
                   t.espn,
+                t.id,
               );
             } catch {}
             if (!info.depth) info.unavailable.push("roster");
