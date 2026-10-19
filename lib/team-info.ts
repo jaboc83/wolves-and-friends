@@ -496,7 +496,7 @@ export function decorateTable(table: Table, id: string): Table {
       {
         after: 7,
         label:
-          "League-based European places end · cup winners can shift cutoffs",
+          "European places may extend through 7th · cup winners can shift the cutoff",
       },
       { after: 17, label: "Relegation zone · places 18–20" },
     );
