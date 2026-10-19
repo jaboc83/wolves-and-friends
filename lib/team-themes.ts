@@ -2,6 +2,7 @@ export const teamThemes: Record<
   string,
   { primary: string; accent: string; soft: string }
 > = {
+  "march-madness": { primary: "#123d73", accent: "#ef9637", soft: "#edf3fc" },
   // Icon uniform inspiration: royal blue, green, and crisp white.
   wolves: { primary: "#21468b", accent: "#009b48", soft: "#edf3fc" },
   wild: { primary: "#154734", accent: "#a6192e", soft: "#edf3ee" },

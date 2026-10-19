@@ -151,6 +151,120 @@ summary:focus-visible {
   overflow-x: auto;
   padding: 4px 2px 14px;
 }
+.march-panel {
+  background: var(--surface, #fffefb);
+  padding: 24px;
+  border: 1px solid var(--line, #d3d9d4);
+  border-top: 4px solid var(--team-accent);
+  border-radius: 8px;
+}
+.march-toolbar {
+  display: flex;
+  justify-content: space-between;
+  gap: 16px;
+  align-items: start;
+  flex-wrap: wrap;
+}
+.march-toolbar h2 {
+  margin: 0;
+}
+.march-champion {
+  background: var(--team-soft);
+  padding: 16px;
+  border-radius: 6px;
+}
+.march-sources,
+.march-regions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  margin: 18px 0;
+}
+.march-sources a {
+  color: var(--ink, #192a3c);
+  font-size: 13px;
+}
+.march-regions button {
+  background: var(--raised, #eef1f6);
+  border: 1px solid var(--line, #d3d9d4);
+  border-radius: 20px;
+  padding: 9px 14px;
+  color: var(--ink, #192a3c);
+}
+.march-regions button[aria-pressed="true"] {
+  background: var(--team-primary);
+  color: white;
+}
+.march-region {
+  margin: 26px 0;
+}
+.march-rounds {
+  display: flex;
+  overflow-x: auto;
+  gap: 18px;
+  padding: 2px 2px 12px;
+  align-items: stretch;
+}
+.march-round {
+  flex: 0 0 245px;
+  display: flex;
+  flex-direction: column;
+  max-width: 78vw;
+}
+.march-round h4 {
+  font-size: 13px;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  margin: 10px 0 16px;
+}
+.march-game {
+  border: 1px solid var(--line, #d3d9d4);
+  border-left: 3px solid var(--team-accent);
+  border-radius: 6px;
+  padding: 12px;
+  margin: auto 0;
+}
+.march-game + .march-game {
+  margin-top: 12px;
+}
+.march-game > div {
+  display: grid;
+  grid-template-columns: 22px minmax(0, 1fr) 28px;
+  align-items: center;
+  gap: 6px;
+  padding: 7px 0;
+}
+.march-game a {
+  color: var(--ink, #192a3c);
+  text-decoration: none;
+}
+.march-game a:hover {
+  text-decoration: underline;
+}
+.march-game small,
+.march-date {
+  font-size: 11px;
+  color: var(--muted, #64707a);
+  margin: 0 0 5px;
+}
+.march-game .march-result-link {
+  display: block;
+  font-size: 11px;
+  border-top: 1px solid var(--line, #d3d9d4);
+  padding-top: 10px;
+  margin-top: 8px;
+}
+.march-winner {
+  font-weight: 800;
+}
+.march-game b {
+  text-align: right;
+}
+@media (max-width: 680px) {
+  .march-panel {
+    padding: 16px 12px;
+  }
+}
 .bracket-round {
   flex: 0 0 250px;
   max-width: 85vw;
@@ -2408,7 +2522,7 @@ footer b {
 @media (min-width: 681px) {
   .hub[data-team] .team-nav {
     display: grid;
-    grid-template-columns: repeat(12, minmax(0, 1fr));
+    grid-template-columns: repeat(13, minmax(0, 1fr));
     gap: 0;
     padding: 24px 0 0;
     border: 0;
