@@ -62,56 +62,11 @@ const after = rosterDetails(
 );
 assert.equal(before.age, 24);
 assert.equal(after.age, 25);
-assert.equal(after.salary.amount, 48000000);
-assert.equal(after.salary.season, "2026-27");
-assert.equal(after.joined.date, "2020-11-29");
+assert.equal(after.salary, undefined);
+assert.equal(after.joined, undefined);
 assert.equal(
-  rosterDetails(athlete, "basketball/nba", season, "2026-10-19", "lynx").joined,
-  undefined,
-);
-assert.equal(
-  rosterDetails(
-    { ...athlete, contract: undefined },
-    "basketball/nba",
-    season,
-    "2026-10-19",
-    "wolves",
-  ).salary,
-  undefined,
-);
-assert.equal(
-  rosterDetails(
-    { ...athlete, contract: { salary: 0, season: { year: 2027 } } },
-    "basketball/nba",
-    season,
-    "2026-10-19",
-    "wolves",
-  ).salary,
-  undefined,
-);
-assert.equal(
-  rosterDetails(athlete, "soccer/eng.1", season, "2026-10-19", "palace").salary,
-  undefined,
-);
-assert.equal(
-  rosterDetails(
-    { age: 31, debutYear: 2015 },
-    "football/nfl",
-    {},
-    "2026-10-19",
-    "vikings",
-  ).age,
+  rosterDetails({ age: 31 }, "football/nfl", {}, "2026-10-19", "vikings").age,
   31,
-);
-assert.equal(
-  rosterDetails(
-    { id: "unknown", age: -1, debutYear: 2015, contract: { salary: 12000 } },
-    "football/nfl",
-    season,
-    "2026-10-19",
-    "vikings",
-  ).joined,
-  undefined,
 );
 const flat = parseRoster(
   { season, athletes: [athlete] },
@@ -138,10 +93,143 @@ const html = renderToStaticMarkup(
   }),
 );
 assert.ok(html.includes("Age 25"));
-assert.ok(html.includes("Joined Nov 29, 2020"));
-assert.ok(html.includes("Salary (2026-27): $48,000,000"));
-assert.ok(html.includes(after.joined.url));
-assert.ok(html.includes('rel="noreferrer"'));
+assert.ok(!html.includes("Joined"));
+assert.ok(!html.includes("Salary"));
+const { parsePlayerStats } = load(path.resolve("lib/player-stats.ts"));
+const summary = (title, values) => ({
+  athlete: {
+    statsSummary: {
+      displayName: title,
+      statistics: values.map(([abbreviation, displayValue]) => ({
+        abbreviation,
+        displayValue,
+      })),
+    },
+  },
+});
+const nba = parsePlayerStats(
+  summary("2025-26 regular season stats", [
+    ["PTS", "20.1"],
+    ["REB", "4.8"],
+    ["AST", "7.1"],
+    ["FG%", "40.7"],
+  ]),
+);
+assert.equal(nba.values[0].value, "20.1");
+assert.equal(nba.title, "2025-26 regular season stats");
+assert.equal(
+  parsePlayerStats(summary("2026 career stats", [["PTS", "1"]])),
+  undefined,
+);
+assert.equal(parsePlayerStats({}), undefined);
+assert.equal(
+  parsePlayerStats(summary("2026-27 English Premier League", [["CS", "0"]]))
+    .values[0].value,
+  "0",
+);
+const statsHtml = renderToStaticMarkup(
+  createElement(Insights, {
+    active: "wolves",
+    data: [{ id: "wolves", tables: [], depth: flat, unavailable: [] }],
+    playerStats: { "basketball/nba:4594268": nba },
+  }),
+);
+assert.ok(statsHtml.includes("2025-26 regular season stats"));
+assert.ok(statsHtml.includes("20.1"));
+const { loadScorePreference, saveScorePreference } = load(
+  path.resolve("lib/score-preference.ts"),
+);
+const memory = new Map();
+const storage = {
+  getItem: (key) => memory.get(key) ?? null,
+  setItem: (key, value) => memory.set(key, value),
+};
+assert.deepEqual(loadScorePreference(storage), { ask: true, hidden: true });
+assert.equal(memory.size, 0);
+saveScorePreference(storage, false, true);
+assert.deepEqual(loadScorePreference(storage), { ask: true, hidden: true });
+saveScorePreference(storage, false, false);
+assert.deepEqual(loadScorePreference(storage), { ask: false, hidden: false });
+saveScorePreference(storage, true, false);
+assert.deepEqual(loadScorePreference(storage), { ask: false, hidden: true });
+assert.deepEqual(
+  loadScorePreference({
+    getItem() {
+      throw Error("Unavailable");
+    },
+  }),
+  { ask: true, hidden: true },
+);
+const Dialog = load(
+  path.resolve("components/score-preference-dialog.tsx"),
+).default;
+const dialogHtml = renderToStaticMarkup(
+  createElement(Dialog, { open: false, onChoose: () => {} }),
+);
+assert.ok(dialogHtml.includes("Ask me this every time I visit"));
+assert.ok(dialogHtml.includes('checked=""'));
+assert.ok(dialogHtml.includes("aria-labelledby"));
+const dialogCss = fs.readFileSync("app/globals.css", "utf8");
+const dialogRule = dialogCss.slice(
+  dialogCss.indexOf(".score-choice {"),
+  dialogCss.indexOf(".score-choice::backdrop"),
+);
+assert.match(dialogRule, /position:\s*fixed/);
+assert.match(dialogRule, /top:\s*50%/);
+assert.match(dialogRule, /left:\s*50%/);
+assert.match(dialogRule, /translate\(-50%,\s*-50%\)/);
+
+const originalFetch = globalThis.fetch;
+const calls = [];
+globalThis.fetch = async (url, options) => {
+  calls.push({ url, options });
+  if (url.includes("/roster"))
+    return {
+      ok: true,
+      json: async () => ({
+        athletes: Array.from({ length: 8 }, (_, i) => ({ id: String(i + 1) })),
+      }),
+    };
+  if (url.endsWith("/athletes/2")) throw Error("Unavailable player");
+  return {
+    ok: true,
+    json: async () => summary("2026 regular season stats", [["PTS", "0"]]),
+  };
+};
+try {
+  const { GET } = load(path.resolve("app/api/roster-stats/route.ts"));
+  assert.equal(
+    (await GET(new Request("https://local/api/roster-stats?batch=-1"))).status,
+    400,
+  );
+  assert.equal(calls.length, 0);
+  const response = await GET(
+    new Request("https://local/api/roster-stats?batch=0", {
+      headers: { cookie: "private", "user-agent": "private" },
+    }),
+  );
+  const payload = await response.json();
+  assert.equal(payload.players.length, 6);
+  assert.equal(payload.players[0].stats.values[0].value, "0");
+  assert.equal(payload.players[1].stats, undefined);
+  const afterFirst = calls.length;
+  await GET(new Request("https://local/api/roster-stats?batch=0"));
+  assert.equal(
+    calls.length,
+    afterFirst,
+    "shared cache prevents duplicate upstream fetches",
+  );
+  assert.ok(
+    calls.every(
+      (c) =>
+        c.options.credentials === "omit" &&
+        c.options.referrerPolicy === "no-referrer" &&
+        !c.options.headers,
+    ),
+  );
+} finally {
+  globalThis.fetch = originalFetch;
+}
 const page = fs.readFileSync("app/page.tsx", "utf8"),
   start = page.indexOf('className="social-refresh"'),
   button = page.slice(start, page.indexOf("</button>", start));
@@ -150,5 +238,5 @@ assert.ok(button.includes("aria-busy={socialRefreshing}"));
 assert.ok(button.includes("title="));
 assert.ok(!button.includes('"Refreshing…" : "Refresh"'));
 console.log(
-  "Roster details and icon refresh passed: birthday boundary, season-matched salary, source-linked joins, missing fields, nested feeds and accessible icon.",
+  "Roster season stats, age, browser-only score preferences, safe defaults, modal semantics and icon refresh passed.",
 );
