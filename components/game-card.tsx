@@ -1,4 +1,6 @@
 "use client";
+import AddToCalendar from "./add-to-calendar";
+import { eventDateLabel } from "../lib/event-time";
 import GameBadges from "./game-badges";
 import { gameBadges } from "../lib/game-badges";
 import { useState } from "react";
@@ -116,14 +118,33 @@ export default function GameCard({
                 {g.state === "post"
                   ? "FINAL"
                   : g.state === "in"
-                    ? "LIVE"
+                    ? g.eventOnly
+                      ? "IN PROGRESS"
+                      : "LIVE"
                     : ct(g.date, { month: "short", day: "numeric" })}
               </span>
               <GameBadges game={g} />
             </div>
           </div>
           {g.eventOnly ? (
-            <h3 className="event-name">{g.name}</h3>
+            <div className="event-details">
+              <h3 className="event-name">{g.name}</h3>
+              <p>{eventDateLabel(g)}</p>
+              {g.state === "post" &&
+                (scoreVisible ? (
+                  g.eventResults?.length ? (
+                    g.eventResults.map((r) => (
+                      <p key={r.division}>
+                        <b>{r.division}:</b> {r.name} · {r.score}
+                      </p>
+                    ))
+                  ) : (
+                    <p>Completed · see official results</p>
+                  )
+                ) : (
+                  <p>Results hidden</p>
+                ))}
+            </div>
           ) : (
             g.competitors.map((p) => (
               <div
@@ -166,7 +187,9 @@ export default function GameCard({
       )}
       <div className="game-footer">
         {g.dateOnly
-          ? "Time not listed"
+          ? g.state === "pre"
+            ? "All-day event · tee times not listed"
+            : g.status
           : g.state === "pre"
             ? ct(g.date, { hour: "numeric", minute: "2-digit" }) + " CT"
             : hidden
@@ -184,7 +207,7 @@ export default function GameCard({
           </a>
         )}
       </div>
-      {g.state === "post" && (
+      {g.state === "post" && !g.eventOnly && (
         <a
           className="game-highlights"
           href={
@@ -249,97 +272,114 @@ export default function GameCard({
       {g.sourceName && <p className="source-game">{g.sourceName}</p>}
     </article>
   );
-  if (!compact) return full;
+  if (!compact)
+    return (
+      <>
+        {full}
+        {g.state === "pre" && <AddToCalendar game={g} />}
+      </>
+    );
   return (
-    <details
-      className={
-        "compact-game" +
-        (g.state === "post" ? " past-game" : "") +
-        (g.state === "post" && scoreVisible && result ? " result-shown" : "")
-      }
-      onToggle={(e) => {
-        if (e.target === e.currentTarget) setExpanded(e.currentTarget.open);
-      }}
-    >
-      <summary>
-        {g.state === "post" && scoreVisible && result && (
-          <span
-            className={"result-cap cap-" + result}
-            aria-label={
-              result === "W" ? "Win" : result === "L" ? "Loss" : terms.tieLabel
-            }
-          >
-            <span>{result}</span>
-          </span>
-        )}
-        <img src={logo} alt="" width={30} height={30} />
-        <span className="compact-match">
-          <span className="compact-name">
-            <strong>
-              {t.id === "disc" ? (
-                t.short
-              ) : (
+    <div className="calendar-game">
+      <details
+        className={
+          "compact-game" +
+          (g.state === "post" ? " past-game" : "") +
+          (g.state === "post" && scoreVisible && result ? " result-shown" : "")
+        }
+        onToggle={(e) => {
+          if (e.target === e.currentTarget) setExpanded(e.currentTarget.open);
+        }}
+      >
+        <summary>
+          {g.state === "post" && scoreVisible && result && (
+            <span
+              className={"result-cap cap-" + result}
+              aria-label={
+                result === "W"
+                  ? "Win"
+                  : result === "L"
+                    ? "Loss"
+                    : terms.tieLabel
+              }
+            >
+              <span>{result}</span>
+            </span>
+          )}
+          <img src={logo} alt="" width={30} height={30} />
+          <span className="compact-match">
+            <span className="compact-name">
+              <strong>
+                {t.id === "disc" ? (
+                  t.short
+                ) : (
+                  <a
+                    href={teamWikipediaUrl(t.id, undefined, true)}
+                    target="_blank"
+                    rel="noreferrer"
+                    onClick={(e) => e.stopPropagation()}
+                  >
+                    {t.short}
+                  </a>
+                )}
+              </strong>
+              <Location team={g.team} name={t.name} league={g.league} own />
+              <GameBadges game={g} />
+            </span>
+            {g.eventOnly ? (
+              <span>{g.name}</span>
+            ) : (
+              <span>
+                vs.{" "}
                 <a
-                  href={teamWikipediaUrl(t.id, undefined, true)}
+                  href={teamWikipediaUrl(t.id, opponent)}
                   target="_blank"
                   rel="noreferrer"
                   onClick={(e) => e.stopPropagation()}
                 >
-                  {t.short}
+                  {opponent}
                 </a>
-              )}
-            </strong>
-            <Location team={g.team} name={t.name} league={g.league} own />
-            <GameBadges game={g} />
+                <Location team={g.team} name={opponent} league={g.league} />
+              </span>
+            )}
           </span>
-          {g.eventOnly ? (
-            <span>{g.name}</span>
-          ) : (
-            <span>
-              vs.{" "}
-              <a
-                href={teamWikipediaUrl(t.id, opponent)}
-                target="_blank"
-                rel="noreferrer"
-                onClick={(e) => e.stopPropagation()}
-              >
-                {opponent}
-              </a>
-              <Location team={g.team} name={opponent} league={g.league} />
+          {g.state === "post" && scoreVisible && result && (
+            <span
+              className="result-score"
+              aria-label={`${t.name} ${club?.score}, ${opponent} ${g.competitors.find((p) => p !== club)?.score}`}
+            >
+              <strong>{club?.score}</strong>
+              <span className="score-separator">–</span>
+              <span>{g.competitors.find((p) => p !== club)?.score}</span>
             </span>
           )}
-        </span>
-        {g.state === "post" && scoreVisible && result && (
-          <span
-            className="result-score"
-            aria-label={`${t.name} ${club?.score}, ${opponent} ${g.competitors.find((p) => p !== club)?.score}`}
-          >
-            <strong>{club?.score}</strong>
-            <span className="score-separator">–</span>
-            <span>{g.competitors.find((p) => p !== club)?.score}</span>
-          </span>
-        )}
-        <span className="compact-date">
-          {ct(g.date, { month: "short", day: "numeric" })}
-          {!g.dateOnly &&
-            (g.state === "post" ? (
-              <> · {ct(g.date, { hour: "numeric", minute: "2-digit" })} CT</>
-            ) : (
+          <span className="compact-date">
+            {eventDateLabel(g)}
+            {!g.dateOnly &&
+              (g.state === "post" ? (
+                <> · {ct(g.date, { hour: "numeric", minute: "2-digit" })} CT</>
+              ) : (
+                <small>
+                  {ct(g.date, { hour: "numeric", minute: "2-digit" })} CT
+                </small>
+              ))}
+            {g.state === "post" && (!scoreVisible || !result) && (
               <small>
-                {ct(g.date, { hour: "numeric", minute: "2-digit" })} CT
+                {scoreVisible
+                  ? g.eventOnly
+                    ? "Completed · official results"
+                    : "Score unavailable"
+                  : "Result hidden"}
               </small>
-            ))}
-          {g.state === "post" && (!scoreVisible || !result) && (
-            <small>
-              {scoreVisible ? "Score unavailable" : "Result hidden"}
-            </small>
-          )}
-        </span>
-        <span className="expand-chevron" aria-hidden="true">
-          ⌄
-        </span>
-      </summary>
-      {full}
-    </details>
+            )}
+          </span>
+          <span className="expand-chevron" aria-hidden="true">
+            ⌄
+          </span>
+        </summary>
+        {full}
+      </details>
+      {g.state === "pre" && <AddToCalendar game={g} />}
+    </div>
   );
 }
