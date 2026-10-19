@@ -2,6 +2,7 @@
 import { useEffect, useRef, useState, type CSSProperties } from "react";
 import GameCard from "../components/game-card";
 import MatchCalendar from "../components/match-calendar";
+import SectionLinks from "../components/section-links";
 import { sportTerms } from "../lib/sport-terms";
 import TeamInsights from "../components/team-insights";
 import { recentStories } from "../lib/news-window";
@@ -748,6 +749,7 @@ export default function Home() {
               Latest headlines. Live scores. Social posts. All in one place.
             </p>
           </div>
+          <SectionLinks active={active} />
         </div>
         {scheduleError && (
           <p className="alert">

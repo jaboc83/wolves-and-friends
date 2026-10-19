@@ -49,7 +49,7 @@ export default function TeamInsights({
           </select>
         </label>
       )}
-      <details className="data-panel">
+      <details id="team-standings" className="data-panel">
         <summary>
           {headings.standings}
           <small>{t?.short}</small>
@@ -142,7 +142,7 @@ export default function TeamInsights({
         )}
       </details>
       {id !== "disc" && (
-        <details className="data-panel">
+        <details id="team-roster" className="data-panel">
           <summary>
             {headings.roster}
             <small>{t?.short}</small>

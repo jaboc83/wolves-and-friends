@@ -135,6 +135,44 @@ summary:focus-visible {
   color: var(--muted, #6d795d);
   margin: 0 0 10px;
 }
+.section-links {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  gap: 8px 16px;
+  align-self: flex-start;
+  padding-top: 4px;
+  font-size: 13px;
+  font-weight: 600;
+}
+.section-links a {
+  color: var(--ink, #192a3c);
+  text-underline-offset: 4px;
+  padding: 8px 0;
+}
+.section-links a:focus-visible {
+  outline: 2px solid currentColor;
+  outline-offset: 4px;
+  border-radius: 2px;
+}
+#event-calendar,
+#team-roster,
+#team-standings {
+  scroll-margin-top: 20px;
+}
+@media (max-width: 700px) {
+  .intro:has(.section-links) {
+    display: flex;
+    flex-direction: column;
+    align-items: stretch;
+    gap: 12px;
+  }
+  .section-links {
+    order: -1;
+    align-self: flex-end;
+    padding-top: 0;
+  }
+}
 h1 {
   font-family: Georgia, serif;
   font-size: 38px;
@@ -2369,7 +2407,7 @@ footer b {
     height: 40px;
     object-fit: contain;
     filter: grayscale(1);
-    opacity: .58;
+    opacity: 0.58;
   }
   .hub[data-team] .team-nav button:hover {
     background: var(--raised, #eef1f6);
@@ -2389,12 +2427,18 @@ footer b {
     opacity: 1;
   }
   .hub[data-team] .team-nav button[data-tab-team="twins"] .team-tab-logo {
-    opacity: .9;
-    filter: grayscale(1) drop-shadow(1px 0 0 #e9f1ff) drop-shadow(-1px 0 0 #e9f1ff) drop-shadow(0 1px 0 #e9f1ff) drop-shadow(0 -1px 0 #e9f1ff);
+    opacity: 0.9;
+    filter: grayscale(1) drop-shadow(1px 0 0 #e9f1ff)
+      drop-shadow(-1px 0 0 #e9f1ff) drop-shadow(0 1px 0 #e9f1ff)
+      drop-shadow(0 -1px 0 #e9f1ff);
   }
-  .hub[data-team] .team-nav button[data-tab-team="twins"]:is(:hover, .selected) .team-tab-logo {
+  .hub[data-team]
+    .team-nav
+    button[data-tab-team="twins"]:is(:hover, .selected)
+    .team-tab-logo {
     opacity: 1;
-    filter: drop-shadow(1px 0 0 #e9f1ff) drop-shadow(-1px 0 0 #e9f1ff) drop-shadow(0 1px 0 #e9f1ff) drop-shadow(0 -1px 0 #e9f1ff);
+    filter: drop-shadow(1px 0 0 #e9f1ff) drop-shadow(-1px 0 0 #e9f1ff)
+      drop-shadow(0 1px 0 #e9f1ff) drop-shadow(0 -1px 0 #e9f1ff);
   }
   .hub[data-team] .team-nav button .team-today {
     top: -12px;
@@ -2416,22 +2460,104 @@ footer b {
   }
 }
 
-.headline-loading { display: flex; align-items: center; justify-content: center; gap: 12px; min-height: 160px; }
-.headline-spinner { width: 24px; height: 24px; border: 3px solid var(--line, #d3d9d4); border-top-color: var(--ink-team, #21468b); border-radius: 50%; animation: headline-spin .8s linear infinite; }
-@keyframes headline-spin { to { transform: rotate(360deg); } }
-@media (prefers-reduced-motion: reduce) { .headline-spinner { animation: none; } }
+.headline-loading {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  min-height: 160px;
+}
+.headline-spinner {
+  width: 24px;
+  height: 24px;
+  border: 3px solid var(--line, #d3d9d4);
+  border-top-color: var(--ink-team, #21468b);
+  border-radius: 50%;
+  animation: headline-spin 0.8s linear infinite;
+}
+@keyframes headline-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .headline-spinner {
+    animation: none;
+  }
+}
 
-.calendar-game { margin-bottom: 12px; }
-.calendar-game .compact-game { margin-bottom: 0; }
-.add-calendar { font-size: .8rem; padding: 8px 12px; color: var(--ink, #192a3c); }
-.add-calendar > summary { cursor: pointer; width: fit-content; padding: 6px 0; font-weight: 600; }
-.add-calendar > div { display: flex; flex-wrap: wrap; gap: 10px 18px; padding: 8px 0; align-items: center; }
-.add-calendar button { background: var(--surface, #fff); color: inherit; border: 1px solid var(--line, #d3d9d4); border-radius: 6px; padding: 9px 12px; cursor: pointer; }
-.event-details p { font-size: .85rem; margin: 8px 0; }
-.social-heading { display: flex; align-items: center; justify-content: space-between; gap: 12px; flex-wrap: wrap; }
-.social-heading h2 { margin-bottom: 0; }
-.social-refresh { display: inline-flex; align-items: center; gap: 6px; border: 1px solid var(--line, #d3d9d4); background: var(--raised, #eef1f6); color: var(--ink, #192a3c); border-radius: 6px; padding: 8px 10px; font-size: .8rem; cursor: pointer; }
-.social-refresh:disabled { opacity: .7; cursor: wait; }
-.refresh-spinning { display: inline-block; animation: headline-spin .8s linear infinite; }
-.injury-report { font-size: .85rem; margin-top: 12px; }
-@media (prefers-reduced-motion: reduce) { .refresh-spinning { animation: none; } }
+.calendar-game {
+  margin-bottom: 12px;
+}
+.calendar-game .compact-game {
+  margin-bottom: 0;
+}
+.add-calendar {
+  font-size: 0.8rem;
+  padding: 8px 12px;
+  color: var(--ink, #192a3c);
+}
+.add-calendar > summary {
+  cursor: pointer;
+  width: fit-content;
+  padding: 6px 0;
+  font-weight: 600;
+}
+.add-calendar > div {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px 18px;
+  padding: 8px 0;
+  align-items: center;
+}
+.add-calendar button {
+  background: var(--surface, #fff);
+  color: inherit;
+  border: 1px solid var(--line, #d3d9d4);
+  border-radius: 6px;
+  padding: 9px 12px;
+  cursor: pointer;
+}
+.event-details p {
+  font-size: 0.85rem;
+  margin: 8px 0;
+}
+.social-heading {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+.social-heading h2 {
+  margin-bottom: 0;
+}
+.social-refresh {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  border: 1px solid var(--line, #d3d9d4);
+  background: var(--raised, #eef1f6);
+  color: var(--ink, #192a3c);
+  border-radius: 6px;
+  padding: 8px 10px;
+  font-size: 0.8rem;
+  cursor: pointer;
+}
+.social-refresh:disabled {
+  opacity: 0.7;
+  cursor: wait;
+}
+.refresh-spinning {
+  display: inline-block;
+  animation: headline-spin 0.8s linear infinite;
+}
+.injury-report {
+  font-size: 0.85rem;
+  margin-top: 12px;
+}
+@media (prefers-reduced-motion: reduce) {
+  .refresh-spinning {
+    animation: none;
+  }
+}
