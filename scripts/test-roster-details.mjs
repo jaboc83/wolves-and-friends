@@ -117,6 +117,17 @@ const nba = parsePlayerStats(
 );
 assert.equal(nba.values[0].value, "20.1");
 assert.equal(nba.title, "2025-26 regular season stats");
+const currentSeason = parsePlayerStats({
+  season: { displayName: "2026-27" },
+  categories: [
+    { name: "general", labels: ["GP", "PTS", "REB"], totals: ["0", "0", "0"] },
+  ],
+});
+assert.equal(currentSeason.title, "2026-27");
+assert.deepEqual(
+  currentSeason.values.map((stat) => stat.label),
+  ["GP", "PTS", "REB"],
+);
 assert.equal(
   parsePlayerStats(summary("2026 career stats", [["PTS", "1"]])),
   undefined,
@@ -190,7 +201,7 @@ globalThis.fetch = async (url, options) => {
         athletes: Array.from({ length: 8 }, (_, i) => ({ id: String(i + 1) })),
       }),
     };
-  if (url.endsWith("/athletes/2")) throw Error("Unavailable player");
+  if (url.endsWith("/athletes/2/stats")) throw Error("Unavailable player");
   return {
     ok: true,
     json: async () => summary("2026 regular season stats", [["PTS", "0"]]),
@@ -212,6 +223,7 @@ try {
   assert.equal(payload.players.length, 6);
   assert.equal(payload.players[0].stats.values[0].value, "0");
   assert.equal(payload.players[1].stats, undefined);
+  assert.ok(calls.some((c) => String(c.url).endsWith("/athletes/1/stats")));
   const afterFirst = calls.length;
   await GET(new Request("https://local/api/roster-stats?batch=0"));
   assert.equal(

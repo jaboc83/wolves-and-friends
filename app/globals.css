@@ -2684,6 +2684,32 @@ footer b {
   gap: 5px;
   flex-shrink: 0;
 }
+.back-to-top {
+  position: fixed;
+  z-index: 120;
+  right: max(16px, env(safe-area-inset-right));
+  bottom: calc(18px + env(safe-area-inset-bottom));
+  width: 48px;
+  height: 48px;
+  display: grid;
+  place-items: center;
+  border: 2px solid var(--team-accent, #8aa747);
+  border-radius: 50%;
+  background: var(--surface, #fffefb);
+  color: var(--ink, #192a3c);
+  box-shadow: 0 3px 12px #0003;
+  font-size: 26px;
+  font-weight: 700;
+  line-height: 1;
+}
+.back-to-top:hover {
+  background: var(--raised, #f5f4ef);
+}
+@media (prefers-reduced-motion: reduce) {
+  html {
+    scroll-behavior: auto;
+  }
+}
 .event-details p {
   font-size: 0.85rem;
   margin: 8px 0;
