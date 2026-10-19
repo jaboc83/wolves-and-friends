@@ -43,7 +43,7 @@ const euroNames: Record<string, string> = {
 };
 
 export function parseEuroLeagueStandings(html: string, checked: string): Table | undefined {
-  const eurohoops = [...html.matchAll(/<tr\b[^>]*>[\s\S]*?bapro-standings__name[\s\S]*?<\/tr>/gi)].map((m) => m[0]);
+  const eurohoops = rows(html).filter((row) => /bapro-standings__name/.test(row));
   const euroRows = eurohoops.flatMap((row) => {
     const name = plain(row.match(/<span\b[^>]*class=["']bapro-standings__name["'][^>]*>([\s\S]*?)<\/span>/i)?.[1] || "");
     const rank = plain(row.match(/<span\b[^>]*class=["']bapro-standings__pos["'][^>]*>([\s\S]*?)<\/span>/i)?.[1] || "");
