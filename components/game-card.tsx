@@ -122,7 +122,11 @@ export default function GameCard({
                     ? g.eventOnly
                       ? "IN PROGRESS"
                       : "LIVE"
-                    : ct(g.date, { month: "short", day: "numeric" })}
+                    : ct(g.date, {
+                        weekday: "short",
+                        month: "short",
+                        day: "numeric",
+                      })}
               </span>
               <GameBadges game={g} />
             </div>

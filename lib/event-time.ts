@@ -36,6 +36,7 @@ export function eventDateLabel(g: Game) {
   const fmt = (date: string) =>
     new Date(date).toLocaleDateString("en-US", {
       timeZone: "America/Chicago",
+      weekday: "short",
       month: "short",
       day: "numeric",
     });

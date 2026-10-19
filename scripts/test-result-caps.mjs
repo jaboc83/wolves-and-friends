@@ -119,6 +119,7 @@ assert.doesNotMatch(
 );
 assert.match(today(game("", "", "pre")), /class="game-top"/);
 assert.match(render(game("122", "104"), true), /class="game-top"/);
+assert.match(render(game("122", "104", "pre"), false), /Tue, Oct 13/);
 const soccerDraw = {
   ...game("1", "1"),
   team: "palace",
