@@ -229,7 +229,7 @@ export default function TeamInsights({
               )}
               {playerStatsStatus === "empty" && (
                 <p className="panel-note" aria-live="polite">
-                  ESPN has not published season stats for these players yet.
+                  Season stats could not be loaded for these players right now.
                 </p>
               )}
               {playerStatsStatus === "unavailable" && (

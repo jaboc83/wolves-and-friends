@@ -33,6 +33,14 @@ assert.equal(standings?.rows.length, 2);
 assert.deepEqual(standings?.rows[0].cells, ["1", "4", "2", "+20"]);
 assert.equal(standings?.rows[0].highlight, true);
 assert.equal(standings?.rows[0].url, "https://euroleague-standings.com/club/zal");
+const eurohoopsRows = Array.from({ length: 10 }, (_, i) =>
+  `<tr><td><span class="bapro-standings__pos">${i + 1}</span><span class="bapro-standings__name">${i === 5 ? "Zalgiris Kaunas" : `Club ${i}`}</span></td><td>6</td><td>2</td><td>4</td><td>33.3%</td><td>490</td><td>517</td><td>-27</td></tr>`,
+).join("");
+const eurohoops = parseEuroLeagueStandings(`<table>${eurohoopsRows}</table>`, checked);
+assert.equal(eurohoops?.rows.length, 10);
+assert.deepEqual(eurohoops?.rows[5].cells, ["6", "2", "4", "-27"]);
+assert.equal(eurohoops?.rows[5].highlight, true);
+assert.equal(eurohoops?.source, "Eurohoops standings");
 
 const zalgiris = parseZalgirisRoster(
   `<table><tbody><tr><td><a href="/player/example">Example Player</a></td><td>PG</td><td>1999-03-14</td></tr></tbody></table>`,

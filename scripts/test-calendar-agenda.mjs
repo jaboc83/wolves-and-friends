@@ -66,7 +66,7 @@ const html = renderToStaticMarkup(
 assert.ok(html.includes('class="calendar-agenda-game"'));
 assert.ok(html.includes('class="calendar-agenda-link"'));
 assert.ok(html.includes("https://calendar.google.com/calendar/render?"));
-assert.ok(html.includes("Add to calendar"));
+assert.ok(html.includes("to Google Calendar"));
 assert.ok(
   html.match(
     /<a[^>]*class="calendar-agenda-link"[^>]*>[\s\S]*?<\/a><a[^>]*add-calendar/,

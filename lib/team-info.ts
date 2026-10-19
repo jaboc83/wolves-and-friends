@@ -310,7 +310,7 @@ export async function fetchTeamInfo() {
   };
   const getText = async (url: string) => {
     const r = await fetch(url, {
-      signal: AbortSignal.timeout(10000),
+      signal: AbortSignal.timeout(url.includes("eurohoops.net") ? 30000 : 10000),
       headers: { Accept: "text/html" },
     });
     if (!r.ok) throw Error(String(r.status));
@@ -438,7 +438,7 @@ export async function fetchTeamInfo() {
           (async () => {
             try {
               const table = parseEuroLeagueStandings(
-                await getText("https://euroleague-standings.com/"),
+                await getText("https://www.eurohoops.net/euroleague-standings/"),
                 checked,
               );
               if (!table) throw Error("No standings table parsed");

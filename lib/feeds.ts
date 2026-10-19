@@ -115,7 +115,7 @@ const tag = (s: string, k: string) =>
 const safe = (u: string) => (/^https?:\/\//i.test(u) ? u : "");
 async function get(url: string) {
   const r = await fetch(url, {
-    signal: AbortSignal.timeout(12000),
+    signal: AbortSignal.timeout(url.includes("eurohoops.net") ? 30000 : 12000),
     headers: {
       Accept:
         "application/json, application/rss+xml, application/atom+xml, text/xml, text/html",
@@ -310,6 +310,7 @@ export async function collect(
   if (section !== "schedules") {
     const feeds: [string, string, string[] | undefined][] = [
       ["PDGA News", "https://www.pdga.com/rss.xml", ["disc"]],
+      ["Eurohoops Žalgiris", "https://www.eurohoops.net/basket/zalgiris-kaunas/feed/?lang=en", ["zalgiris"]],
       ["Canis Hoopus", "https://www.canishoopus.com/rss/index.xml", undefined],
       [
         "Daily Norseman",

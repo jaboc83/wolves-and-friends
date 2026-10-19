@@ -149,7 +149,7 @@ summary:focus-visible {
   display: flex;
   gap: 18px;
   overflow-x: auto;
-  padding: 4px 2px 14px;
+  padding: 4px 18px 14px 2px;
 }
 .march-panel {
   background: var(--surface, #fffefb);
@@ -202,7 +202,7 @@ summary:focus-visible {
   display: flex;
   overflow-x: auto;
   gap: 18px;
-  padding: 2px 2px 12px;
+  padding: 2px 18px 12px 2px;
   align-items: stretch;
 }
 .march-round {
@@ -218,11 +218,35 @@ summary:focus-visible {
   margin: 10px 0 16px;
 }
 .march-game {
+  position: relative;
   border: 1px solid var(--line, #d3d9d4);
   border-left: 3px solid var(--team-accent);
   border-radius: 6px;
   padding: 12px;
   margin: auto 0;
+}
+.march-round:not(:last-child) .march-game::after,
+.bracket-round:not(:last-child) .bracket-match::after {
+  content: "";
+  position: absolute;
+  top: 50%;
+  left: 100%;
+  width: 18px;
+  border-top: 2px solid var(--team-accent, #8aa747);
+  pointer-events: none;
+}
+.march-round:not(:last-child) .march-game::before,
+.bracket-round:not(:last-child) .bracket-match::before {
+  content: "";
+  position: absolute;
+  top: calc(50% - 4px);
+  right: -18px;
+  width: 7px;
+  height: 7px;
+  border-top: 2px solid var(--team-accent, #8aa747);
+  border-right: 2px solid var(--team-accent, #8aa747);
+  transform: rotate(45deg);
+  pointer-events: none;
 }
 .march-game + .march-game {
   margin-top: 12px;
@@ -273,6 +297,7 @@ summary:focus-visible {
   margin: 8px 0 14px;
 }
 .bracket-match {
+  position: relative;
   display: block;
   border: 1px solid var(--line, #d3d9d4);
   border-left: 3px solid var(--accent, #718355);
@@ -2720,9 +2745,9 @@ footer b {
   outline-offset: 3px;
 }
 .add-calendar-compact {
-  font-size: 0.65rem;
   padding: 5px 6px;
 }
+.add-calendar svg { display: block; flex: 0 0 18px; }
 .compact-upcoming-actions {
   display: flex;
   flex-direction: column;

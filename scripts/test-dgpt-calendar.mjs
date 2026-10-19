@@ -99,7 +99,7 @@ const timed = {
 };
 const file = calendarFile(timed, now);
 assert.ok(file.includes("DTSTART:20261102T010000Z"));
-assert.ok(!file.includes("DTEND"), "unknown duration is not invented");
+assert.ok(file.includes("DTEND:20261102T033000Z"), "timed events default to 2.5 hours");
 assert.ok(file.includes("SUMMARY:Žalgiris\\, Wolves\\; test\\nInjected"));
 const long = calendarFile({ ...timed, name: "Ž".repeat(120) }, now);
 for (const line of long.split("\r\n"))
@@ -132,7 +132,8 @@ assert.ok(render(eventLifecycle(power, now), false).includes("Results hidden"));
 const upcomingCard = render(
   eventLifecycle(power, new Date("2026-10-10T12:00:00Z")),
 );
-assert.ok(upcomingCard.includes("Add to calendar"));
+assert.ok(upcomingCard.includes("Add "));
+assert.ok(upcomingCard.includes("to Google Calendar"));
 assert.ok(upcomingCard.includes("calendar.google.com/calendar/render"));
 assert.ok(!upcomingCard.includes("Apple / Outlook"));
 assert.ok(!upcomingCard.includes('<details class="add-calendar"'));
