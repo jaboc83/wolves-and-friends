@@ -129,11 +129,13 @@ assert.ok(
   ),
 );
 assert.ok(render(eventLifecycle(power, now), false).includes("Results hidden"));
-assert.ok(
-  render(eventLifecycle(power, new Date("2026-10-10T12:00:00Z"))).includes(
-    "Add to calendar",
-  ),
+const upcomingCard = render(
+  eventLifecycle(power, new Date("2026-10-10T12:00:00Z")),
 );
+assert.ok(upcomingCard.includes("Add to calendar"));
+assert.ok(upcomingCard.includes("calendar.google.com/calendar/render"));
+assert.ok(!upcomingCard.includes("Apple / Outlook"));
+assert.ok(!upcomingCard.includes('<details class="add-calendar"'));
 assert.ok(!render(eventLifecycle(power, now)).includes("Add to calendar"));
 const todayCard = renderToStaticMarkup(
   createElement(Card, {
@@ -148,5 +150,5 @@ assert.ok(todayCard.includes("https://www.espn.com/nba/injuries"));
 assert.ok(todayCard.includes("Injury report"));
 assert.ok(!render(eventLifecycle(power, now)).includes("Injury report"));
 console.log(
-  "DGPT/calendar checks passed: range boundaries, retained completed events, current-year results, calendar dates/escaping/folding, and card actions.",
+  "DGPT/calendar checks passed: range boundaries, retained completed events, current-year results, calendar dates/escaping/folding, and inline Google Calendar action.",
 );
