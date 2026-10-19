@@ -953,7 +953,11 @@ export default function Home() {
               )}
             </div>
             <div className="team-details">
-              <TeamInsights active={active} data={teamInfo} />
+              <TeamInsights
+                active={active}
+                data={teamInfo}
+                revealResults={resultsReady && !hideScores}
+              />
               <MatchCalendar games={visibleGames} team={active} />
             </div>
             <div className="news-resources">

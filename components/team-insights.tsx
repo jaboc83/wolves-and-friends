@@ -7,9 +7,11 @@ import type { TeamInfo } from "../lib/team-info";
 export default function TeamInsights({
   active,
   data,
+  revealResults = true,
 }: {
   active: string;
   data: TeamInfo[];
+  revealResults?: boolean;
 }) {
   const [selected, setSelected] = useState("wolves");
   const id = active === "all" ? selected : active;
@@ -54,6 +56,61 @@ export default function TeamInsights({
           {headings.standings}
           <small>{t?.short}</small>
         </summary>
+        {info?.postseason && (
+          <section className="postseason-panel" aria-label="Postseason bracket">
+            <h3>Postseason bracket · {info.postseason.season}</h3>
+            <p className="panel-note">
+              Confirmed matchups only. Later rounds appear as announced.
+              {info.postseason.partial &&
+                " Some rounds could not be refreshed."}
+            </p>
+            <div
+              className="bracket-rounds"
+              tabIndex={0}
+              role="region"
+              aria-label="Postseason rounds"
+            >
+              {info.postseason.rounds.map((round) => (
+                <section className="bracket-round" key={round.name}>
+                  <h4>{round.name}</h4>
+                  {round.matchups.map((match) => (
+                    <a
+                      className="bracket-match"
+                      key={match.id}
+                      href={match.url}
+                      target="_blank"
+                      rel="noreferrer"
+                    >
+                      {match.teams.map((p) => (
+                        <span key={p.name}>
+                          {p.name}
+                          <b>{revealResults ? p.value : ""}</b>
+                        </span>
+                      ))}
+                      <small>
+                        {revealResults
+                          ? match.summary || match.status
+                          : "Results hidden"}{" "}
+                        ↗
+                      </small>
+                      {revealResults &&
+                        match.teams.some((p) => p.value !== undefined) && (
+                          <small>{match.metric}</small>
+                        )}
+                    </a>
+                  ))}
+                </section>
+              ))}
+            </div>
+            <p className="panel-note">
+              ESPN · checked{" "}
+              {new Date(info.postseason.checked).toLocaleString("en-US", {
+                timeZone: "America/Chicago",
+              })}{" "}
+              CT
+            </p>
+          </section>
+        )}
         {info?.tables.length ? (
           info.tables.map((raw) => {
             const table = decorateTable(raw, id);
