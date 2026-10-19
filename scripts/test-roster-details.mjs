@@ -128,6 +128,38 @@ assert.deepEqual(
   currentSeason.values.map((stat) => stat.label),
   ["GP", "PTS", "REB"],
 );
+const espnSeasonResponse = {
+  categories: [
+    {
+      name: "averages",
+      displayName: "Regular Season Averages",
+      labels: ["GP", "PTS", "REB"],
+      displayNames: ["Games Played", "Points Per Game", "Rebounds Per Game"],
+      statistics: [
+        {
+          teamId: "16",
+          season: { year: 2025, displayName: "2024-25" },
+          stats: ["79", "25.8", "5.2"],
+        },
+        {
+          teamId: "16",
+          season: { year: 2026, displayName: "2025-26" },
+          stats: ["61", "20.1", "4.8"],
+        },
+        {
+          teamId: "30",
+          season: { year: 2027, displayName: "2026-27" },
+          stats: ["5", "22.0", "4.0"],
+        },
+      ],
+      totals: ["140", "23.2", "5.0"],
+    },
+  ],
+};
+const espnStats = parsePlayerStats(espnSeasonResponse, "16");
+assert.equal(espnStats.title, "2025-26 · Regular Season Averages");
+assert.equal(espnStats.values[1].value, "20.1");
+assert.equal(espnStats.values[0].description, "Games Played");
 assert.equal(
   parsePlayerStats(summary("2026 career stats", [["PTS", "1"]])),
   undefined,

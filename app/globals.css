@@ -284,9 +284,29 @@ summary:focus-visible {
 }
 .bracket-match > span {
   display: flex;
-  justify-content: space-between;
+  align-items: center;
   gap: 12px;
   margin-bottom: 7px;
+}
+.bracket-match > span .bracket-team-logo {
+  width: 22px;
+  height: 22px;
+  flex: 0 0 22px;
+  object-fit: contain;
+}
+.bracket-match > span b {
+  margin-left: auto;
+}
+.march-game > div {
+  display: grid;
+  grid-template-columns: 22px 22px minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 8px;
+}
+.march-game .bracket-team-logo {
+  width: 22px;
+  height: 22px;
+  object-fit: contain;
 }
 .bracket-match small {
   display: block;
@@ -1864,13 +1884,23 @@ footer b {
   font-size: 13px;
   margin: 8px 0;
 }
-.calendar-agenda > a {
+.calendar-agenda-game {
   display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  border-bottom: 1px solid var(--line, #dce4db);
+}
+.calendar-agenda-link {
+  display: flex;
+  min-width: 0;
+  flex: 1;
   gap: 10px;
   align-items: center;
   padding: 9px 0;
   font-size: 12px;
   line-height: 1.5;
+  text-decoration: none;
 }
 .calendar-agenda img {
   object-fit: contain;
@@ -2686,9 +2716,9 @@ footer b {
 }
 .back-to-top {
   position: fixed;
-  z-index: 120;
+  z-index: 1000;
   right: max(16px, env(safe-area-inset-right));
-  bottom: calc(18px + env(safe-area-inset-bottom));
+  bottom: calc(24px + env(safe-area-inset-bottom));
   width: 48px;
   height: 48px;
   display: grid;
@@ -2702,8 +2732,22 @@ footer b {
   font-weight: 700;
   line-height: 1;
 }
+.back-to-top span {
+  display: block;
+  transform: translateY(-1px);
+}
 .back-to-top:hover {
   background: var(--raised, #f5f4ef);
+}
+@media (max-width: 800px) {
+  .back-to-top {
+    right: max(16px, env(safe-area-inset-right));
+    bottom: calc(88px + env(safe-area-inset-bottom));
+    width: 52px;
+    height: 52px;
+    border-width: 3px;
+    box-shadow: 0 4px 16px #0005;
+  }
 }
 @media (prefers-reduced-motion: reduce) {
   html {

@@ -226,9 +226,27 @@ export function parseStandings(x: any, id: string, checked: string): Table[] {
               x.season?.type?.type ??
               x.season?.type,
           ) || undefined,
-        note:
-          node.standings.seasonDisplayName +
-          (node.standings.seasonType === 1 ? " · Preseason" : ""),
+        note: [
+          node.standings.seasonDisplayName,
+          Number(
+            node.standings.seasonType?.type ?? node.standings.seasonType,
+          ) === 1
+            ? league.startsWith("soccer/")
+              ? "Regular Season"
+              : "Preseason"
+            : Number(
+                  node.standings.seasonType?.type ?? node.standings.seasonType,
+                ) === 2
+              ? "Regular Season"
+              : Number(
+                    node.standings.seasonType?.type ??
+                      node.standings.seasonType,
+                  ) === 3
+                ? "Postseason"
+                : "",
+        ]
+          .filter(Boolean)
+          .join(" · "),
       });
     }
     for (const child of node.children || []) walk(child);
@@ -416,13 +434,15 @@ export async function fetchTeamInfo() {
 }
 
 // Qualification lines use the table's rank scope, never a guessed division cutoff.
-export function tableSeasonType(table: Table) {
+export function tableSeasonType(table: Table, id = "") {
   return /preseason|pre-season|spring training/i.test(table.note || "")
     ? 1
     : /postseason|post-season|playoffs/i.test(table.note || "")
       ? 3
-      : (table.seasonType ??
-        (/regular.?season/i.test(table.note || "") ? 2 : undefined));
+      : ["loons", "palace"].includes(id) && table.seasonType === 1
+        ? 2
+        : (table.seasonType ??
+          (/regular.?season/i.test(table.note || "") ? 2 : undefined));
 }
 export function decorateTable(table: Table, id: string): Table {
   const rows = [...table.rows].sort(
@@ -432,7 +452,7 @@ export function decorateTable(table: Table, id: string): Table {
   let qualification = "";
   // Legacy cached tables carry a note instead of structured season metadata.
   // Never apply qualification boundaries to preseason or postseason standings.
-  if (tableSeasonType(table) !== 2)
+  if (tableSeasonType(table, id) !== 2)
     return { ...table, rows, cuts, qualification };
   if (id === "wolves") {
     cuts.push(
@@ -467,9 +487,21 @@ export function decorateTable(table: Table, id: string): Table {
       "Top 9 per conference qualify: 1–7 enter Round One; 8–9 play the Wild Card match.";
   }
   if (id === "palace") {
-    cuts.push({ after: 17, label: "Relegation zone · places 18–20" });
+    cuts.push(
+      {
+        after: 4,
+        label:
+          "Base Champions League places end · UEFA may add a performance place",
+      },
+      {
+        after: 7,
+        label:
+          "League-based European places end · cup winners can shift cutoffs",
+      },
+      { after: 17, label: "Relegation zone · places 18–20" },
+    );
     qualification =
-      "The bottom three are relegated at season end. European places vary with cup winners and UEFA allocations.";
+      "The top four are the base Champions League places. UEFA performance spots and domestic cup winners can change European cutoffs; the bottom three are relegated.";
   }
   if (id === "wild") {
     if (table.name.includes("Division"))

@@ -1,3 +1,4 @@
+import { espnTeamLogoUrl } from "./march-madness";
 export type Postseason = {
   partial?: boolean;
   season: string;
@@ -11,7 +12,7 @@ export type Postseason = {
       status: string;
       summary?: string;
       metric: string;
-      teams: { name: string; value?: string }[];
+      teams: { id: string; name: string; logo: string; value?: string }[];
     }[];
   }[];
 };
@@ -51,6 +52,7 @@ export function parsePostseason(
   data: any,
   window: NonNullable<ReturnType<typeof postseasonWindow>>,
   checked: string,
+  league = "",
 ): Postseason | undefined {
   const rounds = new Map<
     string,
@@ -109,7 +111,9 @@ export function parsePostseason(
       summary: c.series?.summary,
       metric: c.series ? "Series wins" : "Score",
       teams: competitors.map((p: any) => ({
+        id: String(p.team.id),
         name: p.team.displayName,
+        logo: espnTeamLogoUrl(league, String(p.team.id)),
         value: c.series
           ? String(
               c.series.competitors?.find(
@@ -175,7 +179,7 @@ export async function fetchPostseason(
       r.status === "fulfilled" ? r.value.events || [] : [],
     ),
   ];
-  const parsed = parsePostseason({ events }, window, now.toISOString());
+  const parsed = parsePostseason({ events }, window, now.toISOString(), league);
   if (parsed) parsed.partial = results.some((r) => r.status === "rejected");
   return parsed;
 }

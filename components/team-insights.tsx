@@ -5,6 +5,7 @@ import { teams } from "../lib/teams";
 import { sportTerms } from "../lib/sport-terms";
 import type { TeamInfo } from "../lib/team-info";
 import type { PlayerStats } from "../lib/player-stats";
+import { espnTeamLogoUrl } from "../lib/march-madness";
 export default function TeamInsights({
   active,
   data,
@@ -87,7 +88,17 @@ export default function TeamInsights({
                       rel="noreferrer"
                     >
                       {match.teams.map((p) => (
-                        <span key={p.name}>
+                        <span key={p.id}>
+                          <img
+                            className="bracket-team-logo"
+                            src={
+                              p.logo || espnTeamLogoUrl(t?.league || "", p.id)
+                            }
+                            alt=""
+                            width={22}
+                            height={22}
+                            loading="lazy"
+                          />
                           {p.name}
                           <b>{revealResults ? p.value : ""}</b>
                         </span>

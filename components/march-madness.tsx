@@ -2,6 +2,7 @@
 import { useEffect, useState } from "react";
 import initial from "../lib/march-madness-initial.json";
 import type { MarchData } from "../lib/march-madness";
+import { espnTeamLogoUrl } from "../lib/march-madness";
 export default function MarchMadness({
   revealResults,
   onToggleResults,
@@ -154,6 +155,20 @@ export default function MarchMadness({
                               key={t.id + i}
                             >
                               <small>{t.seed || "—"}</small>
+                              <img
+                                className="bracket-team-logo"
+                                src={
+                                  t.logo ||
+                                  espnTeamLogoUrl(
+                                    "basketball/mens-college-basketball",
+                                    t.id,
+                                  )
+                                }
+                                alt=""
+                                width={22}
+                                height={22}
+                                loading="lazy"
+                              />
                               {t.url ? (
                                 <a
                                   href={t.url}

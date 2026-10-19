@@ -1,5 +1,6 @@
 "use client";
 import GameBadges from "./game-badges";
+import AddToCalendar from "./add-to-calendar";
 import { useState } from "react";
 import type { Game } from "../lib/feeds";
 import { teams } from "../lib/teams";
@@ -115,28 +116,36 @@ export default function MatchCalendar({
           active.map((g) => {
             const t = teams.find((t) => t.id === g.team);
             return (
-              <a key={g.id} href={g.url} target="_blank" rel="noreferrer">
-                <img
-                  src={
-                    "/logos/" + g.team + (g.team === "disc" ? ".svg" : ".png")
-                  }
-                  alt=""
-                  width={24}
-                  height={24}
-                />
-                <span>
-                  <b>{t?.short}</b> <GameBadges game={g} /> · {g.name}
-                  <small>
-                    {g.dateOnly
-                      ? "Time not listed"
-                      : new Date(g.date).toLocaleTimeString("en-US", {
-                          timeZone: "America/Chicago",
-                          hour: "numeric",
-                          minute: "2-digit",
-                        }) + " CT"}
-                  </small>
-                </span>
-              </a>
+              <div className="calendar-agenda-game" key={g.id}>
+                <a
+                  className="calendar-agenda-link"
+                  href={g.url}
+                  target="_blank"
+                  rel="noreferrer"
+                >
+                  <img
+                    src={
+                      "/logos/" + g.team + (g.team === "disc" ? ".svg" : ".png")
+                    }
+                    alt=""
+                    width={24}
+                    height={24}
+                  />
+                  <span>
+                    <b>{t?.short}</b> <GameBadges game={g} /> · {g.name}
+                    <small>
+                      {g.dateOnly
+                        ? "Time not listed"
+                        : new Date(g.date).toLocaleTimeString("en-US", {
+                            timeZone: "America/Chicago",
+                            hour: "numeric",
+                            minute: "2-digit",
+                          }) + " CT"}
+                    </small>
+                  </span>
+                </a>
+                {g.state === "pre" && <AddToCalendar game={g} compact />}
+              </div>
             );
           })
         ) : (
