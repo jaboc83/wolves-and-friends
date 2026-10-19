@@ -5,7 +5,7 @@ export default function BackToTop() {
   const [visible, setVisible] = useState(false);
 
   useEffect(() => {
-    const updateVisibility = () => setVisible(window.scrollY > 480);
+    const updateVisibility = () => setVisible(window.scrollY > 240);
     updateVisibility();
     window.addEventListener("scroll", updateVisibility, { passive: true });
     return () => window.removeEventListener("scroll", updateVisibility);

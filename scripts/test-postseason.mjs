@@ -60,8 +60,12 @@ for (const id of [
 ]) {
   for (const phase of [1, 3, undefined]) {
     const decorated = decorateTable({ ...base, seasonType: phase }, id);
-    assert.equal(decorated.cuts.length, 0);
-    assert.equal(decorated.qualification, "");
+    const soccerRegular = phase === 1 && ["loons", "palace"].includes(id);
+    assert.equal(
+      decorated.cuts.length,
+      soccerRegular ? (id === "loons" ? 2 : 3) : 0,
+    );
+    assert.equal(decorated.qualification !== "", soccerRegular);
   }
 }
 assert.equal(
@@ -121,6 +125,37 @@ const nhl = {
   ],
 };
 assert.equal(parseNHLStandings(nhl, { groups: [] }, "now").length, 1);
+
+// ESPN uses season type 1 for active soccer league tables; the same numeric
+// value means preseason in the North American leagues above.
+for (const [id, espnId, expectedCuts] of [
+  ["loons", "17362", 2],
+  ["palace", "384", 3],
+]) {
+  const soccer = {
+    season: { type: 1 },
+    children: [
+      {
+        name: "League",
+        standings: {
+          seasonType: "1",
+          seasonDisplayName: "2026-27",
+          entries: [
+            {
+              team: { id: espnId, displayName: "Minnesota United" },
+              stats: [],
+            },
+          ],
+        },
+      },
+    ],
+  };
+  const table = parseStandings(soccer, id, "now")[0];
+  assert.equal(table.seasonType, 1);
+  assert.match(table.note, /Regular Season/);
+  assert.doesNotMatch(table.note, /Preseason/);
+  assert.equal(table.cuts.length, expectedCuts);
+}
 const season = {
   year: 2027,
   type: { type: 2 },
@@ -193,11 +228,17 @@ const parsed = parsePostseason(
   },
   window,
   "2027-04-20",
+  "basketball/nba",
 );
 assert.equal(parsed.rounds.length, 2);
 assert.equal(parsed.rounds[0].matchups.length, 1);
 assert.ok(parsed.rounds[0].matchups[0].url.endsWith("2"));
 assert.equal(parsed.rounds[0].matchups[0].teams[0].value, "2");
+assert.equal(parsed.rounds[0].matchups[0].teams[0].id, "16");
+assert.match(
+  parsed.rounds[0].matchups[0].teams[0].logo,
+  /\/api\/team-logo\?league=basketball%2Fnba&id=16/,
+);
 const Insights = load(path.resolve("components/team-insights.tsx")).default;
 const render = (revealResults) =>
   renderToStaticMarkup(
@@ -212,6 +253,7 @@ const render = (revealResults) =>
 assert.ok(render(true).includes("MIN leads 2-1"));
 assert.ok(!render(false).includes("MIN leads 2-1"));
 assert.ok(render(false).includes("Results hidden"));
+assert.ok(render(true).includes("bracket-team-logo"));
 assert.ok(!render(false).includes("old cutoff"));
 let calls = [];
 globalThis.fetch = async (url, options) => {

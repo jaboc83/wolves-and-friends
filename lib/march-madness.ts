@@ -10,6 +10,7 @@ export type MarchGame = {
   teams: {
     id: string;
     name: string;
+    logo?: string;
     seed?: number;
     score?: string;
     winner: boolean;
@@ -22,6 +23,10 @@ export type MarchData = {
   games: MarchGame[];
   unavailable?: boolean;
 };
+export const espnTeamLogoUrl = (league: string, id: string) =>
+  /^\d+$/.test(id)
+    ? "/api/team-logo?league=" + encodeURIComponent(league) + "&id=" + id
+    : "";
 const espnLink = (s: string) =>
   /^https:\/\/www\.espn\.com\//.test(s || "") ? s : "";
 export function marchRound(raw: string): { name: string; order: number } {
@@ -58,6 +63,10 @@ export function parseMarchMadness(
       id: String(p.team?.id || ""),
       name:
         p.team?.shortDisplayName || p.team?.displayName || "To be announced",
+      logo: espnTeamLogoUrl(
+        "basketball/mens-college-basketball",
+        String(p.team?.id || ""),
+      ),
       seed: Number(p.curatedRank?.current) || undefined,
       score:
         (c.status?.type || e.status?.type)?.state !== "pre" &&

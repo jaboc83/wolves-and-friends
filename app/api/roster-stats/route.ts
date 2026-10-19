@@ -2,7 +2,7 @@ import { teams } from "../../../lib/teams";
 import { parsePlayerStats, type PlayerStats } from "../../../lib/player-stats";
 const batchSize = 6,
   ttl = 15 * 60000;
-type Entry = { key: string; league: string; id: string };
+type Entry = { key: string; league: string; id: string; teamId: string };
 let manifest: Entry[] = [],
   expires = 0;
 let manifestRequest: Promise<void> | null = null;
@@ -42,6 +42,7 @@ async function loadManifest() {
                   key: t.league + ":" + a.id,
                   league: t.league,
                   id: String(a.id),
+                  teamId: String(data.team?.id || t.espn),
                 }));
             } catch {
               return [];
@@ -58,11 +59,12 @@ async function loadManifest() {
   return manifestRequest;
 }
 async function stats(entry: Entry) {
-  const old = cache.get(entry.key);
+  const cacheKey = entry.key + ":" + entry.teamId;
+  const old = cache.get(cacheKey);
   if (old && old.expires > Date.now()) return old.stats;
-  if (!inflight.has(entry.key))
+  if (!inflight.has(cacheKey))
     inflight.set(
-      entry.key,
+      cacheKey,
       get(
         "https://site.web.api.espn.com/apis/common/v3/sports/" +
           entry.league +
@@ -70,17 +72,17 @@ async function stats(entry: Entry) {
           entry.id +
           "/stats",
       )
-        .then(parsePlayerStats)
+        .then((data) => parsePlayerStats(data, entry.teamId))
         .catch(() => undefined)
         .then((stats) => {
-          cache.set(entry.key, { expires: Date.now() + ttl, stats });
+          cache.set(cacheKey, { expires: Date.now() + ttl, stats });
           return stats;
         })
         .finally(() => {
-          inflight.delete(entry.key);
+          inflight.delete(cacheKey);
         }),
     );
-  return inflight.get(entry.key);
+  return inflight.get(cacheKey);
 }
 export async function GET(request: Request) {
   // Public, fixed batches are identical for all visitors; no team preferences,
