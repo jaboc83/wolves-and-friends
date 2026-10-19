@@ -67,6 +67,7 @@ export default function Home() {
       socialQueue(initial.stories as Story[]),
     ),
     [socialUnavailable, setSocialUnavailable] = useState<string[]>([]),
+    [youtubeUnavailable, setYoutubeUnavailable] = useState<string[]>([]),
     [liveGames, setLiveGames] = useState<Game[]>([]),
     [scoreCheck, setScoreCheck] = useState(""),
     [scoreError, setScoreError] = useState(false),
@@ -99,16 +100,24 @@ export default function Home() {
       } catch {}
     });
   }
-  function refreshSocial() {
+  const [socialRefreshing, setSocialRefreshing] = useState(false);
+  const [socialRefreshError, setSocialRefreshError] = useState(false);
+  function refreshSocial(force = false) {
     return once("social", async () => {
+      setSocialRefreshing(true);
+      setSocialRefreshError(false);
       try {
-        const r = await fetch("/api/social", {
+        const r = await fetch(force ? "/api/social?refresh=1" : "/api/social", {
           credentials: "omit",
           referrerPolicy: "no-referrer",
           cache: "no-store",
         });
         if (!r.ok) throw Error();
-        const d = (await r.json()) as { posts: Story[]; unavailable: string[] };
+        const d = (await r.json()) as {
+          posts: Story[];
+          unavailable: string[];
+          youtubeUnavailable?: string[];
+        };
         setSocialData((previous) => {
           const next = socialQueue([...d.posts, ...previous]);
           const merged = retainAvatars(
@@ -121,8 +130,12 @@ export default function Home() {
           return merged;
         });
         setSocialUnavailable(d.unavailable);
+        setYoutubeUnavailable(d.youtubeUnavailable || []);
       } catch {
         setSocialUnavailable(teams.map((t) => t.id));
+        setSocialRefreshError(true);
+      } finally {
+        setSocialRefreshing(false);
       }
     });
   }
@@ -510,7 +523,9 @@ export default function Home() {
         }
         key={s.id}
       >
-        {s.kind === "social" ? (
+        {s.socialPlatform === "youtube" ? (
+          <TeamLogos teamIds={s.teams} />
+        ) : s.kind === "social" ? (
           <div className="post-avatar">
             <SocialImage
               src={s.avatar}
@@ -532,7 +547,11 @@ export default function Home() {
             {isToday && <span className="today-badge">TODAY</span>}
             <span>{s.source}</span>
             <span>· {age(s.date)}</span>
-            {s.kind === "social" && <span className="video">POST</span>}
+            {s.kind === "social" && (
+              <span className="video">
+                {s.socialPlatform === "youtube" ? "VIDEO" : "POST"}
+              </span>
+            )}
             {s.premium && <span>INSIDER</span>}
             {s.kind === "video" && <span className="video">VIDEO</span>}
           </div>
@@ -778,12 +797,41 @@ export default function Home() {
                   className="message-feed"
                   aria-label="Latest Social Media"
                 >
-                  <h2>Latest Social Media</h2>
+                  <div className="social-heading">
+                    <h2>Latest Social Media</h2>
+                    <button
+                      type="button"
+                      className="social-refresh"
+                      onClick={() => void refreshSocial(true)}
+                      disabled={socialRefreshing}
+                      aria-label="Refresh latest social media"
+                    >
+                      <span
+                        aria-hidden="true"
+                        className={socialRefreshing ? "refresh-spinning" : ""}
+                      >
+                        ↻
+                      </span>{" "}
+                      {socialRefreshing ? "Refreshing…" : "Refresh"}
+                    </button>
+                  </div>
                   <p className="feed-description">
                     {active === "all"
-                      ? "Latest posts for your teams · Bluesky"
+                      ? "Latest posts for your teams · Bluesky & YouTube"
                       : team?.name + " posts"}
                   </p>
+                  {socialRefreshError && (
+                    <p className="feed-description" role="status">
+                      Social posts could not refresh. Try again shortly.
+                    </p>
+                  )}
+                  {youtubeUnavailable.some(
+                    (id) => active === "all" || active === id,
+                  ) && (
+                    <p className="feed-description">
+                      Some official YouTube feeds are temporarily unavailable.
+                    </p>
+                  )}
                   {socialPosts.length ? (
                     socialPosts.map(story)
                   ) : (
