@@ -3,6 +3,7 @@ import { useEffect, useState } from "react";
 import initial from "../lib/march-madness-initial.json";
 import type { MarchData } from "../lib/march-madness";
 import { espnTeamLogoUrl } from "../lib/march-madness";
+import BracketConnectors from "./bracket-connectors";
 export default function MarchMadness({
   revealResults,
   onToggleResults,
@@ -197,6 +198,7 @@ export default function MarchMadness({
                     </section>
                   );
                 })}
+              <BracketConnectors key={data.checked + r} roundClass="march-round" matchClass="march-game" />
             </div>
           </section>
         ))}

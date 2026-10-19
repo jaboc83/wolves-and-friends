@@ -1,6 +1,6 @@
 import { teams } from "../../../lib/teams";
 import { parsePlayerStats, type PlayerStats } from "../../../lib/player-stats";
-const batchSize = 6,
+const batchSize = 18,
   ttl = 15 * 60000;
 type Entry = { key: string; league: string; id: string; teamId: string };
 let manifest: Entry[] = [],
@@ -12,7 +12,7 @@ const get = async (url: string): Promise<any> => {
   const r = await fetch(url, {
     credentials: "omit",
     referrerPolicy: "no-referrer",
-    signal: AbortSignal.timeout(10000),
+    signal: AbortSignal.timeout(30000),
   });
   if (!r.ok) throw Error("Stats unavailable");
   return r.json();

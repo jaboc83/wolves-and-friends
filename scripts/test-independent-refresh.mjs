@@ -50,6 +50,7 @@ const mocks = {
     teamPlaysCompetition: () => false,
   },
   "./zalgiris": { parseZalgiris: () => [structuredClone(game)] },
+  "./special-team-data": { parsePwhlSchedule: () => [] },
   "./odds": {
     enrichOdds: async (games) => {
       oddsCalls++;

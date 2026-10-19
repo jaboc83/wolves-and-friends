@@ -110,13 +110,13 @@ export default function Home() {
       let total = 1;
       let received = false;
       let foundStats = hasCachedStats;
-      for (let batch = 0; batch < total; batch++) {
+      async function loadBatch(batch: number) {
         try {
           const r = await fetch("/api/roster-stats?batch=" + batch, {
             credentials: "omit",
             referrerPolicy: "no-referrer",
           });
-          if (!r.ok) continue;
+          if (!r.ok) return;
           const d = (await r.json()) as {
             players: { key: string; stats?: PlayerStats }[];
             totalBatches: number;
@@ -136,6 +136,14 @@ export default function Home() {
           /* A failed batch must not block other roster or feed data. */
         }
       }
+      await loadBatch(0);
+      let nextBatch = 1;
+      await Promise.all(Array.from({ length: 4 }, async () => {
+        while (nextBatch < total) {
+          const batch = nextBatch++;
+          await loadBatch(batch);
+        }
+      }));
       if (!foundStats) setPlayerStatsStatus(received ? "empty" : "unavailable");
     });
   }

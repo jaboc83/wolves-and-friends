@@ -6,6 +6,7 @@ import { sportTerms } from "../lib/sport-terms";
 import type { TeamInfo } from "../lib/team-info";
 import type { PlayerStats } from "../lib/player-stats";
 import { espnTeamLogoUrl } from "../lib/march-madness";
+import BracketConnectors from "./bracket-connectors";
 export default function TeamInsights({
   active,
   data,
@@ -117,6 +118,7 @@ export default function TeamInsights({
                   ))}
                 </section>
               ))}
+              <BracketConnectors key={info.postseason.checked} roundClass="bracket-round" matchClass="bracket-match" />
             </div>
             <p className="panel-note">
               ESPN · checked{" "}
@@ -229,7 +231,7 @@ export default function TeamInsights({
               )}
               {playerStatsStatus === "empty" && (
                 <p className="panel-note" aria-live="polite">
-                  ESPN has not published season stats for these players yet.
+                  Season stats could not be loaded for these players right now.
                 </p>
               )}
               {playerStatsStatus === "unavailable" && (

@@ -268,7 +268,7 @@ try {
     }),
   );
   const payload = await response.json();
-  assert.equal(payload.players.length, 6);
+  assert.equal(payload.players.length, 18);
   assert.equal(payload.players[0].stats.values[0].value, "20.1");
   assert.equal(
     payload.players[0].stats.title,

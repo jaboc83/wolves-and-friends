@@ -110,12 +110,12 @@ assert.equal(
   "unknown competition is not guessed",
 );
 const page = fs.readFileSync("app/page.tsx", "utf8");
-assert.match(page, /\[hideScores, setHideResults\] = useState\(false\)/);
+assert.match(page, /\[hideScores, setHideResults\] = useState\(true\)/);
 assert.match(
   page,
-  /setHideResults\(localStorage.getItem\("wf-hide-results"\) === "true"\)/,
+  /setHideResults\(preference.hidden\)/,
 );
-assert.match(page, /localStorage.setItem\("wf-hide-results", String\(next\)\)/);
+assert.match(page, /saveScorePreference\(localStorage, hidden, ask\)/);
 assert.match(page, /hideScores \? "Show scores" : "Hide scores"/);
 assert.doesNotMatch(page, /checked=\{hideScores\}/);
 const originalFetch = globalThis.fetch;

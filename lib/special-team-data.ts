@@ -43,6 +43,20 @@ const euroNames: Record<string, string> = {
 };
 
 export function parseEuroLeagueStandings(html: string, checked: string): Table | undefined {
+  const eurohoops = rows(html).filter((row) => /bapro-standings__name/.test(row));
+  const euroRows = eurohoops.flatMap((row) => {
+    const name = plain(row.match(/<span\b[^>]*class=["']bapro-standings__name["'][^>]*>([\s\S]*?)<\/span>/i)?.[1] || "");
+    const rank = plain(row.match(/<span\b[^>]*class=["']bapro-standings__pos["'][^>]*>([\s\S]*?)<\/span>/i)?.[1] || "");
+    const values = cells(row);
+    if (!name || !/^\d{1,2}$/.test(rank) || values.length < 8 || !/^\d+$/.test(values[2]) || !/^\d+$/.test(values[3])) return [];
+    const code = Object.keys(euroNames).find((key) => euroNames[key].toLowerCase() === name.toLowerCase()) || name.toLowerCase().replace(/[^a-z0-9]+/g, "-");
+    return [{ id: code, name, url: "https://www.eurohoops.net/euroleague-standings/", highlight: /zalgiris|žalgiris/i.test(name), cells: [rank, values[2], values[3], values[7]] }];
+  });
+  if (euroRows.length >= 10 && euroRows.some((row) => row.highlight)) return {
+    name: "EuroLeague · regular season", columns: ["#", "W", "L", "+/−"], rows: euroRows,
+    source: "Eurohoops standings", url: "https://www.eurohoops.net/euroleague-standings/", checked,
+    seasonType: 2, note: `Regular-season standings · checked ${checked.slice(0, 10)}. Tie-break information remains with the source.`,
+  };
   const candidates = [...html.matchAll(/<table\b[^>]*>[\s\S]*?<\/table>/gi)].map((m) => m[0]);
   const table = candidates.find((candidate) =>
     /\bZAL\b/i.test(plain(candidate)) && rows(candidate).some((row) => links(row).some((a) => a.text.toUpperCase() === "ZAL")),
