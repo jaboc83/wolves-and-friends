@@ -1,5 +1,7 @@
 import { teams } from "./teams";
+import { fetchPostseason, type Postseason } from "./postseason";
 export type Table = {
+  seasonType?: number;
   name: string;
   columns: string[];
   rows: {
@@ -29,6 +31,7 @@ export type Depth = {
   note?: string;
 };
 export type TeamInfo = {
+  postseason?: Postseason;
   id: string;
   tables: Table[];
   depth?: Depth;
@@ -204,6 +207,13 @@ export function parseStandings(x: any, id: string, checked: string): Table[] {
         source: "ESPN",
         url,
         checked,
+        seasonType:
+          Number(
+            node.standings.seasonType?.type ??
+              node.standings.seasonType ??
+              x.season?.type?.type ??
+              x.season?.type,
+          ) || undefined,
         note:
           node.standings.seasonDisplayName +
           (node.standings.seasonType === 1 ? " · Preseason" : ""),
@@ -273,6 +283,13 @@ export async function fetchTeamInfo() {
           "/teams/" +
           t.espn;
         await Promise.all([
+          (async () => {
+            try {
+              info.postseason = await fetchPostseason(t.league);
+            } catch {
+              info.unavailable.push("postseason");
+            }
+          })(),
           (async () => {
             try {
               const x = await get(
@@ -386,19 +403,31 @@ export async function fetchTeamInfo() {
 }
 
 // Qualification lines use the table's rank scope, never a guessed division cutoff.
+export function tableSeasonType(table: Table) {
+  return /preseason|pre-season|spring training/i.test(table.note || "")
+    ? 1
+    : /postseason|post-season|playoffs/i.test(table.note || "")
+      ? 3
+      : (table.seasonType ??
+        (/regular.?season/i.test(table.note || "") ? 2 : undefined));
+}
 export function decorateTable(table: Table, id: string): Table {
   const rows = [...table.rows].sort(
     (a, b) => Number(a.cells[0]) - Number(b.cells[0]),
   );
   const cuts: { after: number; label: string }[] = [];
   let qualification = "";
+  // Legacy cached tables carry a note instead of structured season metadata.
+  // Never apply qualification boundaries to preseason or postseason standings.
+  if (tableSeasonType(table) !== 2)
+    return { ...table, rows, cuts, qualification };
   if (id === "wolves") {
     cuts.push(
       { after: 6, label: "Direct playoff places end · 7–10 enter the Play-In" },
       { after: 10, label: "Play-In places end" },
     );
     qualification =
-      "Regular-season format: top 6 in each conference qualify directly; 7–10 enter the Play-In. Preseason positions do not qualify teams.";
+      "Regular-season format: top 6 in each conference qualify directly; 7–10 enter the Play-In.";
   }
   if (id === "vikings") {
     cuts.push(
@@ -450,6 +479,7 @@ export function parseNHLStandings(
 ): Table[] {
   const conference = parseStandings(x, "wild", checked)[0];
   if (!conference) return [];
+  if (tableSeasonType(conference) !== 2) return [conference];
   const selected = groups.groups?.find((g: any) =>
     g.children?.some((d: any) =>
       d.teams?.some((t: any) => t.abbreviation?.toLowerCase() === "min"),

@@ -145,6 +145,40 @@ summary:focus-visible {
   font-size: 13px;
   font-weight: 600;
 }
+.bracket-rounds {
+  display: flex;
+  gap: 18px;
+  overflow-x: auto;
+  padding: 4px 2px 14px;
+}
+.bracket-round {
+  flex: 0 0 250px;
+  max-width: 85vw;
+}
+.bracket-round h4 {
+  margin: 8px 0 14px;
+}
+.bracket-match {
+  display: block;
+  border: 1px solid var(--line, #d3d9d4);
+  border-left: 3px solid var(--accent, #718355);
+  border-radius: 6px;
+  padding: 12px;
+  margin-bottom: 12px;
+  color: var(--ink, #192a3c);
+  text-decoration: none;
+}
+.bracket-match > span {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 7px;
+}
+.bracket-match small {
+  display: block;
+  color: var(--muted, #64707a);
+  margin-top: 8px;
+}
 .section-links a {
   color: var(--ink, #192a3c);
   text-underline-offset: 4px;
