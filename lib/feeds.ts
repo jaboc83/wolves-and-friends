@@ -274,14 +274,16 @@ export function mergeLiveScoreboard(games: Game[], json: any, league: string) {
 }
 export async function collect(
   section: "news" | "schedules" | "all" = "all",
+  team?: string,
 ): Promise<HubData> {
-  const cached = sectionCache[section] || null;
+  const cached = sectionCache[team ? `${section}:${team}` : section] || null;
   const checked = new Date().toISOString();
   const stories: Story[] = [];
   const games: Game[] = [];
   const health: Health[] = [];
   const authors: AuthorFeed[] = [];
   async function task(name: string, ids: string[], f: () => Promise<number>) {
+    if (team && !ids.includes(team)) return;
     try {
       health.push({
         name,
@@ -395,63 +397,82 @@ export async function collect(
       },
     ];
     await Promise.all(
-      authorSources.map(async (source) => {
-        try {
-          const xml = await (await get(source.feed)).text();
-          let parsed = parseFeed(xml, source.name, ["wolves"]);
-          if (source.name === "Jon Krawczynski")
-            parsed = parsed.filter((s) =>
-              / - The New York Times$/.test(s.title),
-            );
-          if (source.name === "Britt Robson")
-            parsed = parsed.filter((s) => / - MinnPost$/.test(s.title));
-          if (source.name === "Jess Myers")
-            parsed = parsed.filter((s) => /wild/i.test(s.title));
-          else if (source.name === "Alec Lewis")
-            parsed = parsed.filter(
-              (s) =>
-                /vikings/i.test(s.title) &&
+      authorSources
+        .filter(
+          (source) =>
+            !team ||
+            (source.name === "Jess Myers"
+              ? team === "wild"
+              : ["Alec Lewis", "Will Ragatz", "Ben Goessling"].includes(
+                    source.name,
+                  )
+                ? team === "vikings"
+                : team === "wolves"),
+        )
+        .map(async (source) => {
+          try {
+            const xml = await (await get(source.feed)).text();
+            let parsed = parseFeed(xml, source.name, ["wolves"]);
+            if (source.name === "Jon Krawczynski")
+              parsed = parsed.filter((s) =>
                 / - The New York Times$/.test(s.title),
+              );
+            if (source.name === "Britt Robson")
+              parsed = parsed.filter((s) => / - MinnPost$/.test(s.title));
+            if (source.name === "Jess Myers")
+              parsed = parsed.filter((s) => /wild/i.test(s.title));
+            else if (source.name === "Alec Lewis")
+              parsed = parsed.filter(
+                (s) =>
+                  /vikings/i.test(s.title) &&
+                  / - The New York Times$/.test(s.title),
+              );
+            else if (source.name === "Will Ragatz")
+              parsed = parsed.filter(
+                (s) =>
+                  /vikings/i.test(s.title) &&
+                  / - Sports Illustrated$/.test(s.title),
+              );
+            else if (source.name === "Ben Goessling")
+              parsed = parsed.filter(
+                (s) =>
+                  /vikings/i.test(s.title) &&
+                  / - (?:The Minnesota )?Star Tribune$/.test(s.title),
+              );
+            else
+              parsed = parsed.filter((s) =>
+                /timberwolves|wolves|lynx|finch|edwards/i.test(s.title),
+              );
+            authors.push({
+              ...source,
+              items: parsed
+                .slice(0, 4)
+                .map(({ title, url, date }) => ({ title, url, date })),
+              checked,
+              status: "ok",
+            });
+          } catch {
+            const old = (cached?.authors || initial.authors || []).find(
+              (a) => a.name === source.name,
             );
-          else if (source.name === "Will Ragatz")
-            parsed = parsed.filter(
-              (s) =>
-                /vikings/i.test(s.title) &&
-                / - Sports Illustrated$/.test(s.title),
-            );
-          else if (source.name === "Ben Goessling")
-            parsed = parsed.filter(
-              (s) =>
-                /vikings/i.test(s.title) &&
-                / - (?:The Minnesota )?Star Tribune$/.test(s.title),
-            );
-          else
-            parsed = parsed.filter((s) =>
-              /timberwolves|wolves|lynx|finch|edwards/i.test(s.title),
-            );
-          authors.push({
-            ...source,
-            items: parsed
-              .slice(0, 4)
-              .map(({ title, url, date }) => ({ title, url, date })),
-            checked,
-            status: "ok",
-          });
-        } catch {
-          const old = (cached?.authors || initial.authors || []).find(
-            (a) => a.name === source.name,
-          );
-          authors.push({
-            ...source,
-            items: old?.items || [],
-            checked: old?.checked || checked,
-            status: "unavailable",
-          });
-        }
-      }),
+            authors.push({
+              ...source,
+              items: section === "news" ? [] : old?.items || [],
+              checked: old?.checked || checked,
+              status: "unavailable",
+            });
+          }
+        }),
     );
     await Promise.all(authors.map(verifyAuthorFeed));
-    const sports = [...new Set(teams.map((t) => t.league).filter(Boolean))];
+    const sports = [
+      ...new Set(
+        teams
+          .filter((t) => !team || t.id === team)
+          .map((t) => t.league)
+          .filter(Boolean),
+      ),
+    ];
     await Promise.all(
       sports.map((league) =>
         task(
@@ -613,20 +634,21 @@ export async function collect(
   }
   const baseline = cached || (initial as HubData);
   for (const h of health.filter((h) => h.status === "unavailable")) {
-    stories.push(
-      ...baseline.stories.filter(
-        (s) =>
-          s.source === h.name ||
-          (h.name === "Bluesky · Wolves starter pack" &&
-            s.kind === "social" &&
-            s.teams.includes("wolves")) ||
-          (h.name === "Official Žalgiris news" &&
-            s.source.startsWith("Official Žalgiris")) ||
-          (h.name.startsWith("ESPN news") &&
-            s.source === "ESPN" &&
-            s.teams.some((id) => h.teams.includes(id))),
-      ),
-    );
+    if (section !== "news")
+      stories.push(
+        ...baseline.stories.filter(
+          (s) =>
+            s.source === h.name ||
+            (h.name === "Bluesky · Wolves starter pack" &&
+              s.kind === "social" &&
+              s.teams.includes("wolves")) ||
+            (h.name === "Official Žalgiris news" &&
+              s.source.startsWith("Official Žalgiris")) ||
+            (h.name.startsWith("ESPN news") &&
+              s.source === "ESPN" &&
+              s.teams.some((id) => h.teams.includes(id))),
+        ),
+      );
     games.push(
       ...baseline.games.filter(
         (g) =>
@@ -697,32 +719,38 @@ export async function collect(
     stories: [...unique.values()]
       .filter(
         (s) =>
+          (!team || s.teams.includes(team)) &&
           !(
             s.source === "ESPN" &&
             /\b(?:game|match|full[- ]game|extended) highlights?\b/i.test(
               s.title,
             )
-          ) && Date.parse(s.date) > Date.now() - 14 * 86400000,
+          ) &&
+          Date.parse(s.date) > Date.now() - 14 * 86400000,
       )
       .slice(0, 140),
     games,
     health,
   };
 }
-export function hubData(section: "news" | "schedules" | "all" = "all") {
-  const cached = sectionCache[section];
+export function hubData(
+  section: "news" | "schedules" | "all" = "all",
+  team?: string,
+) {
+  const key = team ? `${section}:${team}` : section;
+  const cached = sectionCache[key];
   if (cached && Date.now() - Date.parse(cached.checked) < 300000)
     return Promise.resolve(cached);
-  if (sectionInflight[section]) return sectionInflight[section]!;
-  const request = collect(section)
+  if (sectionInflight[key]) return sectionInflight[key]!;
+  const request = collect(section, team)
     .then((data) => {
-      sectionCache[section] = data;
+      sectionCache[key] = data;
       return data;
     })
     .finally(() => {
-      delete sectionInflight[section];
+      delete sectionInflight[key];
     });
-  sectionInflight[section] = request;
+  sectionInflight[key] = request;
   return request;
 }
 let oddsInflight: Promise<{ games: Game[]; checked: string }> | null = null;

@@ -56,8 +56,10 @@ export default function Home() {
     [teamInfo, setTeamInfo] = useState<TeamInfo[]>(infoSeed as TeamInfo[]),
     [active, setActive] = useState("wolves"),
     [search, setSearch] = useState(""),
-    [loading, setLoading] = useState(true),
-    [error, setError] = useState(""),
+    [newsPages, setNewsPages] = useState<Record<string, HubData>>({}),
+    [newsStatus, setNewsStatus] = useState<
+      Record<string, "loading" | "ready" | "error">
+    >({}),
     [sources, setSources] = useState(false),
     [teamMenuOpen, setTeamMenuOpen] = useState(false),
     [socialData, setSocialData] = useState<Story[]>(
@@ -145,45 +147,65 @@ export default function Home() {
       }
     });
   }
-  function refreshNews() {
-    return once("news", async () => {
-      setLoading(true);
-      setError("");
+  const activePage = useRef("wolves");
+  const newsChecked = useRef(new Map<string, number>());
+  function fetchNewsPage(id: string, force = false) {
+    if (!force && Date.now() - (newsChecked.current.get(id) || 0) < 300000)
+      return Promise.resolve();
+    return once("news:" + id, async () => {
+      setNewsStatus((s) => ({ ...s, [id]: "loading" }));
       try {
-        const r = await fetch("/api/news", {
+        const r = await fetch("/api/news?team=" + encodeURIComponent(id), {
           credentials: "omit",
           referrerPolicy: "no-referrer",
+          cache: "no-store",
         });
         if (!r.ok) throw Error();
         const d = activeHub((await r.json()) as HubData);
-        setData((previous) => {
-          const merged = retainAvatars(
-            {
-              ...d,
-              games: previous?.games || [],
-              health: [
-                ...d.health,
-                ...(previous?.health || []).filter(
-                  (h) => !d.health.some((next) => next.name === h.name),
-                ),
-              ],
-            },
-            previous,
-          );
-          try {
-            localStorage.setItem("wf-cache", JSON.stringify(merged));
-          } catch {}
-          return merged;
-        });
+        if (
+          d.health.length &&
+          d.health.every((h) => h.status === "unavailable")
+        )
+          throw Error();
+        setNewsPages((pages) => ({ ...pages, [id]: d }));
+        newsChecked.current.set(id, Date.now());
+        setNewsStatus((s) => ({ ...s, [id]: "ready" }));
       } catch {
-        setError(
-          "Headlines could not refresh. Previously loaded items are kept below.",
-        );
-      } finally {
-        setLoading(false);
+        setNewsStatus((s) => ({ ...s, [id]: "error" }));
       }
     });
   }
+  function refreshNews() {
+    return once("news-queue", async () => {
+      const selected = activePage.current;
+      if (selected !== "all") await fetchNewsPage(selected, true);
+      // Background work is bounded to one page at a time. Selecting a new page
+      // can immediately start its request without waiting behind this queue.
+      for (const t of teams) {
+        if (t.id !== selected) await fetchNewsPage(t.id);
+      }
+    });
+  }
+  const visibleNewsIds = active === "all" ? teams.map((t) => t.id) : [active];
+  const loading = visibleNewsIds.some(
+    (id) => !newsStatus[id] || newsStatus[id] === "loading",
+  );
+  const newsFailed = visibleNewsIds.some((id) => newsStatus[id] === "error");
+  const newsData: HubData = {
+    checked:
+      visibleNewsIds
+        .filter((id) => newsStatus[id] === "ready")
+        .map((id) => newsPages[id]?.checked || "")
+        .sort()[0] || "",
+    stories: visibleNewsIds.flatMap((id) =>
+      newsStatus[id] === "ready" ? newsPages[id]?.stories || [] : [],
+    ),
+    authors: visibleNewsIds.flatMap((id) =>
+      newsStatus[id] === "ready" ? newsPages[id]?.authors || [] : [],
+    ),
+    health: visibleNewsIds.flatMap((id) => newsPages[id]?.health || []),
+    games: [],
+  };
   const [scheduleError, setScheduleError] = useState(false);
   const [oddsGames, setOddsGames] = useState<Game[]>([]);
   function refreshSchedules() {
@@ -269,6 +291,10 @@ export default function Home() {
         );
       setReadIds(JSON.parse(localStorage.getItem("wf-read") || "[]"));
       const previousTeam = localStorage.getItem("wf-team") || "wolves";
+      activePage.current =
+        previousTeam === "all" || teams.some((t) => t.id === previousTeam)
+          ? previousTeam
+          : "wolves";
       setActive(
         previousTeam === "all" || teams.some((t) => t.id === previousTeam)
           ? previousTeam
@@ -287,7 +313,9 @@ export default function Home() {
     };
   }, []);
   function choose(id: string) {
+    activePage.current = id;
     setActive(id);
+    if (id !== "all") void fetchNewsPage(id);
     setTeamMenuOpen(false);
     setShowOlder(false);
     setShowOlderResults(false);
@@ -329,7 +357,7 @@ export default function Home() {
   const filtered = [
     ...new Map(
       [
-        ...(data?.stories || []).filter(
+        ...(newsData.stories || []).filter(
           (s) =>
             validAuthorStory(s) &&
             s.source !== "BasketNews" &&
@@ -340,7 +368,7 @@ export default function Home() {
               )
             ),
         ),
-        ...authorStories(data?.authors || []),
+        ...authorStories(newsData.authors || []),
       ].map((s) => [s.url, s]),
     ).values(),
   ]
@@ -356,7 +384,7 @@ export default function Home() {
   const recent = recentStories(filtered, active);
   const displayed = compactNews && !showOlder ? recent : filtered;
   const olderCount = filtered.length - recent.length;
-  const newest = (data?.stories || [])
+  const newest = (newsData.stories || [])
     .filter(
       (s) =>
         s.kind !== "social" && (active === "all" || s.teams.includes(active)),
@@ -436,7 +464,12 @@ export default function Home() {
           (a, b) => teamPriority(a.team) - teamPriority(b.team),
         )
       : futureCandidates.slice(0, 3);
-  const failed = (data?.health || []).filter(
+  const failed = [
+    ...(data?.health || []).filter((h) =>
+      /schedule|scores|scoreboard/.test(h.name),
+    ),
+    ...newsData.health,
+  ].filter(
     (h) =>
       h.name !== "BasketNews" &&
       h.status === "unavailable" &&
@@ -643,7 +676,13 @@ export default function Home() {
             className={active === "all" ? "selected" : ""}
             onClick={() => choose("all")}
           >
-            <img className="team-tab-logo" src="/logos/wolves-friends-neutral.png" alt="" width={40} height={40} />
+            <img
+              className="team-tab-logo"
+              src="/logos/wolves-friends-neutral.png"
+              alt=""
+              width={40}
+              height={40}
+            />
             <span>All teams</span>
           </button>
           {teams.map((t) => (
@@ -657,7 +696,15 @@ export default function Home() {
               <span className="dot" style={{ background: t.color }} />
               <img
                 className="team-tab-logo"
-                src={t.id === "disc" ? "/logos/dgpt-tab.png" : t.id === "zalgiris" ? "/logos/zalgiris-tab.svg" : t.id === "usmnt" ? "/logos/usmnt-tab.svg" : `/logos/${t.id}.png`}
+                src={
+                  t.id === "disc"
+                    ? "/logos/dgpt-tab.png"
+                    : t.id === "zalgiris"
+                      ? "/logos/zalgiris-tab.svg"
+                      : t.id === "usmnt"
+                        ? "/logos/usmnt-tab.svg"
+                        : `/logos/${t.id}.png`
+                }
                 alt=""
                 width={40}
                 height={40}
@@ -693,17 +740,6 @@ export default function Home() {
           <p className="alert">
             Some live score feeds are unavailable; showing previously loaded{" "}
             {terms.events}.
-          </p>
-        )}
-        {error && (
-          <p className="alert" role="alert">
-            {error}
-          </p>
-        )}
-        {data && Date.now() - Date.parse(data.checked) > 15 * 60000 && (
-          <p className="alert">
-            Showing cached items checked{" "}
-            {ct(data.checked, { dateStyle: "medium", timeStyle: "short" })} CT.
           </p>
         )}
         <div className="columns">
@@ -787,9 +823,25 @@ export default function Home() {
                   />
                 </label>
               </div>
-              {!data && loading ? (
-                <div className="empty">
-                  Fetching headlines and scores from the publishers…
+              {loading && active === "all" && displayed.length > 0 && (
+                <p className="headline-loading" role="status">
+                  <span className="headline-spinner" aria-hidden="true" />
+                  Fetching more headlines…
+                </p>
+              )}
+              {loading && (active !== "all" || !displayed.length) ? (
+                <div
+                  className="empty headline-loading"
+                  role="status"
+                  aria-live="polite"
+                >
+                  <span className="headline-spinner" aria-hidden="true" />
+                  Fetching headlines…
+                </div>
+              ) : newsFailed && !displayed.length ? (
+                <div className="empty" role="status">
+                  Headlines are temporarily unavailable. We’ll try again
+                  automatically.
                 </div>
               ) : displayed.length ? (
                 displayed.map(story)
@@ -816,7 +868,22 @@ export default function Home() {
                   </p>
                 </div>
               )}
-              {compactNews && (
+              {!loading && newsData.checked && (
+                <p className="feed-description">
+                  Last update:{" "}
+                  {ct(newsData.checked, {
+                    dateStyle: "medium",
+                    timeStyle: "short",
+                  })}{" "}
+                  CT
+                </p>
+              )}
+              {!loading && newsFailed && displayed.length > 0 && (
+                <p className="feed-description">
+                  Some headline feeds are unavailable.
+                </p>
+              )}
+              {!loading && compactNews && (
                 <div className="news-more">
                   <p>
                     {showOlder

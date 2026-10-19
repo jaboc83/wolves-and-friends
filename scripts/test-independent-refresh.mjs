@@ -59,8 +59,10 @@ const mocks = {
 };
 const originalFetch = globalThis.fetch;
 let calls = 0;
+const urls = [];
 globalThis.fetch = async (url) => {
   calls++;
+  urls.push(String(url));
   if (/rss|feed|\/news|naujienos/.test(String(url))) await newsGate;
   return {
     ok: true,
@@ -120,8 +122,63 @@ try {
     [],
     "news response cannot replace schedules",
   );
+  const scopeStart = urls.length;
+  const wolvesNews = hubData("news", "wolves");
+  assert.equal(
+    hubData("news", "wolves"),
+    wolvesNews,
+    "same page shares in-flight work",
+  );
+  await wolvesNews;
+  const scopedUrls = urls.slice(scopeStart);
+  assert.ok(scopedUrls.some((url) => url.includes("canishoopus")));
+  assert.ok(
+    !scopedUrls.some((url) =>
+      /pdga|ultiworld|norseman|pwhl|Ragatz|Goessling|Lewis|Myers/.test(url),
+    ),
+    "Wolves page never waits for unrelated team feeds",
+  );
+  const failureModule = { exports: {} };
+  new Function("require", "module", "exports", js)(
+    (name) =>
+      name === "./initial.json"
+        ? {
+            stories: [
+              {
+                source: "Canis Hoopus",
+                url: "stale",
+                title: "Stale story",
+                teams: ["wolves"],
+                date: new Date().toISOString(),
+              },
+            ],
+            games: [],
+            authors: [],
+          }
+        : mocks[name],
+    failureModule,
+    failureModule.exports,
+  );
+  globalThis.fetch = async () => {
+    throw Error("offline");
+  };
+  const failed = await failureModule.exports.hubData("news", "wolves");
+  assert.equal(
+    failed.stories.length,
+    0,
+    "failed feeds never inject stale seed headlines",
+  );
+  globalThis.fetch = async (url) => {
+    calls++;
+    return {
+      ok: true,
+      json: async () => ({ events: [], articles: [] }),
+      text: async () => "",
+    };
+  };
   const before = calls;
   await hubData("news");
+  await hubData("news", "wolves");
   await hubData("schedules");
   await oddsData();
   assert.equal(calls, before, "warm caches avoid upstream refetches");

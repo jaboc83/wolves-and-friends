@@ -2415,3 +2415,8 @@ footer b {
     font-size: 10px;
   }
 }
+
+.headline-loading { display: flex; align-items: center; justify-content: center; gap: 12px; min-height: 160px; }
+.headline-spinner { width: 24px; height: 24px; border: 3px solid var(--line, #d3d9d4); border-top-color: var(--ink-team, #21468b); border-radius: 50%; animation: headline-spin .8s linear infinite; }
+@keyframes headline-spin { to { transform: rotate(360deg); } }
+@media (prefers-reduced-motion: reduce) { .headline-spinner { animation: none; } }
