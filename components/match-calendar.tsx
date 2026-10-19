@@ -38,7 +38,7 @@ export default function MatchCalendar({
     );
   const active = matches(selected);
   return (
-    <details className="calendar-panel data-panel">
+    <details id="event-calendar" className="calendar-panel data-panel">
       <summary>{terms.calendar}</summary>
       <p className="panel-note">
         Past and upcoming {terms.events} · Central Time · available schedule
