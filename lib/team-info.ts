@@ -504,10 +504,10 @@ export async function fetchTeamInfo() {
               )?.name || "current season";
               if (!seasonId || !leagueId) throw Error("PWHL season unavailable");
               const standingsResult = await getJsonp({
-                feed: "statviewfeed", view: "teams", groupTeamsBy: "division",
+                feed: "statviewfeed", view: "teams", groupTeamsBy: "league",
                 context: "overall", site_id: siteId, season: seasonId,
                 special: "false", key: appKey, client_code: "pwhl",
-                league_id: leagueId, conference: "-1", division: "1",
+                league_id: leagueId, conference: "-1", division: "undefined",
                 sort: "points", order_direction: "normal", lang: "en",
                 callback: "wolvesFriendsCallback",
               });
