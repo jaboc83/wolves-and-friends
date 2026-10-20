@@ -310,6 +310,9 @@ export async function collect(
   if (section !== "schedules") {
     const feeds: [string, string, string[] | undefined][] = [
       ["PDGA News", "https://www.pdga.com/rss.xml", ["disc"]],
+      ["Yard Barker · Timberwolves", "https://www.yardbarker.com/rss/team/83", ["wolves"]],
+      ["Gone Puck Wild", "https://gonepuckwild.com/feed/", ["wild"]],
+      ["Puckett's Pond", "https://puckettspond.com/feed/", ["twins"]],
       ["Eurohoops Žalgiris", "https://www.eurohoops.net/basket/zalgiris-kaunas/feed/?lang=en", ["zalgiris"]],
       ["Canis Hoopus", "https://www.canishoopus.com/rss/index.xml", undefined],
       [

@@ -7,7 +7,11 @@ export function parsePlayerStats(
   data: any,
   rosterTeamId = "",
 ): PlayerStats | undefined {
-  const summary = data.athlete?.statsSummary || data.statsSummary;
+  const summary =
+    data.athlete?.statsSummary ||
+    data.statsSummary ||
+    data.athlete?.statisticsSummary ||
+    data.statisticsSummary;
   const categories =
     data.categories ||
     data.statistics?.categories ||
@@ -32,8 +36,13 @@ export function parsePlayerStats(
   )[0];
 
   let values: PlayerStats["values"] = [];
-  if (summary?.statistics?.length) {
-    values = summary.statistics
+  const summaryStatistics =
+    summary?.statistics ||
+    data.athlete?.statistics ||
+    (Array.isArray(data.statistics) ? data.statistics : undefined) ||
+    data.statistics?.statistics;
+  if (summaryStatistics?.length) {
+    values = summaryStatistics
       .filter(
         (s: any) =>
           (s.abbreviation || s.name) &&
