@@ -96,6 +96,43 @@ export function parseEuroLeagueStandings(html: string, checked: string): Table |
   };
 }
 
+const lklStandingsUrl = "https://en.lkl.lt/turnyrine-lentele";
+
+export function parseLklStandings(html: string, checked: string): Table | undefined {
+  const standings = rows(html).flatMap((row) => {
+    const values = cells(row);
+    if (values.length < 6) return [];
+    const rank = values[0].replace(/\.$/, "");
+    const teamLink = links(row).find((link) => /žalgiris|zalgiris/i.test(link.text));
+    const name = teamLink?.text || values[1] || "";
+    if (!/^\d{1,2}$/.test(rank) || !name) return [];
+    const numbers = (value: string) =>
+      [...value.matchAll(/-?\d+(?:[.,]\d+)?/g)].map((match) => match[0].replace(",", "."));
+    const ppg = numbers(values.slice(6).join(" "));
+    if (ppg.length < 2) return [];
+    const slug = name.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "");
+    return [{
+      id: slug,
+      name,
+      url: lklStandingsUrl,
+      highlight: /žalgiris|zalgiris/i.test(name),
+      cells: [rank, values[2], values[3], values[4], values[5], ppg[0], ppg[1]],
+    }];
+  });
+  if (standings.length < 8 || !standings.some((row) => row.highlight)) return;
+  const season = plain(html).match(/20\d{2}\s*[/–-]\s*\d{2,4}/)?.[0].replace(/\s/g, "") || "current season";
+  return {
+    name: `LKL · ${season}`,
+    columns: ["#", "G", "W", "L", "Win%", "PPG", "OPPG"],
+    rows: standings,
+    source: "LKL official standings",
+    url: lklStandingsUrl,
+    checked,
+    seasonType: 2,
+    note: `Regular-season standings · checked ${checked.slice(0, 10)}.`,
+  };
+}
+
 function ageFromText(value: string, checked: string): RosterDetails {
   const birth = value.match(/\b(19\d{2}|20\d{2})-(\d{2})-(\d{2})\b/);
   if (!birth) return {};

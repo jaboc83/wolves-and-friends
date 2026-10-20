@@ -3,6 +3,7 @@ import { fetchPostseason, type Postseason } from "./postseason";
 import { rosterDetails, type RosterDetails } from "./roster-details";
 import {
   parseEuroLeagueStandings,
+  parseLklStandings,
   parseZalgirisRoster,
   parsePwhlRoster,
   parsePwhlStandings,
@@ -313,7 +314,7 @@ export async function fetchTeamInfo() {
   const getText = async (url: string) => {
     const r = await fetch(url, {
       signal: AbortSignal.timeout(
-        url.includes("eurohoops.net") || url.includes("thepwhl.com")
+        url.includes("eurohoops.net") || url.includes("thepwhl.com") || url.includes("lkl.lt")
           ? 30000
           : 10000,
       ),
@@ -461,6 +462,18 @@ export async function fetchTeamInfo() {
               info.tables.push(table);
             } catch {
               info.unavailable.push("EuroLeague standings");
+            }
+          })(),
+          (async () => {
+            try {
+              const table = parseLklStandings(
+                await getText("https://en.lkl.lt/turnyrine-lentele"),
+                checked,
+              );
+              if (!table) throw Error("No LKL standings table parsed");
+              info.tables.push(table);
+            } catch {
+              info.unavailable.push("LKL standings");
             }
           })(),
           (async () => {
