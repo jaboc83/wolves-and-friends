@@ -13,7 +13,10 @@ const decode = (s: string) =>
     .replace(/&apos;|&#39;/gi, "'")
     .replace(/&lt;/gi, "<")
     .replace(/&gt;/gi, ">");
-const plain = (s: string) => decode(s.replace(/<[^>]*>/g, " ")).replace(/\s+/g, " ").trim();
+const stripNonContent = (s: string) => s
+  .replace(/<style\b[^>]*>[\s\S]*?<\/style>/gi, " ")
+  .replace(/<script\b[^>]*>[\s\S]*?<\/script>/gi, " ");
+const plain = (s: string) => decode(stripNonContent(s).replace(/<[^>]*>/g, " ")).replace(/\s+/g, " ").trim();
 const rows = (html: string) => [...html.matchAll(/<tr\b[^>]*>([\s\S]*?)<\/tr>/gi)].map((m) => m[1]);
 const cells = (html: string) => [...html.matchAll(/<t[dh]\b[^>]*>([\s\S]*?)<\/t[dh]>/gi)].map((m) => plain(m[1]));
 const links = (html: string) =>
