@@ -405,7 +405,7 @@ export default function GameCard({
                 scoreVisible &&
                 Boolean(g.eventResults?.length) && (
                   <small className="event-winners">
-                    {g.eventResults.map((result) => (
+                    {g.eventResults?.map((result) => (
                       <span key={result.division}>
                         {result.division}: {result.name}
                       </span>
