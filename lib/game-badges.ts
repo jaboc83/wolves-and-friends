@@ -9,7 +9,7 @@ export function gameBadges(g: Game): GameBadge[] {
     if (/jomezpro/i.test(context))
       badges.push({ label: "JomezPro", tone: "jomezpro" });
     else if (
-      /pdga major|united states disc golf championship|throw pink/i.test(
+      /pdga major|united states disc golf championship/i.test(
         context,
       )
     )
