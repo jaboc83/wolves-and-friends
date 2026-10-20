@@ -35,6 +35,15 @@ function load(file) {
   );
   return module.exports;
 }
+const css = fs.readFileSync(path.resolve("app/globals.css"), "utf8");
+assert.match(
+  css,
+  /\.past-game\.result-shown > summary\s*\{[^}]*grid-template-columns:\s*44px minmax\(0, 1fr\) auto auto 12px;/s,
+);
+assert.match(
+  css,
+  /\.past-game\.result-shown > summary\s*\{[^}]*grid-template-columns:\s*38px minmax\(0, 1fr\) auto auto 10px;/s,
+);
 const Card = load(path.resolve("components/game-card.tsx")).default;
 function game(a, b, state = "post") {
   return {

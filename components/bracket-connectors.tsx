@@ -1,7 +1,7 @@
 "use client";
-import { useEffect, useId, useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 
-type Segment = { path: string; arrow: boolean };
+type Segment = { path: string };
 
 export default function BracketConnectors({
   roundClass,
@@ -11,7 +11,6 @@ export default function BracketConnectors({
   matchClass: string;
 }) {
   const svg = useRef<SVGSVGElement>(null);
-  const markerId = useId().replace(/:/g, "");
   const [drawing, setDrawing] = useState<{ width: number; height: number; segments: Segment[] }>({
     width: 0,
     height: 0,
@@ -43,7 +42,6 @@ export default function BracketConnectors({
             const middle = (x1 + x2) / 2;
             segments.push({
               path: `M${x1} ${y1} H${middle} V${y2} H${x2}`,
-              arrow: i % group === group - 1,
             });
           }
         }
@@ -58,9 +56,8 @@ export default function BracketConnectors({
   }, [roundClass, matchClass]);
   return (
     <svg ref={svg} className="bracket-connectors" width={drawing.width} height={drawing.height} aria-hidden="true">
-      <defs><marker id={markerId} viewBox="0 0 8 8" refX="7" refY="4" markerWidth="6" markerHeight="6" orient="auto"><path d="M0 0 L8 4 L0 8" fill="none" stroke="currentColor" strokeWidth="1.5" /></marker></defs>
       {drawing.segments.map((segment, index) => (
-        <path key={index} d={segment.path} fill="none" stroke="currentColor" strokeWidth="2" markerEnd={segment.arrow ? `url(#${markerId})` : undefined} />
+        <path key={index} d={segment.path} fill="none" stroke="currentColor" strokeWidth="2" />
       ))}
     </svg>
   );

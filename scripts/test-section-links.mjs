@@ -29,7 +29,10 @@ assert.deepEqual(
   ["Calendar", "Squad", "Table"],
 );
 assert.equal(links("disc").length, 2);
-assert.equal(links("all")[2].props.children[0], "Standings/Table");
+assert.deepEqual(
+  links("all").map((a) => a.props.children[0]),
+  ["Calendar"],
+);
 let focused = false,
   scrolled,
   prevented = false,
