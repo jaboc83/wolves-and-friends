@@ -154,6 +154,7 @@ export default function GameCard({
                     g.eventResults.map((r) => (
                       <p key={r.division}>
                         <b>{r.division}:</b> {r.name} · {r.score}
+                        {r.margin && <small> · Won by {r.margin} strokes</small>}
                       </p>
                     ))
                   ) : null
