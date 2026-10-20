@@ -95,6 +95,7 @@ export default function Home() {
     [hideScores, setHideResults] = useState(true),
     [scorePrompt, setScorePrompt] = useState(false),
     [resultsReady, setResultsReady] = useState(false),
+    [autoOpenStandings, setAutoOpenStandings] = useState(false),
     [darkMode, setDarkMode] = useState(false);
   const pending = useRef(new Map<string, Promise<void>>());
   const [playerStats, setPlayerStats] = useState<Record<string, PlayerStats>>(
@@ -356,6 +357,8 @@ export default function Home() {
     } catch {}
     setHideResults(preference.hidden);
     setScorePrompt(preference.ask);
+    if (!preference.ask && !preference.hidden)
+      setAutoOpenStandings(window.matchMedia("(min-width: 1600px)").matches);
     setResultsReady(true);
     try {
       const socialCache = localStorage.getItem("wf-social-cache");
@@ -405,6 +408,7 @@ export default function Home() {
   function choose(id: string) {
     activePage.current = id;
     setActive(id);
+    setAutoOpenStandings(false);
     if (id !== "all") void fetchNewsPage(id);
     setTeamMenuOpen(false);
     setShowOlder(false);
@@ -423,6 +427,9 @@ export default function Home() {
       saveScorePreference(localStorage, hidden, ask);
     } catch {}
     setHideResults(hidden);
+    setAutoOpenStandings(
+      !hidden && window.matchMedia("(min-width: 1600px)").matches,
+    );
     setScorePrompt(false);
   }
   function toggleColorMode() {
@@ -1100,6 +1107,7 @@ export default function Home() {
                         active={active}
                         data={teamInfo}
                         revealResults={resultsReady && !hideScores}
+                        autoOpenStandings={autoOpenStandings}
                         playerStats={playerStats}
                         playerStatsStatus={playerStatsStatus}
                       />
