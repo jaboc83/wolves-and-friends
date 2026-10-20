@@ -7,6 +7,49 @@ export function parsePlayerStats(
   data: any,
   rosterTeamId = "",
 ): PlayerStats | undefined {
+  // The core API uses stat objects inside splits.categories (not the
+  // season-row arrays returned by common-v3). Do not select career totals.
+  const coreStats = (data.splits?.categories || []).flatMap(
+    (c: any) => c.stats || [],
+  );
+  if (coreStats.length && !/career|projected/i.test(data.season?.displayName || "")) {
+    const preferred = [
+      "avgPoints", "avgRebounds", "avgAssists", "fieldGoalPct",
+      "threePointFieldGoalPct", "gamesPlayed",
+    ];
+    const selected = coreStats.some((s: any) => s.name === "avgPoints")
+      ? preferred.flatMap((name) => coreStats.filter((s: any) => s.name === name))
+      : coreStats.filter((s: any) => !/rank|rating|projected/i.test(s.name || ""));
+    const values = selected
+      .filter((s: any) => s.abbreviation && s.displayValue !== undefined && String(s.displayValue).trim())
+      .slice(0, 6)
+      .map((s: any) => ({
+        label: String(s.abbreviation),
+        value: String(s.displayValue),
+        description: String(s.displayName || s.description || s.abbreviation),
+      }));
+    if (values.length) return {
+      title: (data.season?.displayName || "Season") + " · Regular season",
+      values,
+    };
+  }
+  // The overview API has parallel labels and split values, including a
+  // Career row. Read only the explicitly named regular-season row.
+  const overview = data.statistics;
+  const regular = Array.isArray(overview?.splits)
+    ? overview.splits.find((s: any) => /^regular season$/i.test(s.displayName || ""))
+    : undefined;
+  if (regular && Array.isArray(overview.labels) && Array.isArray(regular.stats)) {
+    const values = overview.labels.map((label: string, i: number) => ({
+      label: String(label),
+      value: String(regular.stats[i] ?? ""),
+      description: String(overview.displayNames?.[i] || label),
+    })).filter((s: { value: string }) => s.value.trim() !== "").slice(0, 6);
+    if (values.length) return {
+      title: "Latest published regular season",
+      values,
+    };
+  }
   const summary =
     data.athlete?.statsSummary ||
     data.statsSummary ||
