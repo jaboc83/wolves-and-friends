@@ -253,7 +253,7 @@ globalThis.fetch = async (url, options) => {
         athletes: Array.from({ length: 8 }, (_, i) => ({ id: String(i + 1) })),
       }),
     };
-  if (url.includes("/athletes/2/")) throw Error("Unavailable player");
+  if (url.includes("/athletes/2")) throw Error("Unavailable player");
   return {
     ok: true,
     json: async () => ({
