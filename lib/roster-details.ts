@@ -1,4 +1,9 @@
-export type RosterDetails = { age?: number };
+export type RosterDetails = {
+  age?: number;
+  campTeam?: string;
+  signedForSeason?: boolean;
+  draftPick?: boolean;
+};
 export function rosterDetails(
   athlete: any,
   _league: string,
