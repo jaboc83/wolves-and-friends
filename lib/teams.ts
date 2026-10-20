@@ -14,6 +14,7 @@ export const teams = [
         "https://bsky.app/starter-pack/canishoopus.bsky.social/3lal4p6wu5o2a",
       ],
       ["Canis Hoopus", "https://www.canishoopus.com/"],
+      ["Dunking with Wolves", "https://dunkingwithwolves.com/"],
       ["Yard Barker", "https://www.yardbarker.com/nba/teams/minnesota_timberwolves/83"],
       ["Howls and Growls", "https://www.youtube.com/@howlsandgrowlshoops"],
       [
