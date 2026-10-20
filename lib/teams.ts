@@ -97,6 +97,7 @@ export const teams = [
       ],
       ["Twin Cities Territory", "https://omny.fm/shows/twin-cities-territory"],
       ["Official Twins", "https://www.mlb.com/twins"],
+      ["Twins Daily", "https://twinsdaily.com/"],
       ["Puckett's Pond", "https://puckettspond.com/"],
     ],
   },
