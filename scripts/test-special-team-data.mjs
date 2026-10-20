@@ -16,6 +16,7 @@ const module = { exports: {} };
 new Function("module", "exports", js)(module, module.exports);
 const {
   parseEuroLeagueStandings,
+  parseLklStandings,
   parseZalgirisRoster,
   parsePwhlRoster,
   parsePwhlStandings,
@@ -43,6 +44,18 @@ assert.equal(eurohoops?.rows.length, 10);
 assert.deepEqual(eurohoops?.rows[5].cells, ["6", "2", "4", "-27"]);
 assert.equal(eurohoops?.rows[5].highlight, true);
 assert.equal(eurohoops?.source, "Eurohoops standings");
+
+const lklRows = Array.from({ length: 10 }, (_, i) =>
+  `<tr><td>${i + 1}</td><td><a href="/komandos/${i === 0 ? "zalgiris" : `club-${i}`}">${i === 0 ? "Žalgiris" : `Club ${i}`}</a></td><td>6</td><td>${i === 0 ? "6" : "3"}</td><td>${i === 0 ? "0" : "3"}</td><td>${i === 0 ? "100" : "50"}</td><td>${i === 0 ? "94.2 74.7" : "82.8 / 82.8"}</td></tr>`,
+).join("");
+const lkl = parseLklStandings(`<h1>Standings 2026/27</h1><table>${lklRows}</table>`, checked);
+assert.equal(lkl?.rows.length, 10);
+assert.equal(lkl?.name, "LKL · 2026/27");
+assert.deepEqual(lkl?.rows[0].cells, ["1", "6", "6", "0", "100", "94.2", "74.7"]);
+assert.equal(lkl?.rows[0].name, "Žalgiris");
+assert.equal(lkl?.rows[0].highlight, true);
+assert.equal(lkl?.url, "https://en.lkl.lt/turnyrine-lentele");
+assert.equal(parseLklStandings(`<table>${lklRows.slice(0, 500)}</table>`, checked), undefined);
 
 const zalgiris = parseZalgirisRoster(
   `<table><tbody><tr><td><a href="/player/example">Example Player</a></td><td>PG</td><td>1999-03-14</td></tr></tbody></table>`,
