@@ -9,7 +9,11 @@ export function socialQueue(
 ): Story[] {
   const unique = new Map<string, Story>();
   for (const post of posts) {
-    if (post.kind !== "social" || !Number.isFinite(Date.parse(post.date)))
+    if (
+      post.kind !== "social" ||
+      !Number.isFinite(Date.parse(post.date)) ||
+      /twins daily/i.test(post.source)
+    )
       continue;
     const old = unique.get(post.url);
     unique.set(

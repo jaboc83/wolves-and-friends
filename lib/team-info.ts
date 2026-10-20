@@ -352,21 +352,41 @@ export async function fetchTeamInfo() {
           })(),
           (async () => {
             try {
-              const x = await get(
-                "https://site.api.espn.com/apis/v2/sports/" +
-                  t.league +
-                  "/standings",
-              );
-              info.tables =
+              const standingsUrl =
+                "https://site.api.espn.com/apis/v2/sports/" + t.league + "/standings";
+              const x = await get(standingsUrl);
+              const parseTables = async (value: any) =>
                 t.id === "wild"
                   ? parseNHLStandings(
-                      x,
+                      value,
                       await get(
                         "https://site.api.espn.com/apis/site/v2/sports/hockey/nhl/groups",
                       ),
                       checked,
                     )
-                  : parseStandings(x, t.id, checked);
+                  : parseStandings(value, t.id, checked);
+              const currentTables = await parseTables(x);
+              info.tables = currentTables;
+              // During the postseason ESPN's default standings response switches
+              // to playoff context. Keep the regular-season table too so the
+              // final seeding and qualification lines remain visible.
+              const seasonType = Number(
+                x.season?.type?.type ?? x.season?.type,
+              );
+              if (seasonType === 3 && x.season?.year) {
+                try {
+                  const regular = await get(
+                    standingsUrl +
+                      "?season=" +
+                      encodeURIComponent(String(x.season.year)) +
+                      "&seasontype=2",
+                  );
+                  const regularTables = await parseTables(regular);
+                  info.tables = [...regularTables, ...currentTables];
+                } catch {
+                  // Keep the postseason table if the historical lookup is unavailable.
+                }
+              }
               if (x.season?.startDate && x.season?.endDate)
                 info.season = {
                   name: x.season.displayName,
