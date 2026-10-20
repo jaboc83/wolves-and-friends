@@ -69,6 +69,8 @@ export type Health = {
   checked: string;
   count: number;
   teams: string[];
+  /** Safe diagnostic code for operators; never contains request or visitor data. */
+  error?: string;
 };
 export type AuthorFeed = {
   name: string;
@@ -113,16 +115,37 @@ const tag = (s: string, k: string) =>
     )?.[1] || "",
   );
 const safe = (u: string) => (/^https?:\/\//i.test(u) ? u : "");
+class FeedError extends Error {
+  constructor(readonly code: string) {
+    super(code);
+    this.name = "FeedError";
+  }
+}
+
+function safeFeedError(error: unknown) {
+  if (error instanceof FeedError) return error.code;
+  if (error instanceof DOMException && error.name === "TimeoutError")
+    return "timeout";
+  return "request-failed";
+}
+
 async function get(url: string) {
-  const r = await fetch(url, {
-    signal: AbortSignal.timeout(url.includes("eurohoops.net") ? 30000 : 12000),
-    headers: {
-      Accept:
-        "application/json, application/rss+xml, application/atom+xml, text/xml, text/html",
-    },
-  });
-  if (!r.ok) throw Error(String(r.status));
-  return r;
+  try {
+    const r = await fetch(url, {
+      signal: AbortSignal.timeout(url.includes("eurohoops.net") ? 30000 : 12000),
+      headers: {
+        // A stable server identifier helps publishers allow-list the feed request
+        // without forwarding any visitor/browser headers or identifiers.
+        "User-Agent": "WolvesAndFriendsFeed/1.0 (+https://wolvesandfriends.moening.org)",
+        Accept:
+          "application/json, application/rss+xml, application/atom+xml, text/xml, text/html",
+      },
+    });
+    if (!r.ok) throw new FeedError("http-" + r.status);
+    return r;
+  } catch (error) {
+    throw error instanceof FeedError ? error : new FeedError(safeFeedError(error));
+  }
 }
 function match(s: string) {
   return teams
@@ -138,10 +161,15 @@ export function parseFeed(xml: string, name: string, only?: string[]): Story[] {
     .map((b) => {
       const title = tag(b, "title");
       const url = safe(
-        tag(b, "link") || b.match(/<link[^>]*href="([^"]+)"/)?.[1] || "",
+        tag(b, "link") ||
+          b.match(/<link[^>]*href=["']([^"']+)["']/i)?.[1] ||
+          "",
       );
       const date =
-        tag(b, "pubDate") || tag(b, "published") || tag(b, "updated");
+        tag(b, "pubDate") ||
+        tag(b, "published") ||
+        tag(b, "updated") ||
+        tag(b, "dc:date");
       const ids = only || match(title + " " + tag(b, "description"));
       return {
         id: url,
@@ -322,13 +350,14 @@ export async function collect(
         status: "ok",
         count: await f(),
       });
-    } catch {
+    } catch (error) {
       health.push({
         name,
         teams: ids,
         checked,
         status: "unavailable",
         count: 0,
+        error: safeFeedError(error),
       });
     }
   }
