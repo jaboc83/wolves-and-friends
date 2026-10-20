@@ -1782,6 +1782,10 @@ footer b {
 .data-panel thead {
   background: var(--raised, #edf1e9);
 }
+.data-panel thead th:first-child,
+.data-panel thead th:nth-child(n + 3) {
+  text-align: right;
+}
 .data-panel .my-team {
   background: var(--raised, #edf5e6);
   font-weight: 700;
