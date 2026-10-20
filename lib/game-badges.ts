@@ -5,14 +5,6 @@ export function gameBadges(g: Game): GameBadge[] {
     .filter(Boolean)
     .join(" ");
   const badges: GameBadge[] = [];
-  if (g.team === "disc") {
-    if (/jomezpro/i.test(context))
-      badges.push({ label: "JomezPro", tone: "jomezpro" });
-    else if (/pdga major|united states disc golf championship|throw pink/i.test(context))
-      badges.push({ label: "PDGA Major", tone: "pdga-major" });
-    else if (/\\bdgpt\\b/i.test(context))
-      badges.push({ label: "DGPT", tone: "dgpt" });
-  }
   if (g.team === "palace") {
     if (/\bfriendly\b|\bfriendlies\b/i.test(context))
       badges.push({ label: "Friendly", tone: "friendly" });

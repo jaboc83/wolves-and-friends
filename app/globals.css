@@ -2112,6 +2112,21 @@ footer b {
   color: #1e623b;
   border-color: #9ac9aa;
 }
+.badge-dgpt {
+  background: #fff1bf;
+  color: #765409;
+  border-color: #d9b957;
+}
+.badge-pdga-major {
+  background: #e8f1f7;
+  color: #285674;
+  border-color: #a7c3d5;
+}
+.badge-jomezpro {
+  background: #eee4ff;
+  color: #52317a;
+  border-color: #c2a5e2;
+}
 .badge-friendly {
   background: #e8f1f7;
   color: #285674;
