@@ -1095,13 +1095,15 @@ export default function Home() {
                     )}
                   </div>
                   <div className="team-details">
-                    <TeamInsights
-                      active={active}
-                      data={teamInfo}
-                      revealResults={resultsReady && !hideScores}
-                      playerStats={playerStats}
-                      playerStatsStatus={playerStatsStatus}
-                    />
+                    {active !== "all" && (
+                      <TeamInsights
+                        active={active}
+                        data={teamInfo}
+                        revealResults={resultsReady && !hideScores}
+                        playerStats={playerStats}
+                        playerStatsStatus={playerStatsStatus}
+                      />
+                    )}
                     <MatchCalendar games={visibleGames} team={active} />
                   </div>
                   <div className="news-resources">
