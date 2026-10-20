@@ -153,7 +153,8 @@ function match(s: string) {
     .map((t) => t.id);
 }
 export function parseFeed(xml: string, name: string, only?: string[]): Story[] {
-  if (!/<rss[\s>]|<feed[\s>]/i.test(xml)) throw Error("Not a feed");
+  if (!/<rss[\s>]|<feed[\s>]|<rdf:RDF[\s>]/i.test(xml))
+    throw new FeedError("invalid-feed");
   const blocks =
     xml.match(/<item[\s>][\s\S]*?<\/item>|<entry[\s>][\s\S]*?<\/entry>/gi) ||
     [];
