@@ -5,6 +5,8 @@ import {
   parseEuroLeagueStandings,
   parseZalgirisRoster,
   parsePwhlRoster,
+  parsePwhlStandings,
+  parsePwhlTrainingCampRoster,
 } from "./special-team-data";
 export type Table = {
   seasonType?: number;
@@ -310,11 +312,25 @@ export async function fetchTeamInfo() {
   };
   const getText = async (url: string) => {
     const r = await fetch(url, {
-      signal: AbortSignal.timeout(url.includes("eurohoops.net") ? 30000 : 10000),
+      signal: AbortSignal.timeout(
+        url.includes("eurohoops.net") || url.includes("thepwhl.com")
+          ? 30000
+          : 10000,
+      ),
       headers: { Accept: "text/html" },
     });
     if (!r.ok) throw Error(String(r.status));
     return r.text();
+  };
+  const getJsonp = async (params: Record<string, string>) => {
+    const url = new URL("https://lscluster.hockeytech.com/feed/index.php");
+    for (const [key, value] of Object.entries(params))
+      url.searchParams.set(key, value);
+    const raw = await getText(url.href);
+    const start = raw.indexOf("(");
+    const end = raw.lastIndexOf(")");
+    if (start < 0 || end <= start) throw Error("Invalid PWHL stats response");
+    return JSON.parse(raw.slice(start + 1, end));
   };
   return Promise.all(
     teams.map(async (t) => {
@@ -463,17 +479,67 @@ export async function fetchTeamInfo() {
         ]);
       }
       if (t.id === "frost") {
-        try {
-          info.depth = parsePwhlRoster(
-            await getText(
-              "https://www.thepwhl.com/en/stats/roster/2/10?league=1",
-            ),
-            checked,
-          );
-          if (!info.depth) throw Error("No roster parsed");
-        } catch {
-          info.unavailable.push("roster");
-        }
+        await Promise.all([
+          (async () => {
+            try {
+              const standingsPage = await getText(
+                "https://www.thepwhl.com/en/stats/standings",
+              );
+              const appKey = standingsPage.match(/\bappKey\s*=\s*['\"]([^'\"]+)['\"]/i)?.[1];
+              if (!appKey) throw Error("PWHL stats key not found");
+              const siteId = standingsPage.match(/\bsite_id\s*=\s*(\d+)/i)?.[1] || "0";
+              const bootstrapResult = await getJsonp({
+                feed: "statviewfeed", view: "bootstrap", season: "latest",
+                game_id: "", pageName: "teams", key: appKey, client_code: "pwhl",
+                site_id: siteId, league_id: "", league_code: "", conference: "-1",
+                division: "-1", lang: "en", callback: "wolvesFriendsCallback",
+              });
+              const bootstrap = Array.isArray(bootstrapResult)
+                ? bootstrapResult[0]
+                : bootstrapResult;
+              const seasonId = String(bootstrap?.current_season_id || "");
+              const leagueId = String(bootstrap?.current_league_id || "");
+              const seasonName = bootstrap?.seasons?.find(
+                (season: any) => String(season.id) === seasonId,
+              )?.name || "current season";
+              if (!seasonId || !leagueId) throw Error("PWHL season unavailable");
+              const standingsResult = await getJsonp({
+                feed: "statviewfeed", view: "teams", groupTeamsBy: "league",
+                context: "overall", site_id: siteId, season: seasonId,
+                special: "false", key: appKey, client_code: "pwhl",
+                league_id: leagueId, conference: "-1", division: "undefined",
+                sort: "points", order_direction: "normal", lang: "en",
+                callback: "wolvesFriendsCallback",
+              });
+              const standings = parsePwhlStandings(
+                `wolvesFriendsCallback(${JSON.stringify(standingsResult)})`,
+                checked,
+                seasonName,
+              );
+              if (!standings) throw Error("No PWHL standings parsed");
+              info.tables.push(standings);
+            } catch {
+              info.unavailable.push("standings");
+            }
+          })(),
+          (async () => {
+            try {
+              const rosterPage = await getText(
+                "https://www.thepwhl.com/en/stats/roster/2/10?league=1",
+              );
+              info.depth = parsePwhlRoster(rosterPage, checked);
+              if (!info.depth) {
+                const trainingCampPage = await getText(
+                  "https://www.thepwhl.com/en/teams/minnesota-frost/news/2026/october/07/minnesota-frost-announce-2026-27-training-camp-roster",
+                );
+                info.depth = parsePwhlTrainingCampRoster(trainingCampPage, checked);
+              }
+              if (!info.depth) throw Error("No Frost roster parsed");
+            } catch {
+              info.unavailable.push("roster");
+            }
+          })(),
+        ]);
       }
       if (t.id === "frost")
         info.season = {

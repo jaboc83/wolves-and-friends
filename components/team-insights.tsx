@@ -38,14 +38,14 @@ export default function TeamInsights({
     : id === "zalgiris"
       ? "https://www.euroleaguebasketball.net/euroleague/standings/"
       : id === "frost"
-        ? "https://www.thepwhl.com/en/standings"
+        ? "https://www.thepwhl.com/en/stats/standings"
         : "https://www.dgpt.com/full-standings/";
   const rosterUrl = league
     ? "https://www.espn.com/" + league + "/team/roster/_/name/" + t?.espn
     : id === "zalgiris"
       ? "https://zalgiris.lt/komandos"
       : id === "frost"
-        ? "https://www.thepwhl.com/en/teams/minnesota-frost/roster"
+        ? "https://www.thepwhl.com/en/teams/minnesota-frost/news/2026/october/07/minnesota-frost-announce-2026-27-training-camp-roster"
         : "https://www.dgpt.com/";
   return (
     <section className="team-insights">
@@ -235,24 +235,24 @@ export default function TeamInsights({
           </summary>
           {info?.depth ? (
             <>
-              {playerStatsStatus === "loading" && (
+              {Boolean(t?.league) && playerStatsStatus === "loading" && (
                 <p className="panel-note" aria-live="polite">
                   Loading ESPN season stats…
                 </p>
               )}
-              {playerStatsStatus === "empty" && (
+              {Boolean(t?.league) && playerStatsStatus === "empty" && (
                 <p className="panel-note" aria-live="polite">
                   Season stats could not be loaded for these players right now.
                 </p>
               )}
-              {playerStatsStatus === "unavailable" && (
+              {Boolean(t?.league) && playerStatsStatus === "unavailable" && (
                 <p className="panel-note" aria-live="polite">
                   ESPN season stats are temporarily unavailable.
                 </p>
               )}
               <p className="panel-note">
                 Players grouped by position. Links open player bios and
-                profiles.
+                source profiles when available.
               </p>
               {info.depth.groups.map((group, i) => (
                 <div className="depth-row" key={group.position + i}>
@@ -266,6 +266,13 @@ export default function TeamInsights({
                         {p.age !== undefined && (
                           <div className="roster-player-info">
                             {p.age !== undefined && <span>Age {p.age}</span>}
+                          </div>
+                        )}
+                        {(p.campTeam || p.signedForSeason || p.draftPick) && (
+                          <div className="roster-player-info">
+                            {p.campTeam && <span>{p.campTeam}</span>}
+                            {p.signedForSeason && <span>Signed for 2026–27</span>}
+                            {p.draftPick && <span>2026 draft pick</span>}
                           </div>
                         )}
                         {(() => {
@@ -298,8 +305,9 @@ export default function TeamInsights({
                 <a href={info.depth.url} target="_blank" rel="noreferrer">
                   {info.depth.source} ↗
                 </a>{" "}
-                · Age and season stats from ESPN. Each summary keeps ESPN’s
-                season and competition label; unavailable stats are omitted.
+                {id === "frost"
+                  ? "· Preliminary names and positions from the official training-camp announcement; final roster may change."
+                  : "· Age and season stats from ESPN. Each summary keeps ESPN’s season and competition label; unavailable stats are omitted."}
               </p>
             </>
           ) : (

@@ -165,6 +165,124 @@ export function parsePwhlRoster(html: string, checked: string): Depth | undefine
   );
 }
 
+const pwhlStandingsUrl = "https://www.thepwhl.com/en/stats/standings";
+
+function parseCallbackJson(input: string): any | undefined {
+  const start = input.indexOf("(");
+  const end = input.lastIndexOf(")");
+  if (start < 0 || end <= start) return;
+  try {
+    return JSON.parse(input.slice(start + 1, end));
+  } catch {
+    return;
+  }
+}
+
+export function parsePwhlStandings(
+  response: string,
+  checked: string,
+  seasonName = "current season",
+): Table | undefined {
+  const payload = parseCallbackJson(response);
+  const sections = Array.isArray(payload) ? payload[0]?.sections : payload?.sections;
+  if (!Array.isArray(sections)) return;
+  const entries = sections.flatMap((section: any) =>
+    Array.isArray(section?.data) ? section.data : [],
+  );
+  const standings = entries.flatMap((entry: any) => {
+    const row = entry?.row || entry;
+    const name = String(row?.name || row?.team_name || "").trim();
+    const rank = row?.rank ?? row?.overall_rank;
+    if (!name || !/^\d+$/.test(String(rank))) return [];
+    const value = (key: string) => {
+      const result = row[key];
+      return result === undefined || result === null || result === "" ? "—" : String(result);
+    };
+    const id = name.toLocaleLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "");
+    return [{
+      id,
+      name,
+      url: pwhlStandingsUrl,
+      highlight: /minnesota frost/i.test(name),
+      cells: [
+        String(rank), value("games_played"), value("games_remaining"), value("points"),
+        value("regulation_wins"), value("non_reg_wins"), value("non_reg_losses"),
+        value("losses"), value("percentage"), value("goals_for"), value("goals_against"),
+      ],
+    }];
+  });
+  if (standings.length < 8 || !standings.some((row) => row.highlight)) return;
+  return {
+    name: `PWHL · ${seasonName} standings`,
+    columns: ["#", "GP", "GR", "PTS", "W", "OTW", "OTL", "L", "PCT", "GF", "GA"],
+    rows: standings,
+    source: "PWHL official standings",
+    url: pwhlStandingsUrl,
+    checked,
+    seasonType: /pre.?season/i.test(seasonName) ? 1 : 2,
+    note: `${seasonName} standings · checked ${checked.slice(0, 10)}.`,
+  };
+}
+
+const trainingCampRosterUrl =
+  "https://www.thepwhl.com/en/teams/minnesota-frost/news/2026/october/07/minnesota-frost-announce-2026-27-training-camp-roster";
+
+export function parsePwhlTrainingCampRoster(
+  html: string,
+  checked: string,
+): Depth | undefined {
+  if (!/Minnesota Frost announce 2026.?27 training camp roster/i.test(plain(html))) return;
+  const groups: Depth["groups"] = [];
+  const groupPatterns = [
+    { title: "Forwards", pattern: /Forwards\s*\(\d+\):/i },
+    { title: "Defenders", pattern: /Defenders\s*\(\d+\):/i },
+    { title: "Goaltenders", pattern: /Goaltenders\s*\(\d+\):/i },
+  ];
+  const text = html
+    .replace(/<script\b[^>]*>[\s\S]*?<\/script>/gi, " ")
+    .replace(/<style\b[^>]*>[\s\S]*?<\/style>/gi, " ")
+    .replace(/<br\s*\/?>/gi, "\n")
+    .replace(/<\/(?:p|li|h[1-6])\s*>/gi, "\n")
+    .replace(/<[^>]*>/g, " ")
+    .split("2026-27 Frost Training Camp Roster").pop() || "";
+  const normalized = decode(text)
+    .replace(/&nbsp;|\u00a0/g, " ")
+    .split(/\r?\n/)
+    .map((line) => line.replace(/\s+/g, " ").trim())
+    .filter(Boolean);
+  for (const group of groupPatterns) {
+    const headingIndex = normalized.findIndex((line) => group.pattern.test(line));
+    if (headingIndex < 0) continue;
+    const players: Depth["groups"][number]["players"] = [];
+    for (const line of normalized.slice(headingIndex + 1)) {
+      if (groupPatterns.some((other) => other.pattern.test(line))) break;
+      const match = line.match(/^(.+?)\s+\(([^()]*)\)\s*([*^]*)$/);
+      if (!match) continue;
+      const name = match[1].trim();
+      const team = match[2].trim();
+      const markers = match[3];
+      if (!name || !team || players.some((player) => player.name === name)) continue;
+      players.push({
+        name,
+        url: trainingCampRosterUrl,
+        campTeam: team,
+        signedForSeason: markers.includes("*"),
+        draftPick: markers.includes("^"),
+      });
+    }
+    if (players.length) groups.push({ position: group.title, players });
+  }
+  if (!groups.length || groups.reduce((total, group) => total + group.players.length, 0) < 25) return;
+  return {
+    label: "Training camp roster",
+    groups,
+    source: "PWHL · 2026–27 training camp announcement",
+    url: trainingCampRosterUrl,
+    checked,
+    note: "Preliminary training camp roster announced Oct. 7, 2026. “Signed” marks players signed for 2026–27; this is not yet the final season roster.",
+  };
+}
+
 function easternOffset(year: number, month: number, day: number): string {
   const instant = new Date(Date.UTC(year, month - 1, day, 12));
   const zone = new Intl.DateTimeFormat("en-US", { timeZone: "America/New_York", timeZoneName: "shortOffset" })

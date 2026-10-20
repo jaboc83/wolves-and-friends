@@ -18,6 +18,8 @@ const {
   parseEuroLeagueStandings,
   parseZalgirisRoster,
   parsePwhlRoster,
+  parsePwhlStandings,
+  parsePwhlTrainingCampRoster,
   parsePwhlSchedule,
 } = module.exports;
 
@@ -57,6 +59,43 @@ const frostRoster = parsePwhlRoster(
 assert.equal(frostRoster?.groups[0].position, "Forwards / Centers");
 assert.equal(frostRoster?.groups[0].players[0].name, "Example Skater");
 assert.equal(frostRoster?.groups[0].players[0].age, 25);
+
+const pwhlStandingsRows = [
+  { name: "Boston Fleet", rank: 1, games_played: "0", games_remaining: "2", points: 0, regulation_wins: "", non_reg_wins: "", non_reg_losses: "0", losses: "0", percentage: "0.000", goals_for: "0", goals_against: "0" },
+  { name: "Minnesota Frost", rank: 2, games_played: "0", games_remaining: "2", points: 0, regulation_wins: "", non_reg_wins: "", non_reg_losses: "0", losses: "0", percentage: "0.000", goals_for: "0", goals_against: "0" },
+  ...Array.from({ length: 8 }, (_, i) => ({ name: `PWHL Club ${i}`, rank: i + 3, games_played: "0", games_remaining: "2", points: 0 })),
+];
+const pwhlStandings = parsePwhlStandings(
+  `wolvesFriendsCallback(${JSON.stringify([{ sections: [{ data: pwhlStandingsRows.map((row) => ({ row })) }] }])})`,
+  checked,
+  "2026-27 Pre-Season",
+);
+assert.equal(pwhlStandings?.rows.length, 10);
+assert.equal(pwhlStandings?.rows[1].name, "Minnesota Frost");
+assert.equal(pwhlStandings?.rows[1].highlight, true);
+assert.deepEqual(pwhlStandings?.rows[1].cells.slice(0, 5), ["2", "0", "2", "0", "—"]);
+assert.equal(pwhlStandings?.seasonType, 1);
+
+const forwardLines = ["Peyton Anderson (Minnesota Frost) *", "Lara Beecher (Clarkson University) ^",
+  ...Array.from({ length: 15 }, (_, i) => `Forward ${i + 3} (Minnesota Frost)`)];
+const defenderLines = ["Brooke Becker (Minnesota Frost) *",
+  ...Array.from({ length: 8 }, (_, i) => `Defender ${i + 2} (Minnesota Frost)`)];
+const goalieLines = ["Marlène Boissonnault (Minnesota Frost) *",
+  ...Array.from({ length: 3 }, (_, i) => `Goalie ${i + 2} (Minnesota Frost)`)];
+const campRoster = parsePwhlTrainingCampRoster(
+  `<h1>MINNESOTA FROST ANNOUNCE 2026-27 TRAINING CAMP ROSTER</h1>
+  <p><strong>2026-27 Frost Training Camp Roster</strong><br><strong>Forwards&nbsp;(17):</strong><br>${forwardLines.join("<br>")}</p>
+  <p><strong>Defenders (9):</strong><br>${defenderLines.join("<br>")}</p>
+  <p><strong>Goaltenders (4):</strong><br>${goalieLines.join("<br>")}</p>`,
+  checked,
+);
+assert.equal(campRoster?.label, "Training camp roster");
+assert.deepEqual(campRoster?.groups.map((group) => group.position), ["Forwards", "Defenders", "Goaltenders"]);
+assert.equal(campRoster?.groups[0].players[0].name, "Peyton Anderson");
+assert.equal(campRoster?.groups[0].players[0].signedForSeason, true);
+assert.equal(campRoster?.groups[0].players[1].draftPick, true);
+assert.equal(campRoster?.groups[0].players[1].campTeam, "Clarkson University");
+assert.equal(campRoster?.groups.reduce((sum, group) => sum + group.players.length, 0), 30);
 
 const games = parsePwhlSchedule(
   `<table><tbody><tr><td><a href="/en/stats/game/2026-12-05">MINNESOTA FROST PWHL SAN JOSE Sat, Dec 05 7:00 p.m. ET SAP Center | San Jose, CA</a></td></tr>
