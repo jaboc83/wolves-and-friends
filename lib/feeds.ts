@@ -164,10 +164,10 @@ export function parseFeed(xml: string, name: string, only?: string[]): Story[] {
 export function parsePalaceRadar(html: string, checked: string): Story[] {
   const base = "https://www.palaceradar.co.uk";
   const year = new Date(checked).getUTCFullYear();
-  const blocks = html.match(/<article\\b[\\s\\S]*?<\\/article>/gi) || [];
+  const blocks = html.match(/<article\b[\s\S]*?<\/article>/gi) || [];
   return blocks
     .map((block) => {
-      const path = block.match(/href=["'](\\/story\\/[^"'#?]+)["']/i)?.[1];
+      const path = block.match(/href=["'](\/story\/[^"'#?]+)["']/i)?.[1];
       const title = tag(block, "h3");
       const rawDate = tag(block, "time");
       const parsedDate = rawDate ? new Date(`${rawDate} ${year}`) : null;
