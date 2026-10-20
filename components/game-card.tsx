@@ -427,6 +427,7 @@ export default function GameCard({
                     {g.eventResults?.map((result) => (
                       <span key={result.division}>
                         {result.division}: {result.name}
+                        {result.margin && ` · Won by ${result.margin}`}
                       </span>
                     ))}
                   </small>
