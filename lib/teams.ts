@@ -129,6 +129,7 @@ export const teams = [
     sources: [
       ["Official Palace schedule", "https://www.cpfc.co.uk/matches/"],
       ["Official Palace", "https://www.cpfc.co.uk/news/"],
+      ["PalaceRadar", "https://www.palaceradar.co.uk/"],
       [
         "Matt Woosnam · The Athletic",
         "https://www.nytimes.com/athletic/author/matt-woosnam/",
