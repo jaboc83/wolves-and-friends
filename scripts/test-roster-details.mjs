@@ -165,6 +165,40 @@ assert.equal(
   undefined,
 );
 assert.equal(parsePlayerStats({}), undefined);
+// Shapes captured from ESPN's actual Anthony Edwards responses. In
+// particular, core uses splits.categories.stats and overview uses parallel
+// labels/splits; neither is a common-v3 season-row array.
+const coreSeason = {
+  splits: { categories: [
+    { name: "general", stats: [
+      { name: "avgRebounds", abbreviation: "REB", displayValue: "5.0", displayName: "Rebounds Per Game" },
+      { name: "gamesPlayed", abbreviation: "GP", displayValue: "61" },
+    ] },
+    { name: "offensive", stats: [
+      { name: "avgPoints", abbreviation: "PTS", displayValue: "28.8", displayName: "Points Per Game" },
+      { name: "avgAssists", abbreviation: "AST", displayValue: "3.7" },
+      { name: "fieldGoalPct", abbreviation: "FG%", displayValue: "48.9" },
+    ] },
+  ] },
+};
+const core = parsePlayerStats({ ...coreSeason, season: { displayName: "2026" } });
+assert.equal(core.title, "2026 · Regular season");
+assert.deepEqual(core.values.map((s) => s.label), ["PTS", "REB", "AST", "FG%", "GP"]);
+assert.equal(core.values[0].value, "28.8");
+assert.equal(parsePlayerStats({ ...coreSeason, season: { displayName: "Career" } }), undefined);
+const overviewStats = parsePlayerStats({ statistics: {
+  displayName: "Stats", labels: ["GP", "MIN", "FG%"],
+  displayNames: ["Games Played", "Minutes Per Game", "Field Goal Percentage"],
+  splits: [
+    { displayName: "Career", stats: ["442", "34.8", "45.3"] },
+    { displayName: "Regular Season", stats: ["61", "35.0", "48.9"] },
+  ],
+} });
+assert.equal(overviewStats.values[0].value, "61");
+assert.equal(overviewStats.values[1].description, "Minutes Per Game");
+assert.equal(parsePlayerStats({ statistics: { labels: ["PTS"], splits: [
+  { displayName: "Career", stats: ["24.6"] },
+] } }), undefined);
 assert.equal(
   parsePlayerStats(summary("2026-27 English Premier League", [["CS", "0"]]))
     .values[0].value,
@@ -250,10 +284,16 @@ globalThis.fetch = async (url, options) => {
       ok: true,
       json: async () => ({
         team: { id: "16" },
+        season: { year: 2027 },
         athletes: Array.from({ length: 8 }, (_, i) => ({ id: String(i + 1) })),
       }),
     };
   if (url.includes("/athletes/2")) throw Error("Unavailable player");
+  if (url.includes("sports.core.api.espn.com")) {
+    if (url.includes("/seasons/2027/") || url.includes("/athletes/3/"))
+      return { ok: false };
+    return { ok: true, json: async () => coreSeason };
+  }
   return {
     ok: true,
     json: async () => ({
@@ -287,14 +327,16 @@ try {
     }),
   );
   const payload = await response.json();
-  assert.equal(payload.players.length, 6);
-  assert.equal(payload.players[0].stats.values[0].value, "20.1");
+  assert.equal(payload.players.length, 3);
+  assert.equal(payload.players[0].stats.values[0].value, "28.8");
   assert.equal(
     payload.players[0].stats.title,
-    "2025-26 · Regular Season Averages",
+    "2026 · Regular season",
   );
   assert.equal(payload.players[1].stats, undefined);
-  assert.ok(calls.some((c) => String(c.url).endsWith("/athletes/1/stats")));
+  assert.ok(calls.some((c) => String(c.url).endsWith("/athletes/3/stats")));
+  assert.ok(!calls.some((c) => String(c.url).endsWith("/athletes/1/stats")),
+    "successful core stats skip the failing common-v3 endpoints");
   const afterFirst = calls.length;
   await GET(new Request("https://local/api/roster-stats?batch=0"));
   assert.equal(
