@@ -65,15 +65,33 @@ async function stats(entry: Entry) {
   if (!inflight.has(cacheKey))
     inflight.set(
       cacheKey,
-      get(
-        "https://site.web.api.espn.com/apis/common/v3/sports/" +
-          entry.league +
-          "/athletes/" +
-          entry.id +
-          "/stats",
-      )
-        .then((data) => parsePlayerStats(data, entry.teamId))
-        .catch(() => undefined)
+      (async () => {
+        const urls = [
+          "https://site.web.api.espn.com/apis/common/v3/sports/" +
+            entry.league +
+            "/athletes/" +
+            entry.id +
+            "/stats",
+          "https://site.web.api.espn.com/apis/common/v3/sports/" +
+            entry.league +
+            "/athletes/" +
+            entry.id +
+            "/overview",
+          "https://site.api.espn.com/apis/site/v2/sports/" +
+            entry.league +
+            "/athletes/" +
+            entry.id,
+        ];
+        for (const url of urls) {
+          try {
+            const parsed = parsePlayerStats(await get(url), entry.teamId);
+            if (parsed) return parsed;
+          } catch {
+            // Try the next ESPN representation.
+          }
+        }
+        return undefined;
+      })()
         .then((stats) => {
           // A missing or failed response can be transient. Keep successful
           // stats warm, but let missing values retry soon instead of hiding
