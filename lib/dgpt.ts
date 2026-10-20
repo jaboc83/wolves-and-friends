@@ -82,7 +82,20 @@ export function parseDgptSchedule(html: string, now = new Date()): Game[] {
       )?.[1] || "";
     const eventResults = [
       ...champions.matchAll(/(MPO|FPO):\s*([^|]+)\|\s*([+−-]?\d+|E)\b/g),
-    ].map((m) => ({ division: m[1], name: m[2].trim(), score: m[3] }));
+    ].map((m) => {
+      const margin = champions.match(
+        new RegExp(
+          m[1] + "[^|]{0,180}(?:won by|lead(?:ing)? by|margin)\\s*(\\d+)\\s*stroke",
+          "i",
+        ),
+      )?.[1];
+      return {
+        division: m[1],
+        name: m[2].trim(),
+        score: m[3],
+        ...(margin ? { margin } : {}),
+      };
+    });
     events.push(
       eventLifecycle(
         {

@@ -36,7 +36,8 @@ export type Story = {
   kind: string;
 };
 export type Game = {
-  eventResults?: { division: string; name: string; score: string }[];
+  eventResults?: { division: string; name: string; score: string; margin?: string }[];
+  injuries?: { player: string; status: string; detail?: string }[];
   competitionNote?: string;
   eventOnly?: boolean;
   dateOnly?: boolean;
@@ -152,6 +153,56 @@ function match(s: string) {
     .filter((t) => new RegExp(t.pattern, "i").test(s))
     .map((t) => t.id);
 }
+export function parseNbaTeamNews(
+  html: string,
+  name = "Official Timberwolves",
+  checked = new Date().toISOString(),
+): Story[] {
+  const decode = (value: string) =>
+    value
+      .replace(/\\u0026/g, "&")
+      .replace(/\\u002F/g, "/")
+      .replace(/\\u0022/g, '"')
+      .replace(/&amp;/g, "&")
+      .replace(/&#39;|&apos;/g, "'")
+      .replace(/&quot;/g, '"');
+  const stories: Story[] = [];
+  const seen = new Set<string>();
+  const patterns = [
+    /"url"\s*:\s*"(\/timberwolves\/news\/[^"]+)"[\s\S]{0,1200}?"(?:title|headline)"\s*:\s*"([^"]+)"/gi,
+    /href=["'](\/timberwolves\/news\/[^"'#?]+)["'][^>]*>[\s\S]{0,300}?(?:<h[1-6][^>]*>)?([^<]{12,180})</gi,
+  ];
+  for (const pattern of patterns) {
+    for (const match of html.matchAll(pattern)) {
+      const url = "https://www.nba.com" + decode(match[1]);
+      const title = text(decode(match[2]));
+      if (!title || seen.has(url)) continue;
+      seen.add(url);
+      const context = html.slice(
+        Math.max(0, (match.index || 0) - 800),
+        (match.index || 0) + 1400,
+      );
+      const published =
+        context.match(
+          /(?:datePublished|published_at|publishDate)\\?"?\s*:\s*\\?"([^"]+)/i,
+        )?.[1] ||
+        context.match(/datetime=["']([^"']+)["']/i)?.[1] ||
+        checked;
+      stories.push({
+        id: url,
+        title,
+        url,
+        source: name,
+        date: Number.isFinite(Date.parse(published)) ? published : checked,
+        dateApproximate: published === checked,
+        teams: ["wolves"],
+        kind: "story",
+      });
+    }
+  }
+  return stories;
+}
+
 export function parseFeed(xml: string, name: string, only?: string[]): Story[] {
   if (!/<rss[\s>]|<feed[\s>]|<rdf:RDF[\s>]/i.test(xml))
     throw new FeedError("invalid-feed");
@@ -392,6 +443,14 @@ export async function collect(
         ["wolves"],
       ],
     ];
+    await task("Official Timberwolves news", ["wolves"], async () => {
+      const parsed = parseNbaTeamNews(
+        await (await get("https://www.nba.com/timberwolves/news")).text(),
+      );
+      if (!parsed.length) throw new Error("No NBA team stories");
+      stories.push(...parsed);
+      return parsed.length;
+    });
     await Promise.all(
       feeds.map(([name, url, ids]) =>
         task(
@@ -467,6 +526,12 @@ export async function collect(
         feed: "https://news.google.com/rss/search?q=%22Britt+Robson%22+site%3Aminnpost.com+when%3A14d&hl=en-US&gl=US&ceid=US%3Aen",
       },
       {
+        name: "Michael Russo",
+        label: "Google News index · bylines unverified",
+        url: "https://www.nytimes.com/athletic/author/michael-russo/",
+        feed: "https://news.google.com/rss/search?q=%22Michael+Russo%22+site%3Anytimes.com%2Fathletic%20when%3A14d&hl=en-US&gl=US&ceid=US%3Aen",
+      },
+      {
         name: "Jon Krawczynski",
         label: "Google News index · bylines unverified",
         url: "https://www.nytimes.com/athletic/author/jon-krawczynski/",
@@ -478,7 +543,7 @@ export async function collect(
         .filter(
           (source) =>
             !team ||
-            (source.name === "Jess Myers"
+            ((source.name === "Jess Myers" || source.name === "Michael Russo")
               ? team === "wild"
               : ["Alec Lewis", "Will Ragatz", "Ben Goessling"].includes(
                     source.name,
@@ -491,12 +556,14 @@ export async function collect(
             const xml = await (await get(source.feed)).text();
             let parsed = parseFeed(xml, source.name, ["wolves"]);
             if (source.name === "Jon Krawczynski")
-              parsed = parsed.filter((s) =>
-                / - The New York Times$/.test(s.title),
+              parsed = parsed.filter(
+                (s) =>
+                  / - The New York Times$/.test(s.title) ||
+                  /timberwolves|wolves/i.test(s.title),
               );
             if (source.name === "Britt Robson")
               parsed = parsed.filter((s) => / - MinnPost$/.test(s.title));
-            if (source.name === "Jess Myers")
+            if (source.name === "Jess Myers" || source.name === "Michael Russo")
               parsed = parsed.filter((s) => /wild/i.test(s.title));
             else if (source.name === "Alec Lewis")
               parsed = parsed.filter(
@@ -587,6 +654,28 @@ export async function collect(
     );
   }
   if (section !== "news") {
+    await task("ESPN injury report · Timberwolves", ["wolves"], async () => {
+      const json = (await (
+        await get("https://site.api.espn.com/apis/site/v2/sports/basketball/nba/injuries")
+      ).json()) as any;
+      const pattern = new RegExp(
+        teams.find((t) => t.id === "wolves")?.pattern || "timberwolves",
+        "i",
+      );
+      const injuries = (json.injuries || [])
+        .filter((item: any) => pattern.test(
+          item.team?.displayName || item.team?.name || item.athlete?.displayName || "",
+        ))
+        .map((item: any) => ({
+          player: item.athlete?.displayName || item.athlete?.fullName || "Unknown player",
+          status: item.status || item.type || "Unavailable",
+          detail: item.details?.detail || item.details?.type || item.longComment || undefined,
+        }))
+        .filter((item: any) => item.player);
+      for (const game of games.filter((game) => game.team === "wolves"))
+        game.injuries = injuries;
+      return injuries.length;
+    });
     await Promise.all(
       teams
         .filter((t) => t.league)

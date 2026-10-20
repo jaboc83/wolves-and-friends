@@ -154,6 +154,7 @@ export default function GameCard({
                     g.eventResults.map((r) => (
                       <p key={r.division}>
                         <b>{r.division}:</b> {r.name} · {r.score}
+                        {r.margin && <small> · Won by {r.margin} strokes</small>}
                       </p>
                     ))
                   ) : null
@@ -239,11 +240,29 @@ export default function GameCard({
         </span>
       </div>
       {today && injuryReportUrl(g.team) && (
-        <p className="injury-report">
+        <section className="injury-report" aria-label="Injury report">
+          {g.injuries?.length ? (
+            <>
+              <strong>Injury report</strong>
+              <ul>
+                {g.injuries.map((injury) => (
+                  <li key={injury.player}>
+                    <span>{injury.player}</span>
+                    <span>{injury.status}</span>
+                    {injury.detail && <small>{injury.detail}</small>}
+                  </li>
+                ))}
+              </ul>
+            </>
+          ) : (
+            <a href={injuryReportUrl(g.team)} target="_blank" rel="noreferrer">
+              Injury report ↗
+            </a>
+          )}
           <a href={injuryReportUrl(g.team)} target="_blank" rel="noreferrer">
-            Injury report ↗
+            Full report ↗
           </a>
-        </p>
+        </section>
       )}
       {g.state === "post" && !g.eventOnly && (
         <a
@@ -408,6 +427,7 @@ export default function GameCard({
                     {g.eventResults?.map((result) => (
                       <span key={result.division}>
                         {result.division}: {result.name}
+                        {result.margin && ` · Won by ${result.margin}`}
                       </span>
                     ))}
                   </small>

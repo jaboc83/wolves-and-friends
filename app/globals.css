@@ -115,6 +115,15 @@ summary:focus-visible {
   border-color: #10283a;
   color: white;
 }
+.team-nav button[data-tab-team="march-madness"] {
+  white-space: normal;
+  min-width: 0;
+}
+.team-nav button[data-tab-team="march-madness"] > span:last-child {
+  min-width: 0;
+  overflow-wrap: anywhere;
+  line-height: 1.15;
+}
 .dot {
   height: 7px;
   width: 7px;
@@ -2972,8 +2981,38 @@ body:has(.score-choice[open]) {
   animation: headline-spin 0.8s linear infinite;
 }
 .injury-report {
+  display: grid;
+  gap: 8px;
   font-size: 0.85rem;
   margin-top: 12px;
+  padding: 10px 12px;
+  border-left: 3px solid var(--team-accent, var(--accent, #79bc43));
+  background: var(--raised, #f2f4ee);
+}
+.injury-report strong {
+  font-size: 0.78rem;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+}
+.injury-report ul {
+  display: grid;
+  gap: 5px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+.injury-report li {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 3px 10px;
+}
+.injury-report li small {
+  grid-column: 1 / -1;
+  color: var(--muted, #64717d);
+}
+.injury-report > a:last-child {
+  justify-self: start;
+  font-size: 0.76rem;
 }
 @media (prefers-reduced-motion: reduce) {
   .refresh-spinning {
