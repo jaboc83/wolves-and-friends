@@ -1,8 +1,8 @@
 import { teams } from "../../../lib/teams";
 import { parsePlayerStats, type PlayerStats } from "../../../lib/player-stats";
-const batchSize = 6,
+const batchSize = 3,
   ttl = 15 * 60000;
-type Entry = { key: string; league: string; id: string; teamId: string };
+type Entry = { key: string; league: string; id: string; teamId: string; year: number };
 let manifest: Entry[] = [],
   expires = 0;
 let manifestRequest: Promise<void> | null = null;
@@ -12,7 +12,7 @@ const get = async (url: string): Promise<any> => {
   const r = await fetch(url, {
     credentials: "omit",
     referrerPolicy: "no-referrer",
-    signal: AbortSignal.timeout(30000),
+    signal: AbortSignal.timeout(8000),
   });
   if (!r.ok) throw Error("Stats unavailable");
   return r.json();
@@ -43,6 +43,7 @@ async function loadManifest() {
                   league: t.league,
                   id: String(a.id),
                   teamId: String(data.team?.id || t.espn),
+                  year: Number(data.season?.year) || new Date().getUTCFullYear(),
                 }));
             } catch {
               return [];
@@ -66,6 +67,22 @@ async function stats(entry: Entry) {
     inflight.set(
       cacheKey,
       (async () => {
+        // Use ESPN's season-specific core API first. Before the new season
+        // starts it can be empty/404, so try the previous season explicitly.
+        const [sport, league] = entry.league.split("/");
+        for (const year of [entry.year, entry.year - 1]) {
+          try {
+            const data = await get(
+              "https://sports.core.api.espn.com/v2/sports/" + sport +
+              "/leagues/" + league + "/seasons/" + year +
+              "/types/2/athletes/" + entry.id + "/statistics/0",
+            );
+            const parsed = parsePlayerStats({ ...data, season: { displayName: String(year) } });
+            if (parsed) return parsed;
+          } catch {
+            // Missing current-season stats must not hide the last season.
+          }
+        }
         const urls = [
           "https://site.web.api.espn.com/apis/common/v3/sports/" +
             entry.league +
