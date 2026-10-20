@@ -220,12 +220,16 @@ export const teams = [
       ],
       ["The Ice Garden", "https://www.theicegarden.com/"],
       [
+        "Official PWHL standings",
+        "https://www.thepwhl.com/en/stats/standings",
+      ],
+      [
         "Official Frost schedule",
         "https://www.thepwhl.com/en/stats/schedule/2/11/all-months/homeaway?league=1",
       ],
       [
-        "Official Frost roster",
-        "https://www.thepwhl.com/en/stats/roster/2/10?league=1",
+        "Official Frost training camp roster",
+        "https://www.thepwhl.com/en/teams/minnesota-frost/news/2026/october/07/minnesota-frost-announce-2026-27-training-camp-roster",
       ],
     ],
   },
