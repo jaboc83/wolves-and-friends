@@ -400,6 +400,18 @@ export default function GameCard({
                     {ct(g.date, { hour: "numeric", minute: "2-digit" })} CT
                   </small>
                 ))}
+              {g.state === "post" &&
+                g.eventOnly &&
+                scoreVisible &&
+                Boolean(g.eventResults?.length) && (
+                  <small className="event-winners">
+                    {g.eventResults.map((result) => (
+                      <span key={result.division}>
+                        {result.division}: {result.name}
+                      </span>
+                    ))}
+                  </small>
+                )}
               {g.state === "post" && g.eventOnly && scoreVisible && (
                 <small>
                   <a
