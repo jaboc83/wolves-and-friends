@@ -1,5 +1,5 @@
 "use client";
-import { Fragment, useState } from "react";
+import { Fragment, useEffect, useState } from "react";
 import { decorateTable } from "../lib/team-info";
 import { teams } from "../lib/teams";
 import { sportTerms } from "../lib/sport-terms";
@@ -11,17 +11,23 @@ export default function TeamInsights({
   active,
   data,
   revealResults = true,
+  autoOpenStandings = false,
   playerStats = {},
   playerStatsStatus = "loading",
 }: {
   active: string;
   data: TeamInfo[];
   revealResults?: boolean;
+  autoOpenStandings?: boolean;
   playerStats?: Record<string, PlayerStats>;
   playerStatsStatus?: "loading" | "ready" | "empty" | "unavailable";
 }) {
   const [selected, setSelected] = useState("wolves");
+  const [standingsOpen, setStandingsOpen] = useState(false);
   const id = active === "all" ? selected : active;
+  useEffect(() => {
+    setStandingsOpen(autoOpenStandings);
+  }, [id, autoOpenStandings]);
   const terms = sportTerms(id);
   const headings = sportTerms(active);
   const t = teams.find((t) => t.id === id);
@@ -58,7 +64,12 @@ export default function TeamInsights({
           </select>
         </label>
       )}
-      <details id="team-standings" className="data-panel">
+      <details
+        id="team-standings"
+        className="data-panel"
+        open={standingsOpen}
+        onToggle={(event) => setStandingsOpen(event.currentTarget.open)}
+      >
         <summary>
           {headings.standings}
           <small>{t?.short}</small>
