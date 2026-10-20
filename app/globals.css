@@ -1307,7 +1307,7 @@ footer b {
   gap: 12px;
 }
 
-.headlines-content > .message-feed {
+.headlines-content .message-feed {
   margin-top: 0;
   margin-bottom: 24px;
 }
@@ -2183,7 +2183,7 @@ footer b {
     width: 100%;
     min-width: 0;
   }
-  .headlines-content > .message-feed {
+  .headlines-content .message-feed {
     display: block;
     visibility: visible;
     width: 100%;
@@ -2224,7 +2224,7 @@ footer b {
   min-height: 80px;
   content-visibility: visible !important;
 }
-.headlines-content > .message-feed {
+.headlines-content .message-feed {
   position: relative;
   isolation: isolate;
 }
@@ -2550,6 +2550,14 @@ footer b {
     display: contents;
   }
   .headlines-content {
+    display: contents;
+  }
+  .ultrawide-left-column,
+  .headline-column {
+    display: contents;
+  }
+  #latest-messages,
+  .headline-column > * {
     order: 0;
   }
   .team-details {
@@ -2559,6 +2567,8 @@ footer b {
     order: 3;
   }
   .headlines-content,
+  .ultrawide-left-column,
+  .headline-column,
   .team-details,
   .news-resources {
     width: 100%;
@@ -2979,32 +2989,44 @@ body:has(.score-choice[open]) {
   .news {
     display: grid;
     grid-template-columns: minmax(340px, min(24vw, 500px)) minmax(0, 1fr);
-    grid-auto-flow: row;
-    row-gap: 24px;
     column-gap: 28px;
     align-items: start;
   }
   .headlines-content {
     display: contents;
   }
-  .headlines-content > :not(#latest-messages) {
-    grid-column: 2;
-    min-width: 0;
-  }
-  .headlines-content > #latest-messages {
+  .ultrawide-left-column {
     grid-column: 1;
     grid-row: 1;
     min-width: 0;
-    margin: 0;
+  }
+  .headline-column {
+    grid-column: 2;
+    grid-row: 1;
+    min-width: 0;
+  }
+}
+@media (min-width: 801px) and (max-width: 1599px) {
+  .news {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr);
+    align-items: start;
+  }
+  .headlines-content,
+  .ultrawide-left-column,
+  .headline-column {
+    display: contents;
+  }
+  #latest-messages {
+    order: 0;
+  }
+  .headline-column > * {
+    order: 1;
   }
   .team-details {
-    grid-column: 1;
-    grid-row: 2;
-    min-width: 0;
+    order: 2;
   }
   .news-resources {
-    grid-column: 1;
-    grid-row: 3;
-    min-width: 0;
+    order: 3;
   }
 }

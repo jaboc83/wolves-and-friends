@@ -933,7 +933,7 @@ export default function Home() {
                 </div>
                 <section className="news">
                   <div className="headlines-content">
-                    {
+                    <div className="ultrawide-left-column">
                       <section
                         id="latest-messages"
                         className="message-feed"
@@ -998,7 +998,99 @@ export default function Home() {
                           </p>
                         )}
                       </section>
-                    }
+                      <div className="team-details">
+                        {active !== "all" && (
+                          <TeamInsights
+                            active={active}
+                            data={teamInfo}
+                            revealResults={resultsReady && !hideScores}
+                            autoOpenStandings={autoOpenStandings}
+                            playerStats={playerStats}
+                            playerStatsStatus={playerStatsStatus}
+                          />
+                        )}
+                        <MatchCalendar games={visibleGames} team={active} />
+                      </div>
+                      <div className="news-resources">
+                        <section className="community-panel">
+                          <h2>Fan communities</h2>
+                          <p>Permanent Reddit links</p>
+                          {communities
+                            .filter((c) => active === "all" || c.team === active)
+                            .map((c) => (
+                              <a
+                                key={c.url}
+                                href={c.url}
+                                target="_blank"
+                                rel="noreferrer"
+                              >
+                                <img
+                                  src={
+                                    "/logos/" +
+                                    c.team +
+                                    (c.team === "disc" ? ".svg" : ".png")
+                                  }
+                                  alt=""
+                                  width={24}
+                                  height={24}
+                                />
+                                <span>{c.name} ↗</span>
+                              </a>
+                            ))}
+                        </section>
+                        <div className="source-panel">
+                          <button
+                            className="source-toggle"
+                            onClick={() => setSources(!sources)}
+                            aria-expanded={sources}
+                          >
+                            Source desk <span>{sources ? "−" : "+"}</span>
+                          </button>
+                          <p>
+                            Direct links to your trusted voices, including sources
+                            whose feeds aren’t available.
+                          </p>
+                          {sources && (
+                            <div className="source-grid">
+                              {(team ? [team] : teams).map((t) => (
+                                <div key={t.id}>
+                                  <h4>{t.short}</h4>
+                                  {t.sources.map(([name, url]) => (
+                                    <a
+                                      key={url}
+                                      href={url}
+                                      target="_blank"
+                                      rel="noreferrer"
+                                    >
+                                      {name} ↗
+                                    </a>
+                                  ))}
+                                </div>
+                              ))}
+                            </div>
+                          )}
+                          {failed.length > 0 && (
+                            <details className="health">
+                              <summary>
+                                {failed.length} feed{failed.length === 1 ? "" : "s"}{" "}
+                                unavailable · cached items may remain
+                              </summary>
+                              {failed.map((h) => (
+                                <p key={h.name}>
+                                  {h.name} · checked{" "}
+                                  {ct(h.checked, {
+                                    hour: "numeric",
+                                    minute: "2-digit",
+                                  })}{" "}
+                                  CT
+                                </p>
+                              ))}
+                            </details>
+                          )}
+                        </div>
+                      </div>
+                    </div>
+                    <div className="headline-column">
                     <div className="section-heading">
                       <h2 className="latest-heading">
                         Latest stories <small>{displayed.length}</small>
@@ -1100,96 +1192,6 @@ export default function Home() {
                         )}
                       </div>
                     )}
-                  </div>
-                  <div className="team-details">
-                    {active !== "all" && (
-                      <TeamInsights
-                        active={active}
-                        data={teamInfo}
-                        revealResults={resultsReady && !hideScores}
-                        autoOpenStandings={autoOpenStandings}
-                        playerStats={playerStats}
-                        playerStatsStatus={playerStatsStatus}
-                      />
-                    )}
-                    <MatchCalendar games={visibleGames} team={active} />
-                  </div>
-                  <div className="news-resources">
-                    <section className="community-panel">
-                      <h2>Fan communities</h2>
-                      <p>Permanent Reddit links</p>
-                      {communities
-                        .filter((c) => active === "all" || active === c.team)
-                        .map((c) => (
-                          <a
-                            key={c.url}
-                            href={c.url}
-                            target="_blank"
-                            rel="noreferrer"
-                          >
-                            <img
-                              src={
-                                "/logos/" +
-                                c.team +
-                                (c.team === "disc" ? ".svg" : ".png")
-                              }
-                              alt=""
-                              width={24}
-                              height={24}
-                            />
-                            <span>{c.name} ↗</span>
-                          </a>
-                        ))}
-                    </section>
-                    <div className="source-panel">
-                      <button
-                        className="source-toggle"
-                        onClick={() => setSources(!sources)}
-                        aria-expanded={sources}
-                      >
-                        Source desk <span>{sources ? "−" : "+"}</span>
-                      </button>
-                      <p>
-                        Direct links to your trusted voices, including sources
-                        whose feeds aren’t available.
-                      </p>
-                      {sources && (
-                        <div className="source-grid">
-                          {(team ? [team] : teams).map((t) => (
-                            <div key={t.id}>
-                              <h4>{t.short}</h4>
-                              {t.sources.map(([name, url]) => (
-                                <a
-                                  key={url}
-                                  href={url}
-                                  target="_blank"
-                                  rel="noreferrer"
-                                >
-                                  {name} ↗
-                                </a>
-                              ))}
-                            </div>
-                          ))}
-                        </div>
-                      )}
-                      {failed.length > 0 && (
-                        <details className="health">
-                          <summary>
-                            {failed.length} feed{failed.length === 1 ? "" : "s"}{" "}
-                            unavailable · cached items may remain
-                          </summary>
-                          {failed.map((h) => (
-                            <p key={h.name}>
-                              {h.name} · checked{" "}
-                              {ct(h.checked, {
-                                hour: "numeric",
-                                minute: "2-digit",
-                              })}{" "}
-                              CT
-                            </p>
-                          ))}
-                        </details>
-                      )}
                     </div>
                   </div>
                 </section>
