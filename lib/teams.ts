@@ -107,6 +107,7 @@ export const teams = [
     sources: [
       ["Official MNUFC schedule", "https://www.mnufc.com/schedule/matches"],
       ["Official MNUFC", "https://www.mnufc.com/news/"],
+      ["Yard Barker", "https://www.yardbarker.com/soccer/teams/minnesota_united/17423"],
       [
         "Andy Greder · Pioneer Press",
         "https://www.twincities.com/author/andy-greder/",
