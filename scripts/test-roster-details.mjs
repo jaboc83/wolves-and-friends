@@ -179,6 +179,22 @@ const statsHtml = renderToStaticMarkup(
 );
 assert.ok(statsHtml.includes("2025-26 regular season stats"));
 assert.ok(statsHtml.includes("20.1"));
+const {
+  readPlayerStatsCache,
+  writePlayerStatsCache,
+} = load(path.resolve("lib/player-stats-cache.ts"));
+const statsMemory = new Map();
+const statsStorage = {
+  getItem: (key) => statsMemory.get(key) ?? null,
+  setItem: (key, value) => statsMemory.set(key, value),
+};
+writePlayerStatsCache(statsStorage, { "basketball/nba:4594268": nba }, 1000);
+assert.deepEqual(readPlayerStatsCache(statsStorage, 2000), {
+  "basketball/nba:4594268": nba,
+});
+assert.deepEqual(readPlayerStatsCache(statsStorage, 1000 + 12 * 60 * 60 * 1000 + 1), {});
+statsStorage.setItem("wf-player-stats-cache", "not json");
+assert.deepEqual(readPlayerStatsCache(statsStorage, 2000), {});
 const { loadScorePreference, saveScorePreference } = load(
   path.resolve("lib/score-preference.ts"),
 );
@@ -223,6 +239,9 @@ assert.match(dialogRule, /left:\s*50%/);
 assert.match(dialogRule, /translate\(-50%,\s*-50%\)/);
 
 const originalFetch = globalThis.fetch;
+const originalDateNow = Date.now;
+let now = 1_000_000;
+Date.now = () => now;
 const calls = [];
 globalThis.fetch = async (url, options) => {
   calls.push({ url, options });
@@ -268,7 +287,7 @@ try {
     }),
   );
   const payload = await response.json();
-  assert.equal(payload.players.length, 18);
+  assert.equal(payload.players.length, 6);
   assert.equal(payload.players[0].stats.values[0].value, "20.1");
   assert.equal(
     payload.players[0].stats.title,
@@ -283,6 +302,13 @@ try {
     afterFirst,
     "shared cache prevents duplicate upstream fetches",
   );
+  now += 2 * 60 * 1000 + 1;
+  await GET(new Request("https://local/api/roster-stats?batch=0"));
+  assert.equal(
+    calls.filter((c) => String(c.url).endsWith("/athletes/2/stats")).length,
+    2,
+    "failed player stats retry after the short negative-cache window",
+  );
   assert.ok(
     calls.every(
       (c) =>
@@ -293,6 +319,7 @@ try {
   );
 } finally {
   globalThis.fetch = originalFetch;
+  Date.now = originalDateNow;
 }
 const page = fs.readFileSync("app/page.tsx", "utf8"),
   start = page.indexOf('className="social-refresh"'),
@@ -300,6 +327,8 @@ const page = fs.readFileSync("app/page.tsx", "utf8"),
 assert.ok(button.includes('aria-label="Refresh latest social media"'));
 assert.ok(button.includes("aria-busy={socialRefreshing}"));
 assert.ok(button.includes("title="));
+const refreshBody = page.match(/function refresh\(\) \{([\s\S]*?)\n  \}/)?.[1] || "";
+assert.ok(!refreshBody.includes("refreshRosterStats"));
 assert.ok(!button.includes('"Refreshing…" : "Refresh"'));
 console.log(
   "Roster season stats, age, browser-only score preferences, safe defaults, modal semantics and icon refresh passed.",

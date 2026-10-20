@@ -14,13 +14,15 @@ export default function TeamInsights({
   autoOpenStandings = false,
   playerStats = {},
   playerStatsStatus = "loading",
+  onRosterOpen = () => {},
 }: {
   active: string;
   data: TeamInfo[];
   revealResults?: boolean;
   autoOpenStandings?: boolean;
   playerStats?: Record<string, PlayerStats>;
-  playerStatsStatus?: "loading" | "ready" | "empty" | "unavailable";
+  playerStatsStatus?: "idle" | "loading" | "ready" | "empty" | "unavailable";
+  onRosterOpen?: () => void;
 }) {
   const [selected, setSelected] = useState("wolves");
   const [standingsOpen, setStandingsOpen] = useState(false);
@@ -228,13 +230,24 @@ export default function TeamInsights({
         )}
       </details>
       {id !== "disc" && (
-        <details id="team-roster" className="data-panel">
+        <details
+          id="team-roster"
+          className="data-panel"
+          onToggle={(event) => {
+            if (event.currentTarget.open) onRosterOpen();
+          }}
+        >
           <summary>
             {headings.roster}
             <small>{t?.short}</small>
           </summary>
           {info?.depth ? (
             <>
+              {Boolean(t?.league) && playerStatsStatus === "idle" && (
+                <p className="panel-note">
+                  Open the roster to load current season stats.
+                </p>
+              )}
               {Boolean(t?.league) && playerStatsStatus === "loading" && (
                 <p className="panel-note" aria-live="polite">
                   Loading ESPN season stats…
