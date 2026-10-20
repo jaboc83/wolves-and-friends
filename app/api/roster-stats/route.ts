@@ -1,6 +1,6 @@
 import { teams } from "../../../lib/teams";
 import { parsePlayerStats, type PlayerStats } from "../../../lib/player-stats";
-const batchSize = 18,
+const batchSize = 6,
   ttl = 15 * 60000;
 type Entry = { key: string; league: string; id: string; teamId: string };
 let manifest: Entry[] = [],
@@ -75,7 +75,13 @@ async function stats(entry: Entry) {
         .then((data) => parsePlayerStats(data, entry.teamId))
         .catch(() => undefined)
         .then((stats) => {
-          cache.set(cacheKey, { expires: Date.now() + ttl, stats });
+          // A missing or failed response can be transient. Keep successful
+          // stats warm, but let missing values retry soon instead of hiding
+          // recovered ESPN data for the full positive-cache window.
+          cache.set(cacheKey, {
+            expires: Date.now() + (stats ? ttl : 2 * 60000),
+            stats,
+          });
           return stats;
         })
         .finally(() => {

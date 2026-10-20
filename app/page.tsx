@@ -17,6 +17,10 @@ import {
   saveScorePreference,
 } from "../lib/score-preference";
 import type { PlayerStats } from "../lib/player-stats";
+import {
+  readPlayerStatsCache,
+  writePlayerStatsCache,
+} from "../lib/player-stats-cache";
 const MarchMadness = lazy(() => import("../components/march-madness"));
 import { sportTerms } from "../lib/sport-terms";
 import TeamInsights from "../components/team-insights";
@@ -98,15 +102,20 @@ export default function Home() {
     [autoOpenStandings, setAutoOpenStandings] = useState(false),
     [darkMode, setDarkMode] = useState(false);
   const pending = useRef(new Map<string, Promise<void>>());
+  const rosterStatsRequested = useRef(false);
   const [playerStats, setPlayerStats] = useState<Record<string, PlayerStats>>(
     {},
   );
   const [playerStatsStatus, setPlayerStatsStatus] = useState<
-    "loading" | "ready" | "empty" | "unavailable"
-  >("loading");
+    "idle" | "loading" | "ready" | "empty" | "unavailable"
+  >("idle");
   function refreshRosterStats() {
+    if (rosterStatsRequested.current)
+      return pending.current.get("roster-stats") || Promise.resolve();
+    rosterStatsRequested.current = true;
     return once("roster-stats", async () => {
-      const hasCachedStats = Object.keys(playerStats).length > 0;
+      let latestStats = { ...playerStats };
+      const hasCachedStats = Object.keys(latestStats).length > 0;
       setPlayerStatsStatus(hasCachedStats ? "ready" : "loading");
       let total = 1;
       let received = false;
@@ -128,24 +137,29 @@ export default function Home() {
           if (available.length) {
             foundStats = true;
             setPlayerStatsStatus("ready");
+            latestStats = {
+              ...latestStats,
+              ...Object.fromEntries(available.map((p) => [p.key, p.stats!])),
+            };
+            setPlayerStats(latestStats);
           }
-          setPlayerStats((previous) => ({
-            ...previous,
-            ...Object.fromEntries(available.map((p) => [p.key, p.stats!])),
-          }));
         } catch {
           /* A failed batch must not block other roster or feed data. */
         }
       }
       await loadBatch(0);
       let nextBatch = 1;
-      await Promise.all(Array.from({ length: 4 }, async () => {
+      await Promise.all(Array.from({ length: 2 }, async () => {
         while (nextBatch < total) {
           const batch = nextBatch++;
           await loadBatch(batch);
         }
       }));
-      if (!foundStats) setPlayerStatsStatus(received ? "empty" : "unavailable");
+      if (foundStats) writePlayerStatsCache(localStorage, latestStats);
+      if (!foundStats) {
+        rosterStatsRequested.current = false;
+        setPlayerStatsStatus(received ? "empty" : "unavailable");
+      }
     });
   }
   function once(key: string, work: () => Promise<void>) {
@@ -340,7 +354,6 @@ export default function Home() {
     });
   }
   function refresh() {
-    void refreshRosterStats();
     void refreshInfo();
     void refreshScores();
     void refreshSocial();
@@ -348,6 +361,10 @@ export default function Home() {
     void refreshNews();
   }
   useEffect(() => {
+    try {
+      const cachedStats = readPlayerStatsCache(localStorage);
+      if (Object.keys(cachedStats).length) setPlayerStats(cachedStats);
+    } catch {}
     try {
       setDarkMode(localStorage.getItem("wf-color-mode") === "dark");
     } catch {}
@@ -1007,6 +1024,7 @@ export default function Home() {
                             autoOpenStandings={autoOpenStandings}
                             playerStats={playerStats}
                             playerStatsStatus={playerStatsStatus}
+                            onRosterOpen={refreshRosterStats}
                           />
                         )}
                         <MatchCalendar games={visibleGames} team={active} />
