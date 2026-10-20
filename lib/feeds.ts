@@ -160,17 +160,17 @@ export function parseNbaTeamNews(
 ): Story[] {
   const decode = (value: string) =>
     value
-      .replace(/\\\\u0026/g, "&")
-      .replace(/\\\\u002F/g, "/")
-      .replace(/\\\\u0022/g, '"')
+      .replace(/\\u0026/g, "&")
+      .replace(/\\u002F/g, "/")
+      .replace(/\\u0022/g, '"')
       .replace(/&amp;/g, "&")
       .replace(/&#39;|&apos;/g, "'")
       .replace(/&quot;/g, '"');
   const stories: Story[] = [];
   const seen = new Set<string>();
   const patterns = [
-    /"url"\\s*:\\s*"(\\/timberwolves\\/news\\/[^"]+)"[\\s\\S]{0,1200}?"(?:title|headline)"\\s*:\\s*"([^"]+)"/gi,
-    /href=["'](\\/timberwolves\\/news\\/[^"'#?]+)["'][^>]*>[\\s\\S]{0,300}?(?:<h[1-6][^>]*>)?([^<]{12,180})</gi,
+    /"url"\s*:\s*"(\/timberwolves\/news\/[^"]+)"[\s\S]{0,1200}?"(?:title|headline)"\s*:\s*"([^"]+)"/gi,
+    /href=["'](\/timberwolves\/news\/[^"'#?]+)["'][^>]*>[\s\S]{0,300}?(?:<h[1-6][^>]*>)?([^<]{12,180})</gi,
   ];
   for (const pattern of patterns) {
     for (const match of html.matchAll(pattern)) {
@@ -178,9 +178,14 @@ export function parseNbaTeamNews(
       const title = text(decode(match[2]));
       if (!title || seen.has(url)) continue;
       seen.add(url);
-      const context = html.slice(Math.max(0, (match.index || 0) - 800), (match.index || 0) + 1400);
+      const context = html.slice(
+        Math.max(0, (match.index || 0) - 800),
+        (match.index || 0) + 1400,
+      );
       const published =
-        context.match(/(?:datePublished|published_at|publishDate)\\\\"?\\s*:\\s*\\\\"([^"]+)/i)?.[1] ||
+        context.match(
+          /(?:datePublished|published_at|publishDate)\\?"?\s*:\s*\\?"([^"]+)/i,
+        )?.[1] ||
         context.match(/datetime=["']([^"']+)["']/i)?.[1] ||
         checked;
       stories.push({
