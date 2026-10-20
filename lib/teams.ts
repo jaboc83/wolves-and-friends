@@ -49,6 +49,7 @@ export const teams = [
         "https://www.nytimes.com/athletic/author/joe-smith/",
       ],
       ["Official Wild", "https://www.nhl.com/wild/"],
+      ["Yard Barker", "https://www.yardbarker.com/nhl/teams/minnesota_wild/115"],
     ],
   },
   {
