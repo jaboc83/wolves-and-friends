@@ -161,6 +161,31 @@ export function parseFeed(xml: string, name: string, only?: string[]): Story[] {
         Number.isFinite(Date.parse(s.date)),
     );
 }
+export function parsePalaceRadar(html: string, checked: string): Story[] {
+  const base = "https://www.palaceradar.co.uk";
+  const year = new Date(checked).getUTCFullYear();
+  const blocks = html.match(/<article\\b[\\s\\S]*?<\\/article>/gi) || [];
+  return blocks
+    .map((block) => {
+      const path = block.match(/href=["'](\\/story\\/[^"'#?]+)["']/i)?.[1];
+      const title = tag(block, "h3");
+      const rawDate = tag(block, "time");
+      const parsedDate = rawDate ? new Date(`${rawDate} ${year}`) : null;
+      const date = parsedDate && Number.isFinite(parsedDate.getTime())
+        ? parsedDate.toISOString()
+        : checked;
+      return {
+        id: path ? base + path : "",
+        title,
+        url: path ? base + path : "",
+        date,
+        source: "Palace Radar",
+        teams: ["palace"],
+        kind: "story",
+      };
+    })
+    .filter((story) => story.url && story.title && Number.isFinite(Date.parse(story.date)));
+}
 export function parseGames(json: any, team: string, sport: string): Game[] {
   return (json.events || [])
     .map((e: any) => {
@@ -310,8 +335,12 @@ export async function collect(
   if (section !== "schedules") {
     const feeds: [string, string, string[] | undefined][] = [
       ["PDGA News", "https://www.pdga.com/rss.xml", ["disc"]],
+      ["Dunking with Wolves", "https://dunkingwithwolves.com/feed/", ["wolves"]],
       ["Yard Barker · Timberwolves", "https://www.yardbarker.com/rss/team/83", ["wolves"]],
+      ["Yard Barker · Wild", "https://www.yardbarker.com/rss/team/115", ["wild"]],
+      ["Yard Barker · MNUFC", "https://www.yardbarker.com/rss/team/17423", ["loons"]],
       ["Gone Puck Wild", "https://gonepuckwild.com/feed/", ["wild"]],
+      ["Twins Daily", "https://twinsdaily.com/rss/3-twins-daily-content.xml/", ["twins"]],
       ["Puckett's Pond", "https://puckettspond.com/feed/", ["twins"]],
       ["Eurohoops Žalgiris", "https://www.eurohoops.net/basket/zalgiris-kaunas/feed/?lang=en", ["zalgiris"]],
       ["Canis Hoopus", "https://www.canishoopus.com/rss/index.xml", undefined],
@@ -356,6 +385,15 @@ export async function collect(
       ),
     );
     await Promise.all([
+      task("Palace Radar", ["palace"], async () => {
+        const parsed = parsePalaceRadar(
+          await (await get("https://www.palaceradar.co.uk/")).text(),
+          checked,
+        );
+        if (!parsed.length) throw Error("No Palace Radar stories");
+        stories.push(...parsed);
+        return parsed.length;
+      }),
       task("Official Minnesota Frost", ["frost"], async () => {
         const parsed = parseFrostNews(
           await (
