@@ -123,4 +123,15 @@ assert.equal(games[0].venue, "SAP Center | San Jose, CA");
 assert.equal(games[1].name, "Seattle Torrent at Minnesota Frost");
 assert.equal(games[1].venue, "Grand Casino Arena | St. Paul, MN");
 assert.ok(games.every((g) => g.url.startsWith("https://www.thepwhl.com/")));
+
+const styledVenueGames = parsePwhlSchedule(
+  `<table><tbody><tr><td><a href="/en/stats/game/2026-11-22">MINNESOTA FROST PWHL LAS VEGAS Sun, Nov 22 4:00 p.m. ET
+    <style data-emotion="css 1wpqury">.css-1wpqury{color:#6A6A6A}.css-1wpqury svg{fill:none}</style>
+    America First Center | Henderson, NV
+    <style>.venue-label{font-weight:600}</style></a></td></tr></tbody></table>`,
+  checked,
+);
+assert.equal(styledVenueGames.length, 1);
+assert.equal(styledVenueGames[0].venue, "America First Center | Henderson, NV");
+assert.ok(!/css-|color:|svg|fill:|venue-label/.test(styledVenueGames[0].venue));
 console.log("EuroLeague standings, Žalgiris and Frost rosters, and PWHL schedule parsing passed.");
