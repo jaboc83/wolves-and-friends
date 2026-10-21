@@ -13,5 +13,7 @@ export function mergeTeamInfo(next: TeamInfo, previous?: TeamInfo): TeamInfo {
     if (failed(table, next.unavailable) && !tables.some((fresh) => identity(fresh) === identity(table)))
       tables.push({ ...table, stale: true });
   }
-  return { ...next, tables, depth: next.depth || previous?.depth, season: next.season || previous?.season };
+  return { ...next, tables, depth: next.depth || previous?.depth, season: next.season || previous?.season,
+    powerRanking: next.powerRanking || previous?.powerRanking,
+  };
 }
