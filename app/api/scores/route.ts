@@ -1,9 +1,10 @@
 import { fetchScoreboard } from "../../../lib/scoreboard";
 import { scoreboardLeagues } from "../../../lib/competitions";
 import { mergeLiveScoreboard, type Game } from "../../../lib/feeds";
-let cached: { checked: string; games: Game[]; unavailable: string[] } | null =
+type ScoreData = { checked: string; games: Game[]; unavailable: string[] };
+let cached: ScoreData | null =
   null;
-let inflight: Promise<NonNullable<typeof cached>> | null = null;
+let inflight: Promise<ScoreData> | null = null;
 async function collect() {
   const checked = new Date().toISOString(),
     games: Game[] = [],
