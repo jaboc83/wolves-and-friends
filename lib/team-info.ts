@@ -127,24 +127,30 @@ async function parsePowerRanking(
     .sort((a: any, b: any) => Number(a.rank.value) - Number(b.rank.value))
     .slice(0, 10) as any[];
   if (!ranked.length) return;
-  const rows = await Promise.all(
-    ranked.map(async ({ teamId, rank, metric }) => {
-      const teamResult = await get(
-        `https://site.api.espn.com/apis/site/v2/sports/${league}/teams/${teamId}`,
-      );
-      const team = teamResult.team || {};
-      const url =
-        team.links?.find((link: any) => link.rel?.includes("clubhouse"))?.href ||
-        `https://www.espn.com/${leagueName}/team/_/id/${teamId}`;
-      return {
-        id: teamId,
-        name: team.displayName || team.name || teamId,
-        url,
-        logo: team.logo || team.logos?.[0]?.href,
-        cells: [String(rank.displayValue || rank.value), String(metric?.displayValue || "—")],
-      };
-    }),
+  // Use one team-catalog request instead of one slow request per row. The
+  // catalog is fast enough for the Site worker timeout and keeps the panel
+  // available when ESPN's individual team endpoints are delayed.
+  const catalogResult = await get(
+    `https://site.api.espn.com/apis/site/v2/sports/${league}/teams?limit=100`,
   );
+  const catalog = new Map(
+    (catalogResult.sports?.[0]?.leagues?.[0]?.teams || [])
+      .map((entry: any) => entry.team || entry)
+      .map((team: any) => [String(team.id), team]),
+  );
+  const rows = ranked.map(({ teamId, rank, metric }) => {
+    const team = catalog.get(teamId) || {};
+    const url =
+      team.links?.find((link: any) => link.rel?.includes("clubhouse"))?.href ||
+      `https://www.espn.com/${leagueName}/team/_/id/${teamId}`;
+    return {
+      id: teamId,
+      name: team.displayName || team.name || teamId,
+      url,
+      logo: team.logo || team.logos?.[0]?.href,
+      cells: [String(rank.displayValue || rank.value), String(metric?.displayValue || "—")],
+    };
+  });
   const metricName = league === "football/nfl" ? "FPI" : "BPI";
   const sourceUrl = `https://www.espn.com/${leagueName}/${metricName.toLowerCase()}`;
   const publishedAt = ranked[0].item.lastUpdated || ranked[0].item.runCutoffDate;
