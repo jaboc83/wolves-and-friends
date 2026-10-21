@@ -139,7 +139,7 @@ async function parsePowerRanking(
       .map((team: any) => [String(team.id), team]),
   );
   const rows = ranked.map(({ teamId, rank, metric }) => {
-    const team = catalog.get(teamId) || {};
+    const team: any = catalog.get(teamId) || {};
     const url =
       team.links?.find((link: any) => link.rel?.includes("clubhouse"))?.href ||
       `https://www.espn.com/${leagueName}/team/_/id/${teamId}`;
