@@ -39,7 +39,7 @@ function safeFeedError(error: unknown) {
 async function providerGet(url: string, signal?: AbortSignal) {
   try {
     const r = await fetch(url, {
-      signal: signal ? AbortSignal.any([signal, AbortSignal.timeout(12000)]) : AbortSignal.timeout(12000),
+      signal: signal ? AbortSignal.any([signal, AbortSignal.timeout(url.includes("eurohoops.net") ? 30000 : 12000)]) : AbortSignal.timeout(12000),
       headers: {
         // A stable server identifier helps publishers allow-list the feed request
         // without forwarding any visitor/browser headers or identifiers.
@@ -66,7 +66,7 @@ export async function collect(
   let wolvesInjuries: Game["injuries"];
   const health: Health[] = [];
   const authors: AuthorFeed[] = [];
-  type Output = { stories: Story[]; games: Game[]; health: Health[]; authors: AuthorFeed[]; injuries?: Game["injuries"]; count: number };
+  type Output = { stories: Story[]; games: Game[]; health: Health[]; authors: AuthorFeed[]; injuries?: Game["injuries"]; count: number; failed?: boolean };
   const tasks: ProviderTask<Output>[] = [];
   const taskTeams: string[][] = [];
   async function task(name: string, ids: string[], f: (output: Output, signal: AbortSignal) => Promise<number>) {
@@ -203,6 +203,7 @@ export async function collect(
             await verifyAuthorFeed(author, signal);
             authors.push(author);
           } catch {
+            output.failed = true;
             const old = (cached?.authors || initial.authors || []).find(
               (a) => a.name === source.name,
             );
@@ -484,8 +485,8 @@ export async function collect(
   for (const [index, outcome] of outcomes.entries()) {
     const output = outcome.value;
     health.push({ name: outcome.name, teams: taskTeams[index], checked,
-      status: output ? "ok" : "unavailable", count: output?.count || 0,
-      ...(output ? {} : { error: safeFeedError(outcome.error) }),
+      status: output && !output.failed ? "ok" : "unavailable", count: output?.count || 0,
+      ...(output && !output.failed ? {} : { error: safeFeedError(outcome.error) }),
     });
     if (!output) continue;
     stories.push(...output.stories);
