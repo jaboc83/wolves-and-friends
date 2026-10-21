@@ -35,7 +35,13 @@ export function selectStories({ newsData, active, search, readIds, showRead, sho
         (showRead || !readIds.includes(s.id)),
     );
   const compactNews = true;
-  const recent = recentStories(filtered, active);
+  const recentStoriesForView = recentStories(filtered, active);
+  // Keep the all-teams page focused on a quick daily scan while preserving
+  // older same-day stories behind View older.
+  const recent =
+    active === "all"
+      ? recentStoriesForView.slice(0, 8)
+      : recentStoriesForView;
   const displayed = compactNews && !showOlder ? recent : filtered;
   const olderCount = filtered.length - recent.length;
   const newest = (newsData.stories || [])
