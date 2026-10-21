@@ -10,6 +10,36 @@ const aliases: Record<string, string> = {
   "anadolu efes": "Anadolu Efes S.K.", "anadolu efes istanbul": "Anadolu Efes S.K.",
   "zalgiris": "BC Žalgiris", "zalgiris kaunas": "BC Žalgiris",
 };
+const palaceOpponents: Record<string, string> = {
+  "fulham": "Fulham F.C.",
+  "besiktas|besiktas jk": "Beşiktaş J.K.",
+  "lyon|olympique lyonnais": "Olympique Lyonnais",
+  "brighton|brighton and hove albion": "Brighton & Hove Albion F.C.",
+  "hoffenheim|tsg 1899 hoffenheim": "TSG 1899 Hoffenheim",
+  "newcastle|newcastle united": "Newcastle United F.C.",
+  "tottenham|tottenham hotspur|spurs": "Tottenham Hotspur F.C.",
+  "arsenal": "Arsenal F.C.",
+  "chelsea": "Chelsea F.C.",
+  "liverpool": "Liverpool F.C.",
+  "manchester city": "Manchester City F.C.",
+  "manchester united": "Manchester United F.C.",
+  "everton": "Everton F.C.",
+  "leeds|leeds united": "Leeds United F.C.",
+  "aston villa|villa": "Aston Villa F.C.",
+  "west ham|west ham united": "West Ham United F.C.",
+  "nottingham forest|nottm forest": "Nottingham Forest F.C.",
+  "bournemouth|afc bournemouth": "A.F.C. Bournemouth",
+  "real sociedad": "Real Sociedad",
+  "jagiellonia|jagiellonia bialystok": "Jagiellonia Białystok",
+  "coventry|coventry city": "Coventry City F.C.",
+  "hull|hull city": "Hull City A.F.C.",
+};
+function palaceOpponentPage(name: string): string | undefined {
+  const normalized = key(name);
+  return Object.entries(palaceOpponents).find(([aliases]) =>
+    aliases.split("|").some((alias) => key(alias) === normalized),
+  )?.[1];
+}
 const key = (name: string) => name.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase().replace(/[^a-z0-9]+/g, " ").trim();
 
  // Resolve provider nicknames within their league, never across sports.
@@ -54,7 +84,9 @@ function franchisePage(teamId: string, name: string): string | undefined {
 
 export function teamWikipediaUrl(teamId: string, name?: string, ownTeam = false) {
   const team = teams.find(t => t.id === teamId);
-  const page = ownTeam ? pages[teamId] : franchisePage(teamId, name || "") || aliases[key(name || "")] ||
+  const page = ownTeam ? pages[teamId] : franchisePage(teamId, name || "") ||
+    (teamId === "palace" ? palaceOpponentPage(name || "") : undefined) ||
+    aliases[key(name || "")] ||
     (name === team?.name || name === team?.short ? pages[teamId] : undefined);
   if (page) return "https://en.wikipedia.org/wiki/" + encodeURIComponent(page.replaceAll(" ", "_"));
   if (!name) return undefined;
