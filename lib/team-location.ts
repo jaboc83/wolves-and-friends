@@ -61,6 +61,7 @@ const clubs: [string, string, string][] = [
   ["nottingham forest", "Nottingham", "England"], ["leeds|leeds united", "Leeds", "England"],
   ["bournemouth|afc bournemouth", "Bournemouth", "England"],
   ["lyon|olympique lyonnais", "Lyon", "France"],
+  ["beşiktaş|besiktas|beşiktaş jk|besiktas jk", "Istanbul", "Turkey"],
 ];
 const key = (s: string) => s.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase().trim();
 export function teamLocation(teamId: string, name: string, league: string, isOwn = false): string {
