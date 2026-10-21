@@ -1,6 +1,6 @@
 "use client";
 import { Fragment, useEffect, useState } from "react";
-import { decorateTable } from "../lib/team-info";
+import { decorateTable } from "../lib/standings";
 import { teams } from "../lib/teams";
 import { sportTerms } from "../lib/sport-terms";
 import type { TeamInfo } from "../lib/team-info";

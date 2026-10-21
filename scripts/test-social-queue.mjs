@@ -115,7 +115,7 @@ assert.match(
   page,
   /setHideResults\(preference.hidden\)/,
 );
-assert.match(page, /saveScorePreference\(localStorage, hidden, ask\)/);
+assert.match(page, /saveScorePreference\(browserStorage, hidden, ask\)/);
 assert.match(page, /hideScores \? "Show scores" : "Hide scores"/);
 assert.doesNotMatch(page, /checked=\{hideScores\}/);
 const originalFetch = globalThis.fetch;
@@ -166,3 +166,4 @@ try {
 console.log(
   "Social queue, next-unread refill, 7-day headlines, Palace labels, result preference wiring, pagination, and route checks passed.",
 );
+
