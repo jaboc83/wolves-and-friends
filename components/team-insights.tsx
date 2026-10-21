@@ -230,6 +230,69 @@ export default function TeamInsights({
           </p>
         )}
       </details>
+      {info?.powerRanking && (
+        <section className="power-rankings" aria-labelledby="power-rankings-title">
+          <div className="power-rankings-heading">
+            <h2 id="power-rankings-title">Power Rankings</h2>
+            <span>{info.powerRanking.metric}</span>
+          </div>
+          <p className="panel-note">
+            {info.powerRanking.note} · produced{" "}
+            {new Date(info.powerRanking.publishedAt).toLocaleDateString("en-US", {
+              timeZone: "America/Chicago",
+              month: "short",
+              day: "numeric",
+              year: "numeric",
+            })}
+          </p>
+          <div className="table-scroll">
+            <table>
+              <thead>
+                <tr>
+                  <th>#</th>
+                  <th>Team</th>
+                  <th>{info.powerRanking.metric}</th>
+                </tr>
+              </thead>
+              <tbody>
+                {info.powerRanking.rows.map((row) => (
+                  <tr key={row.id}>
+                    <td>{row.cells[0]}</td>
+                    <th scope="row">
+                      <a href={row.url} target="_blank" rel="noreferrer">
+                        {row.logo && (
+                          <img
+                            className="power-ranking-logo"
+                            src={row.logo}
+                            alt=""
+                            width={22}
+                            height={22}
+                            loading="lazy"
+                          />
+                        )}
+                        {row.name} ↗
+                      </a>
+                    </th>
+                    <td>{row.cells[1]}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+          <p className="panel-note">
+            <a href={info.powerRanking.url} target="_blank" rel="noreferrer">
+              {info.powerRanking.source} ↗
+            </a>{" "}
+            · checked {new Date(info.powerRanking.checked).toLocaleString("en-US", {
+              timeZone: "America/Chicago",
+              month: "short",
+              day: "numeric",
+              hour: "numeric",
+              minute: "2-digit",
+            })} CT
+          </p>
+        </section>
+      )}
       {id !== "disc" && (
         <details
           id="team-roster"
