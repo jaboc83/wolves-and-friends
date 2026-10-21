@@ -16,6 +16,7 @@ import {
   loadScorePreference,
   saveScorePreference,
 } from "../lib/score-preference";
+import { createRosterStatsLoader, type StatsStatus } from "../lib/roster-stats-loader";
 import type { PlayerStats } from "../lib/player-stats";
 import {
   readPlayerStatsCache,
@@ -38,6 +39,7 @@ import { authorStories } from "../lib/author-stories";
 import { communities } from "../lib/communities";
 import { teams, teamPriority } from "../lib/teams";
 import initial from "../lib/initial.json";
+import { newsDisplayMode, loadedNewsData } from "../lib/news-page-data";
 import type { HubData, Story, Game } from "../lib/feeds";
 import SocialImage from "../components/social-image";
 import { isLocalSocialImage } from "../lib/bluesky-images";
@@ -102,66 +104,32 @@ export default function Home() {
     [autoOpenStandings, setAutoOpenStandings] = useState(false),
     [darkMode, setDarkMode] = useState(false);
   const pending = useRef(new Map<string, Promise<void>>());
-  const rosterStatsRequested = useRef(false);
+  const rosterLoader = useRef(createRosterStatsLoader());
   const [playerStats, setPlayerStats] = useState<Record<string, PlayerStats>>(
     {},
   );
   const [playerStatsStatus, setPlayerStatsStatus] = useState<
-    "idle" | "loading" | "ready" | "empty" | "unavailable"
+    StatsStatus
   >("idle");
   function refreshRosterStats() {
-    if (rosterStatsRequested.current)
-      return pending.current.get("roster-stats") || Promise.resolve();
-    rosterStatsRequested.current = true;
-    return once("roster-stats", async () => {
-      let latestStats = { ...playerStats };
-      const hasCachedStats = Object.keys(latestStats).length > 0;
-      setPlayerStatsStatus(hasCachedStats ? "ready" : "loading");
-      let total = 1;
-      let received = false;
-      let foundStats = hasCachedStats;
-      async function loadBatch(batch: number) {
-        try {
-          const r = await fetch("/api/roster-stats?batch=" + batch, {
-            credentials: "omit",
-            referrerPolicy: "no-referrer",
-          });
-          if (!r.ok) return;
-          const d = (await r.json()) as {
-            players: { key: string; stats?: PlayerStats }[];
-            totalBatches: number;
-          };
-          total = Math.min(d.totalBatches, 101);
-          received = true;
-          const available = d.players.filter((p) => p.stats);
-          if (available.length) {
-            foundStats = true;
-            setPlayerStatsStatus("ready");
-            latestStats = {
-              ...latestStats,
-              ...Object.fromEntries(available.map((p) => [p.key, p.stats!])),
-            };
-            setPlayerStats(latestStats);
-          }
-        } catch {
-          /* A failed batch must not block other roster or feed data. */
-        }
-      }
-      await loadBatch(0);
-      let nextBatch = 1;
-      await Promise.all(Array.from({ length: 2 }, async () => {
-        while (nextBatch < total) {
-          const batch = nextBatch++;
-          await loadBatch(batch);
-        }
-      }));
-      if (foundStats) writePlayerStatsCache(localStorage, latestStats);
-      if (!foundStats) {
-        rosterStatsRequested.current = false;
-        setPlayerStatsStatus(received ? "empty" : "unavailable");
-      }
+    return rosterLoader.current({
+      initial: playerStats,
+      fetchBatch: async (batch, version, signal) => {
+        const response = await fetch("/api/roster-stats?batch=" + batch +
+          (version ? "&version=" + encodeURIComponent(version) : ""), {
+          credentials: "omit", referrerPolicy: "no-referrer", signal,
+        });
+        if (!response.ok) throw Error(response.status === 409 ? "Manifest changed" : "Stats unavailable");
+        return response.json();
+      },
+      onStats: (stats) => {
+        setPlayerStats(stats);
+        try { writePlayerStatsCache(localStorage, stats); } catch {}
+      },
+      onStatus: setPlayerStatsStatus,
     });
   }
+
   function once(key: string, work: () => Promise<void>) {
     const existing = pending.current.get(key);
     if (existing) return existing;
@@ -288,21 +256,7 @@ export default function Home() {
     (id) => !newsStatus[id] || newsStatus[id] === "loading",
   );
   const newsFailed = visibleNewsIds.some((id) => newsStatus[id] === "error");
-  const newsData: HubData = {
-    checked:
-      visibleNewsIds
-        .filter((id) => newsStatus[id] === "ready")
-        .map((id) => newsPages[id]?.checked || "")
-        .sort()[0] || "",
-    stories: visibleNewsIds.flatMap((id) =>
-      newsStatus[id] === "ready" ? newsPages[id]?.stories || [] : [],
-    ),
-    authors: visibleNewsIds.flatMap((id) =>
-      newsStatus[id] === "ready" ? newsPages[id]?.authors || [] : [],
-    ),
-    health: visibleNewsIds.flatMap((id) => newsPages[id]?.health || []),
-    games: [],
-  };
+  const newsData = loadedNewsData(visibleNewsIds, newsPages);
   const [scheduleError, setScheduleError] = useState(false);
   const [oddsGames, setOddsGames] = useState<Game[]>([]);
   function refreshSchedules() {
@@ -504,6 +458,7 @@ export default function Home() {
   const compactNews = true;
   const recent = recentStories(filtered, active);
   const displayed = compactNews && !showOlder ? recent : filtered;
+  const newsMode = newsDisplayMode(loading, displayed.length > 0, newsFailed);
   const olderCount = filtered.length - recent.length;
   const newest = (newsData.stories || [])
     .filter(
@@ -1131,13 +1086,13 @@ export default function Home() {
                         />
                       </label>
                     </div>
-                    {loading && active === "all" && displayed.length > 0 && (
+                    {loading && displayed.length > 0 && (
                       <p className="headline-loading" role="status">
                         <span className="headline-spinner" aria-hidden="true" />
                         Fetching more headlines…
                       </p>
                     )}
-                    {loading && (active !== "all" || !displayed.length) ? (
+                    {newsMode === "loading" ? (
                       <div
                         className="empty headline-loading"
                         role="status"
@@ -1146,7 +1101,7 @@ export default function Home() {
                         <span className="headline-spinner" aria-hidden="true" />
                         Fetching headlines…
                       </div>
-                    ) : newsFailed && !displayed.length ? (
+                    ) : newsMode === "error" ? (
                       <div className="empty" role="status">
                         Headlines are temporarily unavailable. We’ll try again
                         automatically.
@@ -1177,7 +1132,7 @@ export default function Home() {
                         </p>
                       </div>
                     )}
-                    {!loading && newsData.checked && (
+                    {newsData.checked && (
                       <p className="feed-description">
                         Last update:{" "}
                         {ct(newsData.checked, {
@@ -1299,3 +1254,4 @@ export default function Home() {
     </>
   );
 }
+

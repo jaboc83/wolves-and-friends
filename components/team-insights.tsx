@@ -21,7 +21,7 @@ export default function TeamInsights({
   revealResults?: boolean;
   autoOpenStandings?: boolean;
   playerStats?: Record<string, PlayerStats>;
-  playerStatsStatus?: "idle" | "loading" | "ready" | "empty" | "unavailable";
+  playerStatsStatus?: "idle" | "loading" | "ready" | "partial" | "empty" | "unavailable";
   onRosterOpen?: () => void;
 }) {
   const [selected, setSelected] = useState("wolves");
@@ -213,7 +213,7 @@ export default function TeamInsights({
                     minute: "2-digit",
                   })}{" "}
                   CT
-                  {info.unavailable.length > 0 && " · cached data may be shown"}
+                  {table.stale && " · cached data; source unavailable"}
                 </p>
               </section>
             );
@@ -251,6 +251,11 @@ export default function TeamInsights({
               {Boolean(t?.league) && playerStatsStatus === "loading" && (
                 <p className="panel-note" aria-live="polite">
                   Loading ESPN season stats…
+                </p>
+              )}
+              {Boolean(t?.league) && playerStatsStatus === "partial" && (
+                <p className="panel-note" aria-live="polite">
+                  Some season stats could not refresh. Reopen the roster in a few minutes to retry.
                 </p>
               )}
               {Boolean(t?.league) && playerStatsStatus === "empty" && (
@@ -337,3 +342,4 @@ export default function TeamInsights({
     </section>
   );
 }
+

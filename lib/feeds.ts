@@ -1,3 +1,4 @@
+import { fetchScoreboard } from "./scoreboard";
 import { discEvents } from "./event-seed";
 import { parseDgptSchedule } from "./dgpt";
 import { eventLifecycle } from "./event-time";
@@ -390,6 +391,7 @@ export async function collect(
   const checked = new Date().toISOString();
   const stories: Story[] = [];
   const games: Game[] = [];
+  let wolvesInjuries: Game["injuries"];
   const health: Health[] = [];
   const authors: AuthorFeed[] = [];
   async function task(name: string, ids: string[], f: () => Promise<number>) {
@@ -663,6 +665,9 @@ export async function collect(
         "i",
       );
       const injuries = (json.injuries || [])
+        .flatMap((group: any) => group.injuries
+          ? group.injuries.map((injury: any) => ({ ...injury, team: group.team || { displayName: group.displayName } }))
+          : [group])
         .filter((item: any) => pattern.test(
           item.team?.displayName || item.team?.name || item.athlete?.displayName || "",
         ))
@@ -672,8 +677,7 @@ export async function collect(
           detail: item.details?.detail || item.details?.type || item.longComment || undefined,
         }))
         .filter((item: any) => item.player);
-      for (const game of games.filter((game) => game.team === "wolves"))
-        game.injuries = injuries;
+      wolvesInjuries = injuries;
       return injuries.length;
     });
     await Promise.all(
@@ -893,15 +897,7 @@ export async function collect(
               .filter((t) => teamPlaysCompetition(t.id, league))
               .map((t) => t.id),
             async () => {
-              const json = await (
-                await get(
-                  "https://site.api.espn.com/apis/site/v2/sports/" +
-                    league +
-                    "/scoreboard?dates=" +
-                    date +
-                    "&limit=100",
-                )
-              ).json();
+              const json = await fetchScoreboard(league, date);
               mergeLiveScoreboard(games, json, league);
               return (json as any).events?.length || 0;
             },
@@ -910,6 +906,9 @@ export async function collect(
       ),
     );
   }
+  if (wolvesInjuries)
+    for (const game of games.filter((game) => game.team === "wolves"))
+      game.injuries = wolvesInjuries;
   if (section === "all") await enrichOdds(games, checked);
   return {
     checked,
@@ -970,3 +969,4 @@ export function oddsData() {
     });
   return oddsInflight;
 }
+
