@@ -19,7 +19,7 @@ const tag = (s: string, k: string) =>
       new RegExp("<" + k + "(?:\\s[^>]*)?>([\\s\\S]*?)</" + k + ">", "i"),
     )?.[1] || "",
   );
-const safe = (u: string) => (/^https?:\/\//i.test(u) ? u : "");
+export const safe = (u: string) => (/^https?:\/\//i.test(u) ? u : "");
 export class FeedError extends Error {
   constructor(readonly code: string) {
     super(code);
@@ -27,7 +27,7 @@ export class FeedError extends Error {
   }
 }
 
-function match(s: string) {
+export function match(s: string) {
   return teams
     .filter((t) => new RegExp(t.pattern, "i").test(s))
     .map((t) => t.id);
