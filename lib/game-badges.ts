@@ -18,7 +18,9 @@ export function gameBadges(g: Game): GameBadge[] {
       badges.push({ label: "DGPT", tone: "dgpt" });
   }
   if (g.team === "palace") {
-    if (/\bfriendly\b|\bfriendlies\b/i.test(context))
+    if (/uefa europa league|europa league/i.test(context))
+      badges.push({ label: "Europa League", tone: "europa-league" });
+    else if (/\bfriendly\b|\bfriendlies\b/i.test(context))
       badges.push({ label: "Friendly", tone: "friendly" });
     else if (/premier league|\bEPL\b|eng\.1/i.test(context))
       badges.push({ label: "Premier", tone: "premier" });

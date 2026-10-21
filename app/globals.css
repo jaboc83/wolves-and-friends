@@ -2154,6 +2154,11 @@ footer b {
   color: #522366;
   border-color: #c7a6d6;
 }
+.badge-europa-league {
+  background: #e7ecff;
+  color: #243d87;
+  border-color: #a8b8ec;
+}
 .results-toggle {
   display: inline-flex;
   align-items: center;
