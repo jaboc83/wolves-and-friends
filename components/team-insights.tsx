@@ -407,7 +407,7 @@ export default function TeamInsights({
                               <th scope="col">Pos.</th>
                               <th scope="col"><button type="button" className="table-sort-button" onClick={() => setRosterSort((current) => ({ column: "Player", direction: current.column === "Player" && current.direction === "asc" ? "desc" : "asc" }))}>Player {rosterSort.column === "Player" ? (rosterSort.direction === "asc" ? "↑" : "↓") : "↕"}</button></th>
                               {statsTable.columns.map((column) => (
-                                <th scope="col" key={column}>{column}</th>
+                                <th scope="col" key={column}><button type="button" className="table-sort-button" onClick={() => setRosterSort((current) => ({ column, direction: current.column === column && current.direction === "asc" ? "desc" : "asc" }))}>{column} {rosterSort.column === column ? (rosterSort.direction === "asc" ? "↑" : "↓") : "↕"}</button></th>
                               ))}
                             </tr>
                           </thead>
@@ -420,6 +420,7 @@ export default function TeamInsights({
                               return rosterSort.direction === "asc" ? result : -result;
                             }).map(({ player: p, summary }) => (
                               <tr key={p.url + p.name}>
+                                <td>{(p as any).position || "—"}</td>
                                 <th scope="row">
                                   <a href={p.url} target="_blank" rel="noreferrer">
                                     {p.name} ↗
