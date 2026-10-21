@@ -404,14 +404,21 @@ export default function TeamInsights({
                           </caption>
                           <thead>
                             <tr>
-                              <th scope="col">Pos.</th>\n                              <th scope="col"><button type="button" className="table-sort-button" onClick={() => setRosterSort((current) => ({ column: "Player", direction: current.column === "Player" && current.direction === "asc" ? "desc" : "asc" }))}>Player {rosterSort.column === "Player" ? (rosterSort.direction === "asc" ? "↑" : "↓") : "↕"}</button></th>
+                              <th scope="col">Pos.</th>
+                              <th scope="col"><button type="button" className="table-sort-button" onClick={() => setRosterSort((current) => ({ column: "Player", direction: current.column === "Player" && current.direction === "asc" ? "desc" : "asc" }))}>Player {rosterSort.column === "Player" ? (rosterSort.direction === "asc" ? "↑" : "↓") : "↕"}</button></th>
                               {statsTable.columns.map((column) => (
                                 <th scope="col" key={column}>{column}</th>
                               ))}
                             </tr>
                           </thead>
                           <tbody>
-                            {[...statsTable.rows].sort((a, b) => {\n                              const av = rosterSort.column === "Player" ? a.player.name : rosterStatValue(a.summary, rosterSort.column);\n                              const bv = rosterSort.column === "Player" ? b.player.name : rosterStatValue(b.summary, rosterSort.column);\n                              const an = Number(av.replace(/[%,$,]/g, "")), bn = Number(bv.replace(/[%,$,]/g, ""));\n                              const result = Number.isFinite(an) && Number.isFinite(bn) ? an - bn : av.localeCompare(bv);\n                              return rosterSort.direction === "asc" ? result : -result;\n                            }).map(({ player: p, summary }) => (
+                            {[...statsTable.rows].sort((a, b) => {
+                              const av = rosterSort.column === "Player" ? a.player.name : rosterStatValue(a.summary, rosterSort.column);
+                              const bv = rosterSort.column === "Player" ? b.player.name : rosterStatValue(b.summary, rosterSort.column);
+                              const an = Number(av.replace(/[%,$,]/g, "")), bn = Number(bv.replace(/[%,$,]/g, ""));
+                              const result = Number.isFinite(an) && Number.isFinite(bn) ? an - bn : av.localeCompare(bv);
+                              return rosterSort.direction === "asc" ? result : -result;
+                            }).map(({ player: p, summary }) => (
                               <tr key={p.url + p.name}>
                                 <th scope="row">
                                   <a href={p.url} target="_blank" rel="noreferrer">
