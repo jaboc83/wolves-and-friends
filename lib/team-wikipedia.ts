@@ -37,7 +37,10 @@ const palaceOpponents: Record<string, string> = {
 function palaceOpponentPage(name: string): string | undefined {
   const normalized = key(name);
   return Object.entries(palaceOpponents).find(([aliases]) =>
-    aliases.split("|").some((alias) => key(alias) === normalized),
+    aliases.split("|").some((alias) => {
+      const normalizedAlias = key(alias);
+      return normalized === normalizedAlias || normalized.startsWith(normalizedAlias + " ");
+    }),
   )?.[1];
 }
 const key = (name: string) => name.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase().replace(/[^a-z0-9]+/g, " ").trim();
