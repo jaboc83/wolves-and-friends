@@ -39,7 +39,7 @@ import { authorStories } from "../lib/author-stories";
 import { communities } from "../lib/communities";
 import { teams, teamPriority } from "../lib/teams";
 import initial from "../lib/initial.json";
-import { loadedNewsData } from "../lib/news-page-data";
+import { newsDisplayMode, loadedNewsData } from "../lib/news-page-data";
 import type { HubData, Story, Game } from "../lib/feeds";
 import SocialImage from "../components/social-image";
 import { isLocalSocialImage } from "../lib/bluesky-images";
@@ -458,6 +458,7 @@ export default function Home() {
   const compactNews = true;
   const recent = recentStories(filtered, active);
   const displayed = compactNews && !showOlder ? recent : filtered;
+  const newsMode = newsDisplayMode(loading, displayed.length > 0, newsFailed);
   const olderCount = filtered.length - recent.length;
   const newest = (newsData.stories || [])
     .filter(
@@ -1085,13 +1086,13 @@ export default function Home() {
                         />
                       </label>
                     </div>
-                    {loading && active === "all" && displayed.length > 0 && (
+                    {loading && displayed.length > 0 && (
                       <p className="headline-loading" role="status">
                         <span className="headline-spinner" aria-hidden="true" />
                         Fetching more headlines…
                       </p>
                     )}
-                    {loading && (active !== "all" || !displayed.length) ? (
+                    {newsMode === "loading" ? (
                       <div
                         className="empty headline-loading"
                         role="status"
@@ -1100,7 +1101,7 @@ export default function Home() {
                         <span className="headline-spinner" aria-hidden="true" />
                         Fetching headlines…
                       </div>
-                    ) : newsFailed && !displayed.length ? (
+                    ) : newsMode === "error" ? (
                       <div className="empty" role="status">
                         Headlines are temporarily unavailable. We’ll try again
                         automatically.
@@ -1131,7 +1132,7 @@ export default function Home() {
                         </p>
                       </div>
                     )}
-                    {!loading && newsData.checked && (
+                    {newsData.checked && (
                       <p className="feed-description">
                         Last update:{" "}
                         {ct(newsData.checked, {
