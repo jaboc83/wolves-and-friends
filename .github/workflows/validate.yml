@@ -51,3 +51,10 @@ jobs:
             node "${test_file}"
             echo "::endgroup::"
           done
+
+
+      - name: Compare client assets with PR base
+        if: github.event_name == 'pull_request'
+        env:
+          ASSET_BASE_SHA: ${{ github.event.pull_request.base.sha }}
+        run: node scripts/compare-client-assets.mjs "$ASSET_BASE_SHA"

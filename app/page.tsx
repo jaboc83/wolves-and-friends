@@ -3,10 +3,15 @@ import {
   lazy,
   Suspense,
   useEffect,
-  useRef,
   useState,
   type CSSProperties,
 } from "react";
+import { useDashboardFeeds } from "../hooks/use-dashboard-feeds";
+import { browserStorage, readStored, stringList } from "../lib/browser-storage";
+import { storedTeam } from "../lib/dashboard-storage";
+import { newsDisplayMode } from "../lib/news-page-data";
+import StoryCard from "../components/story-card";
+import { selectStories, selectGames } from "../lib/dashboard-selectors";
 import GameCard from "../components/game-card";
 import BackToTop from "../components/back-to-top";
 import MatchCalendar from "../components/match-calendar";
@@ -16,83 +21,22 @@ import {
   loadScorePreference,
   saveScorePreference,
 } from "../lib/score-preference";
-import { createRosterStatsLoader, type StatsStatus } from "../lib/roster-stats-loader";
-import type { PlayerStats } from "../lib/player-stats";
-import {
-  readPlayerStatsCache,
-  writePlayerStatsCache,
-} from "../lib/player-stats-cache";
 const MarchMadness = lazy(() => import("../components/march-madness"));
+import { recentStories } from "../lib/news-window";
 import { sportTerms } from "../lib/sport-terms";
 import TeamInsights from "../components/team-insights";
-import { recentStories } from "../lib/news-window";
-import { activeHub, activeStories } from "../lib/content-policy";
-import { discEvents } from "../lib/event-seed";
-import { eventLifecycle, eventIsToday } from "../lib/event-time";
-import infoSeed from "../lib/team-info-initial.json";
-import type { TeamInfo } from "../lib/team-info";
-import TeamLogos from "../components/team-logos";
 import { teamThemes } from "../lib/team-themes";
-import { validAuthorStory } from "../lib/byline-status";
-import { socialQueue, unreadSocial } from "../lib/social-queue";
-import { authorStories } from "../lib/author-stories";
+import { unreadSocial } from "../lib/social-queue";
 import { communities } from "../lib/communities";
 import { teams, teamPriority } from "../lib/teams";
-import initial from "../lib/initial.json";
-import { newsDisplayMode, loadedNewsData } from "../lib/news-page-data";
-import type { HubData, Story, Game } from "../lib/feeds";
-import SocialImage from "../components/social-image";
-import { isLocalSocialImage } from "../lib/bluesky-images";
+import type { Story, Game } from "../lib/feeds";
 const ct = (s: string, opts: Intl.DateTimeFormatOptions = {}) =>
   new Date(s).toLocaleString("en-US", { timeZone: "America/Chicago", ...opts });
-const day = (s: string) =>
-  ct(s, { year: "numeric", month: "2-digit", day: "2-digit" });
-const age = (s: string) => {
-  const h = Math.max(0, Math.floor((Date.now() - Date.parse(s)) / 3600000));
-  return h < 1
-    ? "Just now"
-    : h < 24
-      ? h + "h ago"
-      : Math.floor(h / 24) + "d ago";
-};
-function retainAvatars(next: HubData, previous?: HubData | null): HubData {
-  const key = (s: Story) =>
-    s.url.split("/profile/")[1]?.split("/post/")[0] || s.source;
-  const known = new Map<string, string>(
-    [...(initial.stories as Story[]), ...(previous?.stories || [])]
-      .filter((s) => s.kind === "social" && isLocalSocialImage(s.avatar))
-      .map((s) => [key(s), s.avatar!]),
-  );
-  return {
-    ...next,
-    stories: next.stories.map((s) =>
-      s.kind === "social" && !isLocalSocialImage(s.avatar)
-        ? { ...s, avatar: known.get(key(s)) }
-        : s,
-    ),
-  };
-}
 export default function Home() {
-  const [data, setData] = useState<HubData | null>(
-      activeHub(initial as HubData),
-    ),
-    [teamInfo, setTeamInfo] = useState<TeamInfo[]>(infoSeed as TeamInfo[]),
-    [active, setActive] = useState("wolves"),
+  const [active, setActive] = useState("wolves"),
     [search, setSearch] = useState(""),
-    [newsPages, setNewsPages] = useState<Record<string, HubData>>({}),
-    [newsStatus, setNewsStatus] = useState<
-      Record<string, "loading" | "ready" | "error">
-    >({}),
     [sources, setSources] = useState(false),
     [teamMenuOpen, setTeamMenuOpen] = useState(false),
-    [socialData, setSocialData] = useState<Story[]>(
-      socialQueue(initial.stories as Story[]),
-    ),
-    [socialUnavailable, setSocialUnavailable] = useState<string[]>([]),
-    [youtubeUnavailable, setYoutubeUnavailable] = useState<string[]>([]),
-    [liveGames, setLiveGames] = useState<Game[]>([]),
-    [scoreCheck, setScoreCheck] = useState(""),
-    [scoreError, setScoreError] = useState(false),
     [readIds, setReadIds] = useState<string[]>([]),
     [showRead, setShowRead] = useState(false),
     [showOlder, setShowOlder] = useState(false),
@@ -103,278 +47,19 @@ export default function Home() {
     [resultsReady, setResultsReady] = useState(false),
     [autoOpenStandings, setAutoOpenStandings] = useState(false),
     [darkMode, setDarkMode] = useState(false);
-  const pending = useRef(new Map<string, Promise<void>>());
-  const rosterLoader = useRef(createRosterStatsLoader());
-  const [playerStats, setPlayerStats] = useState<Record<string, PlayerStats>>(
-    {},
-  );
-  const [playerStatsStatus, setPlayerStatsStatus] = useState<
-    StatsStatus
-  >("idle");
-  function refreshRosterStats() {
-    return rosterLoader.current({
-      initial: playerStats,
-      fetchBatch: async (batch, version, signal) => {
-        const response = await fetch("/api/roster-stats?batch=" + batch +
-          (version ? "&version=" + encodeURIComponent(version) : ""), {
-          credentials: "omit", referrerPolicy: "no-referrer", signal,
-        });
-        if (!response.ok) throw Error(response.status === 409 ? "Manifest changed" : "Stats unavailable");
-        return response.json();
-      },
-      onStats: (stats) => {
-        setPlayerStats(stats);
-        try { writePlayerStatsCache(localStorage, stats); } catch {}
-      },
-      onStatus: setPlayerStatsStatus,
-    });
-  }
-
-  function once(key: string, work: () => Promise<void>) {
-    const existing = pending.current.get(key);
-    if (existing) return existing;
-    const request = work().finally(() => {
-      pending.current.delete(key);
-    });
-    pending.current.set(key, request);
-    return request;
-  }
-  function refreshInfo() {
-    return once("info", async () => {
-      try {
-        const r = await fetch("/api/team-info", {
-          credentials: "omit",
-          referrerPolicy: "no-referrer",
-        });
-        if (r.ok) setTeamInfo((await r.json()) as TeamInfo[]);
-      } catch {}
-    });
-  }
-  const [socialRefreshing, setSocialRefreshing] = useState(false);
-  const [socialRefreshError, setSocialRefreshError] = useState(false);
-  function refreshSocial(force = false) {
-    return once("social", async () => {
-      setSocialRefreshing(true);
-      setSocialRefreshError(false);
-      try {
-        const r = await fetch(force ? "/api/social?refresh=1" : "/api/social", {
-          credentials: "omit",
-          referrerPolicy: "no-referrer",
-          cache: "no-store",
-        });
-        if (!r.ok) throw Error();
-        const d = (await r.json()) as {
-          posts: Story[];
-          unavailable: string[];
-          youtubeUnavailable?: string[];
-        };
-        setSocialData((previous) => {
-          const next = socialQueue([...d.posts, ...previous]);
-          const merged = retainAvatars(
-            { ...initial, stories: activeStories(next) } as HubData,
-            { ...initial, stories: previous } as HubData,
-          ).stories;
-          try {
-            localStorage.setItem("wf-social-cache", JSON.stringify(merged));
-          } catch {}
-          return merged;
-        });
-        setSocialUnavailable(d.unavailable);
-        setYoutubeUnavailable(d.youtubeUnavailable || []);
-      } catch {
-        setSocialUnavailable(teams.map((t) => t.id));
-        setSocialRefreshError(true);
-      } finally {
-        setSocialRefreshing(false);
-      }
-    });
-  }
-  function refreshScores() {
-    return once("scores", async () => {
-      try {
-        const r = await fetch("/api/scores", {
-          credentials: "omit",
-          referrerPolicy: "no-referrer",
-          cache: "no-store",
-        });
-        if (!r.ok) throw Error();
-        const d = (await r.json()) as {
-          games: Game[];
-          checked: string;
-          unavailable: string[];
-        };
-        setLiveGames(d.games);
-        setScoreCheck(d.checked);
-        setScoreError(d.unavailable.length > 0);
-      } catch {
-        setScoreError(true);
-      }
-    });
-  }
-  const activePage = useRef("wolves");
-  const newsChecked = useRef(new Map<string, number>());
-  function fetchNewsPage(id: string, force = false) {
-    if (id === "march-madness") return Promise.resolve();
-    if (!force && Date.now() - (newsChecked.current.get(id) || 0) < 300000)
-      return Promise.resolve();
-    return once("news:" + id, async () => {
-      setNewsStatus((s) => ({ ...s, [id]: "loading" }));
-      try {
-        const r = await fetch("/api/news?team=" + encodeURIComponent(id), {
-          credentials: "omit",
-          referrerPolicy: "no-referrer",
-          cache: "no-store",
-        });
-        if (!r.ok) throw Error();
-        const d = activeHub((await r.json()) as HubData);
-        if (
-          d.health.length &&
-          d.health.every((h) => h.status === "unavailable")
-        )
-          throw Error();
-        setNewsPages((pages) => ({ ...pages, [id]: d }));
-        newsChecked.current.set(id, Date.now());
-        setNewsStatus((s) => ({ ...s, [id]: "ready" }));
-      } catch {
-        setNewsStatus((s) => ({ ...s, [id]: "error" }));
-      }
-    });
-  }
-  function refreshNews() {
-    return once("news-queue", async () => {
-      const selected = activePage.current;
-      if (selected !== "all") await fetchNewsPage(selected, true);
-      // Background work is bounded to one page at a time. Selecting a new page
-      // can immediately start its request without waiting behind this queue.
-      for (const t of teams) {
-        if (t.id !== selected) await fetchNewsPage(t.id);
-      }
-    });
-  }
-  const visibleNewsIds = active === "all" ? teams.map((t) => t.id) : [active];
-  const loading = visibleNewsIds.some(
-    (id) => !newsStatus[id] || newsStatus[id] === "loading",
-  );
-  const newsFailed = visibleNewsIds.some((id) => newsStatus[id] === "error");
-  const newsData = loadedNewsData(visibleNewsIds, newsPages);
-  const [scheduleError, setScheduleError] = useState(false);
-  const [oddsGames, setOddsGames] = useState<Game[]>([]);
-  function refreshSchedules() {
-    return once("schedules", async () => {
-      try {
-        const r = await fetch("/api/schedules", {
-          credentials: "omit",
-          referrerPolicy: "no-referrer",
-        });
-        if (!r.ok) throw Error();
-        const d = activeHub((await r.json()) as HubData);
-        setData((previous) => {
-          const merged = {
-            ...(previous || d),
-            games: d.games,
-            health: [
-              ...(previous?.health || []).filter(
-                (h) =>
-                  !h.name.includes("schedule") &&
-                  !h.name.includes("scores") &&
-                  !h.name.includes("scoreboard"),
-              ),
-              ...d.health,
-            ],
-          };
-          try {
-            localStorage.setItem("wf-cache", JSON.stringify(merged));
-          } catch {}
-          return merged;
-        });
-        setScheduleError(false);
-        void refreshOdds();
-      } catch {
-        setScheduleError(true);
-      }
-    });
-  }
-  function refreshOdds() {
-    return once("odds", async () => {
-      try {
-        const r = await fetch("/api/odds", {
-          credentials: "omit",
-          referrerPolicy: "no-referrer",
-        });
-        if (!r.ok) return;
-        const d = (await r.json()) as { games: Game[] };
-        setOddsGames(d.games);
-      } catch {}
-    });
-  }
-  function refresh() {
-    void refreshInfo();
-    void refreshScores();
-    void refreshSocial();
-    void refreshSchedules();
-    void refreshNews();
-  }
+  const { data, teamInfo, socialData, socialUnavailable, youtubeUnavailable,
+    liveGames, scoreCheck, scoreError, loading, newsFailed, newsData, scheduleError,
+    oddsGames, playerStats, playerStatsStatus, socialRefreshing, socialRefreshError,
+    refreshSocial, refreshRosterStats, fetchNewsPage, activePage } = useDashboardFeeds(active);
   useEffect(() => {
-    try {
-      const cachedStats = readPlayerStatsCache(localStorage);
-      if (Object.keys(cachedStats).length) setPlayerStats(cachedStats);
-    } catch {}
-    try {
-      setDarkMode(localStorage.getItem("wf-color-mode") === "dark");
-    } catch {}
-    let preference = { ask: true, hidden: true };
-    try {
-      preference = loadScorePreference(localStorage);
-    } catch {}
-    setHideResults(preference.hidden);
-    setScorePrompt(preference.ask);
+    setActive(storedTeam());
+    setReadIds(readStored("wf-read", stringList, []));
+    setDarkMode(browserStorage.getItem("wf-color-mode") === "dark");
+    const preference = loadScorePreference(browserStorage);
+    setHideResults(preference.hidden); setScorePrompt(preference.ask);
     if (!preference.ask && !preference.hidden)
       setAutoOpenStandings(window.matchMedia("(min-width: 1600px)").matches);
     setResultsReady(true);
-    try {
-      const socialCache = localStorage.getItem("wf-social-cache");
-      if (socialCache)
-        setSocialData(
-          (previous) =>
-            retainAvatars(
-              {
-                ...initial,
-                stories: socialQueue(activeStories(JSON.parse(socialCache))),
-              } as HubData,
-              { ...initial, stories: previous } as HubData,
-            ).stories,
-        );
-      const c = localStorage.getItem("wf-cache");
-      if (c)
-        setData((previous) =>
-          retainAvatars(activeHub(JSON.parse(c)), previous),
-        );
-      setReadIds(JSON.parse(localStorage.getItem("wf-read") || "[]"));
-      const previousTeam = localStorage.getItem("wf-team") || "wolves";
-      activePage.current =
-        previousTeam === "all" ||
-        previousTeam === "march-madness" ||
-        teams.some((t) => t.id === previousTeam)
-          ? previousTeam
-          : "wolves";
-      setActive(
-        previousTeam === "all" ||
-          previousTeam === "march-madness" ||
-          teams.some((t) => t.id === previousTeam)
-          ? previousTeam
-          : "wolves",
-      );
-    } catch {}
-    refresh();
-    const i = setInterval(refresh, 300000);
-    const si = setInterval(() => {
-      refreshScores();
-      refreshSocial();
-    }, 60000);
-    return () => {
-      clearInterval(i);
-      clearInterval(si);
-    };
   }, []);
   function choose(id: string) {
     activePage.current = id;
@@ -384,18 +69,18 @@ export default function Home() {
     setTeamMenuOpen(false);
     setShowOlder(false);
     setShowOlderResults(false);
-    localStorage.setItem("wf-team", id);
+    browserStorage.setItem("wf-team", id);
   }
   function toggleResults() {
     const next = !hideScores;
     setHideResults(next);
     try {
-      localStorage.setItem("wf-hide-results", String(next));
+      browserStorage.setItem("wf-hide-results", String(next));
     } catch {}
   }
   function chooseScores(hidden: boolean, ask: boolean) {
     try {
-      saveScorePreference(localStorage, hidden, ask);
+      saveScorePreference(browserStorage, hidden, ask);
     } catch {}
     setHideResults(hidden);
     setAutoOpenStandings(
@@ -407,7 +92,7 @@ export default function Home() {
     const next = !darkMode;
     setDarkMode(next);
     try {
-      localStorage.setItem("wf-color-mode", next ? "dark" : "light");
+      browserStorage.setItem("wf-color-mode", next ? "dark" : "light");
     } catch {}
   }
   function markRead(id: string) {
@@ -415,7 +100,7 @@ export default function Home() {
       ? readIds.filter((x) => x !== id)
       : [...readIds, id];
     setReadIds(next);
-    localStorage.setItem("wf-read", JSON.stringify(next));
+    browserStorage.setItem("wf-read", JSON.stringify(next));
   }
   const palette = teamThemes[active];
   const themeStyle = palette
@@ -429,116 +114,14 @@ export default function Home() {
     : undefined;
   const team = teams.find((t) => t.id === active);
   const terms = sportTerms(active);
-  const filtered = [
-    ...new Map(
-      [
-        ...(newsData.stories || []).filter(
-          (s) =>
-            validAuthorStory(s) &&
-            s.source !== "BasketNews" &&
-            !(
-              s.source === "ESPN" &&
-              /\b(?:game|match|full[- ]game|extended) highlights?\b/i.test(
-                s.title,
-              )
-            ),
-        ),
-        ...authorStories(newsData.authors || []),
-      ].map((s) => [s.url, s]),
-    ).values(),
-  ]
-    .sort((a, b) => Date.parse(b.date) - Date.parse(a.date))
-    .filter(
-      (s) =>
-        s.kind !== "social" &&
-        (active === "all" || s.teams.includes(active)) &&
-        s.title.toLowerCase().includes(search.toLowerCase()) &&
-        (showRead || !readIds.includes(s.id)),
-    );
-  const compactNews = true;
-  const recent = recentStories(filtered, active);
-  const displayed = compactNews && !showOlder ? recent : filtered;
+  const { compactNews, displayed, olderCount, newest } = selectStories({
+    newsData, active, search, readIds, showRead, showOlder,
+  });
+  const { teamsPlayingToday, visibleGames, availableResults, results, todayGames, futureGames } = selectGames({
+    data, oddsGames, liveGames, active, showOlderResults,
+  });
   const newsMode = newsDisplayMode(loading, displayed.length > 0, newsFailed);
-  const olderCount = filtered.length - recent.length;
-  const newest = (newsData.stories || [])
-    .filter(
-      (s) =>
-        s.kind !== "social" && (active === "all" || s.teams.includes(active)),
-    )
-    .sort((a, b) => Date.parse(b.date) - Date.parse(a.date))[0];
-  const combinedGames = [
-    ...(data?.games || []),
-    ...discEvents.filter(
-      (g) =>
-        !(data?.games || []).some(
-          (x) => x.id === g.id || (x.team === "disc" && x.url === g.url),
-        ),
-    ),
-  ]
-    .filter((g) => teams.some((t) => t.id === g.team))
-    .map((original) => {
-      const odds = oddsGames.find((x) => x.id === original.id)?.odds;
-      const event = eventLifecycle(original);
-      const g = odds ? { ...event, odds } : event;
-      const fresh = liveGames.find(
-        (x) =>
-          x.id === g.id ||
-          (x.team === g.team &&
-            Math.abs(Date.parse(x.date) - Date.parse(g.date)) < 3 * 3600000),
-      );
-      return fresh
-        ? {
-            ...g,
-            ...fresh,
-            competitionNote: fresh.competitionNote || g.competitionNote,
-          }
-        : g;
-    });
-  for (const g of liveGames)
-    if (!combinedGames.some((x) => x.id === g.id)) combinedGames.push(g);
   const socialPosts = unreadSocial(socialData, active, readIds);
-  const teamsPlayingToday = new Set(
-    combinedGames.filter((g) => eventIsToday(g)).map((g) => g.team),
-  );
-  const visibleGames = combinedGames.filter(
-    (g) => active === "all" || g.team === active,
-  );
-  const availableResults = visibleGames
-    .filter((g) => g.state === "post" && !eventIsToday(g))
-    .sort(
-      (a, b) =>
-        Date.parse(b.endDate || b.date) - Date.parse(a.endDate || a.date),
-    );
-  const results =
-    active === "all"
-      ? availableResults.slice(0, 8)
-      : showOlderResults
-        ? availableResults
-        : availableResults.slice(0, 3);
-  const upcoming = visibleGames
-    .filter(
-      (g) =>
-        g.state !== "post" &&
-        (eventIsToday(g) || Date.parse(g.date) > Date.now() - 12 * 3600000),
-    )
-    .sort((a, b) => Date.parse(a.date) - Date.parse(b.date));
-  const todayGames = visibleGames
-    .filter((g) => eventIsToday(g))
-    .sort(
-      (a, b) =>
-        teamPriority(a.team) - teamPriority(b.team) ||
-        Date.parse(a.date) - Date.parse(b.date),
-    );
-  const futureCandidates = upcoming.filter((g) => !eventIsToday(g));
-  const nextByTeam = new Map<string, Game>();
-  for (const g of futureCandidates)
-    if (!nextByTeam.has(g.team)) nextByTeam.set(g.team, g);
-  const futureGames =
-    active === "all"
-      ? [...nextByTeam.values()].sort(
-          (a, b) => teamPriority(a.team) - teamPriority(b.team),
-        )
-      : futureCandidates.slice(0, 3);
   const failed = [
     ...(data?.health || []).filter((h) =>
       /schedule|scores|scoreboard/.test(h.name),
@@ -569,135 +152,10 @@ export default function Home() {
       />
     );
   }
-  function story(s: Story) {
-    s = {
-      ...s,
-      teams: [...s.teams].sort((a, b) => teamPriority(a) - teamPriority(b)),
-    };
-    const isToday =
-      s.kind !== "social" && day(s.date) === day(new Date().toISOString());
-    return (
-      <article
-        className={
-          "story " +
-          (s.kind === "social" ? "message-post" : "") +
-          (isToday ? " story-today" : "")
-        }
-        key={s.id}
-      >
-        {s.socialPlatform === "youtube" ? (
-          <TeamLogos teamIds={s.teams} />
-        ) : s.kind === "social" ? (
-          <div className="post-avatar">
-            <SocialImage
-              src={s.avatar}
-              alt=""
-              width={40}
-              height={40}
-              fallback={
-                <span aria-hidden="true">
-                  {s.source.replace("Bluesky · ", "").charAt(0).toUpperCase()}
-                </span>
-              }
-            />
-          </div>
-        ) : (
-          <TeamLogos teamIds={s.teams} />
-        )}
-        <div className="story-content">
-          <div className="story-meta">
-            {isToday && <span className="today-badge">TODAY</span>}
-            <span>{s.source}</span>
-            <span>· {age(s.date)}</span>
-            {s.kind === "social" && (
-              <span className="video">
-                {s.socialPlatform === "youtube" ? "VIDEO" : "POST"}
-              </span>
-            )}
-            {s.premium && <span>INSIDER</span>}
-            {s.kind === "video" && <span className="video">VIDEO</span>}
-          </div>
-          <h3>
-            <a
-              title={s.originalTitle}
-              href={s.url}
-              target="_blank"
-              rel="noreferrer"
-            >
-              {s.title} <span>↗</span>
-            </a>
-          </h3>
-          {s.kind === "social" && !!s.images?.length && (
-            <div
-              className={
-                "post-images" +
-                (s.images.length === 1 ? " post-images-single" : "")
-              }
-            >
-              {s.images
-                .slice(0, 4)
-                .filter((image) => isLocalSocialImage(image.src))
-                .map((image, index) => (
-                  <a
-                    key={image.src + index}
-                    href={s.url}
-                    target="_blank"
-                    rel="noreferrer"
-                    aria-label={image.alt || "View photo on Bluesky"}
-                  >
-                    <SocialImage
-                      src={image.src}
-                      alt={image.alt}
-                      width={image.width}
-                      height={image.height}
-                      fallback={
-                        <span className="post-image-fallback">
-                          View photo on Bluesky ↗
-                        </span>
-                      }
-                    />
-                  </a>
-                ))}
-            </div>
-          )}
-          <div className="story-bottom">
-            <div>
-              {s.teams.map((id) => {
-                const t = teams.find((x) => x.id === id)!;
-                return (
-                  <button
-                    key={id}
-                    onClick={() => choose(id)}
-                    style={{ color: t.color }}
-                  >
-                    {t.short}
-                  </button>
-                );
-              })}
-              <time
-                title={
-                  ct(s.date, { dateStyle: "medium", timeStyle: "short" }) +
-                  " CT"
-                }
-              >
-                {s.dateApproximate ? "Approx. " : ""}
-                {ct(s.date, {
-                  month: "short",
-                  day: "numeric",
-                  hour: "numeric",
-                  minute: "2-digit",
-                })}{" "}
-                CT
-              </time>
-            </div>
-            <button className="read-toggle" onClick={() => markRead(s.id)}>
-              {readIds.includes(s.id) ? "Mark unread" : "✓ Mark read"}
-            </button>
-          </div>
-        </div>
-      </article>
-    );
-  }
+  const story = (item: Story) => (
+    <StoryCard key={item.id} story={item} choose={choose} markRead={markRead} readIds={readIds} />
+  );
+
   return (
     <>
       <ScorePreferenceDialog open={scorePrompt} onChoose={chooseScores} />

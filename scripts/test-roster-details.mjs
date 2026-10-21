@@ -369,9 +369,11 @@ const page = fs.readFileSync("app/page.tsx", "utf8"),
 assert.ok(button.includes('aria-label="Refresh latest social media"'));
 assert.ok(button.includes("aria-busy={socialRefreshing}"));
 assert.ok(button.includes("title="));
-const refreshBody = page.match(/function refresh\(\) \{([\s\S]*?)\n  \}/)?.[1] || "";
+const feeds = fs.readFileSync("hooks/use-dashboard-feeds.ts", "utf8");
+const refreshBody = feeds.match(/function refresh\(\) \{([\s\S]*?)\n  \}/)?.[1] || "";
 assert.ok(!refreshBody.includes("refreshRosterStats"));
 assert.ok(!button.includes('"Refreshing…" : "Refresh"'));
 console.log(
   "Roster season stats, age, browser-only score preferences, safe defaults, modal semantics and icon refresh passed.",
 );
+
