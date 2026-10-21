@@ -21,6 +21,7 @@ import {
   saveScorePreference,
 } from "../lib/score-preference";
 const MarchMadness = lazy(() => import("../components/march-madness"));
+import { recentStories } from "../lib/news-window";
 import { sportTerms } from "../lib/sport-terms";
 import TeamInsights from "../components/team-insights";
 import { teamThemes } from "../lib/team-themes";
