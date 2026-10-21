@@ -33,6 +33,7 @@ const mocks = {
     parsePalace: () => [],
     parseLoonsCalendar: () => [],
     mergeOfficial: () => {},
+    mergeFallbackGames: (games, fallback) => games.push(...fallback),
   },
   "./teams": {
     teams: [

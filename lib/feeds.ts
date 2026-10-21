@@ -13,6 +13,7 @@ import {
   parsePalace,
   parseLoonsCalendar,
   mergeOfficial,
+  mergeFallbackGames,
 } from "./official-schedules";
 import { teams } from "./teams";
 import {
@@ -529,8 +530,9 @@ export async function collect(
               s.teams.some((id) => h.teams.includes(id))),
         ),
       );
-    games.push(
-      ...baseline.games.filter(
+    mergeFallbackGames(
+      games,
+      baseline.games.filter(
         (g) =>
           (h.name === "Official Žalgiris schedule" && g.team === "zalgiris") ||
           (h.name === "Official PWHL schedule · Frost" && g.team === "frost") ||

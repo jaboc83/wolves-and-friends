@@ -24,6 +24,19 @@ function loader(overrides = {}) {
   return (file) => load(path.resolve(file));
 }
 const { runProviderTasks } = loader()('lib/provider-tasks.ts');
+const { mergeFallbackGames } = loader()('lib/official-schedules.ts');
+const games = [
+  { id: 'fresh-wolves', team: 'wolves', date: '2026-10-21T23:30:00Z' },
+  { id: 'fresh-loons', team: 'loons', date: '2026-10-25T00:30:00Z' },
+];
+mergeFallbackGames(games, [
+  { id: 'fresh-wolves', team: 'wolves', date: '2026-10-21T23:30:00Z' },
+  { id: 'stale-loons-id', team: 'loons', date: '2026-10-25T01:00:00Z' },
+  { id: 'future-wolves', team: 'wolves', date: '2026-10-23T23:00:00Z' },
+]);
+assert.deepEqual(games.map((game) => game.id), [
+  'fresh-wolves', 'fresh-loons', 'future-wolves',
+]);
 let active = 0, peak = 0;
 const outcomes = await runProviderTasks(Array.from({ length: 12 }, (_, i) => ({
   name: String(i), run: async () => {
@@ -59,4 +72,4 @@ try {
   title = 'Story 0'; const before = articleFetches; await verifyAuthorFeed(author());
   assert.equal(articleFetches, before + 1, 'cache evicts oldest entry at capacity');
 } finally { globalThis.fetch = originalFetch; Date.now = originalNow; }
-console.log('Provider pipeline passed: bounded concurrency, deterministic ordering, deadline, partial success, bounded byline cache.');
+console.log('Provider pipeline passed: schedule fallback dedupe, bounded concurrency, deterministic ordering, deadline, partial success, bounded byline cache.');

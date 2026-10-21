@@ -133,3 +133,16 @@ export function mergeOfficial(games: Game[], official: Game[]) {
       };
   }
 }
+
+export function mergeFallbackGames(games: Game[], fallback: Game[]) {
+  for (const game of fallback) {
+    const duplicate = games.some(
+      (current) =>
+        current.id === game.id ||
+        (current.team === game.team &&
+          Math.abs(Date.parse(current.date) - Date.parse(game.date)) <
+            3 * 3600000),
+    );
+    if (!duplicate) games.push(game);
+  }
+}
