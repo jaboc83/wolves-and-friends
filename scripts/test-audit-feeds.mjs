@@ -78,7 +78,11 @@ try {
   await assert.rejects(fetchScoreboard('basketball/nba', '20261022'));
   assert.equal(failureCalls, 2, 'failed upstream not latched');
 
-  const { loadedNewsData } = loader()('lib/news-page-data.ts');
+  const { loadedNewsData, newsDisplayMode } = loader()('lib/news-page-data.ts');
+  assert.equal(newsDisplayMode(true, true, false), 'stories', 'refresh never replaces loaded stories with spinner');
+  assert.equal(newsDisplayMode(false, true, true), 'stories', 'failed refresh keeps loaded stories visible');
+  assert.equal(newsDisplayMode(true, false, false), 'loading');
+  assert.equal(newsDisplayMode(false, false, true), 'error');
   const page = { checked: 'last-success', stories: [{ id: 'loaded' }], authors: [], health: [], games: [] };
   const pages = { wolves: page };
   // Loading/error transitions change status separately, never the successful page.
