@@ -500,8 +500,24 @@ export async function collect(
       const index = games.findIndex((old) => old.id === fresh.id ||
         (old.team === fresh.team && Math.abs(Date.parse(old.date) - Date.parse(fresh.date)) < 3 * 3600000));
       if (index < 0) games.push(fresh);
-      else games[index] = { ...games[index], ...fresh,
-        competitionNote: fresh.competitionNote || games[index].competitionNote };
+      else {
+        const existing = games[index];
+        const preserveOfficialPalace =
+          existing.team === "palace" &&
+          existing.sourceName === "Official Palace schedule";
+        games[index] = {
+          ...existing,
+          ...fresh,
+          competitionNote: fresh.competitionNote || existing.competitionNote,
+          ...(preserveOfficialPalace
+            ? {
+                league: existing.league,
+                sourceName: existing.sourceName,
+                sourceChecked: existing.sourceChecked,
+              }
+            : {}),
+        };
+      }
     }
   }
   if (section !== "news") {
