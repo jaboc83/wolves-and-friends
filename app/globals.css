@@ -3158,3 +3158,6 @@ body:has(.score-choice[open]) {
   height: 22px;
   object-fit: contain;
 }
+
+.table-sort-button { appearance: none; border: 0; padding: 0; background: transparent; color: inherit; font: inherit; text-transform: inherit; cursor: pointer; }
+.table-sort-button:hover, .table-sort-button:focus-visible { color: var(--accent, #0b7d4f); text-decoration: underline; }

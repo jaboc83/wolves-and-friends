@@ -1,5 +1,5 @@
 "use client";
-import { Fragment, useEffect, useState } from "react";
+import { Fragment, useEffect, useMemo, useState } from "react";
 import { decorateTable } from "../lib/standings";
 import { teams } from "../lib/teams";
 import { sportTerms } from "../lib/sport-terms";
@@ -35,6 +35,31 @@ export default function TeamInsights({
   const headings = sportTerms(active);
   const t = teams.find((t) => t.id === id);
   const info = data.find((i) => i.id === id);
+  const [rosterSort, setRosterSort] = useState<{ column: string; direction: "asc" | "desc" }>({ column: "Player", direction: "asc" });
+  useEffect(() => { setRosterSort({ column: "Player", direction: "asc" }); }, [id]);
+  const rosterGroups = useMemo(() => {
+    if (!info?.depth) return [];
+    const buckets = new Map<string, { position: string; players: any[] }>();
+    const abbreviation = (position: string) => {
+      const value = position.toLowerCase();
+      if (/goalkeeper|goaltender|\\bgk\\b/.test(value)) return "GK";
+      if (/defen[cs]e|back|\\bdef\\b|\\bdb\\b/.test(value)) return "D";
+      if (/forward|wing|\\bf\\b/.test(value)) return "F";
+      if (/center|centre|\\bc\\b/.test(value)) return "C";
+      if (/guard|\\bg\\b/.test(value)) return "G";
+      return position.slice(0, 4).toUpperCase();
+    };
+    for (const group of info.depth.groups) {
+      const columns = createRosterStatsTable(group.players, t?.league || "", playerStats).columns;
+      const key = columns.join("\\u0001");
+      const existing = buckets.get(key) || { position: "", players: [] };
+      existing.position = existing.position ? existing.position + " / " + group.position : group.position;
+      existing.players.push(...group.players.map((player) => ({ ...player, position: abbreviation(group.position) })));
+      buckets.set(key, existing);
+    }
+    return [...buckets.values()];
+  }, [info, playerStats, t?.league]);
+
   const league = t?.league?.split("/")[1];
   const tableUrl = league
     ? "https://www.espn.com/" + league + "/standings"
@@ -140,6 +165,19 @@ export default function TeamInsights({
                 timeZone: "America/Chicago",
               })}{" "}
               CT
+            </p>
+          </section>
+        )}
+        {id === "palace" && !info?.postseason && (
+          <section className="postseason-panel" aria-label="Europa League bracket">
+            <h3>Europa League bracket · 2026/27</h3>
+            <p className="panel-note">
+              The official UEFA bracket updates as knockout rounds and matchups are published.
+            </p>
+            <p className="panel-note">
+              <a href="https://www.uefa.com/uefaeuropaleague/fixtures-results/bracket/" target="_blank" rel="noreferrer">
+                Open UEFA bracket view ↗
+              </a>
             </p>
           </section>
         )}
@@ -336,7 +374,7 @@ export default function TeamInsights({
                 Players grouped by position. Links open player bios and
                 source profiles when available.
               </p>
-              {info.depth.groups.map((group, i) => {
+              {rosterGroups.map((group, i) => {
                 const statsTable = createRosterStatsTable(
                   group.players,
                   t?.league || "",
@@ -366,15 +404,23 @@ export default function TeamInsights({
                           </caption>
                           <thead>
                             <tr>
-                              <th scope="col">Player</th>
+                              <th scope="col">Pos.</th>
+                              <th scope="col" onClick={() => setRosterSort((current) => ({ column: "Player", direction: current.column === "Player" && current.direction === "asc" ? "desc" : "asc" }))}>Player</th>
                               {statsTable.columns.map((column) => (
-                                <th scope="col" key={column}>{column}</th>
+                                <th scope="col" key={column} onClick={() => setRosterSort((current) => ({ column, direction: current.column === column && current.direction === "asc" ? "desc" : "asc" }))}>{column}</th>
                               ))}
                             </tr>
                           </thead>
                           <tbody>
-                            {statsTable.rows.map(({ player: p, summary }) => (
+                            {[...statsTable.rows].sort((a, b) => {
+                              const av = rosterSort.column === "Player" ? a.player.name : rosterStatValue(a.summary, rosterSort.column);
+                              const bv = rosterSort.column === "Player" ? b.player.name : rosterStatValue(b.summary, rosterSort.column);
+                              const an = Number(av.replace(/[%,$,]/g, "")), bn = Number(bv.replace(/[%,$,]/g, ""));
+                              const result = Number.isFinite(an) && Number.isFinite(bn) ? an - bn : av.localeCompare(bv);
+                              return rosterSort.direction === "asc" ? result : -result;
+                            }).map(({ player: p, summary }) => (
                               <tr key={p.url + p.name}>
+                                <td>{(p as any).position || "—"}</td>
                                 <th scope="row">
                                   <a href={p.url} target="_blank" rel="noreferrer">
                                     {p.name} ↗
