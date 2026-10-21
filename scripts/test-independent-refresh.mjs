@@ -61,6 +61,17 @@ const mocks = {
   },
   "./initial.json": { stories: [], games: [], authors: [] },
 };
+function dependency(file) {
+  const module = { exports: {} };
+  const js = ts.transpileModule(fs.readFileSync("lib/" + file + ".ts", "utf8"), {
+    compilerOptions: { module: ts.ModuleKind.CommonJS, target: ts.ScriptTarget.ES2022 },
+  }).outputText;
+  new Function("require", "module", "exports", js)((name) => mocks[name], module, module.exports);
+  return module.exports;
+}
+mocks["./feed-parsers"] = dependency("feed-parsers");
+mocks["./news-sources"] = dependency("news-sources");
+mocks["./provider-tasks"] = dependency("provider-tasks");
 const originalFetch = globalThis.fetch;
 let calls = 0;
 const urls = [];
