@@ -1,10 +1,10 @@
+import { fetchScoreboard } from "../../../lib/scoreboard";
 import { scoreboardLeagues } from "../../../lib/competitions";
 import { mergeLiveScoreboard, type Game } from "../../../lib/feeds";
 let cached: { checked: string; games: Game[]; unavailable: string[] } | null =
   null;
-export async function GET() {
-  if (cached && Date.now() - Date.parse(cached.checked) < 30000)
-    return Response.json(cached, { headers: { "Cache-Control": "no-store" } });
+let inflight: Promise<NonNullable<typeof cached>> | null = null;
+async function collect() {
   const checked = new Date().toISOString(),
     games: Game[] = [],
     unavailable: string[] = [];
@@ -19,21 +19,20 @@ export async function GET() {
   await Promise.all(
     scoreboardLeagues.map(async (league) => {
       try {
-        const r = await fetch(
-          "https://site.api.espn.com/apis/site/v2/sports/" +
-            league +
-            "/scoreboard?dates=" +
-            date +
-            "&limit=100",
-          { signal: AbortSignal.timeout(10000) },
-        );
-        if (!r.ok) throw Error();
-        mergeLiveScoreboard(games, await r.json(), league);
+        mergeLiveScoreboard(games, await fetchScoreboard(league, date), league);
       } catch {
         unavailable.push(league);
       }
     }),
   );
   cached = { checked, games, unavailable };
-  return Response.json(cached, { headers: { "Cache-Control": "no-store" } });
+  return cached;
+}
+
+
+export async function GET() {
+  if (cached && Date.now() - Date.parse(cached.checked) < 30000)
+    return Response.json(cached, { headers: { "Cache-Control": "no-store" } });
+  if (!inflight) inflight = collect().finally(() => { inflight = null; });
+  return Response.json(await inflight, { headers: { "Cache-Control": "no-store" } });
 }

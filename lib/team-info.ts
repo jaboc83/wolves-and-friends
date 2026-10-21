@@ -10,6 +10,7 @@ import {
   parsePwhlTrainingCampRoster,
 } from "./special-team-data";
 export type Table = {
+  stale?: boolean;
   seasonType?: number;
   name: string;
   columns: string[];
@@ -718,3 +719,4 @@ export function parseNHLStandings(
   );
   return [...divisions, wildcard];
 }
+

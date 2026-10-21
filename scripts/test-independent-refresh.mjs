@@ -18,6 +18,7 @@ const oddsGate = new Promise((resolve) => {
 });
 let oddsCalls = 0;
 const mocks = {
+  "./scoreboard": { fetchScoreboard: async () => ({ events: [] }) },
   "./event-seed": { discEvents: [] },
   "./dgpt": { parseDgptSchedule: () => [] },
   "./event-time": { eventLifecycle: (g) => g },
@@ -192,3 +193,4 @@ try {
 } finally {
   globalThis.fetch = originalFetch;
 }
+
