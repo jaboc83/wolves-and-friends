@@ -178,6 +178,8 @@ try {
     throw Error("offline");
   };
   const failed = await failureModule.exports.hubData("news", "wolves");
+  assert.ok(failed.health.every((source) => source.status === "unavailable"),
+    "author request failures do not appear as successful provider health");
   assert.equal(
     failed.stories.length,
     0,
