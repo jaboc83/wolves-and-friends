@@ -5,6 +5,7 @@ import { teams } from "../lib/teams";
 import { sportTerms } from "../lib/sport-terms";
 import type { TeamInfo } from "../lib/team-info";
 import type { PlayerStats } from "../lib/player-stats";
+import { createRosterStatsTable, rosterStatValue } from "../lib/roster-stats-table";
 import { espnTeamLogoUrl } from "../lib/march-madness";
 import BracketConnectors from "./bracket-connectors";
 export default function TeamInsights({
@@ -272,60 +273,104 @@ export default function TeamInsights({
                 Players grouped by position. Links open player bios and
                 source profiles when available.
               </p>
-              {info.depth.groups.map((group, i) => (
-                <div className="depth-row" key={group.position + i}>
-                  <strong>{group.position}</strong>
-                  <ol>
-                    {group.players.map((p) => (
-                      <li key={p.url + p.name}>
-                        <a href={p.url} target="_blank" rel="noreferrer">
-                          {p.name} ↗
-                        </a>
-                        {p.age !== undefined && (
-                          <div className="roster-player-info">
-                            {p.age !== undefined && <span>Age {p.age}</span>}
-                          </div>
-                        )}
-                        {(p.campTeam || p.signedForSeason || p.draftPick) && (
-                          <div className="roster-player-info">
-                            {p.campTeam && <span>{p.campTeam}</span>}
-                            {p.signedForSeason && <span>Signed for 2026–27</span>}
-                            {p.draftPick && <span>2026 draft pick</span>}
-                          </div>
-                        )}
-                        {(() => {
-                          const summary =
-                            playerStats[
-                              (t?.league || "") +
-                                ":" +
-                                (p.url.match(/\/_\/id\/(\d+)/)?.[1] || "")
-                            ];
-                          return summary ? (
-                            <div className="roster-season-stats">
-                              <small>{summary.title}</small>
-                              <dl>
-                                {summary.values.map((s) => (
-                                  <div key={s.label} title={s.description}>
-                                    <dt>{s.label}</dt>
-                                    <dd>{s.value}</dd>
-                                  </div>
-                                ))}
-                              </dl>
-                            </div>
-                          ) : null;
-                        })()}
-                      </li>
-                    ))}
-                  </ol>
-                </div>
-              ))}
+              {info.depth.groups.map((group, i) => {
+                const statsTable = createRosterStatsTable(
+                  group.players,
+                  t?.league || "",
+                  playerStats,
+                );
+                const seasonTitles = Array.from(
+                  new Set(
+                    statsTable.rows
+                      .map(({ summary }) => summary?.title)
+                      .filter((title): title is string => Boolean(title)),
+                  ),
+                );
+                return (
+                  <section className="depth-row" key={group.position + i}>
+                    <h3>{group.position}</h3>
+                    {statsTable.columns.length > 0 ? (
+                      <div
+                        className="roster-stats-table-scroll"
+                        role="region"
+                        aria-label={`${group.position} player season stats`}
+                        tabIndex={0}
+                      >
+                        <table className="roster-stats-table">
+                          <caption>
+                            {group.position} season stats
+                            {seasonTitles.length > 0 && ` · ${seasonTitles.join(" / ")}`}
+                          </caption>
+                          <thead>
+                            <tr>
+                              <th scope="col">Player</th>
+                              {statsTable.columns.map((column) => (
+                                <th scope="col" key={column}>{column}</th>
+                              ))}
+                            </tr>
+                          </thead>
+                          <tbody>
+                            {statsTable.rows.map(({ player: p, summary }) => (
+                              <tr key={p.url + p.name}>
+                                <th scope="row">
+                                  <a href={p.url} target="_blank" rel="noreferrer">
+                                    {p.name} ↗
+                                  </a>
+                                  <span className="roster-player-age">
+                                    {p.age !== undefined ? `Age ${p.age}` : ""}
+                                  </span>
+                                  {(p.campTeam || p.signedForSeason || p.draftPick) && (
+                                    <span className="roster-table-player-meta">
+                                      {[p.campTeam, p.signedForSeason && "Signed for 2026–27", p.draftPick && "2026 draft pick"]
+                                        .filter(Boolean)
+                                        .join(" · ")}
+                                    </span>
+                                  )}
+                                </th>
+                                {statsTable.columns.map((column) => {
+                                  const stat = summary?.values.find((value) => value.label === column);
+                                  return (
+                                    <td key={column} title={stat?.description}>
+                                      {rosterStatValue(summary, column)}
+                                    </td>
+                                  );
+                                })}
+                              </tr>
+                            ))}
+                          </tbody>
+                        </table>
+                      </div>
+                    ) : (
+                      <ol className="roster-player-list">
+                        {group.players.map((p) => (
+                          <li key={p.url + p.name}>
+                            <a href={p.url} target="_blank" rel="noreferrer">
+                              {p.name} ↗
+                            </a>
+                            {p.age !== undefined && (
+                              <span className="roster-player-age"> · Age {p.age}</span>
+                            )}
+                            {(p.campTeam || p.signedForSeason || p.draftPick) && (
+                              <span className="roster-table-player-meta">
+                                {[p.campTeam, p.signedForSeason && "Signed for 2026–27", p.draftPick && "2026 draft pick"]
+                                  .filter(Boolean)
+                                  .join(" · ")}
+                              </span>
+                            )}
+                          </li>
+                        ))}
+                      </ol>
+                    )}
+                  </section>
+                );
+              })}
               <p className="panel-note">
                 <a href={info.depth.url} target="_blank" rel="noreferrer">
                   {info.depth.source} ↗
                 </a>{" "}
                 {id === "frost"
                   ? "· Preliminary names and positions from the official training-camp announcement; final roster may change."
-                  : "· Age and season stats from ESPN. Each summary keeps ESPN’s season and competition label; unavailable stats are omitted."}
+                  : "· Age and season stats from ESPN. Tables stay separated by position; unavailable values are shown as —."}
               </p>
             </>
           ) : (
