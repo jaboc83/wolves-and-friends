@@ -31,6 +31,16 @@ export type Table = {
   cuts?: { after: number; label: string }[];
   qualification?: string;
 };
+export type PowerRanking = {
+  name: string;
+  metric: string;
+  rows: (Table["rows"][number] & { logo?: string })[];
+  source: string;
+  url: string;
+  checked: string;
+  publishedAt: string;
+  note?: string;
+};
 export type Depth = {
   label: string;
   groups: {
@@ -48,6 +58,7 @@ export type Depth = {
 };
 export type TeamInfo = {
   postseason?: Postseason;
+  powerRanking?: PowerRanking;
   id: string;
   tables: Table[];
   depth?: Depth;
@@ -71,6 +82,83 @@ const player = (p: any, league: string) => ({
       "https://www.espn.com/" + league.split("/")[1] + "/player/_/id/" + p.id,
   ),
 });
+const powerRankingLeague = (league: string) =>
+  ["football/nfl", "basketball/nba", "basketball/wnba"].includes(league);
+
+async function parsePowerRanking(
+  league: string,
+  checked: string,
+  get: (url: string) => Promise<any>,
+): Promise<PowerRanking | undefined> {
+  if (!powerRankingLeague(league)) return;
+  const [sport, leagueName] = league.split("/");
+  const now = new Date();
+  const season =
+    league === "basketball/nba" && now.getUTCMonth() >= 8
+      ? now.getUTCFullYear() + 1
+      : now.getUTCFullYear();
+  const endpoint =
+    `https://sports.core.api.espn.com/v2/sports/${sport}/leagues/${leagueName}` +
+    `/seasons/${season}/powerindex?lang=en&region=us&page=1`;
+  const first = await get(endpoint);
+  const pages = Number(first.pageCount) || 1;
+  const values = [
+    first,
+    ...(await Promise.all(
+      Array.from({ length: Math.max(0, pages - 1) }, (_, i) =>
+        get(endpoint.replace("page=1", `page=${i + 2}`)),
+      ),
+    )),
+  ].flatMap((page) => page.items || []);
+  const ranked = values
+    .map((item: any) => {
+      const stats = item.predictives || item.stats || [];
+      const rank = stats.find((stat: any) =>
+        ["fpirank", "bpirank", "rank"].includes(stat.name),
+      );
+      const metric = stats.find((stat: any) =>
+        ["fpi", "bpi"].includes(stat.name),
+      );
+      const teamId = String(item.team?.$ref || "").match(/\/teams\/(\d+)/)?.[1];
+      if (!teamId || !rank?.value) return null;
+      return { item, teamId, rank, metric };
+    })
+    .filter(Boolean)
+    .sort((a: any, b: any) => Number(a.rank.value) - Number(b.rank.value))
+    .slice(0, 10) as any[];
+  if (!ranked.length) return;
+  const rows = await Promise.all(
+    ranked.map(async ({ teamId, rank, metric }) => {
+      const teamResult = await get(
+        `https://site.api.espn.com/apis/site/v2/sports/${league}/teams/${teamId}`,
+      );
+      const team = teamResult.team || {};
+      const url =
+        team.links?.find((link: any) => link.rel?.includes("clubhouse"))?.href ||
+        `https://www.espn.com/${leagueName}/team/_/id/${teamId}`;
+      return {
+        id: teamId,
+        name: team.displayName || team.name || teamId,
+        url,
+        logo: team.logo || team.logos?.[0]?.href,
+        cells: [String(rank.displayValue || rank.value), String(metric?.displayValue || "—")],
+      };
+    }),
+  );
+  const metricName = league === "football/nfl" ? "FPI" : "BPI";
+  const sourceUrl = `https://www.espn.com/${leagueName}/${metricName.toLowerCase()}`;
+  const publishedAt = ranked[0].item.lastUpdated || ranked[0].item.runCutoffDate;
+  return {
+    name: "ESPN Power Rankings",
+    metric: metricName,
+    rows,
+    source: `ESPN ${metricName}`,
+    url: sourceUrl,
+    checked,
+    publishedAt,
+    note: `${season} season · top 10 teams by ${metricName}.`,
+  };
+}
 export function parseDepth(
   x: any,
   league: string,
@@ -309,6 +397,7 @@ export function parseDGPT(
 }
 export async function fetchTeamInfo() {
   const checked = new Date().toISOString();
+  const powerRankingCache = new Map<string, Promise<PowerRanking | undefined>>();
   const get = async (url: string) => {
     const r = await fetch(url, { signal: AbortSignal.timeout(10000) });
     if (!r.ok) throw Error();
@@ -421,6 +510,18 @@ export async function fetchTeamInfo() {
               );
             } catch {}
             if (!info.depth) info.unavailable.push("roster");
+          })(),
+          (async () => {
+            if (!powerRankingLeague(t.league!)) return;
+            try {
+              const getRanking =
+                powerRankingCache.get(t.league!) ||
+                parsePowerRanking(t.league!, checked, get);
+              powerRankingCache.set(t.league!, getRanking);
+              info.powerRanking = await getRanking;
+            } catch {
+              info.unavailable.push("power rankings");
+            }
           })(),
         ]);
         if (!info.season) {
