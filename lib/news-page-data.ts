@@ -9,3 +9,7 @@ export function loadedNewsData(ids: string[], pages: Record<string, HubData>): H
     games: [],
   };
 }
+export function newsDisplayMode(loading: boolean, hasStories: boolean, failed: boolean) {
+  if (hasStories) return "stories";
+  return loading ? "loading" : failed ? "error" : "empty";
+}

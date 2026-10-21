@@ -9,6 +9,7 @@ import {
 import { useDashboardFeeds } from "../hooks/use-dashboard-feeds";
 import { browserStorage, readStored, stringList } from "../lib/browser-storage";
 import { storedTeam } from "../lib/dashboard-storage";
+import { newsDisplayMode } from "../lib/news-page-data";
 import StoryCard from "../components/story-card";
 import { selectStories, selectGames } from "../lib/dashboard-selectors";
 import GameCard from "../components/game-card";
@@ -119,6 +120,7 @@ export default function Home() {
   const { teamsPlayingToday, visibleGames, availableResults, results, todayGames, futureGames } = selectGames({
     data, oddsGames, liveGames, active, showOlderResults,
   });
+  const newsMode = newsDisplayMode(loading, displayed.length > 0, newsFailed);
   const socialPosts = unreadSocial(socialData, active, readIds);
   const failed = [
     ...(data?.health || []).filter((h) =>
@@ -542,13 +544,13 @@ export default function Home() {
                         />
                       </label>
                     </div>
-                    {loading && active === "all" && displayed.length > 0 && (
+                    {loading && displayed.length > 0 && (
                       <p className="headline-loading" role="status">
                         <span className="headline-spinner" aria-hidden="true" />
                         Fetching more headlines…
                       </p>
                     )}
-                    {loading && (active !== "all" || !displayed.length) ? (
+                    {newsMode === "loading" ? (
                       <div
                         className="empty headline-loading"
                         role="status"
@@ -557,7 +559,7 @@ export default function Home() {
                         <span className="headline-spinner" aria-hidden="true" />
                         Fetching headlines…
                       </div>
-                    ) : newsFailed && !displayed.length ? (
+                    ) : newsMode === "error" ? (
                       <div className="empty" role="status">
                         Headlines are temporarily unavailable. We’ll try again
                         automatically.
@@ -588,7 +590,7 @@ export default function Home() {
                         </p>
                       </div>
                     )}
-                    {!loading && newsData.checked && (
+                    {newsData.checked && (
                       <p className="feed-description">
                         Last update:{" "}
                         {ct(newsData.checked, {
