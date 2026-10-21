@@ -53,7 +53,7 @@ export default function TeamInsights({
       const columns = createRosterStatsTable(group.players, t?.league || "", playerStats).columns;
       const key = columns.join("\\u0001");
       const existing = buckets.get(key) || { position: "", players: [] };
-      existing.position = existing.position ? existing.position + " / " + abbreviation(group.position) : abbreviation(group.position);
+      existing.position = existing.position ? existing.position + " / " + group.position : group.position;
       existing.players.push(...group.players.map((player) => ({ ...player, position: abbreviation(group.position) })));
       buckets.set(key, existing);
     }
