@@ -70,7 +70,10 @@ const calendar = fs.readFileSync("components/match-calendar.tsx", "utf8");
 assert.match(calendar, /<AddToCalendar game=\{g\} compact \/>/);
 assert.match(calendar, /className="calendar-agenda-game"/);
 const backToTop = fs.readFileSync("components/back-to-top.tsx", "utf8");
-assert.match(backToTop, /window\.scrollY > 240/);
+assert.match(backToTop, /pageScrollTop\\(/);
+assert.ok(backToTop.includes("createPortal(") && backToTop.includes("document.body"));
+assert.ok(backToTop.includes('document.addEventListener("scroll"'));
+assert.ok(backToTop.includes('visualViewport?.addEventListener("scroll"'));
 assert.match(fs.readFileSync("app/globals.css", "utf8"), /bottom: calc\(88px/);
 console.log(
   "Same-origin bracket logos, calendar action, and mobile back-to-top passed.",
