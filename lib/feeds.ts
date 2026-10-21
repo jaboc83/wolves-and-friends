@@ -1,21 +1,6 @@
 import { newsSources, authorSources } from "./news-sources";
-import {
-  safe,
-  match,
-  FeedError,
-  parseNbaTeamNews,
-  parseFeed,
-  parsePalaceRadar,
-  parseGames,
-  mergeLiveScoreboard,
-} from "./feed-parsers";
-export {
-  parseNbaTeamNews,
-  parseFeed,
-  parsePalaceRadar,
-  parseGames,
-  mergeLiveScoreboard,
-} from "./feed-parsers";
+import { safe, match, FeedError, parseNbaTeamNews, parseFeed, parsePalaceRadar, parseGames, mergeLiveScoreboard } from "./feed-parsers";
+export { parseNbaTeamNews, parseFeed, parsePalaceRadar, parseGames, mergeLiveScoreboard } from "./feed-parsers";
 import { runProviderTasks, type ProviderTask } from "./provider-tasks";
 import { fetchScoreboard } from "./scoreboard";
 import { discEvents } from "./event-seed";
@@ -55,17 +40,11 @@ function safeFeedError(error: unknown) {
 async function providerGet(url: string, signal?: AbortSignal) {
   try {
     const r = await fetch(url, {
-      signal: signal
-        ? AbortSignal.any([
-            signal,
-            AbortSignal.timeout(url.includes("eurohoops.net") ? 30000 : 12000),
-          ])
-        : AbortSignal.timeout(12000),
+      signal: signal ? AbortSignal.any([signal, AbortSignal.timeout(url.includes("eurohoops.net") ? 30000 : 12000)]) : AbortSignal.timeout(12000),
       headers: {
         // A stable server identifier helps publishers allow-list the feed request
         // without forwarding any visitor/browser headers or identifiers.
-        "User-Agent":
-          "WolvesAndFriendsFeed/1.0 (+https://wolvesandfriends.moening.org)",
+        "User-Agent": "WolvesAndFriendsFeed/1.0 (+https://wolvesandfriends.moening.org)",
         Accept:
           "application/json, application/rss+xml, application/atom+xml, text/xml, text/html",
       },
@@ -73,9 +52,7 @@ async function providerGet(url: string, signal?: AbortSignal) {
     if (!r.ok) throw new FeedError("http-" + r.status);
     return r;
   } catch (error) {
-    throw error instanceof FeedError
-      ? error
-      : new FeedError(safeFeedError(error));
+    throw error instanceof FeedError ? error : new FeedError(safeFeedError(error));
   }
 }
 export async function collect(
@@ -90,54 +67,29 @@ export async function collect(
   let wolvesInjuries: Game["injuries"];
   const health: Health[] = [];
   const authors: AuthorFeed[] = [];
-  type Output = {
-    stories: Story[];
-    games: Game[];
-    health: Health[];
-    authors: AuthorFeed[];
-    injuries?: Game["injuries"];
-    count: number;
-    failed?: boolean;
-  };
+  type Output = { stories: Story[]; games: Game[]; health: Health[]; authors: AuthorFeed[]; injuries?: Game["injuries"]; count: number; failed?: boolean };
   const tasks: ProviderTask<Output>[] = [];
   const taskTeams: string[][] = [];
-  async function task(
-    name: string,
-    ids: string[],
-    f: (output: Output, signal: AbortSignal) => Promise<number>,
-  ) {
+  async function task(name: string, ids: string[], f: (output: Output, signal: AbortSignal) => Promise<number>) {
     if (team && !ids.includes(team)) return;
     taskTeams.push(ids);
-    tasks.push({
-      name,
-      run: async (signal) => {
-        const output: Output = {
-          stories: [],
-          games: [],
-          health: [],
-          authors: [],
-          count: 0,
-        };
-        output.count = await f(output, signal);
-        return output;
-      },
-    });
+    tasks.push({ name, run: async (signal) => {
+      const output: Output = { stories: [], games: [], health: [], authors: [], count: 0 };
+      output.count = await f(output, signal);
+      return output;
+    } });
   }
   if (section !== "schedules") {
-    await task(
-      "Official Timberwolves news",
-      ["wolves"],
-      async (output, signal) => {
-        const { stories, games, health } = output;
-        const get = (url: string) => providerGet(url, signal);
-        const parsed = parseNbaTeamNews(
-          await (await get("https://www.nba.com/timberwolves/news")).text(),
-        );
-        if (!parsed.length) throw new Error("No NBA team stories");
-        stories.push(...parsed);
-        return parsed.length;
-      },
-    );
+    await task("Official Timberwolves news", ["wolves"], async (output, signal) => {
+      const { stories, games, health } = output;
+      const get = (url: string) => providerGet(url, signal);
+      const parsed = parseNbaTeamNews(
+        await (await get("https://www.nba.com/timberwolves/news")).text(),
+      );
+      if (!parsed.length) throw new Error("No NBA team stories");
+      stories.push(...parsed);
+      return parsed.length;
+    });
     await Promise.all(
       newsSources.map(([name, url, ids]) =>
         task(
@@ -149,8 +101,8 @@ export async function collect(
                 ? ["frost"]
                 : ["zalgiris"]),
           async (output, signal) => {
-            const { stories, games, health } = output;
-            const get = (url: string) => providerGet(url, signal);
+      const { stories, games, health } = output;
+      const get = (url: string) => providerGet(url, signal);
             const parsed = parseFeed(await (await get(url)).text(), name, ids);
             stories.push(
               ...(name.startsWith("EuroLeague")
@@ -164,8 +116,8 @@ export async function collect(
     );
     await Promise.all([
       task("Palace Radar", ["palace"], async (output, signal) => {
-        const { stories, games, health } = output;
-        const get = (url: string) => providerGet(url, signal);
+      const { stories, games, health } = output;
+      const get = (url: string) => providerGet(url, signal);
         const parsed = parsePalaceRadar(
           await (await get("https://www.palaceradar.co.uk/")).text(),
           checked,
@@ -175,8 +127,8 @@ export async function collect(
         return parsed.length;
       }),
       task("Official Minnesota Frost", ["frost"], async (output, signal) => {
-        const { stories, games, health } = output;
-        const get = (url: string) => providerGet(url, signal);
+      const { stories, games, health } = output;
+      const get = (url: string) => providerGet(url, signal);
         const parsed = parseFrostNews(
           await (
             await get("https://www.thepwhl.com/en/teams/minnesota-frost/news")
@@ -192,7 +144,7 @@ export async function collect(
         .filter(
           (source) =>
             !team ||
-            (source.name === "Jess Myers" || source.name === "Michael Russo"
+            ((source.name === "Jess Myers" || source.name === "Michael Russo")
               ? team === "wild"
               : ["Alec Lewis", "Will Ragatz", "Ben Goessling"].includes(
                     source.name,
@@ -200,88 +152,71 @@ export async function collect(
                 ? team === "vikings"
                 : team === "wolves"),
         )
-        .map((source) =>
-          task(
-            "Author news · " + source.name,
-            [
-              source.name === "Jess Myers" || source.name === "Michael Russo"
-                ? "wild"
-                : ["Alec Lewis", "Will Ragatz", "Ben Goessling"].includes(
-                      source.name,
-                    )
-                  ? "vikings"
-                  : "wolves",
-            ],
-            async (output, signal) => {
-              const { authors } = output;
-              const get = (url: string) => providerGet(url, signal);
-              try {
-                const xml = await (await get(source.feed)).text();
-                let parsed = parseFeed(xml, source.name, ["wolves"]);
-                if (source.name === "Jon Krawczynski")
-                  parsed = parsed.filter(
-                    (s) =>
-                      / - The New York Times$/.test(s.title) ||
-                      /timberwolves|wolves/i.test(s.title),
-                  );
-                if (source.name === "Britt Robson")
-                  parsed = parsed.filter((s) => / - MinnPost$/.test(s.title));
-                if (
-                  source.name === "Jess Myers" ||
-                  source.name === "Michael Russo"
-                )
-                  parsed = parsed.filter((s) => /wild/i.test(s.title));
-                else if (source.name === "Alec Lewis")
-                  parsed = parsed.filter(
-                    (s) =>
-                      /vikings/i.test(s.title) &&
-                      / - The New York Times$/.test(s.title),
-                  );
-                else if (source.name === "Will Ragatz")
-                  parsed = parsed.filter(
-                    (s) =>
-                      /vikings/i.test(s.title) &&
-                      / - Sports Illustrated$/.test(s.title),
-                  );
-                else if (source.name === "Ben Goessling")
-                  parsed = parsed.filter(
-                    (s) =>
-                      /vikings/i.test(s.title) &&
-                      / - (?:The Minnesota )?Star Tribune$/.test(s.title),
-                  );
-                else
-                  parsed = parsed.filter((s) =>
-                    /timberwolves|wolves|lynx|finch|edwards/i.test(s.title),
-                  );
-                const author: AuthorFeed = {
-                  ...source,
-                  items: parsed
-                    .slice(0, 4)
-                    .map(({ title, url, date }) => ({ title, url, date })),
-                  checked,
-                  status: "ok",
-                };
-                await verifyAuthorFeed(author, signal);
-                authors.push(author);
-              } catch {
-                output.failed = true;
-                const old = (cached?.authors || initial.authors || []).find(
-                  (a) => a.name === source.name,
-                );
-                authors.push({
-                  ...source,
-                  items: section === "news" ? [] : old?.items || [],
-                  checked: old?.checked || checked,
-                  status: "unavailable",
-                });
-              }
-              return authors.reduce(
-                (sum, author) => sum + author.items.length,
-                0,
+        .map((source) => task("Author news · " + source.name,
+          [source.name === "Jess Myers" || source.name === "Michael Russo" ? "wild" :
+            ["Alec Lewis", "Will Ragatz", "Ben Goessling"].includes(source.name) ? "vikings" : "wolves"],
+          async (output, signal) => {
+          const { authors } = output;
+          const get = (url: string) => providerGet(url, signal);
+          try {
+            const xml = await (await get(source.feed)).text();
+            let parsed = parseFeed(xml, source.name, ["wolves"]);
+            if (source.name === "Jon Krawczynski")
+              parsed = parsed.filter(
+                (s) =>
+                  / - The New York Times$/.test(s.title) ||
+                  /timberwolves|wolves/i.test(s.title),
               );
-            },
-          ),
-        ),
+            if (source.name === "Britt Robson")
+              parsed = parsed.filter((s) => / - MinnPost$/.test(s.title));
+            if (source.name === "Jess Myers" || source.name === "Michael Russo")
+              parsed = parsed.filter((s) => /wild/i.test(s.title));
+            else if (source.name === "Alec Lewis")
+              parsed = parsed.filter(
+                (s) =>
+                  /vikings/i.test(s.title) &&
+                  / - The New York Times$/.test(s.title),
+              );
+            else if (source.name === "Will Ragatz")
+              parsed = parsed.filter(
+                (s) =>
+                  /vikings/i.test(s.title) &&
+                  / - Sports Illustrated$/.test(s.title),
+              );
+            else if (source.name === "Ben Goessling")
+              parsed = parsed.filter(
+                (s) =>
+                  /vikings/i.test(s.title) &&
+                  / - (?:The Minnesota )?Star Tribune$/.test(s.title),
+              );
+            else
+              parsed = parsed.filter((s) =>
+                /timberwolves|wolves|lynx|finch|edwards/i.test(s.title),
+              );
+            const author: AuthorFeed = {
+              ...source,
+              items: parsed
+                .slice(0, 4)
+                .map(({ title, url, date }) => ({ title, url, date })),
+              checked,
+              status: "ok",
+            };
+            await verifyAuthorFeed(author, signal);
+            authors.push(author);
+          } catch {
+            output.failed = true;
+            const old = (cached?.authors || initial.authors || []).find(
+              (a) => a.name === source.name,
+            );
+            authors.push({
+              ...source,
+              items: section === "news" ? [] : old?.items || [],
+              checked: old?.checked || checked,
+              status: "unavailable",
+            });
+          }
+          return authors.reduce((sum, author) => sum + author.items.length, 0);
+        })),
     );
     const sports = [
       ...new Set(
@@ -297,8 +232,8 @@ export async function collect(
           "ESPN news · " + league.split("/")[1],
           teams.filter((t) => t.league === league).map((t) => t.id),
           async (output, signal) => {
-            const { stories, games, health } = output;
-            const get = (url: string) => providerGet(url, signal);
+      const { stories, games, health } = output;
+      const get = (url: string) => providerGet(url, signal);
             const json = (await (
               await get(
                 "https://site.api.espn.com/apis/site/v2/sports/" +
@@ -330,62 +265,39 @@ export async function collect(
     );
   }
   if (section !== "news") {
-    await task(
-      "ESPN injury report · Timberwolves",
-      ["wolves"],
-      async (output, signal) => {
-        const { stories, games, health } = output;
-        const get = (url: string) => providerGet(url, signal);
-        const json = (await (
-          await get(
-            "https://site.api.espn.com/apis/site/v2/sports/basketball/nba/injuries",
-          )
-        ).json()) as any;
-        const pattern = new RegExp(
-          teams.find((t) => t.id === "wolves")?.pattern || "timberwolves",
-          "i",
-        );
-        const injuries = (json.injuries || [])
-          .flatMap((group: any) =>
-            group.injuries
-              ? group.injuries.map((injury: any) => ({
-                  ...injury,
-                  team: group.team || { displayName: group.displayName },
-                }))
-              : [group],
-          )
-          .filter((item: any) =>
-            pattern.test(
-              item.team?.displayName ||
-                item.team?.name ||
-                item.athlete?.displayName ||
-                "",
-            ),
-          )
-          .map((item: any) => ({
-            player:
-              item.athlete?.displayName ||
-              item.athlete?.fullName ||
-              "Unknown player",
-            status: item.status || item.type || "Unavailable",
-            detail:
-              item.details?.detail ||
-              item.details?.type ||
-              item.longComment ||
-              undefined,
-          }))
-          .filter((item: any) => item.player);
-        output.injuries = injuries;
-        return injuries.length;
-      },
-    );
+    await task("ESPN injury report · Timberwolves", ["wolves"], async (output, signal) => {
+      const { stories, games, health } = output;
+      const get = (url: string) => providerGet(url, signal);
+      const json = (await (
+        await get("https://site.api.espn.com/apis/site/v2/sports/basketball/nba/injuries")
+      ).json()) as any;
+      const pattern = new RegExp(
+        teams.find((t) => t.id === "wolves")?.pattern || "timberwolves",
+        "i",
+      );
+      const injuries = (json.injuries || [])
+        .flatMap((group: any) => group.injuries
+          ? group.injuries.map((injury: any) => ({ ...injury, team: group.team || { displayName: group.displayName } }))
+          : [group])
+        .filter((item: any) => pattern.test(
+          item.team?.displayName || item.team?.name || item.athlete?.displayName || "",
+        ))
+        .map((item: any) => ({
+          player: item.athlete?.displayName || item.athlete?.fullName || "Unknown player",
+          status: item.status || item.type || "Unavailable",
+          detail: item.details?.detail || item.details?.type || item.longComment || undefined,
+        }))
+        .filter((item: any) => item.player);
+      output.injuries = injuries;
+      return injuries.length;
+    });
     await Promise.all(
       teams
         .filter((t) => t.league)
         .map((t) =>
           task("ESPN scores · " + t.short, [t.id], async (output, signal) => {
-            const { stories, games, health } = output;
-            const get = (url: string) => providerGet(url, signal);
+      const { stories, games, health } = output;
+      const get = (url: string) => providerGet(url, signal);
             const json = await (
               await get(
                 "https://site.api.espn.com/apis/site/v2/sports/" +
@@ -449,68 +361,56 @@ export async function collect(
           }),
         ),
     );
-    await task(
-      "Official Žalgiris schedule",
-      ["zalgiris"],
-      async (output, signal) => {
-        const { stories, games, health } = output;
-        const get = (url: string) => providerGet(url, signal);
-        const r = await get("https://zalgiris.lt/rungtynes/");
-        const parsed = parseZalgiris(await r.text(), checked);
-        games.push(...parsed);
-        return parsed.length;
-      },
-    );
-    await task(
-      "Official PWHL schedule · Frost",
-      ["frost"],
-      async (output, signal) => {
-        const { stories, games, health } = output;
-        const get = (url: string) => providerGet(url, signal);
-        const primaryUrl =
-          "https://www.thepwhl.com/en/stats/schedule/2/11/all-months/homeaway?league=1";
-        let parsed = parsePwhlSchedule(
-          await (await get(primaryUrl)).text(),
+    await task("Official Žalgiris schedule", ["zalgiris"], async (output, signal) => {
+      const { stories, games, health } = output;
+      const get = (url: string) => providerGet(url, signal);
+      const r = await get("https://zalgiris.lt/rungtynes/");
+      const parsed = parseZalgiris(await r.text(), checked);
+      games.push(...parsed);
+      return parsed.length;
+    });
+    await task("Official PWHL schedule · Frost", ["frost"], async (output, signal) => {
+      const { stories, games, health } = output;
+      const get = (url: string) => providerGet(url, signal);
+      const primaryUrl =
+        "https://www.thepwhl.com/en/stats/schedule/2/11/all-months/homeaway?league=1";
+      let parsed = parsePwhlSchedule(
+        await (await get(primaryUrl)).text(),
+        checked,
+        primaryUrl,
+      );
+      if (!parsed.length) {
+        const fallbackUrl =
+          "https://www.thepwhl.com/en/teams/minnesota-frost/schedule";
+        parsed = parsePwhlSchedule(
+          await (await get(fallbackUrl)).text(),
           checked,
-          primaryUrl,
+          fallbackUrl,
         );
-        if (!parsed.length) {
-          const fallbackUrl =
-            "https://www.thepwhl.com/en/teams/minnesota-frost/schedule";
-          parsed = parsePwhlSchedule(
-            await (await get(fallbackUrl)).text(),
-            checked,
-            fallbackUrl,
-          );
-        }
-        if (!parsed.length) throw Error("No PWHL schedule events parsed");
-        games.push(...parsed);
-        return parsed.length;
-      },
-    );
+      }
+      if (!parsed.length) throw Error("No PWHL schedule events parsed");
+      games.push(...parsed);
+      return parsed.length;
+    });
     await Promise.all([
       ...Object.entries(palaceCompetitions).map(([league, name]) =>
-        task(
-          "ESPN Palace schedule · " + name,
-          ["palace"],
-          async (output, signal) => {
-            const { stories, games, health } = output;
-            const get = (url: string) => providerGet(url, signal);
-            const json = await (
-              await get(
-                "https://site.api.espn.com/apis/site/v2/sports/" +
-                  league +
-                  "/teams/384/schedule",
-              )
-            ).json();
-            mergeLiveScoreboard(games, json, league);
-            return (json as any).events?.length || 0;
-          },
-        ),
+        task("ESPN Palace schedule · " + name, ["palace"], async (output, signal) => {
+      const { stories, games, health } = output;
+      const get = (url: string) => providerGet(url, signal);
+          const json = await (
+            await get(
+              "https://site.api.espn.com/apis/site/v2/sports/" +
+                league +
+                "/teams/384/schedule",
+            )
+          ).json();
+          mergeLiveScoreboard(games, json, league);
+          return (json as any).events?.length || 0;
+        }),
       ),
       task("Official Palace schedule", ["palace"], async (output, signal) => {
-        const { stories, games, health } = output;
-        const get = (url: string) => providerGet(url, signal);
+      const { stories, games, health } = output;
+      const get = (url: string) => providerGet(url, signal);
         const parsed = parsePalace(
           await (await get("https://www.cpfc.co.uk/matches/")).text(),
           checked,
@@ -520,8 +420,8 @@ export async function collect(
         return parsed.length;
       }),
       task("Official MNUFC calendar", ["loons"], async (output, signal) => {
-        const { stories, games, health } = output;
-        const get = (url: string) => providerGet(url, signal);
+      const { stories, games, health } = output;
+      const get = (url: string) => providerGet(url, signal);
         const parsed = parseLoonsCalendar(
           await (
             await get(
@@ -571,8 +471,8 @@ export async function collect(
               .filter((t) => teamPlaysCompetition(t.id, league))
               .map((t) => t.id),
             async (output, signal) => {
-              const { stories, games, health } = output;
-              const get = (url: string) => providerGet(url, signal);
+      const { stories, games, health } = output;
+      const get = (url: string) => providerGet(url, signal);
               const json = await fetchScoreboard(league, date);
               mergeLiveScoreboard(games, json, league);
               return (json as any).events?.length || 0;
@@ -585,15 +485,9 @@ export async function collect(
   const outcomes = await runProviderTasks(tasks);
   for (const [index, outcome] of outcomes.entries()) {
     const output = outcome.value;
-    health.push({
-      name: outcome.name,
-      teams: taskTeams[index],
-      checked,
-      status: output && !output.failed ? "ok" : "unavailable",
-      count: output?.count || 0,
-      ...(output && !output.failed
-        ? {}
-        : { error: safeFeedError(outcome.error) }),
+    health.push({ name: outcome.name, teams: taskTeams[index], checked,
+      status: output && !output.failed ? "ok" : "unavailable", count: output?.count || 0,
+      ...(output && !output.failed ? {} : { error: safeFeedError(outcome.error) }),
     });
     if (!output) continue;
     stories.push(...output.stories);
@@ -602,24 +496,13 @@ export async function collect(
     if (output.injuries) wolvesInjuries = output.injuries;
     if (/^Official (Palace schedule|MNUFC calendar)/.test(outcome.name))
       mergeOfficial(games, output.games);
-    else
-      for (const fresh of output.games) {
-        const index = games.findIndex(
-          (old) =>
-            old.id === fresh.id ||
-            (old.team === fresh.team &&
-              Math.abs(Date.parse(old.date) - Date.parse(fresh.date)) <
-                3 * 3600000),
-        );
-        if (index < 0) games.push(fresh);
-        else
-          games[index] = {
-            ...games[index],
-            ...fresh,
-            competitionNote:
-              fresh.competitionNote || games[index].competitionNote,
-          };
-      }
+    else for (const fresh of output.games) {
+      const index = games.findIndex((old) => old.id === fresh.id ||
+        (old.team === fresh.team && Math.abs(Date.parse(old.date) - Date.parse(fresh.date)) < 3 * 3600000));
+      if (index < 0) games.push(fresh);
+      else games[index] = { ...games[index], ...fresh,
+        competitionNote: fresh.competitionNote || games[index].competitionNote };
+    }
   }
   if (section !== "news") {
     const fallback = [
@@ -676,18 +559,10 @@ export async function collect(
       game.injuries = wolvesInjuries;
   if (section === "all" && Date.now() - started < 20000) {
     const enriched = structuredClone(games);
-    const [odds] = await runProviderTasks(
-      [
-        {
-          name: "Odds",
-          run: async () => {
-            await enrichOdds(enriched, checked);
-            return enriched;
-          },
-        },
-      ],
-      { timeoutMs: Math.max(1, 20000 - (Date.now() - started)) },
-    );
+    const [odds] = await runProviderTasks([{ name: "Odds", run: async () => {
+      await enrichOdds(enriched, checked);
+      return enriched;
+    } }], { timeoutMs: Math.max(1, 20000 - (Date.now() - started)) });
     if (odds.value) games.splice(0, games.length, ...odds.value);
   }
   return {
@@ -749,3 +624,4 @@ export function oddsData() {
     });
   return oddsInflight;
 }
+
