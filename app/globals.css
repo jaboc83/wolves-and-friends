@@ -3121,3 +3121,40 @@ body:has(.score-choice[open]) {
     order: 3;
   }
 }
+
+.power-rankings {
+  margin: 18px 0;
+  padding: 14px;
+  border: 1px solid var(--line, #d3d9d4);
+  border-top: 3px solid var(--team-accent, #8aa747);
+  background: var(--surface, #fffefb);
+}
+.power-rankings-heading {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 12px;
+}
+.power-rankings-heading h2 {
+  margin: 0;
+}
+.power-rankings-heading span {
+  color: var(--muted, #64707a);
+  font-size: 0.78rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+.power-rankings table {
+  width: 100%;
+}
+.power-rankings th[scope="row"] a {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+}
+.power-ranking-logo {
+  width: 22px;
+  height: 22px;
+  object-fit: contain;
+}
