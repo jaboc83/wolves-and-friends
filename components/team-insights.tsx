@@ -168,6 +168,19 @@ export default function TeamInsights({
             </p>
           </section>
         )}
+        {id === "palace" && !info?.postseason && (
+          <section className="postseason-panel" aria-label="Europa League bracket">
+            <h3>Europa League bracket · 2026/27</h3>
+            <p className="panel-note">
+              The official UEFA bracket updates as knockout rounds and matchups are published.
+            </p>
+            <p className="panel-note">
+              <a href="https://www.uefa.com/uefaeuropaleague/fixtures-results/bracket/" target="_blank" rel="noreferrer">
+                Open UEFA bracket view ↗
+              </a>
+            </p>
+          </section>
+        )}
         {info?.tables.length ? (
           info.tables.map((raw) => {
             const table = decorateTable(raw, id);
