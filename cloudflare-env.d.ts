@@ -3,3 +3,6 @@ declare namespace Cloudflare {
     BUCKET?: R2Bucket;
   }
 }
+
+
+declare namespace Cloudflare { interface Env { CONNECTORS?: any; } }
