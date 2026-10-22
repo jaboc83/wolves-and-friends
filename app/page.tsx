@@ -123,7 +123,7 @@ export default function Home() {
     data, oddsGames, liveGames, active, showOlderResults,
   });
   const newsMode = newsDisplayMode(loading, displayed.length > 0, newsFailed);
-  const socialPosts = unreadSocial(socialData, active, readIds);
+  const socialPosts = unreadSocial(socialData.filter((post) => post.socialPlatform !== "youtube"), active, readIds);\n  const youtubeHeadlines = unreadSocial(socialData.filter((post) => post.socialPlatform === "youtube"), active, readIds);
   const failed = [
     ...(data?.health || []).filter((h) =>
       /schedule|scores|scoreboard/.test(h.name),
@@ -398,20 +398,12 @@ export default function Home() {
                         </div>
                         <p className="feed-description">
                           {active === "all"
-                            ? "Latest posts for your teams · Bluesky & YouTube"
+                            ? "Latest posts for your teams · Bluesky"
                             : team?.name + " posts"}
                         </p>
                         {socialRefreshError && (
                           <p className="feed-description" role="status">
                             Social posts could not refresh. Try again shortly.
-                          </p>
-                        )}
-                        {youtubeUnavailable.some(
-                          (id) => active === "all" || active === id,
-                        ) && (
-                          <p className="feed-description">
-                            Some official YouTube feeds are temporarily
-                            unavailable.
                           </p>
                         )}
                         {socialPosts.length ? (
@@ -553,6 +545,19 @@ export default function Home() {
                         />
                       </label>
                     </div>
+                    {youtubeHeadlines.length > 0 && (
+                      <section className="youtube-headlines" aria-label="Latest YouTube videos">
+                        <h3>Latest videos</h3>
+                        {youtubeHeadlines.map(story)}
+                      </section>
+                    )}
+                    {youtubeUnavailable.some(
+                      (id) => active === "all" || active === id,
+                    ) && (
+                      <p className="feed-description">
+                        Some official YouTube feeds are temporarily unavailable.
+                      </p>
+                    )}
                     {loading && displayed.length > 0 && (
                       <p className="headline-loading" role="status">
                         <span className="headline-spinner" aria-hidden="true" />
