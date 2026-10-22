@@ -98,6 +98,23 @@ const powerRankingTeamNames: Record<string, Record<string, string>> = {
     "28": "Toronto Raptors", "29": "Memphis Grizzlies", "30": "Charlotte Hornets",
   },
 };
+const nbaBpiFallbackRows = [
+  ["25", "1st", "9.180"], ["24", "2nd", "6.968"], ["18", "3rd", "4.568"],
+  ["8", "4th", "4.175"], ["2", "5th", "4.074"], ["20", "6th", "3.748"],
+  ["7", "7th", "3.325"], ["16", "8th", "3.096"], ["5", "9th", "2.971"],
+  ["10", "10th", "2.471"], ["28", "11th", "2.144"], ["14", "12th", "1.788"],
+  ["13", "13th", "1.754"], ["1", "14th", "0.699"], ["19", "15th", "0.609"],
+  ["22", "16th", "0.525"], ["11", "17th", "0.348"], ["21", "18th", "-0.326"],
+  ["30", "19th", "-0.477"], ["26", "20th", "-2.131"], ["9", "21st", "-2.392"],
+  ["6", "22nd", "-2.881"], ["27", "23rd", "-3.052"], ["29", "24th", "-4.618"],
+  ["4", "25th", "-4.798"], ["3", "26th", "-5.164"], ["12", "27th", "-5.835"],
+  ["15", "28th", "-5.951"], ["17", "29th", "-6.438"], ["23", "30th", "-8.378"],
+].map(([id, rank, bpi]) => ({
+  id,
+  name: powerRankingTeamNames["basketball/nba"][id],
+  url: `https://www.espn.com/nba/team/_/id/${id}`,
+  cells: [rank, bpi],
+}));
 const powerRankingFallback = (
   league: string,
   teamId: string,
@@ -107,19 +124,12 @@ const powerRankingFallback = (
     "basketball/nba:wolves": {
       name: "ESPN Power Rankings",
       metric: "BPI",
-      rows: [
-        {
-          id: "16",
-          name: "Minnesota Timberwolves",
-          url: "https://www.espn.com/nba/team/_/name/min",
-          cells: ["8th", "3.096"],
-        },
-      ],
-      source: "ESPN team snapshot",
+        rows: nbaBpiFallbackRows,
+        source: "ESPN BPI cached snapshot",
       url: "https://www.espn.com/nba/bpi",
       checked,
       publishedAt: "2026-10-21T22:54:00Z",
-      note: "Latest team snapshot while ESPN’s full ranking feed refreshes.",
+        note: "Cached full ESPN BPI snapshot; live ranking feed unavailable.",
     },
     "football/nfl:vikings": {
       name: "ESPN Power Rankings",
