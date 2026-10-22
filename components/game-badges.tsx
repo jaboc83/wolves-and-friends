@@ -1,5 +1,5 @@
 import type { Game } from "../lib/feeds";
-import { gameBadges } from "../lib/game-badges";
+import { gameBadges } from "../lib/games/game-badges";
 export default function GameBadges({ game }: { game: Game }) {
   const badges = gameBadges(game);
   return badges.length ? (

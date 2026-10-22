@@ -46,15 +46,17 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          for test_file in scripts/test-*.mjs; do
-            echo "::group::${test_file}"
-            node "${test_file}"
-            echo "::endgroup::"
+          for test_dir in scripts/tests/*/; do
+            for test_file in "${test_dir}"test-*.mjs; do
+              [[ -e "${test_file}" ]] || continue
+              echo "::group::${test_file}"
+              node "${test_file}"
+              echo "::endgroup::"
+            done
           done
-
 
       - name: Compare client assets with PR base
         if: github.event_name == 'pull_request'
         env:
           ASSET_BASE_SHA: ${{ github.event.pull_request.base.sha }}
-        run: node scripts/compare-client-assets.mjs "$ASSET_BASE_SHA"
+        run: node scripts/build/compare-client-assets.mjs "$ASSET_BASE_SHA"

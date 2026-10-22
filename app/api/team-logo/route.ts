@@ -11,6 +11,12 @@ const allowedLeagues = new Set([
 const maxBytes = 1_000_000;
 const cache = new Map<string, { bytes: Uint8Array; mime: string }>();
 
+type TeamLogo = { rel?: string[]; href?: string };
+
+function isRecord(value: unknown): value is Record<string, unknown> {
+  return typeof value === "object" && value !== null;
+}
+
 function imageMime(bytes: Uint8Array): string | undefined {
   if (bytes[0] === 0xff && bytes[1] === 0xd8 && bytes[2] === 0xff)
     return "image/jpeg";
@@ -59,9 +65,22 @@ export async function GET(request: Request) {
       },
     );
     if (!teamResponse.ok) throw Error("Team logo unavailable");
-    const data: any = await teamResponse.json();
-    const logos = data.team?.logos || data.logos || [];
-    const href = logos.find((logo: any) => logo.rel?.includes("default"))?.href;
+    const data: unknown = await teamResponse.json();
+    if (!isRecord(data)) throw Error("Invalid team response");
+    const team = isRecord(data.team) ? data.team : undefined;
+    const logos = team?.logos ?? data.logos;
+    if (!Array.isArray(logos)) throw Error("Team logos unavailable");
+    const href = (logos as unknown[])
+      .filter(isRecord)
+      .map((logo): TeamLogo => ({
+        rel: Array.isArray(logo.rel)
+          ? logo.rel.filter(
+              (relation): relation is string => typeof relation === "string",
+            )
+          : undefined,
+        href: typeof logo.href === "string" ? logo.href : undefined,
+      }))
+      .find((logo) => logo.rel?.includes("default"))?.href;
     const logoUrl = new URL(href || "");
     if (
       logoUrl.protocol !== "https:" ||

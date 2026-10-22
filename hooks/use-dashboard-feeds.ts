@@ -1,20 +1,39 @@
 "use client";
 import { useEffect, useRef, useState } from "react";
-import { createPublicRequests, pollPublicFeeds } from "../lib/public-requests";
-import { browserStorage, readStored, writeStored } from "../lib/browser-storage";
-import { createRosterStatsLoader, type StatsStatus } from "../lib/roster-stats-loader";
-import { readPlayerStatsCache, writePlayerStatsCache } from "../lib/player-stats-cache";
-import type { PlayerStats } from "../lib/player-stats";
+import {
+  createPublicRequests,
+  pollPublicFeeds,
+} from "../lib/browser/public-requests";
+import {
+  browserStorage,
+  readStored,
+  writeStored,
+} from "../lib/browser/storage";
+import {
+  createRosterStatsLoader,
+  type StatsStatus,
+} from "../lib/team-info/roster-stats-loader";
+import {
+  readPlayerStatsCache,
+  writePlayerStatsCache,
+} from "../lib/team-info/player-stats-cache";
+import type { PlayerStats } from "../lib/team-info/player-stats";
 import type { HubData, Story, Game } from "../lib/feeds";
 import type { TeamInfo } from "../lib/team-info";
-import { activeHub, activeStories } from "../lib/content-policy";
-import { socialQueue } from "../lib/social-queue";
-import { isLocalSocialImage } from "../lib/bluesky-images";
-import { loadedNewsData } from "../lib/news-page-data";
-import { teams } from "../lib/teams";
-import { isHubData, isStories, storedTeam } from "../lib/dashboard-storage";
-import { recordFeedDiagnostics } from "../lib/feed-diagnostics";
-const emptyHub: HubData = { checked: "", stories: [], games: [], health: [], authors: [] };
+import { activeHub, activeStories } from "../lib/dashboard/content-policy";
+import { socialQueue } from "../lib/social/social-queue";
+import { isLocalSocialImage } from "../lib/social/bluesky-images";
+import { loadedNewsData } from "../lib/browser/news-page-data";
+import { teams } from "../lib/teams/teams";
+import { isHubData, isStories, storedTeam } from "../lib/dashboard/storage";
+import { recordFeedDiagnostics } from "../lib/feeds/feed-diagnostics";
+const emptyHub: HubData = {
+  checked: "",
+  stories: [],
+  games: [],
+  health: [],
+  authors: [],
+};
 function retainAvatars(next: HubData, previous?: HubData | null): HubData {
   const key = (s: Story) =>
     s.url.split("/profile/")[1]?.split("/post/")[0] || s.source;
@@ -36,7 +55,9 @@ export function useDashboardFeeds(active: string) {
   const [data, setData] = useState<HubData | null>(null);
   const [teamInfo, setTeamInfo] = useState<TeamInfo[]>([]);
   const [newsPages, setNewsPages] = useState<Record<string, HubData>>({});
-  const [newsStatus, setNewsStatus] = useState<Record<string, "loading" | "ready" | "error">>({});
+  const [newsStatus, setNewsStatus] = useState<
+    Record<string, "loading" | "ready" | "error">
+  >({});
   const [socialData, setSocialData] = useState<Story[]>([]);
   const [socialUnavailable, setSocialUnavailable] = useState<string[]>([]);
   const [youtubeUnavailable, setYoutubeUnavailable] = useState<string[]>([]);
@@ -48,23 +69,33 @@ export function useDashboardFeeds(active: string) {
   const [playerStats, setPlayerStats] = useState<Record<string, PlayerStats>>(
     {},
   );
-  const [playerStatsStatus, setPlayerStatsStatus] = useState<
-    StatsStatus
-  >("idle");
+  const [playerStatsStatus, setPlayerStatsStatus] =
+    useState<StatsStatus>("idle");
   function refreshRosterStats(priorityKeys: string[] = []) {
     return rosterLoader.current({
       initial: playerStats,
       fetchBatch: async (batch, version, signal) => {
-        const response = await requests.current.fetch("/api/roster-stats?batch=" + batch +
-          (version ? "&version=" + encodeURIComponent(version) : ""), {
-          credentials: "omit", referrerPolicy: "no-referrer", signal,
-        });
-        if (!response.ok) throw Error(response.status === 409 ? "Manifest changed" : "Stats unavailable");
+        const response = await requests.current.fetch(
+          "/api/roster-stats?batch=" +
+            batch +
+            (version ? "&version=" + encodeURIComponent(version) : ""),
+          {
+            credentials: "omit",
+            referrerPolicy: "no-referrer",
+            signal,
+          },
+        );
+        if (!response.ok)
+          throw Error(
+            response.status === 409 ? "Manifest changed" : "Stats unavailable",
+          );
         return response.json();
       },
       onStats: (stats) => {
         setPlayerStats(stats);
-        try { writePlayerStatsCache(browserStorage, stats); } catch {}
+        try {
+          writePlayerStatsCache(browserStorage, stats);
+        } catch {}
       },
       onStatus: setPlayerStatsStatus,
       priorityKeys,
@@ -90,11 +121,14 @@ export function useDashboardFeeds(active: string) {
       setSocialRefreshing(true);
       setSocialRefreshError(false);
       try {
-        const r = await requests.current.fetch(force ? "/api/social?refresh=1" : "/api/social", {
-          credentials: "omit",
-          referrerPolicy: "no-referrer",
-          cache: "no-store",
-        });
+        const r = await requests.current.fetch(
+          force ? "/api/social?refresh=1" : "/api/social",
+          {
+            credentials: "omit",
+            referrerPolicy: "no-referrer",
+            cache: "no-store",
+          },
+        );
         if (!r.ok) throw Error();
         const d = (await r.json()) as {
           posts: Story[];
@@ -153,11 +187,14 @@ export function useDashboardFeeds(active: string) {
     return once("news:" + id, async () => {
       setNewsStatus((s) => ({ ...s, [id]: "loading" }));
       try {
-        const r = await requests.current.fetch("/api/news?team=" + encodeURIComponent(id), {
-          credentials: "omit",
-          referrerPolicy: "no-referrer",
-          cache: "no-store",
-        });
+        const r = await requests.current.fetch(
+          "/api/news?team=" + encodeURIComponent(id),
+          {
+            credentials: "omit",
+            referrerPolicy: "no-referrer",
+            cache: "no-store",
+          },
+        );
         if (!r.ok) throw Error();
         const d = activeHub((await r.json()) as HubData);
         void recordFeedDiagnostics(d.health);
@@ -250,31 +287,70 @@ export function useDashboardFeeds(active: string) {
     void refreshSchedules();
     void refreshNews();
   }
+  const pollingCallbacks = useRef({ refresh, refreshScores, refreshSocial });
   useEffect(() => {
-    requests.current.start();
+    const publicRequests = requests.current;
+    publicRequests.start();
     let alive = true;
     activePage.current = storedTeam();
-    setPlayerStats(readPlayerStatsCache(browserStorage));
-    setSocialData(readStored("wf-social-cache", isStories, []));
-    setData(readStored<HubData | null>("wf-cache", isHubData, null));
-    // Split fallbacks out of the main client chunk. Never replace a live/cache response.
-    void import("../lib/initial.json").then(({ default: seed }) => {
+    queueMicrotask(() => {
       if (!alive) return;
-      setData((previous) => previous || activeHub(seed as HubData));
-      setSocialData((previous) => socialQueue([...previous, ...socialQueue(seed.stories as Story[])]));
-    }).catch(() => {});
-    void import("../lib/team-info-initial.json").then(({ default: seed }) => {
-      if (alive) setTeamInfo((previous) => previous.length ? previous : seed as TeamInfo[]);
-    }).catch(() => {});
-    const stopPolling = pollPublicFeeds(refresh, () => { refreshScores(); refreshSocial(); });
+      setPlayerStats(readPlayerStatsCache(browserStorage));
+      setSocialData(readStored("wf-social-cache", isStories, []));
+      setData(readStored<HubData | null>("wf-cache", isHubData, null));
+    });
+    // Split fallbacks out of the main client chunk. Never replace a live/cache response.
+    void import("../data/snapshots/initial.json")
+      .then(({ default: seed }) => {
+        if (!alive) return;
+        setData((previous) => previous || activeHub(seed as HubData));
+        setSocialData((previous) =>
+          socialQueue([...previous, ...socialQueue(seed.stories as Story[])]),
+        );
+      })
+      .catch(() => {});
+    void import("../data/snapshots/team-info-initial.json")
+      .then(({ default: seed }) => {
+        if (alive)
+          setTeamInfo((previous) =>
+            previous.length ? previous : (seed as TeamInfo[]),
+          );
+      })
+      .catch(() => {});
+    const stopPolling = pollPublicFeeds(
+      () => pollingCallbacks.current.refresh(),
+      () => {
+        pollingCallbacks.current.refreshScores();
+        pollingCallbacks.current.refreshSocial();
+      },
+    );
     return () => {
       alive = false;
-      requests.current.stop();
+      publicRequests.stop();
       stopPolling();
     };
   }, []);
-  return { data, teamInfo, socialData, socialUnavailable, youtubeUnavailable,
-    liveGames, scoreCheck, scoreError, loading, newsFailed, newsData, scheduleError,
-    oddsGames, playerStats, playerStatsStatus, socialRefreshing, socialRefreshError,
-    refreshSocial, refreshRosterStats, fetchNewsPage, activePage };
+  return {
+    data,
+    teamInfo,
+    socialData,
+    socialUnavailable,
+    youtubeUnavailable,
+    liveGames,
+    scoreCheck,
+    scoreError,
+    loading,
+    newsFailed,
+    newsData,
+    scheduleError,
+    oddsGames,
+    playerStats,
+    playerStatsStatus,
+    socialRefreshing,
+    socialRefreshError,
+    refreshSocial,
+    refreshRosterStats,
+    fetchNewsPage,
+    activePage,
+  };
 }

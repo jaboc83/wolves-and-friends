@@ -1,3 +1,5 @@
+// Define the validated message, grant, and session-option shapes shared by the
+// local connector preview host and its agent driver.
 import { z } from "zod";
 
 const name = z

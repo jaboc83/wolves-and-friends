@@ -1,3 +1,5 @@
+// Bridge local Site preview requests to the owning agent's approved read actions.
+// This keeps connector execution in the agent session instead of the deployed Site.
 import { randomUUID } from "node:crypto";
 import {
   mkdir,

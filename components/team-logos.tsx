@@ -1,4 +1,6 @@
-import { teams } from "../lib/teams";
+import Image from "next/image";
+import { teams } from "../lib/teams/teams";
+import { teamLogoPath } from "../lib/teams/team-logo";
 export default function TeamLogos({ teamIds }: { teamIds: string[] }) {
   return (
     <div className="team-logos">
@@ -7,8 +9,9 @@ export default function TeamLogos({ teamIds }: { teamIds: string[] }) {
         if (!team) return null;
         return (
           <span key={id} className="team-logo" title={team.name}>
-            <img
-              src={"/logos/" + id + (id === "disc" ? ".svg" : ".png")}
+            <Image
+              unoptimized
+              src={teamLogoPath(id)}
               alt={
                 id === "disc" ? "Disc Golf Pro Tour logo" : team.name + " logo"
               }

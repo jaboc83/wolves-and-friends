@@ -1,4 +1,4 @@
-import { blueskyImagePath } from "../../../lib/bluesky-images";
+import { blueskyImagePath } from "../../../lib/social/bluesky-images";
 
 const maxBytes = 1_500_000;
 const cache = new Map<

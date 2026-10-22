@@ -1,6 +1,6 @@
 import { fetchTeamInfo, type TeamInfo } from "../../../lib/team-info";
-import { mergeTeamInfo } from "../../../lib/team-info-cache";
-import seed from "../../../lib/team-info-initial.json";
+import { mergeTeamInfo } from "../../../lib/team-info/team-info-cache";
+import seed from "../../../data/snapshots/team-info-initial.json";
 let cached: TeamInfo[] = seed as TeamInfo[],
   checked = 0;
 let inflight: Promise<TeamInfo[]> | null = null;
@@ -22,4 +22,3 @@ export async function GET() {
     headers: { "Cache-Control": "no-store" },
   });
 }
-
