@@ -397,29 +397,7 @@ export default function TeamInsights({
                   }));
                 return (
                   <section className="depth-row" key={group.position + i}>
-                    <h3 className="roster-position-heading">
-                      <span>{group.position}</span>
-                      <button
-                        type="button"
-                        className="table-sort-button"
-                        onClick={() => toggleRosterSort("Position")}
-                        aria-label="Sort players by position"
-                        aria-sort={
-                          rosterSort.column === "Position"
-                            ? rosterSort.direction === "asc"
-                              ? "ascending"
-                              : "descending"
-                            : "none"
-                        }
-                      >
-                        Position{" "}
-                        {rosterSort.column === "Position"
-                          ? rosterSort.direction === "asc"
-                            ? "↑"
-                            : "↓"
-                          : "↕"}
-                      </button>
-                    </h3>
+                    <h3 className="visually-hidden">{group.position}</h3>
                     {statsTable.columns.length > 0 ? (
                       <div
                         className="roster-stats-table-scroll"
@@ -434,6 +412,12 @@ export default function TeamInsights({
                           </caption>
                           <thead>
                             <tr>
+                              <th
+                                scope="col"
+                                onClick={() => toggleRosterSort("Position")}
+                              >
+                                Pos.
+                              </th>
                               <th
                                 scope="col"
                                 onClick={() => toggleRosterSort("Player")}
@@ -476,6 +460,7 @@ export default function TeamInsights({
                               })
                               .map(({ player: p, summary }) => (
                                 <tr key={p.url + p.name}>
+                                  <td>{(p as any).position || "—"}</td>
                                   <th scope="row">
                                     <a href={p.url} target="_blank" rel="noreferrer">
                                       {p.name} ↗
