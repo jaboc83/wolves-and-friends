@@ -61,6 +61,7 @@ const clubs: [string, string, string][] = [
   ["nottingham forest", "Nottingham", "England"], ["leeds|leeds united", "Leeds", "England"],
   ["bournemouth|afc bournemouth", "Bournemouth", "England"],
   ["lyon|olympique lyonnais", "Lyon", "France"],
+  ["beşiktaş|besiktas|beşiktaş jk|besiktas jk", "Istanbul", "Turkey"],
 ];
 const key = (s: string) => s.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase().trim();
 export function teamLocation(teamId: string, name: string, league: string, isOwn = false): string {
@@ -71,7 +72,12 @@ export function teamLocation(teamId: string, name: string, league: string, isOwn
   const franchise = groups.find(([sport, aliases]) => sport === category && aliases.split("|").some(alias => normalized === key(alias) || normalized.endsWith(" " + key(alias))));
   if (franchise) return franchise[2];
   if (!["zalgiris", "palace"].includes(teamId)) return "";
-  const club = clubs.find(([aliases]) => aliases.split("|").some(alias => key(alias) === normalized));
+  const club = clubs.find(([aliases]) =>
+    aliases.split("|").some((alias) => {
+      const normalizedAlias = key(alias);
+      return normalized === normalizedAlias || normalized.startsWith(normalizedAlias + " ");
+    }),
+  );
   if (!club) return "";
   const domestic = /\bLKL\b|Lithuanian|Premier League|FA Cup|League Cup|Carabao|Community Shield/i.test(league);
   return domestic ? club[1] : club[1] === club[2] ? club[1] : club[1] + ", " + club[2];

@@ -1,8 +1,10 @@
 "use client";
 import GameBadges from "./game-badges";
+import AddToCalendar from "./add-to-calendar";
 import { useState } from "react";
 import type { Game } from "../lib/feeds";
 import { teams } from "../lib/teams";
+import { sportTerms } from "../lib/sport-terms";
 const key = (date: string) =>
   new Intl.DateTimeFormat("en-CA", {
     timeZone: "America/Chicago",
@@ -10,7 +12,14 @@ const key = (date: string) =>
     month: "2-digit",
     day: "2-digit",
   }).format(new Date(date));
-export default function MatchCalendar({ games }: { games: Game[] }) {
+export default function MatchCalendar({
+  games,
+  team = "all",
+}: {
+  games: Game[];
+  team?: string;
+}) {
+  const terms = sportTerms(team);
   const today = key(new Date().toISOString());
   const [month, setMonth] = useState(() => today.slice(0, 7)),
     [selected, setSelected] = useState(today);
@@ -30,10 +39,11 @@ export default function MatchCalendar({ games }: { games: Game[] }) {
     );
   const active = matches(selected);
   return (
-    <details className="calendar-panel data-panel">
-      <summary>Match calendar</summary>
+    <details id="event-calendar" className="calendar-panel data-panel">
+      <summary>{terms.calendar}</summary>
       <p className="panel-note">
-        Past and upcoming events · Central Time · available schedule feeds
+        Past and upcoming {terms.events} · Central Time · available schedule
+        feeds
       </p>
       <div className="calendar-controls">
         <button aria-label="Previous month" onClick={() => shift(-1)}>
@@ -76,7 +86,8 @@ export default function MatchCalendar({ games }: { games: Game[] }) {
                 (date < today ? " (past)" : "") +
                 ", " +
                 events.length +
-                " events"
+                " " +
+                (events.length === 1 ? terms.event : terms.events)
               }
               aria-pressed={selected === date}
               onClick={() => setSelected(date)}
@@ -105,32 +116,40 @@ export default function MatchCalendar({ games }: { games: Game[] }) {
           active.map((g) => {
             const t = teams.find((t) => t.id === g.team);
             return (
-              <a key={g.id} href={g.url} target="_blank" rel="noreferrer">
-                <img
-                  src={
-                    "/logos/" + g.team + (g.team === "disc" ? ".svg" : ".png")
-                  }
-                  alt=""
-                  width={24}
-                  height={24}
-                />
-                <span>
-                  <b>{t?.short}</b> <GameBadges game={g} /> · {g.name}
-                  <small>
-                    {g.dateOnly
-                      ? "Time not listed"
-                      : new Date(g.date).toLocaleTimeString("en-US", {
-                          timeZone: "America/Chicago",
-                          hour: "numeric",
-                          minute: "2-digit",
-                        }) + " CT"}
-                  </small>
-                </span>
-              </a>
+              <div className="calendar-agenda-game" key={g.id}>
+                <a
+                  className="calendar-agenda-link"
+                  href={g.url}
+                  target="_blank"
+                  rel="noreferrer"
+                >
+                  <img
+                    src={
+                      "/logos/" + g.team + (g.team === "disc" ? ".svg" : ".png")
+                    }
+                    alt=""
+                    width={24}
+                    height={24}
+                  />
+                  <span>
+                    <b>{t?.short}</b> <GameBadges game={g} /> · {g.name}
+                    <small>
+                      {g.dateOnly
+                        ? "Time not listed"
+                        : new Date(g.date).toLocaleTimeString("en-US", {
+                            timeZone: "America/Chicago",
+                            hour: "numeric",
+                            minute: "2-digit",
+                          }) + " CT"}
+                    </small>
+                  </span>
+                </a>
+                {g.state === "pre" && <AddToCalendar game={g} compact />}
+              </div>
             );
           })
         ) : (
-          <p>No event in the available feeds for this day.</p>
+          <p>No {terms.event} in the available feeds for this day.</p>
         )}
       </div>
     </details>

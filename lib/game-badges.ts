@@ -5,8 +5,22 @@ export function gameBadges(g: Game): GameBadge[] {
     .filter(Boolean)
     .join(" ");
   const badges: GameBadge[] = [];
+  if (g.team === "disc") {
+    if (/jomezpro/i.test(context))
+      badges.push({ label: "JomezPro", tone: "jomezpro" });
+    else if (
+      /pdga major|united states disc golf championship/i.test(
+        context,
+      )
+    )
+      badges.push({ label: "PDGA Major", tone: "pdga-major" });
+    else if (/\bdgpt\b/i.test(context))
+      badges.push({ label: "DGPT", tone: "dgpt" });
+  }
   if (g.team === "palace") {
-    if (/\bfriendly\b|\bfriendlies\b/i.test(context))
+    if (/uefa europa league|europa league/i.test(context))
+      badges.push({ label: "Europa League", tone: "europa-league" });
+    else if (/\bfriendly\b|\bfriendlies\b/i.test(context))
       badges.push({ label: "Friendly", tone: "friendly" });
     else if (/premier league|\bEPL\b|eng\.1/i.test(context))
       badges.push({ label: "Premier", tone: "premier" });
@@ -24,8 +38,8 @@ export function gameBadges(g: Game): GameBadge[] {
         ? "KMT Cup"
         : /FA Cup/i.test(context)
           ? "FA Cup"
-          : /League Cup/i.test(context)
-            ? "League Cup"
+          : /League Cup|Carabao Cup/i.test(context)
+            ? "Carabao Cup"
             : /MLS Cup/i.test(context)
               ? "MLS Cup"
               : "Cup";

@@ -14,6 +14,8 @@ export const teams = [
         "https://bsky.app/starter-pack/canishoopus.bsky.social/3lal4p6wu5o2a",
       ],
       ["Canis Hoopus", "https://www.canishoopus.com/"],
+      ["Dunking with Wolves", "https://dunkingwithwolves.com/"],
+      ["Yard Barker", "https://www.yardbarker.com/nba/teams/minnesota_timberwolves/83"],
       ["Howls and Growls", "https://www.youtube.com/@howlsandgrowlshoops"],
       [
         "Jon Krawczynski · The Athletic",
@@ -49,6 +51,8 @@ export const teams = [
         "https://www.nytimes.com/athletic/author/joe-smith/",
       ],
       ["Official Wild", "https://www.nhl.com/wild/"],
+      ["Gone Puck Wild", "https://gonepuckwild.com/"],
+      ["Yard Barker", "https://www.yardbarker.com/nhl/teams/minnesota_wild/115"],
     ],
   },
   {
@@ -93,6 +97,8 @@ export const teams = [
       ],
       ["Twin Cities Territory", "https://omny.fm/shows/twin-cities-territory"],
       ["Official Twins", "https://www.mlb.com/twins"],
+      ["Twins Daily", "https://twinsdaily.com/"],
+      ["Puckett's Pond", "https://puckettspond.com/"],
     ],
   },
   {
@@ -107,6 +113,7 @@ export const teams = [
     sources: [
       ["Official MNUFC schedule", "https://www.mnufc.com/schedule/matches"],
       ["Official MNUFC", "https://www.mnufc.com/news/"],
+      ["Yard Barker", "https://www.yardbarker.com/soccer/teams/minnesota_united/17423"],
       [
         "Andy Greder · Pioneer Press",
         "https://www.twincities.com/author/andy-greder/",
@@ -125,6 +132,7 @@ export const teams = [
     sources: [
       ["Official Palace schedule", "https://www.cpfc.co.uk/matches/"],
       ["Official Palace", "https://www.cpfc.co.uk/news/"],
+      ["PalaceRadar", "https://www.palaceradar.co.uk/"],
       [
         "Matt Woosnam · The Athletic",
         "https://www.nytimes.com/athletic/author/matt-woosnam/",
@@ -182,6 +190,18 @@ export const teams = [
         "https://www.euroleaguebasketball.net/en/euroleague/news/carousels/zalgiris-kaunas/?q=%7B%22articleId%22%3A%22%22%2C%22categoryId%22%3A%22%22%2C%22linkedId%22%3A%7B%22sourceSystem%22%3A%22FS_BASKETBALL_TEAM%22%2C%22sourceSystemId%22%3A%22zal%22%2C%22text%22%3A%22%22%7D%7D&carouselTitle=Zalgiris%20Kaunas",
       ],
       [
+        "EuroLeague standings",
+        "https://euroleague-standings.com/",
+      ],
+      [
+        "Eurohoops · Žalgiris",
+        "https://www.eurohoops.net/basket/zalgiris-kaunas/?lang=en",
+      ],
+      [
+        "BeBasket · Žalgiris roster",
+        "https://www.be-basketball.com/team/zalgiris-kaunas/players",
+      ],
+      [
         "EuroLeague scoreboard",
         "https://www.euroleaguebasketball.net/euroleague/game-center/",
       ],
@@ -207,6 +227,18 @@ export const teams = [
         "https://www.thepwhl.com/en/teams/minnesota-frost",
       ],
       ["The Ice Garden", "https://www.theicegarden.com/"],
+      [
+        "Official PWHL standings",
+        "https://www.thepwhl.com/en/stats/standings",
+      ],
+      [
+        "Official Frost schedule",
+        "https://www.thepwhl.com/en/stats/schedule/2/11/all-months/homeaway?league=1",
+      ],
+      [
+        "Official Frost training camp roster",
+        "https://www.thepwhl.com/en/teams/minnesota-frost/news/2026/october/07/minnesota-frost-announce-2026-27-training-camp-roster",
+      ],
     ],
   },
   {

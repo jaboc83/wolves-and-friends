@@ -1,4 +1,5 @@
 import { fetchTeamInfo, type TeamInfo } from "../../../lib/team-info";
+import { mergeTeamInfo } from "../../../lib/team-info-cache";
 import seed from "../../../lib/team-info-initial.json";
 let cached: TeamInfo[] = seed as TeamInfo[],
   checked = 0;
@@ -11,12 +12,7 @@ export async function GET() {
       .then((data) => {
         cached = data.map((t) => {
           const old = cached.find((x) => x.id === t.id);
-          return {
-            ...t,
-            tables: t.tables.length ? t.tables : old?.tables || [],
-            depth: t.depth || old?.depth,
-            season: t.season || old?.season,
-          };
+          return mergeTeamInfo(t, old);
         });
         checked = Date.now();
         return cached;
@@ -26,3 +22,4 @@ export async function GET() {
     headers: { "Cache-Control": "no-store" },
   });
 }
+

@@ -79,8 +79,20 @@ const days = [0, 3, 6, 7, 8].map((n) => ({
   ...posts[n],
   date: new Date(now - n * 86400000).toISOString(),
 }));
-for (const active of ["wolves", "all"])
-  assert.equal(recentStories(days, active, now).length, 4);
+assert.equal(recentStories(days, "wolves", now).length, 1);
+assert.equal(recentStories(days, "all", now).length, 1);
+// Chicago's calendar day, rather than a rolling 24-hour window or UTC day.
+const midnightStories = [
+  { ...posts[0], id: "yesterday", date: "2026-10-17T04:59:59Z" },
+  { ...posts[0], id: "today", date: "2026-10-17T05:00:00Z" },
+  { ...posts[0], id: "invalid", date: "invalid" },
+];
+assert.deepEqual(
+  recentStories(midnightStories, "all", Date.parse("2026-10-17T05:30:00Z")).map(
+    (s) => s.id,
+  ),
+  ["today"],
+);
 const { gameBadges } = load(path.resolve("lib/game-badges.ts"));
 assert.deepEqual(
   gameBadges({ team: "palace", league: "English Premier League" }),
@@ -98,14 +110,14 @@ assert.equal(
   "unknown competition is not guessed",
 );
 const page = fs.readFileSync("app/page.tsx", "utf8");
-assert.match(page, /\[hideResults, setHideResults\] = useState\(false\)/);
+assert.match(page, /\[hideScores, setHideResults\] = useState\(true\)/);
 assert.match(
   page,
-  /setHideResults\(localStorage.getItem\("wf-hide-results"\) === "true"\)/,
+  /setHideResults\(preference.hidden\)/,
 );
-assert.match(page, /localStorage.setItem\("wf-hide-results", String\(next\)\)/);
-assert.match(page, /hideResults \? "Show results" : "Hide results"/);
-assert.doesNotMatch(page, /checked=\{hideResults\}/);
+assert.match(page, /saveScorePreference\(browserStorage, hidden, ask\)/);
+assert.match(page, /hideScores \? "Show scores" : "Hide scores"/);
+assert.doesNotMatch(page, /checked=\{hideScores\}/);
 const originalFetch = globalThis.fetch;
 let calls = 0;
 globalThis.fetch = async (url) => {
@@ -133,13 +145,19 @@ try {
   assert.equal((await taggedBluesky("palace", "#CPFC")).length, 50);
   assert.equal(calls, 2, "pagination fills the queue then stops");
   const routeLoad = loader({
+    "../../../lib/youtube": {
+      officialYoutubePosts: async () => ({ posts: [], unavailable: [] }),
+    },
     "../../../lib/bluesky": {
       wolvesBluesky: async () => posts,
       taggedBluesky: async () => [],
     },
   });
   const { GET } = routeLoad(path.resolve("app/api/social/route.ts"));
-  const [a, b] = await Promise.all([GET(), GET()]);
+  const [a, b] = await Promise.all([
+    GET(new Request("https://local.invalid/api/social")),
+    GET(new Request("https://local.invalid/api/social")),
+  ]);
   assert.equal((await a.json()).posts.length, 50);
   assert.equal((await b.json()).posts.length, 50);
 } finally {
@@ -148,3 +166,4 @@ try {
 console.log(
   "Social queue, next-unread refill, 7-day headlines, Palace labels, result preference wiring, pagination, and route checks passed.",
 );
+

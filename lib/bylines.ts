@@ -60,13 +60,13 @@ export function authorPageLinks(html: string, base: string) {
 }
 const checks = new Map<
   string,
-  { verified: boolean; authors: string[]; url: string }
+  { verified: boolean; authors: string[]; url: string; expires: number }
 >();
-export async function verifyAuthorFeed(author: AuthorFeed) {
+export async function verifyAuthorFeed(author: AuthorFeed, signal?: AbortSignal) {
   applyKnownBylines(author);
   let links = new Map<string, string>();
   try {
-    const r = await fetch(author.url, { signal: AbortSignal.timeout(8000) });
+    const r = await fetch(author.url, { signal: signal ? AbortSignal.any([signal, AbortSignal.timeout(8000)]) : AbortSignal.timeout(8000) });
     if (r.ok) links = authorPageLinks(await r.text(), author.url);
   } catch {}
   await Promise.all(
@@ -74,10 +74,15 @@ export async function verifyAuthorFeed(author: AuthorFeed) {
       const direct = links.get(normalized(item.title));
       if (item.bylineVerified) return;
       if (!direct) return;
-      let result = checks.get(direct);
+      const cacheKey = author.name + ":" + direct;
+      let result = checks.get(cacheKey);
+      if (result && result.expires <= Date.now()) {
+        checks.delete(cacheKey);
+        result = undefined;
+      }
       if (!result) {
         try {
-          const r = await fetch(direct, { signal: AbortSignal.timeout(8000) });
+          const r = await fetch(direct, { signal: signal ? AbortSignal.any([signal, AbortSignal.timeout(8000)]) : AbortSignal.timeout(8000) });
           if (!r.ok) return;
           const names = articleAuthors(await r.text());
           if (!names.length) return;
@@ -87,8 +92,10 @@ export async function verifyAuthorFeed(author: AuthorFeed) {
             ),
             authors: names,
             url: direct,
+            expires: Date.now() + 3600000,
           };
-          checks.set(direct, result);
+          if (checks.size >= 256) checks.delete(checks.keys().next().value!);
+          checks.set(cacheKey, result);
         } catch {
           return;
         }
@@ -103,3 +110,4 @@ export async function verifyAuthorFeed(author: AuthorFeed) {
   );
   author.items = author.items.filter((item) => item.bylineVerified !== false);
 }
+
