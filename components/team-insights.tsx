@@ -484,13 +484,22 @@ export default function TeamInsights({
                       value: {
                         column,
                         direction:
-                          currentSort.column === column &&
-                          currentSort.direction === "asc"
-                            ? "desc"
-                            : "asc",
+                          currentSort.column === column
+                            ? currentSort.direction === "asc"
+                              ? "desc"
+                              : "asc"
+                            : column === "Player" || column === "Position"
+                              ? "asc"
+                              : "desc",
                       },
                     };
                   });
+                const sortIndicator = (column: string) =>
+                  rosterSort.column === column
+                    ? rosterSort.direction === "asc"
+                      ? "↑"
+                      : "↓"
+                    : "";
                 return (
                   <section className="depth-row" key={group.position + i}>
                     <h3 className="visually-hidden">{group.position}</h3>
