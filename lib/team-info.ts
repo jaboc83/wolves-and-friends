@@ -270,6 +270,68 @@ const powerRankingFallback = (
 };
 
 
+const analystPremierLeaguePowerRankingsUrl =
+  "https://theanalyst.com/competition/premier-league/power-rankings";
+const analystPremierLeaguePowerRankingsEndpoint =
+  "https://theanalyst.com/wp-json/sdapi/v1/soccerdata/seasonpowerrankings?tmcl=6pdwluctev9iebv00r4qqukno";
+
+const ordinal = (rank: number) => {
+  const mod100 = rank % 100;
+  const suffix =
+    mod100 >= 11 && mod100 <= 13
+      ? "th"
+      : rank % 10 === 1
+        ? "st"
+        : rank % 10 === 2
+          ? "nd"
+          : rank % 10 === 3
+            ? "rd"
+            : "th";
+  return `${rank}${suffix}`;
+};
+
+export function parseAnalystPremierLeaguePowerRanking(
+  value: any,
+  checked: string,
+): PowerRanking | undefined {
+  const ranking = value?.division?.find(
+    (division: any) => division.type === "global",
+  )?.ranking;
+  if (!Array.isArray(ranking)) return;
+  const rows = ranking.flatMap((entry: any) => {
+    const rank = Number(entry.rank);
+    const rating = Number(entry.currentRating);
+    if (
+      !entry.contestantId ||
+      !entry.contestantName ||
+      !Number.isFinite(rank) ||
+      !Number.isFinite(rating)
+    )
+      return [];
+    return [{
+      id: String(entry.contestantId),
+      name: String(entry.contestantName),
+      url: analystPremierLeaguePowerRankingsUrl,
+      cells: [ordinal(rank), rating.toFixed(1)],
+    }];
+  });
+  if (
+    rows.length < 10 ||
+    !rows.some((row: Table["rows"][number]) => row.name === "Crystal Palace")
+  )
+    return;
+  return {
+    name: "Premier League Opta Power Rankings",
+    metric: "Rating",
+    rows,
+    source: "Opta Analyst",
+    url: analystPremierLeaguePowerRankingsUrl,
+    checked,
+    publishedAt: value.lastUpdated || checked,
+    note: "Premier League clubs ranked by Opta Power Rankings rating.",
+  };
+}
+
 async function parsePowerRanking(
   league: string,
   checked: string,
@@ -720,13 +782,25 @@ export async function fetchTeamInfo() {
             if (!info.depth) info.unavailable.push("roster");
           })(),
           (async () => {
-            if (!powerRankingLeague(t.league!) && !["wild", "loons"].includes(t.id)) return;
+            if (
+              !powerRankingLeague(t.league!) &&
+              !["wild", "loons", "palace"].includes(t.id)
+            )
+              return;
             try {
-              const getRanking = powerRankingLeague(t.league!)
-                ? powerRankingCache.get(t.league!) || parsePowerRanking(t.league!, checked, get)
-                : Promise.resolve<PowerRanking | undefined>(undefined);
-              powerRankingCache.set(t.league!, getRanking);
-              info.powerRanking = await getRanking;
+              if (t.id === "palace") {
+                info.powerRanking = parseAnalystPremierLeaguePowerRanking(
+                  await get(analystPremierLeaguePowerRankingsEndpoint, 30000),
+                  checked,
+                );
+              } else {
+                const getRanking = powerRankingLeague(t.league!)
+                  ? powerRankingCache.get(t.league!) ||
+                    parsePowerRanking(t.league!, checked, get)
+                  : Promise.resolve<PowerRanking | undefined>(undefined);
+                powerRankingCache.set(t.league!, getRanking);
+                info.powerRanking = await getRanking;
+              }
               if (!info.powerRanking) {
                 info.powerRanking = powerRankingFallback(
                   t.league!,
