@@ -123,7 +123,8 @@ export default function Home() {
     data, oddsGames, liveGames, active, showOlderResults,
   });
   const newsMode = newsDisplayMode(loading, displayed.length > 0, newsFailed);
-  const socialPosts = unreadSocial(socialData.filter((post) => post.socialPlatform !== "youtube"), active, readIds);\n  const youtubeHeadlines = unreadSocial(socialData.filter((post) => post.socialPlatform === "youtube"), active, readIds);
+  const socialPosts = unreadSocial(socialData.filter((post) => post.socialPlatform !== "youtube"), active, readIds);
+  const youtubeHeadlines = unreadSocial(socialData.filter((post) => post.socialPlatform === "youtube"), active, readIds);
   const failed = [
     ...(data?.health || []).filter((h) =>
       /schedule|scores|scoreboard/.test(h.name),
