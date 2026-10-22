@@ -313,7 +313,9 @@ export default function TeamInsights({
                 <tr>
                   <th>#</th>
                   <th>Team</th>
-                  <th>{info.powerRanking.metric}</th>
+                  {info.powerRanking.metric !== "Rank" && (
+                    <th>{info.powerRanking.metric}</th>
+                  )}
                 </tr>
               </thead>
               <tbody>
@@ -338,7 +340,9 @@ export default function TeamInsights({
                         {row.name} ↗
                       </a>
                     </th>
-                    <td>{row.cells[1]}</td>
+                    {info.powerRanking?.metric !== "Rank" && (
+                      <td>{row.cells[1]}</td>
+                    )}
                   </tr>
                 ))}
               </tbody>
