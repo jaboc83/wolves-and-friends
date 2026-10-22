@@ -31,7 +31,9 @@ function loader(overrides = {}) {
   return load;
 }
 const load = loader();
-const { socialQueue, unreadSocial } = load(path.resolve("lib/social-queue.ts"));
+const { socialQueue, unreadSocial } = load(
+  path.resolve("lib/social/social-queue.ts"),
+);
 const now = Date.parse("2026-10-16T18:00:00Z");
 const posts = Array.from({ length: 60 }, (_, i) => ({
   id: "p" + i,
@@ -138,14 +140,14 @@ globalThis.fetch = async (url) => {
   };
 };
 try {
-  const { taggedBluesky } = load(path.resolve("lib/bluesky.ts"));
+  const { taggedBluesky } = load(path.resolve("lib/social/bluesky.ts"));
   assert.equal((await taggedBluesky("palace", "#CPFC")).length, 50);
   assert.equal(calls, 2, "pagination fills the queue then stops");
   const routeLoad = loader({
     "../../../lib/feeds/youtube": {
       officialYoutubePosts: async () => ({ posts: [], unavailable: [] }),
     },
-    "../../../lib/bluesky": {
+    "../../../lib/social/bluesky": {
       wolvesBluesky: async () => posts,
       taggedBluesky: async () => [],
     },

@@ -21,7 +21,7 @@ function compile(file, mocks = {}) {
   return loadedModule.exports;
 }
 const youtube = compile("lib/feeds/youtube.ts");
-const queue = compile("lib/social-queue.ts");
+const queue = compile("lib/social/social-queue.ts");
 const wolves = youtube.officialYoutube.find((s) => s.team === "wolves");
 const xml = (channel, title = "Practice &amp; interviews") =>
   `<feed><yt:channelId>${channel}</yt:channelId><entry><yt:videoId>abcdefghijk</yt:videoId><title>${title}</title><published>2026-10-19T19:00:00Z</published></entry><entry><yt:videoId>invalid</yt:videoId><title>Bad</title><published>invalid</published></entry></feed>`;
@@ -66,15 +66,15 @@ let calls = 0,
   release,
   gate;
 const route = compile("app/api/social/route.ts", {
-  "../../../lib/social-tags": { socialTags: {} },
-  "../../../lib/bluesky": {
+  "../../../lib/social/social-tags": { socialTags: {} },
+  "../../../lib/social/bluesky": {
     wolvesBluesky: async () => {
       calls++;
       if (gate) await gate;
       return posts;
     },
   },
-  "../../../lib/social-queue": queue,
+  "../../../lib/social/social-queue": queue,
   "../../../lib/feeds/youtube": {
     officialYoutubePosts: async () => ({ posts: [], unavailable: ["wild"] }),
   },

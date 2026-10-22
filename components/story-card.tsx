@@ -3,7 +3,7 @@ import type { Story } from "../lib/feeds";
 import { teams, teamPriority } from "../lib/teams/teams";
 import SocialImage from "./social-image";
 import TeamLogos from "./team-logos";
-import { isLocalSocialImage } from "../lib/bluesky-images";
+import { isLocalSocialImage } from "../lib/social/bluesky-images";
 const ct = (s: string, opts: Intl.DateTimeFormatOptions = {}) =>
   new Date(s).toLocaleString("en-US", { timeZone: "America/Chicago", ...opts });
 const day = (s: string) =>

@@ -37,9 +37,9 @@ function loader() {
 }
 const load = loader();
 const { blueskyImageUrl, blueskyImagePath, isLocalSocialImage } = load(
-  "lib/bluesky-images.ts",
+  "lib/social/bluesky-images.ts",
 );
-const { parseBlueskyFeed } = load("lib/bluesky.ts");
+const { parseBlueskyFeed } = load("lib/social/bluesky.ts");
 const avatar =
   "https://cdn.bsky.app/img/avatar/plain/did:plc:test/bafkreiaaaaa";
 const photo =

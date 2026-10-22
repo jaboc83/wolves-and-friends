@@ -1,7 +1,7 @@
 "use client";
 import { useEffect, useRef, useState, type ReactNode } from "react";
 import Image from "next/image";
-import { isLocalSocialImage } from "../lib/bluesky-images";
+import { isLocalSocialImage } from "../lib/social/bluesky-images";
 
 export default function SocialImage({
   src,

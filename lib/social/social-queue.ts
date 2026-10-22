@@ -1,4 +1,4 @@
-import type { Story } from "./feeds";
+import type { Story } from "../feeds/feed-types";
 
 export const SOCIAL_QUEUE_LIMIT = 50;
 

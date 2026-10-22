@@ -1,4 +1,4 @@
-import type { Story } from "./feeds";
+import type { Story } from "../feeds/feed-types";
 import { blueskyImageUrl } from "./bluesky-images";
 import { socialQueue, SOCIAL_QUEUE_LIMIT } from "./social-queue";
 type BlueskyImage = {
@@ -48,9 +48,7 @@ export function parseBlueskyFeed(
       p.labels?.some(
         (l) =>
           typeof l.val === "string" &&
-          ["!hide", "!warn", "porn", "sexual", "graphic-media"].includes(
-            l.val,
-          ),
+          ["!hide", "!warn", "porn", "sexual", "graphic-media"].includes(l.val),
       )
     )
       return [];

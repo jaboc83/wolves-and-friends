@@ -79,7 +79,8 @@ A story can belong to several teams. A game belongs to one tracked team. ESPN ga
 | [author-stories.ts](lib/feeds/author-stories.ts)                                                                                     | Converts author-feed items into ordinary team headlines.                                                                                                                                                                                         |
 | [odds.ts](lib/feeds/odds.ts)                                                                                                         | Selects the competition feed and matches fixtures, including official Palace fixtures with different IDs. Produces plain-English favorites and expandable market details.                                                                        |
 | [youtube.ts](lib/feeds/youtube.ts), [dgpt.ts](lib/feeds/dgpt.ts)                                                                     | Parses public YouTube and DGPT schedule feeds.                                                                                                                                                                                                   |
-| [bluesky.ts](lib/bluesky.ts), [social-tags.ts](lib/social-tags.ts)                                                                   | Read the Wolves starter-pack list and other teams' tag searches. Fetch avatars on the server, prefer small thumbnails, validate image bytes, and inline them in the response.                                                                    |
+| [social/bluesky.ts](lib/social/bluesky.ts), [social/social-tags.ts](lib/social/social-tags.ts)                                       | Read the Wolves starter-pack list and other teams' tag searches. Fetch avatars on the server, prefer small thumbnails, validate image bytes, and inline them in the response.                                                                    |
+| [connectors/](lib/connectors/)                                                                                                       | Defines request-scoped connector contracts, errors, host context, and the connector facade.                                                                                                                                                      |
 | [team-info/index.ts](lib/team-info/index.ts)                                                                                         | Parses ESPN tables/rosters and DGPT standings from StatMando. Sorts ranks and adds supported qualification lines; NHL tables separate division places from wild cards.                                                                           |
 | [team-info/player-stats.ts](lib/team-info/player-stats.ts), [team-info/roster-stats-loader.ts](lib/team-info/roster-stats-loader.ts) | Parses public player statistics and loads them in bounded roster batches.                                                                                                                                                                        |
 | [event-seed.ts](lib/games/event-seed.ts)                                                                                             | Supplies explicitly entered, verified DGPT event dates. This is not a complete live disc-golf schedule service.                                                                                                                                  |
@@ -146,18 +147,18 @@ See [README.md](README.md) for local setup commands. A clean clone defaults to t
 
 ## 9. Where to make common changes
 
-| Desired change                                  | Likely files                                                                          |
-| ----------------------------------------------- | ------------------------------------------------------------------------------------- |
-| Team order, source links, or team matching      | `lib/teams/teams.ts`                                                                  |
-| Colors, mobile spacing, or layout               | `app/globals.css`, `lib/teams/team-themes.ts`, sometimes `app/page.tsx`               |
-| Headline age/read/saved behavior                | `app/page.tsx`, `lib/browser/news-window.ts`                                          |
-| New news or schedule provider                   | A parser/adapter in `lib/feeds/`, then its collection call in `lib/feeds/index.ts`    |
-| Game and event rules                            | `lib/games/` for event dates, calendar exports, badges, links, and postseason logic   |
-| Game-card details or score hiding               | `components/game-card.tsx`                                                            |
-| Competition badges                              | `lib/games/game-badges.ts`, `components/game-badges.tsx`                              |
-| Missing odds                                    | `lib/feeds/odds.ts`; check competition, provider availability, and fixture matching   |
-| Calendar behavior                               | `components/match-calendar.tsx`; check schedule coverage upstream too                 |
-| Missing social posts or avatars                 | `app/api/social/route.ts`, `lib/bluesky.ts`, browser cache handling in `app/page.tsx` |
-| Standings, qualification lines, or player links | `lib/team-info/`, `components/team-insights.tsx`                                      |
+| Desired change                                  | Likely files                                                                                 |
+| ----------------------------------------------- | -------------------------------------------------------------------------------------------- |
+| Team order, source links, or team matching      | `lib/teams/teams.ts`                                                                         |
+| Colors, mobile spacing, or layout               | `app/globals.css`, `lib/teams/team-themes.ts`, sometimes `app/page.tsx`                      |
+| Headline age/read/saved behavior                | `app/page.tsx`, `lib/browser/news-window.ts`                                                 |
+| New news or schedule provider                   | A parser/adapter in `lib/feeds/`, then its collection call in `lib/feeds/index.ts`           |
+| Game and event rules                            | `lib/games/` for event dates, calendar exports, badges, links, and postseason logic          |
+| Game-card details or score hiding               | `components/game-card.tsx`                                                                   |
+| Competition badges                              | `lib/games/game-badges.ts`, `components/game-badges.tsx`                                     |
+| Missing odds                                    | `lib/feeds/odds.ts`; check competition, provider availability, and fixture matching          |
+| Calendar behavior                               | `components/match-calendar.tsx`; check schedule coverage upstream too                        |
+| Missing social posts or avatars                 | `app/api/social/route.ts`, `lib/social/bluesky.ts`, browser cache handling in `app/page.tsx` |
+| Standings, qualification lines, or player links | `lib/team-info/`, `components/team-insights.tsx`                                             |
 
 External feeds and HTML layouts can change or become unavailable. Inspect the provider response and source-health information before treating missing content as a layout problem. Preserve accurate unavailable states instead of inventing scores, schedules, authors, rosters, or odds.
