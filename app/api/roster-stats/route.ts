@@ -4,7 +4,14 @@ const batchSize = 3,
   ttl = 15 * 60000,
   statsDeadlineMs = 60000,
   statsRequestTimeoutMs = 60000;
-type Entry = { key: string; league: string; id: string; teamId: string; year: number; position: string };
+type Entry = {
+  key: string;
+  league: string;
+  id: string;
+  teamId: string;
+  year: number;
+  position: string;
+};
 let manifest: Entry[] = [],
   expires = 0;
 let manifestVersion = "";
@@ -50,8 +57,11 @@ async function loadManifest() {
                   league: t.league,
                   id: String(a.id),
                   teamId: String(data.team?.id || t.espn),
-                  year: Number(data.season?.year) || new Date().getUTCFullYear(),
-                  position: String(a.position?.displayName || a.position?.abbreviation || ""),
+                  year:
+                    Number(data.season?.year) || new Date().getUTCFullYear(),
+                  position: String(
+                    a.position?.displayName || a.position?.abbreviation || "",
+                  ),
                 }));
             } catch {
               return [];
@@ -61,9 +71,15 @@ async function loadManifest() {
       const next = [...new Map(entries.flat().map((e) => [e.key, e])).values()];
       if (!next.length) throw Error("Roster manifest unavailable");
       manifest = next.sort((a, b) => a.key.localeCompare(b.key));
-      manifestVersion = Array.from(new Uint8Array(await crypto.subtle.digest(
-        "SHA-256", new TextEncoder().encode(JSON.stringify(manifest)),
-      )), (byte) => byte.toString(16).padStart(2, "0")).join("");
+      manifestVersion = Array.from(
+        new Uint8Array(
+          await crypto.subtle.digest(
+            "SHA-256",
+            new TextEncoder().encode(JSON.stringify(manifest)),
+          ),
+        ),
+        (byte) => byte.toString(16).padStart(2, "0"),
+      ).join("");
       expires = Date.now() + ttl;
     })().finally(() => {
       manifestRequest = null;
@@ -71,7 +87,7 @@ async function loadManifest() {
   return manifestRequest;
 }
 async function stats(entry: Entry) {
-  const cacheKey = "v6:" + entry.key + ":" + entry.teamId + ":" + entry.year;
+  const cacheKey = "v7:" + entry.key + ":" + entry.teamId + ":" + entry.year;
   const old = cache.get(cacheKey);
   if (old && old.expires > Date.now()) return old.stats;
   if (!inflight.has(cacheKey))
@@ -85,15 +101,30 @@ async function stats(entry: Entry) {
         const remaining = () =>
           Math.min(statsRequestTimeoutMs, Math.max(1, deadline - Date.now()));
         const [sport, league] = entry.league.split("/");
-        const urls = entry.league.startsWith("soccer/") ? [] : [
-          "https://site.api.espn.com/apis/common/v3/sports/" + entry.league + "/athletes/" + entry.id + "/stats",
-          "https://site.api.espn.com/apis/common/v3/sports/" + entry.league + "/athletes/" + entry.id + "/overview",
-          "https://site.api.espn.com/apis/site/v2/sports/" + entry.league + "/athletes/" + entry.id,
-        ];
+        const commonBase =
+          "https://site.api.espn.com/apis/common/v3/sports/" +
+          entry.league +
+          "/athletes/" +
+          entry.id;
+        const urls = entry.league.startsWith("soccer/")
+          ? [commonBase + "/overview"]
+          : [
+              commonBase + "/stats",
+              commonBase + "/overview",
+              "https://site.api.espn.com/apis/site/v2/sports/" +
+                entry.league +
+                "/athletes/" +
+                entry.id,
+            ];
         for (const url of urls) {
           if (Date.now() >= deadline) break;
           try {
-            const parsed = parsePlayerStats(await get(url, remaining()), entry.teamId, entry.league, entry.position);
+            const parsed = parsePlayerStats(
+              await get(url, remaining()),
+              entry.teamId,
+              entry.league,
+              entry.position,
+            );
             if (parsed) return parsed;
           } catch {
             // Try the next ESPN representation.
@@ -106,12 +137,28 @@ async function stats(entry: Entry) {
           try {
             const seasonType = entry.league.startsWith("soccer/") ? "1" : "2";
             const data = await get(
-              "https://sports.core.api.espn.com/v2/sports/" + sport +
-              "/leagues/" + league + "/seasons/" + year +
-              "/types/" + seasonType + "/athletes/" + entry.id + "/statistics/0",
-              Math.min(entry.league.startsWith("soccer/") ? 20000 : 3000, remaining()),
+              "https://sports.core.api.espn.com/v2/sports/" +
+                sport +
+                "/leagues/" +
+                league +
+                "/seasons/" +
+                year +
+                "/types/" +
+                seasonType +
+                "/athletes/" +
+                entry.id +
+                "/statistics/0",
+              Math.min(
+                entry.league.startsWith("soccer/") ? 20000 : 3000,
+                remaining(),
+              ),
             );
-            const parsed = parsePlayerStats({ ...data, season: { displayName: String(year) } }, entry.teamId, entry.league, entry.position);
+            const parsed = parsePlayerStats(
+              { ...data, season: { displayName: String(year) } },
+              entry.teamId,
+              entry.league,
+              entry.position,
+            );
             if (parsed) return parsed;
           } catch {
             // Missing current-season stats must not hide the last season.
@@ -145,9 +192,13 @@ export async function GET(request: Request) {
     await loadManifest();
     const version = new URL(request.url).searchParams.get("version");
     if (version && version !== manifestVersion)
-      return Response.json({ error: "Roster manifest changed" }, {
-        status: 409, headers: { "Cache-Control": "no-store" },
-      });
+      return Response.json(
+        { error: "Roster manifest changed" },
+        {
+          status: 409,
+          headers: { "Cache-Control": "no-store" },
+        },
+      );
     if (batch >= Math.max(1, Math.ceil(manifest.length / batchSize)))
       return Response.json({ error: "Invalid batch" }, { status: 400 });
     const players = await Promise.all(
@@ -160,7 +211,9 @@ export async function GET(request: Request) {
         players,
         totalBatches: Math.ceil(manifest.length / batchSize),
         manifestVersion,
-        ...(batch === 0 ? { manifestKeys: manifest.map((entry) => entry.key) } : {}),
+        ...(batch === 0
+          ? { manifestKeys: manifest.map((entry) => entry.key) }
+          : {}),
       },
       { headers: { "Cache-Control": "no-store" } },
     );
@@ -171,5 +224,3 @@ export async function GET(request: Request) {
     );
   }
 }
-
-
