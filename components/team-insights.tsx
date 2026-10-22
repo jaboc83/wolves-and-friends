@@ -108,10 +108,7 @@ export default function TeamInsights({
         open={standingsOpen}
         onToggle={(event) => setStandingsOpen(event.currentTarget.open)}
       >
-        <summary>
-          {headings.standings}
-          <small>{t?.short}</small>
-        </summary>
+        <summary>{headings.standings}</summary>
         {info?.postseason && (
           <section className="postseason-panel" aria-label="Postseason bracket">
             <h3>Postseason bracket · {info.postseason.season}</h3>
@@ -280,23 +277,17 @@ export default function TeamInsights({
       </details>
       {info?.powerRanking && (
         <details
-          className="power-rankings"
+          className="data-panel power-rankings"
           open={powerRankingsOpen}
           onToggle={(event) => setPowerRankingsOpen(event.currentTarget.open)}
         >
-          <summary className="power-rankings-summary">
-            <span className="power-rankings-heading">
-              <span className="power-rankings-title">
-                <strong>Power Rankings</strong>
-                <small>{info.powerRanking.metric}</small>
-              </span>
-              <span className="power-rankings-preview">
-                {myPowerRanking
-                  ? `${t?.short}: ${myPowerRanking.cells[0]}`
-                  : "Your team’s ranking unavailable"}
-              </span>
-            </span>
-            <span className="power-rankings-chevron" aria-hidden="true">⌄</span>
+          <summary>
+            Power Rankings
+            <small>
+              {myPowerRanking
+                ? myPowerRanking.cells[0]
+                : "Ranking unavailable"}
+            </small>
           </summary>
           <p className="panel-note">
             {info.powerRanking.note} · produced{" "}
@@ -378,10 +369,7 @@ export default function TeamInsights({
             }
           }}
         >
-          <summary>
-            {headings.roster}
-            <small>{t?.short}</small>
-          </summary>
+          <summary>{headings.roster}</summary>
           {info?.depth ? (
             <>
               {Boolean(t?.league) && playerStatsStatus === "idle" && (
