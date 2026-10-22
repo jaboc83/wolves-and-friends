@@ -5,8 +5,20 @@ import { teams, teamPriority } from "./teams";
 import { validAuthorStory } from "./byline-status";
 import { authorStories } from "./author-stories";
 import { recentStories } from "./news-window";
-export function selectStories({ newsData, active, search, readIds, showRead, showOlder }: {
-  newsData: HubData; active: string; search: string; readIds: string[]; showRead: boolean; showOlder: boolean;
+export function selectStories({
+  newsData,
+  active,
+  search,
+  readIds,
+  showRead,
+  showOlder,
+}: {
+  newsData: HubData;
+  active: string;
+  search: string;
+  readIds: string[];
+  showRead: boolean;
+  showOlder: boolean;
 }) {
   const filtered = [
     ...new Map(
@@ -39,9 +51,7 @@ export function selectStories({ newsData, active, search, readIds, showRead, sho
   // Keep the all-teams page focused on a quick daily scan while preserving
   // older same-day stories behind View older.
   const recent =
-    active === "all"
-      ? recentStoriesForView.slice(0, 8)
-      : recentStoriesForView;
+    active === "all" ? recentStoriesForView.slice(0, 8) : recentStoriesForView;
   const displayed = compactNews && !showOlder ? recent : filtered;
   const olderCount = filtered.length - recent.length;
   const newest = (newsData.stories || [])
@@ -52,8 +62,18 @@ export function selectStories({ newsData, active, search, readIds, showRead, sho
     .sort((a, b) => Date.parse(b.date) - Date.parse(a.date))[0];
   return { compactNews, displayed, olderCount, newest };
 }
-export function selectGames({ data, oddsGames, liveGames, active, showOlderResults }: {
-  data: HubData | null; oddsGames: Game[]; liveGames: Game[]; active: string; showOlderResults: boolean;
+export function selectGames({
+  data,
+  oddsGames,
+  liveGames,
+  active,
+  showOlderResults,
+}: {
+  data: HubData | null;
+  oddsGames: Game[];
+  liveGames: Game[];
+  active: string;
+  showOlderResults: boolean;
 }) {
   const combinedGames = [
     ...(data?.games || []),
@@ -114,8 +134,8 @@ export function selectGames({ data, oddsGames, liveGames, active, showOlderResul
     .filter((g) => eventIsToday(g))
     .sort(
       (a, b) =>
-        teamPriority(a.team) - teamPriority(b.team) ||
-        Date.parse(a.date) - Date.parse(b.date),
+        Date.parse(a.date) - Date.parse(b.date) ||
+        teamPriority(a.team) - teamPriority(b.team),
     );
   const futureCandidates = upcoming.filter((g) => !eventIsToday(g));
   const nextByTeam = new Map<string, Game>();
@@ -124,8 +144,17 @@ export function selectGames({ data, oddsGames, liveGames, active, showOlderResul
   const futureGames =
     active === "all"
       ? [...nextByTeam.values()].sort(
-          (a, b) => teamPriority(a.team) - teamPriority(b.team),
+          (a, b) =>
+            Date.parse(a.date) - Date.parse(b.date) ||
+            teamPriority(a.team) - teamPriority(b.team),
         )
       : futureCandidates.slice(0, 3);
-  return { teamsPlayingToday, visibleGames, availableResults, results, todayGames, futureGames };
+  return {
+    teamsPlayingToday,
+    visibleGames,
+    availableResults,
+    results,
+    todayGames,
+    futureGames,
+  };
 }
