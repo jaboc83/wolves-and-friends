@@ -97,6 +97,22 @@ const powerRankingTeamNames: Record<string, Record<string, string>> = {
     "25": "Oklahoma City Thunder", "26": "Utah Jazz", "27": "Washington Wizards",
     "28": "Toronto Raptors", "29": "Memphis Grizzlies", "30": "Charlotte Hornets",
   },
+  "football/nfl": {
+    "1": "Atlanta Falcons", "2": "Buffalo Bills", "3": "Chicago Bears", "4": "Cincinnati Bengals",
+    "5": "Cleveland Browns", "6": "Dallas Cowboys", "7": "Denver Broncos", "8": "Detroit Lions",
+    "9": "Green Bay Packers", "10": "Tennessee Titans", "11": "Indianapolis Colts", "12": "Kansas City Chiefs",
+    "13": "Las Vegas Raiders", "14": "Los Angeles Rams", "15": "Miami Dolphins", "16": "Minnesota Vikings",
+    "17": "New England Patriots", "18": "New Orleans Saints", "19": "New York Giants", "20": "New York Jets",
+    "21": "Philadelphia Eagles", "22": "Arizona Cardinals", "23": "Pittsburgh Steelers", "24": "Los Angeles Chargers",
+    "25": "San Francisco 49ers", "26": "Seattle Seahawks", "27": "Tampa Bay Buccaneers", "28": "Washington Commanders",
+    "29": "Carolina Panthers", "30": "Jacksonville Jaguars", "33": "Baltimore Ravens", "34": "Houston Texans",
+  },
+  "basketball/wnba": {
+    "3": "Dallas Wings", "5": "Indiana Fever", "6": "Los Angeles Sparks", "8": "Minnesota Lynx",
+    "9": "New York Liberty", "11": "Phoenix Mercury", "14": "Seattle Storm", "16": "Washington Mystics",
+    "17": "Las Vegas Aces", "18": "Connecticut Sun", "19": "Chicago Sky", "20": "Atlanta Dream",
+    "129689": "Golden State Valkyries", "131935": "Toronto Tempo", "132052": "Portland Fire",
+  },
 };
 const nbaBpiFallbackRows = [
   ["25", "1st", "9.180"], ["24", "2nd", "6.968"], ["18", "3rd", "4.568"],
@@ -113,6 +129,33 @@ const nbaBpiFallbackRows = [
   id,
   name: powerRankingTeamNames["basketball/nba"][id],
   url: `https://www.espn.com/nba/team/_/id/${id}`,
+  cells: [rank, bpi],
+}));
+const nflFpiFallbackRows = [
+  ["25", "1st", "6.5"], ["12", "2nd", "5.2"], ["2", "3rd", "4.6"], ["30", "4th", "4.0"],
+  ["3", "5th", "3.7"], ["26", "6th", "3.4"], ["14", "7th", "2.9"], ["34", "8th", "2.7"],
+  ["4", "9th", "2.4"], ["17", "10th", "2.4"], ["8", "11th", "2.2"], ["6", "12th", "1.7"],
+  ["16", "13th", "1.6"], ["7", "14th", "1.3"], ["9", "15th", "1.3"], ["33", "16th", "0.5"],
+  ["29", "17th", "-0.3"], ["23", "18th", "-0.9"], ["11", "19th", "-0.9"], ["24", "20th", "-2.0"],
+  ["13", "21st", "-2.3"], ["28", "22nd", "-3.3"], ["1", "23rd", "-3.3"], ["18", "24th", "-3.4"],
+  ["27", "25th", "-4.2"], ["20", "26th", "-4.2"], ["5", "27th", "-4.6"], ["21", "28th", "-4.7"],
+  ["22", "29th", "-4.9"], ["10", "30th", "-5.9"], ["19", "31st", "-6.0"], ["15", "32nd", "-7.8"],
+].map(([id, rank, fpi]) => ({
+  id,
+  name: powerRankingTeamNames["football/nfl"][id],
+  url: `https://www.espn.com/nfl/team/_/id/${id}`,
+  cells: [rank, fpi],
+}));
+const wnbaBpiFallbackRows = [
+  ["129689", "1st", "5.772"], ["20", "2nd", "5.638"], ["17", "3rd", "4.470"],
+  ["8", "4th", "4.360"], ["9", "5th", "3.774"], ["5", "6th", "3.478"],
+  ["3", "7th", "2.462"], ["16", "8th", "0.382"], ["11", "9th", "-1.662"],
+  ["6", "10th", "-2.304"], ["19", "11th", "-3.016"], ["14", "12th", "-5.022"],
+  ["132052", "13th", "-5.206"], ["18", "14th", "-6.407"], ["131935", "15th", "-6.721"],
+].map(([id, rank, bpi]) => ({
+  id,
+  name: powerRankingTeamNames["basketball/wnba"][id],
+  url: `https://www.espn.com/wnba/team/_/id/${id}`,
   cells: [rank, bpi],
 }));
 const powerRankingFallback = (
@@ -134,36 +177,22 @@ const powerRankingFallback = (
     "football/nfl:vikings": {
       name: "ESPN Power Rankings",
       metric: "FPI",
-      rows: [
-        {
-          id: "15",
-          name: "Minnesota Vikings",
-          url: "https://www.espn.com/nfl/team/_/name/min",
-          cells: ["32nd", "-7.8"],
-        },
-      ],
-      source: "ESPN team snapshot",
+      rows: nflFpiFallbackRows,
+      source: "ESPN FPI cached snapshot",
       url: "https://www.espn.com/nfl/fpi",
       checked,
       publishedAt: "2026-10-21T06:00:00Z",
-      note: "Latest team snapshot while ESPN’s full ranking feed refreshes.",
+      note: "Cached full ESPN FPI snapshot; live ranking feed unavailable.",
     },
     "basketball/wnba:lynx": {
       name: "ESPN Power Rankings",
       metric: "BPI",
-      rows: [
-        {
-          id: "8",
-          name: "Minnesota Lynx",
-          url: "https://www.espn.com/wnba/team/_/name/min",
-          cells: ["4th", "4.360"],
-        },
-      ],
-      source: "ESPN team snapshot",
+      rows: wnbaBpiFallbackRows,
+      source: "ESPN BPI cached snapshot",
       url: "https://www.espn.com/wnba/bpi",
       checked,
       publishedAt: "2026-10-21T07:07:00Z",
-      note: "Latest team snapshot while ESPN’s full ranking feed refreshes.",
+      note: "Cached full ESPN BPI snapshot; live ranking feed unavailable.",
     },
   };
   return snapshots[`${league}:${teamId}`];
