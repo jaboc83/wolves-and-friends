@@ -97,9 +97,10 @@ can be bypassed with `git push --no-verify`, but GitHub's PR checks still apply.
 
 The debug configuration stops its VS Code development task when debugging ends.
 Stop an existing `pnpm dev` before starting this task: ports 5173 and 9229 must
-be free. The task enables the local
-Worker inspector with `WF_DEBUG_WORKER=true`; normal development and production
-builds keep it disabled. No application logging or collection is added.
+be free. The Edge browser debugger also uses local port 9230, which must be
+available when using its launch configuration. The task enables the local Worker
+inspector with `WF_DEBUG_WORKER=true`; normal development and production builds
+keep it disabled. No application logging or collection is added.
 
 ## Formatting and linting
 
