@@ -1,0 +1,1882 @@
+{
+  "year": 2026,
+  "checked": "2026-10-19T19:58:06.376Z",
+  "games": [
+    {
+      "id": "401856435",
+      "date": "2026-03-17T22:40Z",
+      "region": "Midwest",
+      "round": "First Four",
+      "order": 0,
+      "status": "Final",
+      "completed": true,
+      "url": "https://www.espn.com/mens-college-basketball/boxscore/_/gameId/401856435",
+      "teams": [
+        {
+          "id": "47",
+          "name": "Howard",
+          "seed": 16,
+          "score": "86",
+          "winner": true,
+          "url": "https://www.espn.com/mens-college-basketball/team/_/id/47/howard-bison"
+        },
+        {
+          "id": "2378",
+          "name": "UMBC",
+          "seed": 16,
+          "score": "83",
+          "winner": false,
+          "url": "https://www.espn.com/mens-college-basketball/team/_/id/2378/umbc-retrievers"
+        }
+      ]
+    },
+    {
+      "id": "401856434",
+      "date": "2026-03-18T01:29Z",
+      "region": "West",
+      "round": "First Four",
+      "order": 0,
+      "status": "Final",
+      "completed": true,
+      "url": "https://www.espn.com/mens-college-basketball/boxscore/_/gameId/401856434",
+      "teams": [
+        {
+          "id": "152",
+          "name": "NC State",
+          "seed": 11,
+          "score": "66",
+          "winner": false,
+          "url": "https://www.espn.com/mens-college-basketball/team/_/id/152/nc-state-wolfpack"
+        },
+        {
+          "id": "251",
+          "name": "Texas",
+          "seed": 11,
+          "score": "68",
+          "winner": true,
+          "url": "https://www.espn.com/mens-college-basketball/team/_/id/251/texas-longhorns"
+        }
+      ]
+    },
+    {
+      "id": "401856437",
+      "date": "2026-03-18T22:40Z",
+      "region": "South",
+      "round": "First Four",
+      "order": 0,
+      "status": "Final",
+      "completed": true,
+      "url": "https://www.espn.com/mens-college-basketball/boxscore/_/gameId/401856437",
+      "teams": [
+        {
+          "id": "2329",
+          "name": "Lehigh",
+          "seed": 16,
+          "score": "55",
+          "winner": false,
+          "url": "https://www.espn.com/mens-college-basketball/team/_/id/2329/lehigh-mountain-hawks"
+        },
+        {
+          "id": "2504",
+          "name": "Prairie View",
+          "seed": 16,
+          "score": "67",
+          "winner": true,
+          "url": "https://www.espn.com/mens-college-basketball/team/_/id/2504/prairie-view-am-panthers"
+        }
+      ]
+    },
+    {
+      "id": "401856436",
+      "date": "2026-03-19T01:15Z",
+      "region": "Midwest",
+      "round": "First Four",
+      "order": 0,
+      "status": "Final",
+      "completed": true,
+      "url": "https://www.espn.com/mens-college-basketball/boxscore/_/gameId/401856436",
+      "teams": [
+        {
+          "id": "2567",
+          "name": "SMU",
+          "seed": 11,
+          "score": "79",
+          "winner": false,
+          "url": "https://www.espn.com/mens-college-basketball/team/_/id/2567/smu-mustangs"
+        },
+        {
+          "id": "193",
+          "name": "Miami OH",
+          "seed": 11,
+          "score": "89",
+          "winner": true,
+          "url": "https://www.espn.com/mens-college-basketball/team/_/id/193/miami-oh-redhawks"
+        }
+      ]
+    },
+    {
+      "id": "401856479",
+      "date": "2026-03-19T16:15Z",
+      "region": "East",
+      "round": "First round",
+      "order": 1,
+      "status": "Final",
+      "completed": true,
+      "url": "https://www.espn.com/mens-college-basketball/boxscore/_/gameId/401856479",
+      "teams": [
+        {
+          "id": "194",
+          "name": "Ohio State",
+          "seed": 8,
+          "score": "64",
+          "winner": false,
+          "url": "https://www.espn.com/mens-college-basketball/team/_/id/194/ohio-state-buckeyes"
+        },
+        {
+          "id": "2628",
+          "name": "TCU",
+          "seed": 9,
+          "score": "66",
+          "winner": true,
+          "url": "https://www.espn.com/mens-college-basketball/team/_/id/2628/tcu-horned-frogs"
+        }
+      ]
+    },
+    {
+      "id": "401856489",
+      "date": "2026-03-19T16:40Z",
+      "region": "South",
+      "round": "First round",
+      "order": 1,
+      "status": "Final",
+      "completed": true,
+      "url": "https://www.espn.com/mens-college-basketball/boxscore/_/gameId/401856489",
+      "teams": [
+        {
+          "id": "158",
+          "name": "Nebraska",
+          "seed": 4,
+          "score": "76",
+          "winner": true,
+          "url": "https://www.espn.com/mens-college-basketball/team/_/id/158/nebraska-cornhuskers"
+        },
+        {
+          "id": "2653",
+          "name": "Troy",
+          "seed": 13,
+          "score": "47",
+          "winner": false,
+          "url": "https://www.espn.com/mens-college-basketball/team/_/id/2653/troy-trojans"
+        }
+      ]
+    },
+    {
+      "id": "401856482",
+      "date": "2026-03-19T17:30Z",
+      "region": "East",
+      "round": "First round",
+      "order": 1,
+      "status": "Final",
+      "completed": true,
+      "url": "https://www.espn.com/mens-college-basketball/boxscore/_/gameId/401856482",
+      "teams": [
+        {
+          "id": "97",
+          "name": "Louisville",
+          "seed": 6,
+          "score": "83",
+          "winner": true,
+          "url": "https://www.espn.com/mens-college-basketball/team/_/id/97/louisville-cardinals"
+        },
+        {
+          "id": "58",
+          "name": "South Florida",
+          "seed": 11,
+          "score": "79",
+          "winner": false,
+          "url": "https://www.espn.com/mens-college-basketball/team/_/id/58/south-florida-bulls"
+        }
+      ]
+    },
+    {
+      "id": "401856480",
+      "date": "2026-03-19T17:50Z",
+      "region": "West",
+      "round": "First round",
+      "order": 1,
+      "status": "Final",
+      "completed": true,
+      "url": "https://www.espn.com/mens-college-basketball/boxscore/_/gameId/401856480",
+      "teams": [
+        {
+          "id": "275",
+          "name": "Wisconsin",
+          "seed": 5,
+          "score": "82",
+          "winner": false,
+          "url": "https://www.espn.com/mens-college-basketball/team/_/id/275/wisconsin-badgers"
+        },
+        {
+          "id": "2272",
+          "name": "High Point",
+          "seed": 12,
+          "score": "83",
+          "winner": true,
+          "url": "https://www.espn.com/mens-college-basketball/team/_/id/2272/high-point-panthers"
+        }
+      ]
+    },
+    {
+      "id": "401856478",
+      "date": "2026-03-19T19:00Z",
+      "region": "East",
+      "round": "First round",
+      "order": 1,
+      "status": "Final",
+      "completed": true,
+      "url": "https://www.espn.com/mens-college-basketball/boxscore/_/gameId/401856478",
+      "teams": [
+        {
+          "id": "150",
+          "name": "Duke",
+          "seed": 1,
+          "score": "71",
+          "winner": true,
+          "url": "https://www.espn.com/mens-college-basketball/team/_/id/150/duke-blue-devils"
+        },
+        {
+          "id": "2561",
+          "name": "Siena",
+          "seed": 16,
+          "score": "65",
+          "winner": false,
+          "url": "https://www.espn.com/mens-college-basketball/team/_/id/2561/siena-saints"
+        }
+      ]
+    },
+    {
+      "id": "401856488",
+      "date": "2026-03-19T19:15Z",
+      "region": "South",
+      "round": "First round",
+      "order": 1,
+      "status": "Final",
+      "completed": true,
+      "url": "https://www.espn.com/mens-college-basketball/boxscore/_/gameId/401856488",
+      "teams": [
+        {
+          "id": "238",
+          "name": "Vanderbilt",
+          "seed": 5,
+          "score": "78",
+          "winner": true,
+          "url": "https://www.espn.com/mens-college-basketball/team/_/id/238/vanderbilt-commodores"
+        },
+        {
+          "id": "2377",
+          "name": "McNeese",
+          "seed": 12,
+          "score": "68",
+          "winner": false,
+          "url": "https://www.espn.com/mens-college-basketball/team/_/id/2377/mcneese-cowboys"
+        }
+      ]
+    },
+    {
+      "id": "401856483",
+      "date": "2026-03-19T20:27Z",
+      "region": "East",
+      "round": "First round",
+      "order": 1,
+      "status": "Final",
+      "completed": true,
+      "url": "https://www.espn.com/mens-college-basketball/boxscore/_/gameId/401856483",
+      "teams": [
+        {
+          "id": "127",
+          "name": "Michigan St",
+          "seed": 3,
+          "score": "92",
+          "winner": true,
+          "url": "https://www.espn.com/mens-college-basketball/team/_/id/127/michigan-state-spartans"
+        },
+        {
+          "id": "2449",
+          "name": "N Dakota St",
+          "seed": 14,
+          "score": "67",
+          "winner": false,
+          "url": "https://www.espn.com/mens-college-basketball/team/_/id/2449/north-dakota-state-bison"
+        }
+      ]
+    },
+    {
+      "id": "401856481",
+      "date": "2026-03-19T20:27Z",
+      "region": "West",
+      "round": "First round",
+      "order": 1,
+      "status": "Final",
+      "completed": true,
+      "url": "https://www.espn.com/mens-college-basketball/boxscore/_/gameId/401856481",
+      "teams": [
+        {
+          "id": "8",
+          "name": "Arkansas",
+          "seed": 4,
+          "score": "97",
+          "winner": true,
+          "url": "https://www.espn.com/mens-college-basketball/team/_/id/8/arkansas-razorbacks"
+        },
+        {
+          "id": "62",
+          "name": "Hawai'i",
+          "seed": 13,
+          "score": "78",
+          "winner": false,
+          "url": "https://www.espn.com/mens-college-basketball/team/_/id/62/hawaii-rainbow-warriors"
+        }
+      ]
+    },
+    {
+      "id": "401856490",
+      "date": "2026-03-19T22:50Z",
+      "region": "South",
+      "round": "First round",
+      "order": 1,
+      "status": "Final/OT",
+      "completed": true,
+      "url": "https://www.espn.com/mens-college-basketball/boxscore/_/gameId/401856490",
+      "teams": [
+        {
+          "id": "153",
+          "name": "North Carolina",
+          "seed": 6,
+          "score": "78",
+          "winner": false,
+          "url": "https://www.espn.com/mens-college-basketball/team/_/id/153/north-carolina-tar-heels"
+        },
+        {
+          "id": "2670",
+          "name": "VCU",
+          "seed": 11,
+          "score": "82",
+          "winner": true,
+          "url": "https://www.espn.com/mens-college-basketball/team/_/id/2670/vcu-rams"
+        }
+      ]
+    },
+    {
+      "id": "401856486",
+      "date": "2026-03-19T23:30Z",
+      "region": "Midwest",
+      "round": "First round",
+      "order": 1,
+      "status": "Final",
+      "completed": true,
+      "url": "https://www.espn.com/mens-college-basketball/boxscore/_/gameId/401856486",
+      "teams": [
+        {
+          "id": "130",
+          "name": "Michigan",
+          "seed": 1,
+          "score": "101",
+          "winner": true,
+          "url": "https://www.espn.com/mens-college-basketball/team/_/id/130/michigan-wolverines"
+        },
+        {
+          "id": "47",
+          "name": "Howard",
+          "seed": 16,
+          "score": "80",
+          "winner": false,
+          "url": "https://www.espn.com/mens-college-basketball/team/_/id/47/howard-bison"
+        }
+      ]
+    },
+    {
+      "id": "401856484",
+      "date": "2026-03-19T23:35Z",
+      "region": "West",
+      "round": "First round",
+      "order": 1,
+      "status": "Final",
+      "completed": true,
+      "url": "https://www.espn.com/mens-college-basketball/boxscore/_/gameId/401856484",
+      "teams": [
+        {
+          "id": "252",
+          "name": "BYU",
+          "seed": 6,
+          "score": "71",
+          "winner": false,
+          "url": "https://www.espn.com/mens-college-basketball/team/_/id/252/byu-cougars"
+        },
+        {
+          "id": "251",
+          "name": "Texas",
+          "seed": 11,
+          "score": "79",
+          "winner": true,
+          "url": "https://www.espn.com/mens-college-basketball/team/_/id/251/texas-longhorns"
+        }
+      ]
+    },
+    {
+      "id": "401856492",
+      "date": "2026-03-19T23:35Z",
+      "region": "South",
+      "round": "First round",
+      "order": 1,
+      "status": "Final",
+      "completed": true,
+      "url": "https://www.espn.com/mens-college-basketball/boxscore/_/gameId/401856492",
+      "teams": [
+        {
+          "id": "2608",
+          "name": "Saint Mary's",
+          "seed": 7,
+          "score": "50",
+          "winner": false,
+          "url": "https://www.espn.com/mens-college-basketball/team/_/id/2608/saint-marys-gaels"
+        },
+        {
+          "id": "245",
+          "name": "Texas A&M",
+          "seed": 10,
+          "score": "63",
+          "winner": true,
+          "url": "https://www.espn.com/mens-college-basketball/team/_/id/245/texas-am-aggies"
+        }
+      ]
+    },
+    {
+      "id": "401856491",
+      "date": "2026-03-20T01:55Z",
+      "region": "South",
+      "round": "First round",
+      "order": 1,
+      "status": "Final",
+      "completed": true,
+      "url": "https://www.espn.com/mens-college-basketball/boxscore/_/gameId/401856491",
+      "teams": [
+        {
+          "id": "356",
+          "name": "Illinois",
+          "seed": 3,
+          "score": "105",
+          "winner": true,
+          "url": "https://www.espn.com/mens-college-basketball/team/_/id/356/illinois-fighting-illini"
+        },
+        {
+          "id": "219",
+          "name": "Penn",
+          "seed": 14,
+          "score": "70",
+          "winner": false,
+          "url": "https://www.espn.com/mens-college-basketball/team/_/id/219/pennsylvania-quakers"
+        }
+      ]
+    },
+    {
+      "id": "401856487",
+      "date": "2026-03-20T02:10Z",
+      "region": "Midwest",
+      "round": "First round",
+      "order": 1,
+      "status": "Final",
+      "completed": true,
+      "url": "https://www.espn.com/mens-college-basketball/boxscore/_/gameId/401856487",
+      "teams": [
+        {
+          "id": "61",
+          "name": "Georgia",
+          "seed": 8,
+          "score": "77",
+          "winner": false,
+          "url": "https://www.espn.com/mens-college-basketball/team/_/id/61/georgia-bulldogs"
+        },
+        {
+          "id": "139",
+          "name": "Saint Louis",
+          "seed": 9,
+          "score": "102",
+          "winner": true,
+          "url": "https://www.espn.com/mens-college-basketball/team/_/id/139/saint-louis-billikens"
+        }
+      ]
+    },
+    {
+      "id": "401856493",
+      "date": "2026-03-20T02:15Z",
+      "region": "South",
+      "round": "First round",
+      "order": 1,
+      "status": "Final",
+      "completed": true,
+      "url": "https://www.espn.com/mens-college-basketball/boxscore/_/gameId/401856493",
+      "teams": [
+        {
+          "id": "248",
+          "name": "Houston",
+          "seed": 2,
+          "score": "78",
+          "winner": true,
+          "url": "https://www.espn.com/mens-college-basketball/team/_/id/248/houston-cougars"
+        },
+        {
+          "id": "70",
+          "name": "Idaho",
+          "seed": 15,
+          "score": "47",
+          "winner": false,
+          "url": "https://www.espn.com/mens-college-basketball/team/_/id/70/idaho-vandals"
+        }
+      ]
+    },
+    {
+      "id": "401856485",
+      "date": "2026-03-20T02:24Z",
+      "region": "West",
+      "round": "First round",
+      "order": 1,
+      "status": "Final",
+      "completed": true,
+      "url": "https://www.espn.com/mens-college-basketball/boxscore/_/gameId/401856485",
+      "teams": [
+        {
+          "id": "2250",
+          "name": "Gonzaga",
+          "seed": 3,
+          "score": "73",
+          "winner": true,
+          "url": "https://www.espn.com/mens-college-basketball/team/_/id/2250/gonzaga-bulldogs"
+        },
+        {
+          "id": "338",
+          "name": "Kennesaw St",
+          "seed": 14,
+          "score": "64",
+          "winner": false,
+          "url": "https://www.espn.com/mens-college-basketball/team/_/id/338/kennesaw-state-owls"
+        }
+      ]
+    },
+    {
+      "id": "401856525",
+      "date": "2026-03-20T16:15Z",
+      "region": "Midwest",
+      "round": "First round",
+      "order": 1,
+      "status": "Final/OT",
+      "completed": true,
+      "url": "https://www.espn.com/mens-college-basketball/boxscore/_/gameId/401856525",
+      "teams": [
+        {
+          "id": "96",
+          "name": "Kentucky",
+          "seed": 7,
+          "score": "89",
+          "winner": true,
+          "url": "https://www.espn.com/mens-college-basketball/team/_/id/96/kentucky-wildcats"
+        },
+        {
+          "id": "2541",
+          "name": "Santa Clara",
+          "seed": 10,
+          "score": "84",
+          "winner": false,
+          "url": "https://www.espn.com/mens-college-basketball/team/_/id/2541/santa-clara-broncos"
+        }
+      ]
+    },
+    {
+      "id": "401856520",
+      "date": "2026-03-20T16:40Z",
+      "region": "Midwest",
+      "round": "First round",
+      "order": 1,
+      "status": "Final",
+      "completed": true,
+      "url": "https://www.espn.com/mens-college-basketball/boxscore/_/gameId/401856520",
+      "teams": [
+        {
+          "id": "2641",
+          "name": "Texas Tech",
+          "seed": 5,
+          "score": "91",
+          "winner": true,
+          "url": "https://www.espn.com/mens-college-basketball/team/_/id/2641/texas-tech-red-raiders"
+        },
+        {
+          "id": "2006",
+          "name": "Akron",
+          "seed": 12,
+          "score": "71",
+          "winner": false,
+          "url": "https://www.espn.com/mens-college-basketball/team/_/id/2006/akron-zips"
+        }
+      ]
+    },
+    {
+      "id": "401856529",
+      "date": "2026-03-20T17:35Z",
+      "region": "West",
+      "round": "First round",
+      "order": 1,
+      "status": "Final",
+      "completed": true,
+      "url": "https://www.espn.com/mens-college-basketball/boxscore/_/gameId/401856529",
+      "teams": [
+        {
+          "id": "12",
+          "name": "Arizona",
+          "seed": 1,
+          "score": "92",
+          "winner": true,
+          "url": "https://www.espn.com/mens-college-basketball/team/_/id/12/arizona-wildcats"
+        },
+        {
+          "id": "112358",
+          "name": "Long Island",
+          "seed": 16,
+          "score": "58",
+          "winner": false,
+          "url": "https://www.espn.com/mens-college-basketball/team/_/id/112358/long-island-university-sharks"
+        }
+      ]
+    },
+    {
+      "id": "401856526",
+      "date": "2026-03-20T17:50Z",
+      "region": "Midwest",
+      "round": "First round",
+      "order": 1,
+      "status": "Final",
+      "completed": true,
+      "url": "https://www.espn.com/mens-college-basketball/boxscore/_/gameId/401856526",
+      "teams": [
+        {
+          "id": "258",
+          "name": "Virginia",
+          "seed": 3,
+          "score": "82",
+          "winner": true,
+          "url": "https://www.espn.com/mens-college-basketball/team/_/id/258/virginia-cavaliers"
+        },
+        {
+          "id": "2750",
+          "name": "Wright St",
+          "seed": 14,
+          "score": "73",
+          "winner": false,
+          "url": "https://www.espn.com/mens-college-basketball/team/_/id/2750/wright-state-raiders"
+        }
+      ]
+    },
+    {
+      "id": "401856524",
+      "date": "2026-03-20T19:07Z",
+      "region": "Midwest",
+      "round": "First round",
+      "order": 1,
+      "status": "Final",
+      "completed": true,
+      "url": "https://www.espn.com/mens-college-basketball/boxscore/_/gameId/401856524",
+      "teams": [
+        {
+          "id": "66",
+          "name": "Iowa State",
+          "seed": 2,
+          "score": "108",
+          "winner": true,
+          "url": "https://www.espn.com/mens-college-basketball/team/_/id/66/iowa-state-cyclones"
+        },
+        {
+          "id": "2634",
+          "name": "Tennessee St",
+          "seed": 15,
+          "score": "74",
+          "winner": false,
+          "url": "https://www.espn.com/mens-college-basketball/team/_/id/2634/tennessee-state-tigers"
+        }
+      ]
+    },
+    {
+      "id": "401856521",
+      "date": "2026-03-20T19:15Z",
+      "region": "Midwest",
+      "round": "First round",
+      "order": 1,
+      "status": "Final",
+      "completed": true,
+      "url": "https://www.espn.com/mens-college-basketball/boxscore/_/gameId/401856521",
+      "teams": [
+        {
+          "id": "333",
+          "name": "Alabama",
+          "seed": 4,
+          "score": "90",
+          "winner": true,
+          "url": "https://www.espn.com/mens-college-basketball/team/_/id/333/alabama-crimson-tide"
+        },
+        {
+          "id": "2275",
+          "name": "Hofstra",
+          "seed": 13,
+          "score": "70",
+          "winner": false,
+          "url": "https://www.espn.com/mens-college-basketball/team/_/id/2275/hofstra-pride"
+        }
+      ]
+    },
+    {
+      "id": "401856528",
+      "date": "2026-03-20T20:10Z",
+      "region": "West",
+      "round": "First round",
+      "order": 1,
+      "status": "Final",
+      "completed": true,
+      "url": "https://www.espn.com/mens-college-basketball/boxscore/_/gameId/401856528",
+      "teams": [
+        {
+          "id": "222",
+          "name": "Villanova",
+          "seed": 8,
+          "score": "76",
+          "winner": false,
+          "url": "https://www.espn.com/mens-college-basketball/team/_/id/222/villanova-wildcats"
+        },
+        {
+          "id": "328",
+          "name": "Utah State",
+          "seed": 9,
+          "score": "86",
+          "winner": true,
+          "url": "https://www.espn.com/mens-college-basketball/team/_/id/328/utah-state-aggies"
+        }
+      ]
+    },
+    {
+      "id": "401856527",
+      "date": "2026-03-20T20:25Z",
+      "region": "Midwest",
+      "round": "First round",
+      "order": 1,
+      "status": "Final",
+      "completed": true,
+      "url": "https://www.espn.com/mens-college-basketball/boxscore/_/gameId/401856527",
+      "teams": [
+        {
+          "id": "2633",
+          "name": "Tennessee",
+          "seed": 6,
+          "score": "78",
+          "winner": true,
+          "url": "https://www.espn.com/mens-college-basketball/team/_/id/2633/tennessee-volunteers"
+        },
+        {
+          "id": "193",
+          "name": "Miami OH",
+          "seed": 11,
+          "score": "56",
+          "winner": false,
+          "url": "https://www.espn.com/mens-college-basketball/team/_/id/193/miami-oh-redhawks"
+        }
+      ]
+    },
+    {
+      "id": "401856522",
+      "date": "2026-03-20T22:50Z",
+      "region": "South",
+      "round": "First round",
+      "order": 1,
+      "status": "Final",
+      "completed": true,
+      "url": "https://www.espn.com/mens-college-basketball/boxscore/_/gameId/401856522",
+      "teams": [
+        {
+          "id": "228",
+          "name": "Clemson",
+          "seed": 8,
+          "score": "61",
+          "winner": false,
+          "url": "https://www.espn.com/mens-college-basketball/team/_/id/228/clemson-tigers"
+        },
+        {
+          "id": "2294",
+          "name": "Iowa",
+          "seed": 9,
+          "score": "67",
+          "winner": true,
+          "url": "https://www.espn.com/mens-college-basketball/team/_/id/2294/iowa-hawkeyes"
+        }
+      ]
+    },
+    {
+      "id": "401856494",
+      "date": "2026-03-20T23:25Z",
+      "region": "East",
+      "round": "First round",
+      "order": 1,
+      "status": "Final",
+      "completed": true,
+      "url": "https://www.espn.com/mens-college-basketball/boxscore/_/gameId/401856494",
+      "teams": [
+        {
+          "id": "2599",
+          "name": "St John's",
+          "seed": 5,
+          "score": "79",
+          "winner": true,
+          "url": "https://www.espn.com/mens-college-basketball/team/_/id/2599/st-johns-red-storm"
+        },
+        {
+          "id": "2460",
+          "name": "Northern Iowa",
+          "seed": 12,
+          "score": "53",
+          "winner": false,
+          "url": "https://www.espn.com/mens-college-basketball/team/_/id/2460/northern-iowa-panthers"
+        }
+      ]
+    },
+    {
+      "id": "401856496",
+      "date": "2026-03-20T23:31Z",
+      "region": "East",
+      "round": "First round",
+      "order": 1,
+      "status": "Final",
+      "completed": true,
+      "url": "https://www.espn.com/mens-college-basketball/boxscore/_/gameId/401856496",
+      "teams": [
+        {
+          "id": "26",
+          "name": "UCLA",
+          "seed": 7,
+          "score": "75",
+          "winner": true,
+          "url": "https://www.espn.com/mens-college-basketball/team/_/id/26/ucla-bruins"
+        },
+        {
+          "id": "2116",
+          "name": "UCF",
+          "seed": 10,
+          "score": "71",
+          "winner": false,
+          "url": "https://www.espn.com/mens-college-basketball/team/_/id/2116/ucf-knights"
+        }
+      ]
+    },
+    {
+      "id": "401856519",
+      "date": "2026-03-20T23:35Z",
+      "region": "West",
+      "round": "First round",
+      "order": 1,
+      "status": "Final",
+      "completed": true,
+      "url": "https://www.espn.com/mens-college-basketball/boxscore/_/gameId/401856519",
+      "teams": [
+        {
+          "id": "2509",
+          "name": "Purdue",
+          "seed": 2,
+          "score": "104",
+          "winner": true,
+          "url": "https://www.espn.com/mens-college-basketball/team/_/id/2509/purdue-boilermakers"
+        },
+        {
+          "id": "2511",
+          "name": "Queens",
+          "seed": 15,
+          "score": "71",
+          "winner": false,
+          "url": "https://www.espn.com/mens-college-basketball/team/_/id/2511/queens-university-royals"
+        }
+      ]
+    },
+    {
+      "id": "401856523",
+      "date": "2026-03-21T01:25Z",
+      "region": "South",
+      "round": "First round",
+      "order": 1,
+      "status": "Final",
+      "completed": true,
+      "url": "https://www.espn.com/mens-college-basketball/boxscore/_/gameId/401856523",
+      "teams": [
+        {
+          "id": "57",
+          "name": "Florida",
+          "seed": 1,
+          "score": "114",
+          "winner": true,
+          "url": "https://www.espn.com/mens-college-basketball/team/_/id/57/florida-gators"
+        },
+        {
+          "id": "2504",
+          "name": "Prairie View",
+          "seed": 16,
+          "score": "55",
+          "winner": false,
+          "url": "https://www.espn.com/mens-college-basketball/team/_/id/2504/prairie-view-am-panthers"
+        }
+      ]
+    },
+    {
+      "id": "401856495",
+      "date": "2026-03-21T02:07Z",
+      "region": "East",
+      "round": "First round",
+      "order": 1,
+      "status": "Final",
+      "completed": true,
+      "url": "https://www.espn.com/mens-college-basketball/boxscore/_/gameId/401856495",
+      "teams": [
+        {
+          "id": "2305",
+          "name": "Kansas",
+          "seed": 4,
+          "score": "68",
+          "winner": true,
+          "url": "https://www.espn.com/mens-college-basketball/team/_/id/2305/kansas-jayhawks"
+        },
+        {
+          "id": "2856",
+          "name": "CA Baptist",
+          "seed": 13,
+          "score": "60",
+          "winner": false,
+          "url": "https://www.espn.com/mens-college-basketball/team/_/id/2856/california-baptist-lancers"
+        }
+      ]
+    },
+    {
+      "id": "401856518",
+      "date": "2026-03-21T02:07Z",
+      "region": "West",
+      "round": "First round",
+      "order": 1,
+      "status": "Final",
+      "completed": true,
+      "url": "https://www.espn.com/mens-college-basketball/boxscore/_/gameId/401856518",
+      "teams": [
+        {
+          "id": "2390",
+          "name": "Miami",
+          "seed": 7,
+          "score": "80",
+          "winner": true,
+          "url": "https://www.espn.com/mens-college-basketball/team/_/id/2390/miami-hurricanes"
+        },
+        {
+          "id": "142",
+          "name": "Missouri",
+          "seed": 10,
+          "score": "66",
+          "winner": false,
+          "url": "https://www.espn.com/mens-college-basketball/team/_/id/142/missouri-tigers"
+        }
+      ]
+    },
+    {
+      "id": "401856497",
+      "date": "2026-03-21T02:31Z",
+      "region": "East",
+      "round": "First round",
+      "order": 1,
+      "status": "Final",
+      "completed": true,
+      "url": "https://www.espn.com/mens-college-basketball/boxscore/_/gameId/401856497",
+      "teams": [
+        {
+          "id": "41",
+          "name": "UConn",
+          "seed": 2,
+          "score": "82",
+          "winner": true,
+          "url": "https://www.espn.com/mens-college-basketball/team/_/id/41/uconn-huskies"
+        },
+        {
+          "id": "231",
+          "name": "Furman",
+          "seed": 15,
+          "score": "71",
+          "winner": false,
+          "url": "https://www.espn.com/mens-college-basketball/team/_/id/231/furman-paladins"
+        }
+      ]
+    },
+    {
+      "id": "401856532",
+      "date": "2026-03-21T16:10Z",
+      "region": "Midwest",
+      "round": "Second round",
+      "order": 2,
+      "status": "Final",
+      "completed": true,
+      "url": "https://www.espn.com/mens-college-basketball/boxscore/_/gameId/401856532",
+      "teams": [
+        {
+          "id": "130",
+          "name": "Michigan",
+          "seed": 1,
+          "score": "95",
+          "winner": true,
+          "url": "https://www.espn.com/mens-college-basketball/team/_/id/130/michigan-wolverines"
+        },
+        {
+          "id": "139",
+          "name": "Saint Louis",
+          "seed": 9,
+          "score": "72",
+          "winner": false,
+          "url": "https://www.espn.com/mens-college-basketball/team/_/id/139/saint-louis-billikens"
+        }
+      ]
+    },
+    {
+      "id": "401856531",
+      "date": "2026-03-21T18:45Z",
+      "region": "East",
+      "round": "Second round",
+      "order": 2,
+      "status": "Final",
+      "completed": true,
+      "url": "https://www.espn.com/mens-college-basketball/boxscore/_/gameId/401856531",
+      "teams": [
+        {
+          "id": "127",
+          "name": "Michigan St",
+          "seed": 3,
+          "score": "77",
+          "winner": true,
+          "url": "https://www.espn.com/mens-college-basketball/team/_/id/127/michigan-state-spartans"
+        },
+        {
+          "id": "97",
+          "name": "Louisville",
+          "seed": 6,
+          "score": "69",
+          "winner": false,
+          "url": "https://www.espn.com/mens-college-basketball/team/_/id/97/louisville-cardinals"
+        }
+      ]
+    },
+    {
+      "id": "401856530",
+      "date": "2026-03-21T21:25Z",
+      "region": "East",
+      "round": "Second round",
+      "order": 2,
+      "status": "Final",
+      "completed": true,
+      "url": "https://www.espn.com/mens-college-basketball/boxscore/_/gameId/401856530",
+      "teams": [
+        {
+          "id": "150",
+          "name": "Duke",
+          "seed": 1,
+          "score": "81",
+          "winner": true,
+          "url": "https://www.espn.com/mens-college-basketball/team/_/id/150/duke-blue-devils"
+        },
+        {
+          "id": "2628",
+          "name": "TCU",
+          "seed": 9,
+          "score": "58",
+          "winner": false,
+          "url": "https://www.espn.com/mens-college-basketball/team/_/id/2628/tcu-horned-frogs"
+        }
+      ]
+    },
+    {
+      "id": "401856535",
+      "date": "2026-03-21T22:10Z",
+      "region": "South",
+      "round": "Second round",
+      "order": 2,
+      "status": "Final",
+      "completed": true,
+      "url": "https://www.espn.com/mens-college-basketball/boxscore/_/gameId/401856535",
+      "teams": [
+        {
+          "id": "248",
+          "name": "Houston",
+          "seed": 2,
+          "score": "88",
+          "winner": true,
+          "url": "https://www.espn.com/mens-college-basketball/team/_/id/248/houston-cougars"
+        },
+        {
+          "id": "245",
+          "name": "Texas A&M",
+          "seed": 10,
+          "score": "57",
+          "winner": false,
+          "url": "https://www.espn.com/mens-college-basketball/team/_/id/245/texas-am-aggies"
+        }
+      ]
+    },
+    {
+      "id": "401856537",
+      "date": "2026-03-21T23:10Z",
+      "region": "West",
+      "round": "Second round",
+      "order": 2,
+      "status": "Final",
+      "completed": true,
+      "url": "https://www.espn.com/mens-college-basketball/boxscore/_/gameId/401856537",
+      "teams": [
+        {
+          "id": "2250",
+          "name": "Gonzaga",
+          "seed": 3,
+          "score": "68",
+          "winner": false,
+          "url": "https://www.espn.com/mens-college-basketball/team/_/id/2250/gonzaga-bulldogs"
+        },
+        {
+          "id": "251",
+          "name": "Texas",
+          "seed": 11,
+          "score": "74",
+          "winner": true,
+          "url": "https://www.espn.com/mens-college-basketball/team/_/id/251/texas-longhorns"
+        }
+      ]
+    },
+    {
+      "id": "401856533",
+      "date": "2026-03-22T00:15Z",
+      "region": "South",
+      "round": "Second round",
+      "order": 2,
+      "status": "Final",
+      "completed": true,
+      "url": "https://www.espn.com/mens-college-basketball/boxscore/_/gameId/401856533",
+      "teams": [
+        {
+          "id": "356",
+          "name": "Illinois",
+          "seed": 3,
+          "score": "76",
+          "winner": true,
+          "url": "https://www.espn.com/mens-college-basketball/team/_/id/356/illinois-fighting-illini"
+        },
+        {
+          "id": "2670",
+          "name": "VCU",
+          "seed": 11,
+          "score": "55",
+          "winner": false,
+          "url": "https://www.espn.com/mens-college-basketball/team/_/id/2670/vcu-rams"
+        }
+      ]
+    },
+    {
+      "id": "401856534",
+      "date": "2026-03-22T01:02Z",
+      "region": "South",
+      "round": "Second round",
+      "order": 2,
+      "status": "Final",
+      "completed": true,
+      "url": "https://www.espn.com/mens-college-basketball/boxscore/_/gameId/401856534",
+      "teams": [
+        {
+          "id": "158",
+          "name": "Nebraska",
+          "seed": 4,
+          "score": "74",
+          "winner": true,
+          "url": "https://www.espn.com/mens-college-basketball/team/_/id/158/nebraska-cornhuskers"
+        },
+        {
+          "id": "238",
+          "name": "Vanderbilt",
+          "seed": 5,
+          "score": "72",
+          "winner": false,
+          "url": "https://www.espn.com/mens-college-basketball/team/_/id/238/vanderbilt-commodores"
+        }
+      ]
+    },
+    {
+      "id": "401856536",
+      "date": "2026-03-22T01:45Z",
+      "region": "West",
+      "round": "Second round",
+      "order": 2,
+      "status": "Final",
+      "completed": true,
+      "url": "https://www.espn.com/mens-college-basketball/boxscore/_/gameId/401856536",
+      "teams": [
+        {
+          "id": "8",
+          "name": "Arkansas",
+          "seed": 4,
+          "score": "94",
+          "winner": true,
+          "url": "https://www.espn.com/mens-college-basketball/team/_/id/8/arkansas-razorbacks"
+        },
+        {
+          "id": "2272",
+          "name": "High Point",
+          "seed": 12,
+          "score": "88",
+          "winner": false,
+          "url": "https://www.espn.com/mens-college-basketball/team/_/id/2272/high-point-panthers"
+        }
+      ]
+    },
+    {
+      "id": "401856564",
+      "date": "2026-03-22T16:10Z",
+      "region": "West",
+      "round": "Second round",
+      "order": 2,
+      "status": "Final",
+      "completed": true,
+      "url": "https://www.espn.com/mens-college-basketball/boxscore/_/gameId/401856564",
+      "teams": [
+        {
+          "id": "2509",
+          "name": "Purdue",
+          "seed": 2,
+          "score": "79",
+          "winner": true,
+          "url": "https://www.espn.com/mens-college-basketball/team/_/id/2509/purdue-boilermakers"
+        },
+        {
+          "id": "2390",
+          "name": "Miami",
+          "seed": 7,
+          "score": "69",
+          "winner": false,
+          "url": "https://www.espn.com/mens-college-basketball/team/_/id/2390/miami-hurricanes"
+        }
+      ]
+    },
+    {
+      "id": "401856561",
+      "date": "2026-03-22T18:45Z",
+      "region": "Midwest",
+      "round": "Second round",
+      "order": 2,
+      "status": "Final",
+      "completed": true,
+      "url": "https://www.espn.com/mens-college-basketball/boxscore/_/gameId/401856561",
+      "teams": [
+        {
+          "id": "66",
+          "name": "Iowa State",
+          "seed": 2,
+          "score": "82",
+          "winner": true,
+          "url": "https://www.espn.com/mens-college-basketball/team/_/id/66/iowa-state-cyclones"
+        },
+        {
+          "id": "96",
+          "name": "Kentucky",
+          "seed": 7,
+          "score": "63",
+          "winner": false,
+          "url": "https://www.espn.com/mens-college-basketball/team/_/id/96/kentucky-wildcats"
+        }
+      ]
+    },
+    {
+      "id": "401856558",
+      "date": "2026-03-22T21:15Z",
+      "region": "East",
+      "round": "Second round",
+      "order": 2,
+      "status": "Final",
+      "completed": true,
+      "url": "https://www.espn.com/mens-college-basketball/boxscore/_/gameId/401856558",
+      "teams": [
+        {
+          "id": "2305",
+          "name": "Kansas",
+          "seed": 4,
+          "score": "65",
+          "winner": false,
+          "url": "https://www.espn.com/mens-college-basketball/team/_/id/2305/kansas-jayhawks"
+        },
+        {
+          "id": "2599",
+          "name": "St John's",
+          "seed": 5,
+          "score": "67",
+          "winner": true,
+          "url": "https://www.espn.com/mens-college-basketball/team/_/id/2599/st-johns-red-storm"
+        }
+      ]
+    },
+    {
+      "id": "401856562",
+      "date": "2026-03-22T22:10Z",
+      "region": "Midwest",
+      "round": "Second round",
+      "order": 2,
+      "status": "Final",
+      "completed": true,
+      "url": "https://www.espn.com/mens-college-basketball/boxscore/_/gameId/401856562",
+      "teams": [
+        {
+          "id": "258",
+          "name": "Virginia",
+          "seed": 3,
+          "score": "72",
+          "winner": false,
+          "url": "https://www.espn.com/mens-college-basketball/team/_/id/258/virginia-cavaliers"
+        },
+        {
+          "id": "2633",
+          "name": "Tennessee",
+          "seed": 6,
+          "score": "79",
+          "winner": true,
+          "url": "https://www.espn.com/mens-college-basketball/team/_/id/2633/tennessee-volunteers"
+        }
+      ]
+    },
+    {
+      "id": "401856563",
+      "date": "2026-03-22T23:10Z",
+      "region": "South",
+      "round": "Second round",
+      "order": 2,
+      "status": "Final",
+      "completed": true,
+      "url": "https://www.espn.com/mens-college-basketball/boxscore/_/gameId/401856563",
+      "teams": [
+        {
+          "id": "57",
+          "name": "Florida",
+          "seed": 1,
+          "score": "72",
+          "winner": false,
+          "url": "https://www.espn.com/mens-college-basketball/team/_/id/57/florida-gators"
+        },
+        {
+          "id": "2294",
+          "name": "Iowa",
+          "seed": 9,
+          "score": "73",
+          "winner": true,
+          "url": "https://www.espn.com/mens-college-basketball/team/_/id/2294/iowa-hawkeyes"
+        }
+      ]
+    },
+    {
+      "id": "401856565",
+      "date": "2026-03-23T00:11Z",
+      "region": "West",
+      "round": "Second round",
+      "order": 2,
+      "status": "Final",
+      "completed": true,
+      "url": "https://www.espn.com/mens-college-basketball/boxscore/_/gameId/401856565",
+      "teams": [
+        {
+          "id": "12",
+          "name": "Arizona",
+          "seed": 1,
+          "score": "78",
+          "winner": true,
+          "url": "https://www.espn.com/mens-college-basketball/team/_/id/12/arizona-wildcats"
+        },
+        {
+          "id": "328",
+          "name": "Utah State",
+          "seed": 9,
+          "score": "66",
+          "winner": false,
+          "url": "https://www.espn.com/mens-college-basketball/team/_/id/328/utah-state-aggies"
+        }
+      ]
+    },
+    {
+      "id": "401856559",
+      "date": "2026-03-23T01:10Z",
+      "region": "East",
+      "round": "Second round",
+      "order": 2,
+      "status": "Final",
+      "completed": true,
+      "url": "https://www.espn.com/mens-college-basketball/boxscore/_/gameId/401856559",
+      "teams": [
+        {
+          "id": "41",
+          "name": "UConn",
+          "seed": 2,
+          "score": "73",
+          "winner": true,
+          "url": "https://www.espn.com/mens-college-basketball/team/_/id/41/uconn-huskies"
+        },
+        {
+          "id": "26",
+          "name": "UCLA",
+          "seed": 7,
+          "score": "57",
+          "winner": false,
+          "url": "https://www.espn.com/mens-college-basketball/team/_/id/26/ucla-bruins"
+        }
+      ]
+    },
+    {
+      "id": "401856560",
+      "date": "2026-03-23T02:08Z",
+      "region": "Midwest",
+      "round": "Second round",
+      "order": 2,
+      "status": "Final",
+      "completed": true,
+      "url": "https://www.espn.com/mens-college-basketball/boxscore/_/gameId/401856560",
+      "teams": [
+        {
+          "id": "333",
+          "name": "Alabama",
+          "seed": 4,
+          "score": "90",
+          "winner": true,
+          "url": "https://www.espn.com/mens-college-basketball/team/_/id/333/alabama-crimson-tide"
+        },
+        {
+          "id": "2641",
+          "name": "Texas Tech",
+          "seed": 5,
+          "score": "65",
+          "winner": false,
+          "url": "https://www.espn.com/mens-college-basketball/team/_/id/2641/texas-tech-red-raiders"
+        }
+      ]
+    },
+    {
+      "id": "401856568",
+      "date": "2026-03-26T23:10Z",
+      "region": "West",
+      "round": "Sweet 16",
+      "order": 3,
+      "status": "Final",
+      "completed": true,
+      "url": "https://www.espn.com/mens-college-basketball/boxscore/_/gameId/401856568",
+      "teams": [
+        {
+          "id": "2509",
+          "name": "Purdue",
+          "seed": 2,
+          "score": "79",
+          "winner": true,
+          "url": "https://www.espn.com/mens-college-basketball/team/_/id/2509/purdue-boilermakers"
+        },
+        {
+          "id": "251",
+          "name": "Texas",
+          "seed": 11,
+          "score": "77",
+          "winner": false,
+          "url": "https://www.espn.com/mens-college-basketball/team/_/id/251/texas-longhorns"
+        }
+      ]
+    },
+    {
+      "id": "401856567",
+      "date": "2026-03-26T23:30Z",
+      "region": "South",
+      "round": "Sweet 16",
+      "order": 3,
+      "status": "Final",
+      "completed": true,
+      "url": "https://www.espn.com/mens-college-basketball/boxscore/_/gameId/401856567",
+      "teams": [
+        {
+          "id": "158",
+          "name": "Nebraska",
+          "seed": 4,
+          "score": "71",
+          "winner": false,
+          "url": "https://www.espn.com/mens-college-basketball/team/_/id/158/nebraska-cornhuskers"
+        },
+        {
+          "id": "2294",
+          "name": "Iowa",
+          "seed": 9,
+          "score": "77",
+          "winner": true,
+          "url": "https://www.espn.com/mens-college-basketball/team/_/id/2294/iowa-hawkeyes"
+        }
+      ]
+    },
+    {
+      "id": "401856566",
+      "date": "2026-03-27T02:05Z",
+      "region": "South",
+      "round": "Sweet 16",
+      "order": 3,
+      "status": "Final",
+      "completed": true,
+      "url": "https://www.espn.com/mens-college-basketball/boxscore/_/gameId/401856566",
+      "teams": [
+        {
+          "id": "248",
+          "name": "Houston",
+          "seed": 2,
+          "score": "55",
+          "winner": false,
+          "url": "https://www.espn.com/mens-college-basketball/team/_/id/248/houston-cougars"
+        },
+        {
+          "id": "356",
+          "name": "Illinois",
+          "seed": 3,
+          "score": "65",
+          "winner": true,
+          "url": "https://www.espn.com/mens-college-basketball/team/_/id/356/illinois-fighting-illini"
+        }
+      ]
+    },
+    {
+      "id": "401856569",
+      "date": "2026-03-27T02:06Z",
+      "region": "West",
+      "round": "Sweet 16",
+      "order": 3,
+      "status": "Final",
+      "completed": true,
+      "url": "https://www.espn.com/mens-college-basketball/boxscore/_/gameId/401856569",
+      "teams": [
+        {
+          "id": "12",
+          "name": "Arizona",
+          "seed": 1,
+          "score": "109",
+          "winner": true,
+          "url": "https://www.espn.com/mens-college-basketball/team/_/id/12/arizona-wildcats"
+        },
+        {
+          "id": "8",
+          "name": "Arkansas",
+          "seed": 4,
+          "score": "88",
+          "winner": false,
+          "url": "https://www.espn.com/mens-college-basketball/team/_/id/8/arkansas-razorbacks"
+        }
+      ]
+    },
+    {
+      "id": "401856570",
+      "date": "2026-03-27T23:10Z",
+      "region": "East",
+      "round": "Sweet 16",
+      "order": 3,
+      "status": "Final",
+      "completed": true,
+      "url": "https://www.espn.com/mens-college-basketball/boxscore/_/gameId/401856570",
+      "teams": [
+        {
+          "id": "150",
+          "name": "Duke",
+          "seed": 1,
+          "score": "80",
+          "winner": true,
+          "url": "https://www.espn.com/mens-college-basketball/team/_/id/150/duke-blue-devils"
+        },
+        {
+          "id": "2599",
+          "name": "St John's",
+          "seed": 5,
+          "score": "75",
+          "winner": false,
+          "url": "https://www.espn.com/mens-college-basketball/team/_/id/2599/st-johns-red-storm"
+        }
+      ]
+    },
+    {
+      "id": "401856572",
+      "date": "2026-03-27T23:35Z",
+      "region": "Midwest",
+      "round": "Sweet 16",
+      "order": 3,
+      "status": "Final",
+      "completed": true,
+      "url": "https://www.espn.com/mens-college-basketball/boxscore/_/gameId/401856572",
+      "teams": [
+        {
+          "id": "130",
+          "name": "Michigan",
+          "seed": 1,
+          "score": "90",
+          "winner": true,
+          "url": "https://www.espn.com/mens-college-basketball/team/_/id/130/michigan-wolverines"
+        },
+        {
+          "id": "333",
+          "name": "Alabama",
+          "seed": 4,
+          "score": "77",
+          "winner": false,
+          "url": "https://www.espn.com/mens-college-basketball/team/_/id/333/alabama-crimson-tide"
+        }
+      ]
+    },
+    {
+      "id": "401856571",
+      "date": "2026-03-28T01:55Z",
+      "region": "East",
+      "round": "Sweet 16",
+      "order": 3,
+      "status": "Final",
+      "completed": true,
+      "url": "https://www.espn.com/mens-college-basketball/boxscore/_/gameId/401856571",
+      "teams": [
+        {
+          "id": "41",
+          "name": "UConn",
+          "seed": 2,
+          "score": "67",
+          "winner": true,
+          "url": "https://www.espn.com/mens-college-basketball/team/_/id/41/uconn-huskies"
+        },
+        {
+          "id": "127",
+          "name": "Michigan St",
+          "seed": 3,
+          "score": "63",
+          "winner": false,
+          "url": "https://www.espn.com/mens-college-basketball/team/_/id/127/michigan-state-spartans"
+        }
+      ]
+    },
+    {
+      "id": "401856573",
+      "date": "2026-03-28T02:35Z",
+      "region": "Midwest",
+      "round": "Sweet 16",
+      "order": 3,
+      "status": "Final",
+      "completed": true,
+      "url": "https://www.espn.com/mens-college-basketball/boxscore/_/gameId/401856573",
+      "teams": [
+        {
+          "id": "66",
+          "name": "Iowa State",
+          "seed": 2,
+          "score": "62",
+          "winner": false,
+          "url": "https://www.espn.com/mens-college-basketball/team/_/id/66/iowa-state-cyclones"
+        },
+        {
+          "id": "2633",
+          "name": "Tennessee",
+          "seed": 6,
+          "score": "76",
+          "winner": true,
+          "url": "https://www.espn.com/mens-college-basketball/team/_/id/2633/tennessee-volunteers"
+        }
+      ]
+    },
+    {
+      "id": "401856574",
+      "date": "2026-03-28T22:09Z",
+      "region": "South",
+      "round": "Elite Eight",
+      "order": 4,
+      "status": "Final",
+      "completed": true,
+      "url": "https://www.espn.com/mens-college-basketball/boxscore/_/gameId/401856574",
+      "teams": [
+        {
+          "id": "356",
+          "name": "Illinois",
+          "seed": 3,
+          "score": "71",
+          "winner": true,
+          "url": "https://www.espn.com/mens-college-basketball/team/_/id/356/illinois-fighting-illini"
+        },
+        {
+          "id": "2294",
+          "name": "Iowa",
+          "seed": 9,
+          "score": "59",
+          "winner": false,
+          "url": "https://www.espn.com/mens-college-basketball/team/_/id/2294/iowa-hawkeyes"
+        }
+      ]
+    },
+    {
+      "id": "401856575",
+      "date": "2026-03-29T00:59Z",
+      "region": "West",
+      "round": "Elite Eight",
+      "order": 4,
+      "status": "Final",
+      "completed": true,
+      "url": "https://www.espn.com/mens-college-basketball/boxscore/_/gameId/401856575",
+      "teams": [
+        {
+          "id": "12",
+          "name": "Arizona",
+          "seed": 1,
+          "score": "79",
+          "winner": true,
+          "url": "https://www.espn.com/mens-college-basketball/team/_/id/12/arizona-wildcats"
+        },
+        {
+          "id": "2509",
+          "name": "Purdue",
+          "seed": 2,
+          "score": "64",
+          "winner": false,
+          "url": "https://www.espn.com/mens-college-basketball/team/_/id/2509/purdue-boilermakers"
+        }
+      ]
+    },
+    {
+      "id": "401856576",
+      "date": "2026-03-29T18:15Z",
+      "region": "Midwest",
+      "round": "Elite Eight",
+      "order": 4,
+      "status": "Final",
+      "completed": true,
+      "url": "https://www.espn.com/mens-college-basketball/boxscore/_/gameId/401856576",
+      "teams": [
+        {
+          "id": "130",
+          "name": "Michigan",
+          "seed": 1,
+          "score": "95",
+          "winner": true,
+          "url": "https://www.espn.com/mens-college-basketball/team/_/id/130/michigan-wolverines"
+        },
+        {
+          "id": "2633",
+          "name": "Tennessee",
+          "seed": 6,
+          "score": "62",
+          "winner": false,
+          "url": "https://www.espn.com/mens-college-basketball/team/_/id/2633/tennessee-volunteers"
+        }
+      ]
+    },
+    {
+      "id": "401856577",
+      "date": "2026-03-29T21:05Z",
+      "region": "East",
+      "round": "Elite Eight",
+      "order": 4,
+      "status": "Final",
+      "completed": true,
+      "url": "https://www.espn.com/mens-college-basketball/boxscore/_/gameId/401856577",
+      "teams": [
+        {
+          "id": "150",
+          "name": "Duke",
+          "seed": 1,
+          "score": "72",
+          "winner": false,
+          "url": "https://www.espn.com/mens-college-basketball/team/_/id/150/duke-blue-devils"
+        },
+        {
+          "id": "41",
+          "name": "UConn",
+          "seed": 2,
+          "score": "73",
+          "winner": true,
+          "url": "https://www.espn.com/mens-college-basketball/team/_/id/41/uconn-huskies"
+        }
+      ]
+    },
+    {
+      "id": "401856598",
+      "date": "2026-04-04T22:09Z",
+      "region": "Final Four",
+      "round": "Final Four",
+      "order": 5,
+      "status": "Final",
+      "completed": true,
+      "url": "https://www.espn.com/mens-college-basketball/boxscore/_/gameId/401856598",
+      "teams": [
+        {
+          "id": "41",
+          "name": "UConn",
+          "seed": 2,
+          "score": "71",
+          "winner": true,
+          "url": "https://www.espn.com/mens-college-basketball/team/_/id/41/uconn-huskies"
+        },
+        {
+          "id": "356",
+          "name": "Illinois",
+          "seed": 3,
+          "score": "62",
+          "winner": false,
+          "url": "https://www.espn.com/mens-college-basketball/team/_/id/356/illinois-fighting-illini"
+        }
+      ]
+    },
+    {
+      "id": "401856599",
+      "date": "2026-04-05T01:19Z",
+      "region": "Final Four",
+      "round": "Final Four",
+      "order": 5,
+      "status": "Final",
+      "completed": true,
+      "url": "https://www.espn.com/mens-college-basketball/boxscore/_/gameId/401856599",
+      "teams": [
+        {
+          "id": "12",
+          "name": "Arizona",
+          "seed": 1,
+          "score": "73",
+          "winner": false,
+          "url": "https://www.espn.com/mens-college-basketball/team/_/id/12/arizona-wildcats"
+        },
+        {
+          "id": "130",
+          "name": "Michigan",
+          "seed": 1,
+          "score": "91",
+          "winner": true,
+          "url": "https://www.espn.com/mens-college-basketball/team/_/id/130/michigan-wolverines"
+        }
+      ]
+    },
+    {
+      "id": "401856600",
+      "date": "2026-04-07T00:50Z",
+      "region": "Final Four",
+      "round": "National championship",
+      "order": 6,
+      "status": "Final",
+      "completed": true,
+      "url": "https://www.espn.com/mens-college-basketball/boxscore/_/gameId/401856600",
+      "teams": [
+        {
+          "id": "130",
+          "name": "Michigan",
+          "seed": 1,
+          "score": "69",
+          "winner": true,
+          "url": "https://www.espn.com/mens-college-basketball/team/_/id/130/michigan-wolverines"
+        },
+        {
+          "id": "41",
+          "name": "UConn",
+          "seed": 2,
+          "score": "63",
+          "winner": false,
+          "url": "https://www.espn.com/mens-college-basketball/team/_/id/41/uconn-huskies"
+        }
+      ]
+    }
+  ]
+}
