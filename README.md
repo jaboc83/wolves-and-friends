@@ -4,7 +4,7 @@ A public sports hub for Wolves, Wild, Vikings, Twins, Loons, Crystal Palace, Dis
 
 Live website: https://wolves-and-friends-hub.tastyfir6.chatgpt.site
 
-This private repository is the shared source code. The live website is hosted through Sites. A cloud automation deploys validated changes after a pull request is merged into `main`; direct pushes do not trigger deployment. See [Automatic deployment](DEPLOYMENT.md).
+This private repository is the shared source code. The live website is hosted through Sites. Automatic deployment triggers are disabled; deployment requires an explicit request to ChatGPT. Merging a pull request or pushing to GitHub does not deploy. See [Manual deployment](DEPLOYMENT.md).
 
 ## Understand the architecture
 
@@ -41,7 +41,7 @@ pnpm build
 
 ## Run and debug in VS Code
 
-On Windows, the tasks use `scripts/vscode-node.ps1` to find Node on PATH,
+On Windows, the tasks use `scripts/runtime/vscode-node.ps1` to find Node on PATH,
 then in the fnm installation matching `.node-version`, then in the ignored
 checkout-local portable tools. This also works when VS Code starts without
 an initialized fnm terminal environment.
@@ -68,6 +68,17 @@ in `app/api/` or feed modules in `lib/`. Trigger an API request from the browser
 to hit a server breakpoint; cached feeds may bypass provider-fetch code.
 The Worker attachment follows the
 [Cloudflare Vite debugging configuration](https://developers.cloudflare.com/workers/vite-plugin/reference/debugging/).
+
+## Project scripts
+
+- `scripts/tests/` contains Node regression tests grouped by feature area.
+- `scripts/install/` contains package-manager installation entry points and helpers.
+- `scripts/runtime/` contains the app runner, local environment setup, and VS Code Node launcher.
+- `scripts/build/` contains build-output checks used by CI.
+- `scripts/connector-preview/` contains the local-only connector preview host.
+
+Run tests from the repository root; they use repository-relative fixture and
+source paths. CI discovers each `test-*.mjs` suite under `scripts/tests/`.
 
 The development task stays running after debugging stops. Use Terminal →
 Terminate Task → `Wolves: dev` when finished. Stop an existing `pnpm dev` before
@@ -96,7 +107,7 @@ or visitor-data collection.
 
 Make changes in this repository so both the owner and the authorized GitHub connection can inspect them. Check the latest `main` branch before changing files to avoid overwriting the other person's work. Keep changes in commits or pull requests with a short description and relevant checks.
 
-Merge a reviewed pull request into `main` to trigger the deployment task. It checks the current source, preserves the privacy rules, validates and builds the app, then publishes through the existing Sites project. Failed checks leave the live version untouched. Direct pushes and merges into other branches do not trigger publishing. Documentation-only changes do not require an app deployment. Read [DEPLOYMENT.md](DEPLOYMENT.md) for the workflow and recovery details. The GitHub and Sites repositories remain separate; the task synchronizes them explicitly.
+Deployment is manual: explicitly request it from ChatGPT. The requested source is checked, privacy rules are preserved, and the app is validated and built before publishing through the existing Sites project. Failed checks leave the live version untouched. GitHub pushes and pull request merges do not trigger publishing. Documentation-only changes do not require an app deployment. Read [DEPLOYMENT.md](DEPLOYMENT.md) for the workflow and recovery details. The GitHub and Sites repositories remain separate and must be synchronized explicitly.
 
 Imported from Sites source commit `50e3e8436546613f408d60418e28eaf6817eccbb` on October 15, 2026. Generated archives, installed dependencies, credentials, and checkout-local runtime state are excluded.
 

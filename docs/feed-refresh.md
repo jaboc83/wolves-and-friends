@@ -6,4 +6,4 @@
 
 News, schedules and odds have separate per-Worker caches and in-flight requests. These are public data caches, not globally shared storage. The legacy combined endpoint only attempts odds within its remaining refresh budget, using isolated objects so late odds cannot mutate returned schedules. Author verification expires after an hour and holds at most 256 results.
 
-Preserve browser-only preferences, generic credentials-omitted/no-referrer feed calls, independent section completion, safe source-health codes and no stale seed headline injection. Regression coverage lives in `scripts/test-provider-pipeline.mjs`, `scripts/test-independent-refresh.mjs` and `scripts/test-audit-feeds.mjs`.
+Preserve browser-only preferences, generic credentials-omitted/no-referrer feed calls, independent section completion, safe source-health codes and no stale seed headline injection. Regression coverage lives in `scripts/tests/feeds/test-provider-pipeline.mjs`, `scripts/tests/feeds/test-independent-refresh.mjs` and `scripts/tests/feeds/test-audit-feeds.mjs`.

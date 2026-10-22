@@ -12,8 +12,8 @@
           "-ExecutionPolicy",
           "Bypass",
           "-File",
-          "${workspaceFolder}/scripts/vscode-node.ps1",
-          "scripts/run-framework.mjs",
+          "${workspaceFolder}/scripts/runtime/vscode-node.ps1",
+          "scripts/runtime/run-framework.mjs",
           "dev",
           "--host",
           "127.0.0.1",
@@ -21,7 +21,7 @@
         ]
       },
       "args": [
-        "scripts/run-framework.mjs",
+        "scripts/runtime/run-framework.mjs",
         "dev",
         "--host",
         "127.0.0.1",
@@ -61,12 +61,12 @@
           "-ExecutionPolicy",
           "Bypass",
           "-File",
-          "${workspaceFolder}/scripts/vscode-node.ps1",
-          "scripts/run-framework.mjs",
+          "${workspaceFolder}/scripts/runtime/vscode-node.ps1",
+          "scripts/runtime/run-framework.mjs",
           "build"
         ]
       },
-      "args": ["scripts/run-framework.mjs", "build"],
+      "args": ["scripts/runtime/run-framework.mjs", "build"],
       "options": { "cwd": "${workspaceFolder}" },
       "group": { "kind": "build", "isDefault": true },
       "problemMatcher": []
@@ -82,7 +82,7 @@
           "-ExecutionPolicy",
           "Bypass",
           "-File",
-          "${workspaceFolder}/scripts/vscode-node.ps1",
+          "${workspaceFolder}/scripts/runtime/vscode-node.ps1",
           "node_modules/typescript/bin/tsc",
           "--noEmit"
         ]

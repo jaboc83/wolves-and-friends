@@ -1,3 +1,5 @@
+// Validate and bound connector calls made by a local Site preview.
+// This prevents the preview from invoking actions outside the agent's explicit grants.
 import { Readable } from "node:stream";
 import { setMaxListeners } from "node:events";
 import getRawBody from "raw-body";
