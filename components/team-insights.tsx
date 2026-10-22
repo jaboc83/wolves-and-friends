@@ -22,6 +22,8 @@ type RosterPlayer = NonNullable<
   position: string;
 };
 type RosterSort = { column: string; direction: "asc" | "desc" };
+const defaultRosterSortDirection = (column: string): "asc" | "desc" =>
+  column === "Player" || column === "Position" ? "asc" : "desc";
 export default function TeamInsights({
   active,
   data,
@@ -505,18 +507,35 @@ export default function TeamInsights({
                       current?.id === id
                         ? current.value
                         : { column: "Player", direction: "asc" as const };
-                    return {
-                      id,
-                      value: {
-                        column,
-                        direction:
-                          currentSort.column === column &&
-                          currentSort.direction === "asc"
-                            ? "desc"
-                            : "asc",
-                      },
-                    };
+                    const direction =
+                      currentSort.column === column
+                        ? currentSort.direction === "asc"
+                          ? "desc"
+                          : "asc"
+                        : defaultRosterSortDirection(column);
+                    return { id, value: { column, direction } };
                   });
+                const rosterSortIndicator = (column: string) =>
+                  rosterSort.column === column
+                    ? rosterSort.direction === "asc"
+                      ? "↑"
+                      : "↓"
+                    : "";
+                const rosterSortAria = (column: string) =>
+                  rosterSort.column === column
+                    ? rosterSort.direction === "asc"
+                      ? "ascending"
+                      : "descending"
+                    : "none";
+                const handleRosterSortKeyDown = (
+                  event: React.KeyboardEvent<HTMLTableCellElement>,
+                  column: string,
+                ) => {
+                  if (event.key === "Enter" || event.key === " ") {
+                    event.preventDefault();
+                    toggleRosterSort(column);
+                  }
+                };
                 return (
                   <section className="depth-row" key={group.position + i}>
                     <h3 className="visually-hidden">{group.position}</h3>
@@ -538,22 +557,37 @@ export default function TeamInsights({
                               <th
                                 scope="col"
                                 onClick={() => toggleRosterSort("Player")}
+                                onKeyDown={(event) =>
+                                  handleRosterSortKeyDown(event, "Player")
+                                }
+                                aria-sort={rosterSortAria("Player")}
+                                tabIndex={0}
                               >
-                                Player
+                                Player {rosterSortIndicator("Player")}
                               </th>
                               <th
                                 scope="col"
                                 onClick={() => toggleRosterSort("Position")}
+                                onKeyDown={(event) =>
+                                  handleRosterSortKeyDown(event, "Position")
+                                }
+                                aria-sort={rosterSortAria("Position")}
+                                tabIndex={0}
                               >
-                                Pos.
+                                Pos. {rosterSortIndicator("Position")}
                               </th>
                               {statsTable.columns.map((column) => (
                                 <th
                                   scope="col"
                                   key={column}
                                   onClick={() => toggleRosterSort(column)}
+                                  onKeyDown={(event) =>
+                                    handleRosterSortKeyDown(event, column)
+                                  }
+                                  aria-sort={rosterSortAria(column)}
+                                  tabIndex={0}
                                 >
-                                  {column}
+                                  {column} {rosterSortIndicator(column)}
                                 </th>
                               ))}
                             </tr>
