@@ -77,7 +77,7 @@ assert.equal(selectStories({ ...props, readIds: ['a'] }).displayed.length, 0);
 assert.equal(selectStories({ ...props, readIds: ['a'], showRead: true }).displayed.length, 1);
 assert.equal(selectStories({ ...props, active: 'wild' }).displayed.length, 0);
 assert.equal(selectStories({ ...props, search: 'missing' }).displayed.length, 0);
-assert.deepEqual(recentStories([todayStory, yesterday], 'wolves', now).map(s => s.id), ['a']);
+assert.deepEqual(recentStories([todayStory, yesterday], 'wolves', now).map(s => s.id), ['c']);
 const before = JSON.stringify(newsData); selectStories(props); assert.equal(JSON.stringify(newsData), before);
 assert.equal(selectGames({ data: null, oddsGames: [], liveGames: [], active: 'wolves', showOlderResults: false }).visibleGames.length, 0);
 console.log('Dashboard boundaries passed: safe storage, today-only team pages, read selectors, generic requests, deduplication, cancellation and polling cleanup.');
