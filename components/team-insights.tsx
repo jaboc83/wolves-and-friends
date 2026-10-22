@@ -225,20 +225,46 @@ export default function TeamInsights({
         {id === "palace" && !info?.postseason && (
           <section
             className="postseason-panel"
-            aria-label="Europa League bracket"
+            aria-label="Crystal Palace cup and European links"
           >
-            <h3>Europa League bracket · 2026/27</h3>
+            <h3>Europa League · 2026/27</h3>
             <p className="panel-note">
-              The official UEFA bracket updates as knockout rounds and matchups
-              are published.
+              Follow Palace&apos;s league-phase table now and the official bracket
+              once knockout rounds and matchups are published.
             </p>
             <p className="panel-note">
+              <a
+                href="https://www.uefa.com/uefaeuropaleague/standings/"
+                target="_blank"
+                rel="noreferrer"
+              >
+                Open Europa League league phase table ↗
+              </a>
+              <br />
               <a
                 href="https://www.uefa.com/uefaeuropaleague/fixtures-results/bracket/"
                 target="_blank"
                 rel="noreferrer"
               >
-                Open UEFA bracket view ↗
+                Open Europa League bracket view ↗
+              </a>
+            </p>
+            <h3>EFL Cup bracket · 2026/27</h3>
+            <p className="panel-note">
+              <a
+                href="https://www.livesport.com/soccer/england/efl-cup/bracket/dGljLaBU/draw/"
+                target="_blank"
+                rel="noreferrer"
+              >
+                Open EFL Cup bracket ↗
+              </a>
+              <br />
+              <a
+                href="https://www.efl.com/competitions/carabao-cup/"
+                target="_blank"
+                rel="noreferrer"
+              >
+                Official Carabao Cup site ↗
               </a>
             </p>
           </section>
@@ -484,22 +510,13 @@ export default function TeamInsights({
                       value: {
                         column,
                         direction:
-                          currentSort.column === column
-                            ? currentSort.direction === "asc"
-                              ? "desc"
-                              : "asc"
-                            : column === "Player" || column === "Position"
-                              ? "asc"
-                              : "desc",
+                          currentSort.column === column &&
+                          currentSort.direction === "asc"
+                            ? "desc"
+                            : "asc",
                       },
                     };
                   });
-                const sortIndicator = (column: string) =>
-                  rosterSort.column === column
-                    ? rosterSort.direction === "asc"
-                      ? "↑"
-                      : "↓"
-                    : "";
                 return (
                   <section className="depth-row" key={group.position + i}>
                     <h3 className="visually-hidden">{group.position}</h3>
