@@ -5,12 +5,13 @@ export type RosterDetails = {
   draftPick?: boolean;
 };
 export function rosterDetails(
-  athlete: any,
+  athlete: { dateOfBirth?: string; age?: number },
   _league: string,
-  _season: any,
+  _season: string | number,
   checked: string,
   _team: string,
 ): RosterDetails {
+  void _team;
   const birth = String(athlete.dateOfBirth || "").slice(0, 10),
     now = new Date(checked);
   if (
@@ -30,7 +31,8 @@ export function rosterDetails(
       (today.slice(5) < birth.slice(5) ? 1 : 0);
     return age >= 15 && age < 100 ? { age } : {};
   }
-  return Number.isInteger(athlete.age) && athlete.age >= 15 && athlete.age < 100
-    ? { age: athlete.age }
+  const age = athlete.age;
+  return typeof age === "number" && Number.isInteger(age) && age >= 15 && age < 100
+    ? { age }
     : {};
 }

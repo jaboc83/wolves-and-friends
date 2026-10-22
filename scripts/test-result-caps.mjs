@@ -10,8 +10,8 @@ const cache = new Map();
 function load(file) {
   if (cache.has(file)) return cache.get(file).exports;
   if (file.endsWith(".json")) return JSON.parse(fs.readFileSync(file, "utf8"));
-  const module = { exports: {} };
-  cache.set(file, module);
+  const loadedModule = { exports: {} };
+  cache.set(file, loadedModule);
   const source = ts.transpileModule(fs.readFileSync(file, "utf8"), {
     compilerOptions: {
       module: ts.ModuleKind.CommonJS,
@@ -30,10 +30,10 @@ function load(file) {
         ),
       );
     },
-    module,
-    module.exports,
+    loadedModule,
+    loadedModule.exports,
   );
-  return module.exports;
+  return loadedModule.exports;
 }
 const css = fs.readFileSync(path.resolve("app/globals.css"), "utf8");
 assert.match(
@@ -151,7 +151,7 @@ assert.match(
   render({ ...soccerDraw, url: "https://example.com/stats" }, true),
   /full match highlights/,
 );
-const terms = load(path.resolve("lib/sport-terms.ts")).sportTerms;
+const terms = load(path.resolve("lib/teams/sport-terms.ts")).sportTerms;
 assert.equal(terms("all").standings, "Standings/Table");
 assert.equal(terms("wolves").calendar, "Game calendar");
 assert.equal(terms("palace").calendar, "Fixture calendar");

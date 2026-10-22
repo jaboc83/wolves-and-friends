@@ -52,7 +52,6 @@ jobs:
             echo "::endgroup::"
           done
 
-
       - name: Compare client assets with PR base
         if: github.event_name == 'pull_request'
         env:

@@ -16,15 +16,20 @@ export type FeedDiagnostic = {
 
 function openDatabase(): Promise<IDBDatabase> {
   return new Promise((resolve, reject) => {
-    if (typeof indexedDB === "undefined") return reject(new Error("IndexedDB unavailable"));
+    if (typeof indexedDB === "undefined")
+      return reject(new Error("IndexedDB unavailable"));
     const request = indexedDB.open(DB_NAME, 1);
     request.onupgradeneeded = () => {
       const db = request.result;
       if (!db.objectStoreNames.contains(STORE_NAME))
-        db.createObjectStore(STORE_NAME, { keyPath: "id", autoIncrement: true });
+        db.createObjectStore(STORE_NAME, {
+          keyPath: "id",
+          autoIncrement: true,
+        });
     };
     request.onsuccess = () => resolve(request.result);
-    request.onerror = () => reject(request.error || new Error("IndexedDB unavailable"));
+    request.onerror = () =>
+      reject(request.error || new Error("IndexedDB unavailable"));
   });
 }
 
@@ -48,8 +53,10 @@ export async function recordFeedDiagnostics(health: Health[]) {
     }
     await new Promise<void>((resolve, reject) => {
       tx.oncomplete = () => resolve();
-      tx.onerror = () => reject(tx.error || new Error("IndexedDB write failed"));
-      tx.onabort = () => reject(tx.error || new Error("IndexedDB write aborted"));
+      tx.onerror = () =>
+        reject(tx.error || new Error("IndexedDB write failed"));
+      tx.onabort = () =>
+        reject(tx.error || new Error("IndexedDB write aborted"));
     });
     const prune = db.transaction(STORE_NAME, "readwrite");
     const cutoff = Date.now() - MAX_AGE_MS;
@@ -63,10 +70,14 @@ export async function recordFeedDiagnostics(health: Health[]) {
         if (Date.parse(value.recordedAt) < cutoff) keys.push(cursor.primaryKey);
         cursor.continue();
       };
-      request.onerror = () => reject(request.error || new Error("IndexedDB read failed"));
+      request.onerror = () =>
+        reject(request.error || new Error("IndexedDB read failed"));
     });
     for (const key of keys) prune.objectStore(STORE_NAME).delete(key);
-    await new Promise<void>((resolve) => { prune.oncomplete = () => resolve(); prune.onerror = () => resolve(); });
+    await new Promise<void>((resolve) => {
+      prune.oncomplete = () => resolve();
+      prune.onerror = () => resolve();
+    });
     const trim = db.transaction(STORE_NAME, "readwrite");
     const trimKeys: IDBValidKey[] = [];
     await new Promise<void>((resolve, reject) => {
@@ -78,7 +89,8 @@ export async function recordFeedDiagnostics(health: Health[]) {
         if (index++ >= MAX_ENTRIES) trimKeys.push(cursor.primaryKey);
         cursor.continue();
       };
-      request.onerror = () => reject(request.error || new Error("IndexedDB read failed"));
+      request.onerror = () =>
+        reject(request.error || new Error("IndexedDB read failed"));
     });
     for (const key of trimKeys) trim.objectStore(STORE_NAME).delete(key);
     db.close();
@@ -90,17 +102,32 @@ export async function recordFeedDiagnostics(health: Health[]) {
 export async function exportFeedDiagnostics() {
   const db = await openDatabase();
   const rows = await new Promise<FeedDiagnostic[]>((resolve, reject) => {
-    const request = db.transaction(STORE_NAME, "readonly").objectStore(STORE_NAME).getAll();
+    const request = db
+      .transaction(STORE_NAME, "readonly")
+      .objectStore(STORE_NAME)
+      .getAll();
     request.onsuccess = () => resolve(request.result as FeedDiagnostic[]);
-    request.onerror = () => reject(request.error || new Error("IndexedDB read failed"));
+    request.onerror = () =>
+      reject(request.error || new Error("IndexedDB read failed"));
   });
   db.close();
-  return rows.sort((a, b) => Date.parse(b.recordedAt) - Date.parse(a.recordedAt));
+  return rows.sort(
+    (a, b) => Date.parse(b.recordedAt) - Date.parse(a.recordedAt),
+  );
 }
 
 export async function downloadFeedDiagnostics() {
   const rows = await exportFeedDiagnostics();
-  const blob = new Blob([JSON.stringify({ exportedAt: new Date().toISOString(), entries: rows }, null, 2)], { type: "application/json" });
+  const blob = new Blob(
+    [
+      JSON.stringify(
+        { exportedAt: new Date().toISOString(), entries: rows },
+        null,
+        2,
+      ),
+    ],
+    { type: "application/json" },
+  );
   const url = URL.createObjectURL(blob);
   const link = document.createElement("a");
   link.href = url;

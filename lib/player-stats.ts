@@ -10,6 +10,54 @@ type Stat = {
   displayName?: string;
   description?: string;
   value?: number;
+  teamId?: string | number;
+  season?: { year?: string | number; displayName?: string };
+  stats?: (string | number | null)[];
+};
+type StatRow = Stat & {
+  stats?: (string | number | null)[];
+};
+type Category = {
+  name?: string;
+  displayName?: string;
+  statistics?: StatRow[];
+  stats?: Stat[];
+  labels?: string[];
+  names?: string[];
+  displayNames?: string[];
+  descriptions?: string[];
+  totals?: (string | number | null)[];
+};
+type StatsSplit = {
+  teamId?: string | number;
+  leagueSlug?: string;
+  displayName?: string;
+  stats?: (string | number | null)[];
+};
+type StatisticsOverview = {
+  displayName?: string;
+  labels?: string[];
+  names?: string[];
+  displayNames?: string[];
+  splits?: StatsSplit[];
+  categories?: Category[];
+  statistics?: Stat[];
+};
+type StatsSummary = { displayName?: string; statistics?: Stat[] };
+type PlayerStatsData = {
+  categories?: Category[];
+  splits?: Category[] | { categories?: Category[] };
+  season?: { displayName?: string; year?: string | number };
+  statistics?: StatisticsOverview | Stat[];
+  statsSummary?: StatsSummary;
+  statisticsSummary?: StatsSummary;
+  athlete?: {
+    statsSummary?: StatsSummary;
+    statistics?: Stat[];
+    statisticsSummary?: StatsSummary;
+  };
+  glossary?: { abbreviation?: string; displayName?: string }[];
+  displayName?: string;
 };
 
 const numberValue = (value: unknown) => {
@@ -203,7 +251,7 @@ function selectedValues(
 }
 
 export function parsePlayerStats(
-  data: any,
+  data: PlayerStatsData,
   rosterTeamId = "",
   league = "",
   position = "",
@@ -212,12 +260,12 @@ export function parsePlayerStats(
     ? data.categories
     : [];
   const commonCategory = commonCategories.find(
-    (category: any) =>
+    (category) =>
       (Array.isArray(category.statistics) && category.statistics.length) ||
       (Array.isArray(category.stats) && category.stats.length),
   );
   if (commonCategory) {
-    const rows = (commonCategory.statistics || commonCategory.stats) as any[];
+    const rows = commonCategory.statistics || commonCategory.stats || [];
     const row = [...rows]
       .filter(
         (candidate) =>
@@ -279,7 +327,7 @@ export function parsePlayerStats(
   const coreCategories = Array.isArray(data.splits)
     ? data.splits
     : data.splits?.categories || [];
-  const coreStats = coreCategories.flatMap((c: any) => c.stats || []);
+  const coreStats = coreCategories.flatMap((c) => c.stats || []);
   if (
     coreStats.length &&
     !/career|projected/i.test(data.season?.displayName || "")
@@ -301,31 +349,31 @@ export function parsePlayerStats(
       "threePointFieldGoalPct",
       "gamesPlayed",
     ];
-    const selectedFallback = coreStats.some((s: any) => s.name === "avgPoints")
+    const selectedFallback = coreStats.some((s) => s.name === "avgPoints")
       ? preferred.flatMap((name) =>
-          coreStats.filter((s: any) => s.name === name),
+          coreStats.filter((s) => s.name === name),
         )
       : coreStats
-          .filter((s: any) => !/rank|rating|projected/i.test(s.name || ""))
-          .filter((s: any) => {
+          .filter((s) => !/rank|rating|projected/i.test(s.name || ""))
+          .filter((s) => {
             const removeGames =
               league === "football/nfl" ||
               (league === "baseball/mlb" &&
                 !coreCategories.some(
-                  (category: any) =>
+                  (category) =>
                     category.name === "pitching" && category.stats?.includes(s),
                 ));
             return !(removeGames && s.abbreviation === "GP");
           });
     const values = selectedFallback
       .filter(
-        (s: any) =>
+        (s) =>
           s.abbreviation &&
           s.displayValue !== undefined &&
           String(s.displayValue).trim(),
       )
       .slice(0, 6)
-      .map((s: any) => ({
+      .map((s) => ({
         label: String(s.abbreviation),
         value: String(s.displayValue),
         description: String(s.displayName || s.description || s.abbreviation),
@@ -340,19 +388,21 @@ export function parsePlayerStats(
   // domestic split with the competition name (for example, "2026 MLS")
   // instead of "Regular Season", so prefer the player's current team and
   // league before falling back to the generic regular-season label.
-  const overview = data.statistics;
+  const overview = Array.isArray(data.statistics)
+    ? undefined
+    : data.statistics;
   const overviewSplits = Array.isArray(overview?.splits)
     ? overview.splits.filter(
-        (split: any) =>
+        (split) =>
           !rosterTeamId || String(split.teamId || "") === rosterTeamId,
       )
     : [];
   const leagueSlug = league.split("/")[1] || "";
   const regular =
     overviewSplits.find(
-      (split: any) => leagueSlug && split.leagueSlug === leagueSlug,
+      (split) => leagueSlug && split.leagueSlug === leagueSlug,
     ) ||
-    overviewSplits.find((split: any) =>
+    overviewSplits.find((split) =>
       /^regular season$/i.test(split.displayName || ""),
     );
   if (
@@ -395,19 +445,19 @@ export function parsePlayerStats(
     data.splits?.categories ||
     [];
   const category =
-    categories.find((c: any) =>
+    categories.find((c) =>
       /averages/i.test(c.name || c.displayName || ""),
     ) ||
-    categories.find((c: any) => /general|offense/i.test(c.name || "")) ||
+    categories.find((c) => /general|offense/i.test(c.name || "")) ||
     categories[0];
-  const seasons = (category?.statistics || []).filter((row: any) =>
+  const seasons = (category?.statistics || []).filter((row) =>
     Array.isArray(row.stats),
   );
   const teamSeasons = seasons.filter(
-    (row: any) => rosterTeamId && String(row.teamId || "") === rosterTeamId,
+    (row) => rosterTeamId && String(row.teamId || "") === rosterTeamId,
   );
   const seasonRow = [...(teamSeasons.length ? teamSeasons : seasons)].sort(
-    (a: any, b: any) =>
+    (a, b) =>
       Number(b.season?.year || 0) - Number(a.season?.year || 0),
   )[0];
 
@@ -420,13 +470,13 @@ export function parsePlayerStats(
   if (summaryStatistics?.length) {
     values = summaryStatistics
       .filter(
-        (s: any) =>
+        (s) =>
           (s.abbreviation || s.name) &&
           s.displayValue !== undefined &&
           String(s.displayValue).trim() !== "",
       )
       .slice(0, 6)
-      .map((s: any) => ({
+      .map((s) => ({
         label: String(s.abbreviation || s.name),
         value: String(s.displayValue),
         description: String(
@@ -443,7 +493,7 @@ export function parsePlayerStats(
         description: String(
           category.displayNames?.[index] ||
             category.descriptions?.[index] ||
-            data.glossary?.find((g: any) => g.abbreviation === label)
+            data.glossary?.find((g) => g.abbreviation === label)
               ?.displayName ||
             label,
         ),
@@ -456,7 +506,7 @@ export function parsePlayerStats(
         label: String(label),
         value: String(category.totals[index] ?? ""),
         description: String(
-          data.glossary?.find((g: any) => g.abbreviation === label)
+          data.glossary?.find((g) => g.abbreviation === label)
             ?.displayName || label,
         ),
       }))

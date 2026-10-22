@@ -8,11 +8,7 @@ export function gameBadges(g: Game): GameBadge[] {
   if (g.team === "disc") {
     if (/jomezpro/i.test(context))
       badges.push({ label: "JomezPro", tone: "jomezpro" });
-    else if (
-      /pdga major|united states disc golf championship/i.test(
-        context,
-      )
-    )
+    else if (/pdga major|united states disc golf championship/i.test(context))
       badges.push({ label: "PDGA Major", tone: "pdga-major" });
     else if (/\bdgpt\b/i.test(context))
       badges.push({ label: "DGPT", tone: "dgpt" });

@@ -3,9 +3,10 @@ import GameBadges from "./game-badges";
 import AddToCalendar from "./add-to-calendar";
 import { useState } from "react";
 import type { Game } from "../lib/feeds";
-import { teams } from "../lib/teams";
-import { sportTerms } from "../lib/sport-terms";
-import { teamLogoPath } from "../lib/team-logo";
+import { teams } from "../lib/teams/teams";
+import { sportTerms } from "../lib/teams/sport-terms";
+import { teamLogoPath } from "../lib/teams/team-logo";
+import Image from "next/image";
 const key = (date: string) =>
   new Intl.DateTimeFormat("en-CA", {
     timeZone: "America/Chicago",
@@ -124,7 +125,8 @@ export default function MatchCalendar({
                   target="_blank"
                   rel="noreferrer"
                 >
-                  <img
+                  <Image
+                    unoptimized
                     src={teamLogoPath(g.team)}
                     alt=""
                     width={24}

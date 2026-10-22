@@ -1,35 +1,46 @@
 import type { Game } from "./feeds";
-function strings(x: any): string[] {
+type JsonObject = Record<string, unknown>;
+function object(value: unknown): JsonObject {
+  return value && typeof value === "object"
+    ? (value as JsonObject)
+    : {};
+}
+function strings(x: unknown): string[] {
   if (typeof x === "string") return x.startsWith("$") ? [] : [x];
   if (typeof x === "number") return [String(x)];
   if (Array.isArray(x)) {
     if (x.length === 4 && x[0] === "$" && typeof x[3] === "object")
-      return strings(x[3]?.children);
+      return strings(object(x[3]).children);
     return x.flatMap(strings);
   }
   return [];
 }
-function properties(x: any, key: string): any[] {
+function properties(x: unknown, key: string): unknown[] {
   if (Array.isArray(x)) return x.flatMap((v) => properties(v, key));
-  if (x && typeof x === "object")
+  if (x && typeof x === "object") {
+    const record = object(x);
     return [
-      ...(key in x ? [x[key]] : []),
-      ...Object.values(x).flatMap((v) => properties(v, key)),
+      ...(key in record ? [record[key]] : []),
+      ...Object.values(record).flatMap((v) => properties(v, key)),
     ];
+  }
   return [];
 }
-function scoreNumbers(x: any): string[] {
+function scoreNumbers(x: unknown): string[] {
   if (Array.isArray(x)) {
+    const element = object(x[3]);
     if (
       x.length === 4 &&
       x[0] === "$" &&
-      x[3]?.className?.includes("tabular-nums") &&
-      /^\d+$/.test(String(x[3]?.children))
+      typeof element.className === "string" &&
+      element.className.includes("tabular-nums") &&
+      /^\d+$/.test(String(element.children))
     )
-      return [String(x[3].children)];
+      return [String(element.children)];
     return x.flatMap(scoreNumbers);
   }
-  if (x && typeof x === "object") return Object.values(x).flatMap(scoreNumbers);
+  if (x && typeof x === "object")
+    return Object.values(object(x)).flatMap(scoreNumbers);
   return [];
 }
 function utc(
@@ -78,9 +89,9 @@ export function parseZalgiris(html: string, checked: string): Game[] {
   });
   const cards = new Map<
     string,
-    { size: number; node: any; featured: boolean }
+    { size: number; node: unknown; featured: boolean }
   >();
-  function visit(x: any) {
+  function visit(x: unknown) {
     if (Array.isArray(x)) {
       if (x.length === 4 && x[0] === "$" && x[3] && typeof x[3] === "object") {
         const visible = strings(x).join(" ");
@@ -96,7 +107,9 @@ export function parseZalgiris(html: string, checked: string): Game[] {
           ];
           if (
             ids.length === 1 &&
-            properties(x, "alt").filter((v: any) => typeof v === "string" && v)
+            properties(x, "alt").filter(
+              (value) => typeof value === "string" && value,
+            )
               .length >= 2
           ) {
             const id = ids[0];
@@ -124,17 +137,19 @@ export function parseZalgiris(html: string, checked: string): Game[] {
     const names = [
       ...new Set(
         properties(card.node, "alt").filter(
-          (s: any) => typeof s === "string" && s && !/icon/i.test(s),
+          (value): value is string =>
+            typeof value === "string" && !!value && !/icon/i.test(value),
         ),
       ),
-    ].slice(0, 2) as string[];
+    ].slice(0, 2);
     if (names.length !== 2 || !names.some((n) => /Žalgiris|Zalgiris/.test(n)))
       continue;
     let date = "";
     let scores: string[] = [];
     let state = "pre";
     if (card.featured) {
-      date = properties(card.node, "startingAt")[0];
+      const startingAt = properties(card.node, "startingAt")[0];
+      date = typeof startingAt === "string" ? startingAt : "";
       if (visible.includes("Pasibaigė")) {
         state = "post";
         scores = scoreNumbers(card.node).slice(0, 2);

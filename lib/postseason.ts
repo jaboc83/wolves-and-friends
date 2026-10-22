@@ -16,6 +16,51 @@ export type Postseason = {
     }[];
   }[];
 };
+type SeasonData = {
+  type?: number | string | { type?: number | string };
+  year?: number | string;
+  startDate?: string;
+  endDate?: string;
+  displayName?: string;
+};
+type EventStatus = {
+  state?: string;
+  shortDetail?: string;
+  description?: string;
+};
+type PostseasonCompetitor = {
+  id?: string | number;
+  wins?: number | string;
+};
+type PostseasonTeam = {
+  id?: string | number;
+  displayName?: string;
+};
+type PostseasonEventCompetitor = {
+  team?: PostseasonTeam;
+  score?: string | number;
+};
+type PostseasonCompetition = {
+  competitors?: PostseasonEventCompetitor[];
+  notes?: { headline?: string }[];
+  status?: { type?: EventStatus };
+  series?: {
+    summary?: string;
+    competitors?: PostseasonCompetitor[];
+  };
+};
+type PostseasonEvent = {
+  date?: string;
+  season?: SeasonData;
+  competitions?: PostseasonCompetition[];
+  links?: { href?: string }[];
+  status?: { type?: EventStatus };
+};
+type PostseasonFeed = {
+  events?: PostseasonEvent[];
+  leagues?: { season?: SeasonData }[];
+};
+
 // Only leagues whose provider uses season type 3 for postseason.
 const supported = new Set([
   "basketball/nba",
@@ -25,9 +70,10 @@ const supported = new Set([
   "baseball/mlb",
   "soccer/usa.1",
 ]);
-const phase = (s: any) => Number(s?.type?.type ?? s?.type);
+const phase = (s: SeasonData | undefined) =>
+  Number(typeof s?.type === "object" ? (s.type.type ?? s.type) : s?.type);
 
-export function postseasonWindow(current: any, now = Date.now()) {
+export function postseasonWindow(current: PostseasonFeed, now = Date.now()) {
   const s = current.leagues?.[0]?.season;
   if (![2, 3].includes(phase(s))) return;
   const start = Date.parse(s.startDate),
@@ -49,7 +95,7 @@ export function postseasonWindow(current: any, now = Date.now()) {
 }
 
 export function parsePostseason(
-  data: any,
+  data: PostseasonFeed,
   window: NonNullable<ReturnType<typeof postseasonWindow>>,
   checked: string,
   league = "",
@@ -75,7 +121,7 @@ export function parsePostseason(
     if (
       competitors.length !== 2 ||
       competitors.some(
-        (p: any) =>
+        (p) =>
           !/^[1-9]\d*$/.test(String(p.team?.id)) ||
           !p.team?.displayName ||
           /\bTBD\b|\/|winner of|loser of/i.test(p.team.displayName),
@@ -83,17 +129,17 @@ export function parsePostseason(
     )
       continue;
     const note = (c.notes || [])
-      .map((n: any) => n.headline || "")
+      .map((n) => n.headline || "")
       .find(Boolean);
     const round =
       note?.replace(/\s*[-–·]\s*Game\s*\d+.*$/i, "").trim() ||
       "Postseason matchups";
     const pair = competitors
-      .map((p: any) => String(p.team.id))
+      .map((p) => String(p.team!.id))
       .sort()
       .join("-");
     const id = round + ":" + pair;
-    const url = (e.links || []).find((l: any) =>
+    const url = (e.links || []).find((l) =>
       /^https:\/\/www\.espn\.com\//.test(l.href || ""),
     )?.href;
     if (!url) continue;
@@ -110,14 +156,14 @@ export function parsePostseason(
       status: status.shortDetail || status.description || "Scheduled",
       summary: c.series?.summary,
       metric: c.series ? "Series wins" : "Score",
-      teams: competitors.map((p: any) => ({
+      teams: competitors.map((p) => ({
         id: String(p.team.id),
         name: p.team.displayName,
         logo: espnTeamLogoUrl(league, String(p.team.id)),
         value: c.series
           ? String(
               c.series.competitors?.find(
-                (x: any) => String(x.id) === String(p.team.id),
+                (x) => String(x.id) === String(p.team!.id),
               )?.wins ?? "—",
             )
           : status.state !== "pre"
@@ -139,14 +185,14 @@ export async function fetchPostseason(
   league: string,
 ): Promise<Postseason | undefined> {
   if (!supported.has(league)) return;
-  const get = async (url: string): Promise<any> => {
+  const get = async (url: string): Promise<PostseasonFeed> => {
     const r = await fetch(url, {
       credentials: "omit",
       referrerPolicy: "no-referrer",
       signal: AbortSignal.timeout(10000),
     });
     if (!r.ok) throw Error("Postseason feed unavailable");
-    return r.json();
+    return (await r.json()) as PostseasonFeed;
   };
   const base =
     "https://site.api.espn.com/apis/site/v2/sports/" + league + "/scoreboard";

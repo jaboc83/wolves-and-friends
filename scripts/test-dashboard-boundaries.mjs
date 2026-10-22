@@ -10,8 +10,8 @@ function loader(overrides = {}) {
     if (cache.has(file)) return cache.get(file).exports;
     if (file.endsWith(".json"))
       return JSON.parse(fs.readFileSync(file, "utf8"));
-    const module = { exports: {} };
-    cache.set(file, module);
+    const loadedModule = { exports: {} };
+    cache.set(file, loadedModule);
     const js = ts.transpileModule(fs.readFileSync(file, "utf8"), {
       compilerOptions: {
         module: ts.ModuleKind.CommonJS,
@@ -26,10 +26,10 @@ function loader(overrides = {}) {
         const resolved = path.resolve(path.dirname(file), name);
         return load(resolved.endsWith(".json") ? resolved : resolved + ".ts");
       },
-      module,
-      module.exports,
+      loadedModule,
+      loadedModule.exports,
     );
-    return module.exports;
+    return loadedModule.exports;
   }
   return (file) => load(path.resolve(file));
 }

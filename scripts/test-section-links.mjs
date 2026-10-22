@@ -5,7 +5,7 @@ import { createRequire } from "node:module";
 import ts from "typescript";
 const require = createRequire(import.meta.url);
 function load(file) {
-  const module = { exports: {} };
+  const loadedModule = { exports: {} };
   const source = ts.transpileModule(fs.readFileSync(file, "utf8"), {
     compilerOptions: {
       module: ts.ModuleKind.CommonJS,
@@ -17,10 +17,10 @@ function load(file) {
       name.startsWith(".")
         ? load(path.resolve(path.dirname(file), name + ".ts"))
         : require(name),
-    module,
-    module.exports,
+    loadedModule,
+    loadedModule.exports,
   );
-  return module.exports;
+  return loadedModule.exports;
 }
 const Links = load(path.resolve("components/section-links.tsx")).default;
 const links = (active) => Links({ active }).props.children;

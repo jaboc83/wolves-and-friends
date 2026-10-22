@@ -13,7 +13,6 @@ export function recentStories(
 ) {
   const today = chicagoDay(new Date(now).toISOString());
   return stories.filter(
-    (s) =>
-      Number.isFinite(Date.parse(s.date)) && chicagoDay(s.date) === today,
+    (s) => Number.isFinite(Date.parse(s.date)) && chicagoDay(s.date) === today,
   );
 }

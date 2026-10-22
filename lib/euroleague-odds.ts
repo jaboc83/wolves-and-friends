@@ -1,6 +1,13 @@
 import type { Game } from "./feeds";
 import type { Odds } from "./odds";
 
+type JsonObject = Record<string, unknown>;
+function object(value: unknown): JsonObject {
+  return value && typeof value === "object"
+    ? (value as JsonObject)
+    : {};
+}
+
 export const euroleagueOddsUrl =
   "https://www.oddsportal.com/basketball/europe/euroleague/";
 const nameKey = (name: string) =>
@@ -23,14 +30,19 @@ export function parseEuroleagueOdds(
     game.state !== "pre"
   )
     return;
-  const rows: any[] = [],
-    markets: any[] = [];
-  function walk(value: any) {
+  const rows: JsonObject[] = [],
+    markets: JsonObject[] = [];
+  function walk(value: unknown) {
     if (!value || typeof value !== "object") return;
-    if (value["home-name"] && value["away-name"] && value.encodeEventId)
-      rows.push(value);
-    if (value.event && Array.isArray(value.odds)) markets.push(value);
-    for (const child of Object.values(value)) walk(child);
+    const record = object(value);
+    if (
+      record["home-name"] &&
+      record["away-name"] &&
+      record.encodeEventId
+    )
+      rows.push(record);
+    if (record.event && Array.isArray(record.odds)) markets.push(record);
+    for (const child of Object.values(record)) walk(child);
   }
   const flight = [...html.matchAll(/self\.__next_f\.push\((\[1,[\s\S]*?\])\)/g)]
     .map((match) => {
@@ -55,8 +67,12 @@ export function parseEuroleagueOdds(
     (r) =>
       r.cols === "1|2" &&
       r["event-stage-name"] === "Scheduled" &&
+      typeof r["home-name"] === "string" &&
+      typeof r["away-name"] === "string" &&
       nameKey(r["home-name"]) === nameKey(home.name) &&
       nameKey(r["away-name"]) === nameKey(away.name) &&
+      (typeof r["date-start-timestamp"] === "string" ||
+        typeof r["date-start-timestamp"] === "number") &&
       Math.abs(
         Number(r["date-start-timestamp"]) * 1000 - Date.parse(game.date),
       ) <=
@@ -64,22 +80,25 @@ export function parseEuroleagueOdds(
   );
   if (!row) return;
   const market = markets.find((m) => m.event === row.id);
-  const prices = market?.odds;
+  const prices = Array.isArray(market?.odds)
+    ? market.odds.map(object)
+    : undefined;
   if (
     prices?.length !== 2 ||
     !prices.every(
-      (p: any) =>
+      (p) =>
         p.active === true &&
         p.eventId === row.id &&
         p.bettingTypeId === 3 &&
         p.scopeId === 1 &&
+        typeof p.avgOdds === "number" &&
         Number.isFinite(p.avgOdds) &&
         p.avgOdds > 1,
     )
   )
     return;
-  const homePrice = prices[0].avgOdds,
-    awayPrice = prices[1].avgOdds;
+  const homePrice = Number(prices[0].avgOdds),
+    awayPrice = Number(prices[1].avgOdds);
   return {
     favorite:
       homePrice === awayPrice

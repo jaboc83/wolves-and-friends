@@ -1,5 +1,6 @@
 import type { PlayerStats } from "./player-stats";
-export type StatsStatus = "idle" | "loading" | "ready" | "partial" | "empty" | "unavailable";
+export type StatsStatus =
+  "idle" | "loading" | "ready" | "partial" | "empty" | "unavailable";
 export type StatsBatch = {
   players: { key: string; stats?: PlayerStats }[];
   totalBatches: number;
@@ -17,7 +18,11 @@ export function createRosterStatsLoader(now = Date.now) {
   let known: Record<string, PlayerStats> = {};
   return function load(options: {
     initial: Record<string, PlayerStats>;
-    fetchBatch: (batch: number, version: string, signal: AbortSignal) => Promise<StatsBatch>;
+    fetchBatch: (
+      batch: number,
+      version: string,
+      signal: AbortSignal,
+    ) => Promise<StatsBatch>;
     priorityKeys?: string[];
     onStats: (stats: Record<string, PlayerStats>) => void;
     onStatus: (status: StatsStatus) => void;
@@ -25,7 +30,10 @@ export function createRosterStatsLoader(now = Date.now) {
     if (inflight) return inflight;
     if (now() < retryAt) return Promise.resolve();
     known = { ...options.initial, ...known };
-    if (complete) { version = ""; remaining.clear(); }
+    if (complete) {
+      version = "";
+      remaining.clear();
+    }
     const signal = AbortSignal.timeout(60000);
     const deadline = now() + 60000;
     options.onStatus(Object.keys(known).length ? "ready" : "loading");
@@ -36,10 +44,15 @@ export function createRosterStatsLoader(now = Date.now) {
       async function batch(index: number) {
         try {
           const data = await options.fetchBatch(index, version, signal);
-          if (!Number.isSafeInteger(data.totalBatches) || data.totalBatches < 0 ||
-              typeof data.manifestVersion !== "string" || !Array.isArray(data.players))
+          if (
+            !Number.isSafeInteger(data.totalBatches) ||
+            data.totalBatches < 0 ||
+            typeof data.manifestVersion !== "string" ||
+            !Array.isArray(data.players)
+          )
             throw Error("Invalid roster batch");
-          if (version && version !== data.manifestVersion) throw Error("Manifest changed");
+          if (version && version !== data.manifestVersion)
+            throw Error("Manifest changed");
           if (!version) {
             version = data.manifestVersion;
             total = data.totalBatches;
@@ -49,7 +62,10 @@ export function createRosterStatsLoader(now = Date.now) {
           }
           received = true;
           const available = data.players.filter((player) => player.stats);
-          known = { ...known, ...Object.fromEntries(available.map((p) => [p.key, p.stats!])) };
+          known = {
+            ...known,
+            ...Object.fromEntries(available.map((p) => [p.key, p.stats!])),
+          };
           if (available.length) options.onStats(known);
           remaining.delete(index);
         } catch (error) {
@@ -69,17 +85,39 @@ export function createRosterStatsLoader(now = Date.now) {
       );
       const queue = [...remaining]
         .filter((i) => i !== 0 || !received)
-        .sort((a, b) => Number(priorityBatches.has(b)) - Number(priorityBatches.has(a)));
+        .sort(
+          (a, b) =>
+            Number(priorityBatches.has(b)) - Number(priorityBatches.has(a)),
+        );
       let next = 0;
-      await Promise.all(Array.from({ length: 2 }, async () => {
-        while (version && next < queue.length && now() < deadline && !signal.aborted)
-          await batch(queue[next++]);
-      }));
+      await Promise.all(
+        Array.from({ length: 2 }, async () => {
+          while (
+            version &&
+            next < queue.length &&
+            now() < deadline &&
+            !signal.aborted
+          )
+            await batch(queue[next++]);
+        }),
+      );
       complete = Boolean(version) && remaining.size === 0;
       retryAt = now() + (complete ? 15 * 60000 : 2 * 60000);
       const hasStats = Object.keys(known).length > 0;
-      options.onStatus(complete ? (hasStats ? "ready" : "empty") : hasStats ? "partial" : received ? "empty" : "unavailable");
-    })().finally(() => { inflight = undefined; });
+      options.onStatus(
+        complete
+          ? hasStats
+            ? "ready"
+            : "empty"
+          : hasStats
+            ? "partial"
+            : received
+              ? "empty"
+              : "unavailable",
+      );
+    })().finally(() => {
+      inflight = undefined;
+    });
     return inflight;
   };
 }

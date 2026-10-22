@@ -23,17 +23,17 @@ Headlines link to publishers rather than reproducing full articles. Deliberately
 
 ## 2. The main parts of the repository
 
-| Part               | Responsibility                                                                           | Start here                                                                       |
-| ------------------ | ---------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------- |
-| Page controller    | Holds browser state, refreshes feeds, merges data, filters teams, and assembles sections | [app/page.tsx](app/page.tsx)                                                     |
-| Shared page shell  | Imports styles and defines metadata and the mobile viewport                              | [app/layout.tsx](app/layout.tsx)                                                 |
-| Presentation       | Responsive layout, colors, badges, spacing, and team themes                              | [app/globals.css](app/globals.css), [lib/team-themes.ts](lib/team-themes.ts)     |
-| Team configuration | Team IDs, priority order, ESPN identifiers, matching patterns, and source links          | [lib/teams.ts](lib/teams.ts)                                                     |
-| Feed endpoints     | Return public data to the page                                                           | [app/api](app/api)                                                               |
-| Feed adapters      | Convert each provider's JSON, RSS, HTML, or calendar into shared objects                 | [lib/feeds.ts](lib/feeds.ts) and the specialized modules below                   |
-| Reusable sections  | Game cards, calendar, standings/rosters, and logo groups                                 | [components](components)                                                         |
-| Images             | Local header and team logos                                                              | [public/logos](public/logos)                                                     |
-| Hosting            | Build and serve the application through Sites                                            | [vite.config.ts](vite.config.ts), [build/sites-worker.ts](build/sites-worker.ts) |
+| Part               | Responsibility                                                                           | Start here                                                                               |
+| ------------------ | ---------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------- |
+| Page controller    | Holds browser state, refreshes feeds, merges data, filters teams, and assembles sections | [app/page.tsx](app/page.tsx)                                                             |
+| Shared page shell  | Imports styles and defines metadata and the mobile viewport                              | [app/layout.tsx](app/layout.tsx)                                                         |
+| Presentation       | Responsive layout, colors, badges, spacing, and team themes                              | [app/globals.css](app/globals.css), [lib/teams/team-themes.ts](lib/teams/team-themes.ts) |
+| Team configuration | Team IDs, priority order, ESPN identifiers, matching patterns, and source links          | [lib/teams/teams.ts](lib/teams/teams.ts)                                                 |
+| Feed endpoints     | Return public data to the page                                                           | [app/api](app/api)                                                                       |
+| Feed adapters      | Convert each provider's JSON, RSS, HTML, or calendar into shared objects                 | [lib/feeds.ts](lib/feeds.ts) and the specialized modules below                           |
+| Reusable sections  | Game cards, calendar, standings/rosters, and logo groups                                 | [components](components)                                                                 |
+| Images             | Local header and team logos                                                              | [public/logos](public/logos)                                                             |
+| Hosting            | Build and serve the application through Sites                                            | [vite.config.ts](vite.config.ts), [build/sites-worker.ts](build/sites-worker.ts)         |
 
 The app uses **React and TypeScript**, with **Vinext/Vite** providing the Next-style page and API route structure. The production request handler runs as a **Cloudflare Worker** through Sites. Most of the dashboard logic is currently concentrated in `app/page.tsx`; separate components handle its larger reusable pieces.
 
@@ -142,8 +142,8 @@ See [README.md](README.md) for local setup commands. A clean clone defaults to t
 
 | Desired change                                  | Likely files                                                                          |
 | ----------------------------------------------- | ------------------------------------------------------------------------------------- |
-| Team order, source links, or team matching      | `lib/teams.ts`                                                                        |
-| Colors, mobile spacing, or layout               | `app/globals.css`, `lib/team-themes.ts`, sometimes `app/page.tsx`                     |
+| Team order, source links, or team matching      | `lib/teams/teams.ts`                                                                  |
+| Colors, mobile spacing, or layout               | `app/globals.css`, `lib/teams/team-themes.ts`, sometimes `app/page.tsx`               |
 | Headline age/read/saved behavior                | `app/page.tsx`, `lib/news-window.ts`                                                  |
 | New news or schedule provider                   | A parser in `lib/`, then its collection call in `lib/feeds.ts`                        |
 | Game-card details or score hiding               | `components/game-card.tsx`                                                            |

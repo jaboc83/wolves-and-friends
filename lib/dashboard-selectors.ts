@@ -1,7 +1,7 @@
 import type { Game, HubData } from "./feeds";
 import { discEvents } from "./event-seed";
 import { eventLifecycle, eventIsToday } from "./event-time";
-import { teams, teamPriority } from "./teams";
+import { teams, teamPriority } from "./teams/teams";
 import { validAuthorStory } from "./byline-status";
 import { authorStories } from "./author-stories";
 import { recentStories } from "./news-window";

@@ -1,9 +1,16 @@
 import type { Story } from "./feeds";
 import initial from "./initial.json";
-function walk(x: any, visit: (x: any) => void) {
+type JsonObject = Record<string, unknown>;
+function object(value: unknown): JsonObject {
+  return value && typeof value === "object"
+    ? (value as JsonObject)
+    : {};
+}
+function walk(x: unknown, visit: (x: JsonObject) => void) {
   if (!x || typeof x !== "object") return;
-  visit(x);
-  for (const v of Object.values(x)) walk(v, visit);
+  const record = object(x);
+  visit(record);
+  for (const v of Object.values(record)) walk(v, visit);
 }
 function flight(html: string) {
   return [...html.matchAll(/self\.__next_f\.push\((\[[\s\S]*?\])\)/g)]
@@ -17,21 +24,28 @@ function flight(html: string) {
     .join("");
 }
 export function parseZalgirisNews(html: string, checked: string): Story[] {
-  const posts = new Map<string, any>();
+  const posts = new Map<string, JsonObject>();
   for (const line of flight(html).split("\n")) {
     try {
       walk(JSON.parse(line.slice(line.indexOf(":") + 1)), (x) => {
+        const category = object(x.subCategoryV2);
         if (
           x.__typename === "PostResource" &&
           x.slug &&
-          x.subCategoryV2?.slug === "naujienos"
-        )
-          posts.set(x.id, x);
+          category.slug === "naujienos" &&
+          x.id
+        ) {
+          posts.set(String(x.id), x);
+        }
       });
     } catch {}
   }
   return [...posts.values()].flatMap((x) => {
-    const age = x.publishedAgo?.match(/(\d+)\s*(val|min|d\.|sav)/);
+    const publishedAgo =
+      typeof x.publishedAgo === "string" ? x.publishedAgo : "";
+    const slug = String(x.slug || "");
+    const title = String(x.title || "");
+    const age = publishedAgo.match(/(\d+)\s*(val|min|d\.|sav)/);
     if (!age) return [];
     const unit = age[2],
       offset =
@@ -43,13 +57,13 @@ export function parseZalgirisNews(html: string, checked: string): Story[] {
             : unit === "sav"
               ? 7 * 86400000
               : 86400000);
-    const url = "https://zalgiris.lt/naujienos/" + x.slug;
+    const url = "https://zalgiris.lt/naujienos/" + slug;
     return [
       {
         id: url,
         url,
-        title: x.title,
-        originalTitle: x.title,
+        title,
+        originalTitle: title,
         date: new Date(Date.parse(checked) - offset).toISOString(),
         dateApproximate: true,
         source: "Official Žalgiris · Lithuanian",
@@ -68,18 +82,20 @@ export function parseFrostNews(html: string): Story[] {
   const found = new Map<string, Story>();
   walk(JSON.parse(raw), (x) => {
     const path = typeof x.url === "string" ? x.url.replace(/\\\//g, "/") : "";
+    const title = typeof x.title === "string" ? x.title : "";
+    const date = typeof x.date === "string" ? x.date : "";
     if (
       x.type === "article" &&
       path.startsWith("/en/teams/minnesota-frost/news/") &&
-      x.title &&
-      Number.isFinite(Date.parse(x.date))
+      title &&
+      Number.isFinite(Date.parse(date))
     ) {
       const url = "https://www.thepwhl.com" + path;
       found.set(url, {
         id: url,
         url,
-        title: x.title,
-        date: x.date,
+        title,
+        date,
         source: "Official Minnesota Frost",
         teams: ["frost"],
         kind: "story",
@@ -106,7 +122,11 @@ export async function translateHeadlines(stories: Story[]) {
             { signal: AbortSignal.timeout(8000) },
           );
           if (!r.ok) throw Error();
-          const d = (await r.json()) as any;
+          const d = (await r.json()) as {
+            responseStatus?: number;
+            quotaFinished?: boolean;
+            responseData?: { translatedText?: string };
+          };
           if (
             d.responseStatus !== 200 ||
             d.quotaFinished ||

@@ -8,8 +8,8 @@ const require = createRequire(import.meta.url);
 const cache = new Map();
 function load(file) {
   if (cache.has(file)) return cache.get(file).exports;
-  const module = { exports: {} };
-  cache.set(file, module);
+  const loadedModule = { exports: {} };
+  cache.set(file, loadedModule);
   const js = ts.transpileModule(fs.readFileSync(file, "utf8"), {
     compilerOptions: {
       module: ts.ModuleKind.CommonJS,
@@ -18,16 +18,23 @@ function load(file) {
     },
   }).outputText;
   new Function("require", "module", "exports", js)(
-    (name) => name.startsWith(".")
-      ? load([".ts", ".tsx"].map((ext) => path.resolve(path.dirname(file), name + ext)).find((f) => fs.existsSync(f)))
-      : require(name),
-    module,
-    module.exports,
+    (name) =>
+      name.startsWith(".")
+        ? load(
+            [".ts", ".tsx"]
+              .map((ext) => path.resolve(path.dirname(file), name + ext))
+              .find((f) => fs.existsSync(f)),
+          )
+        : require(name),
+    loadedModule,
+    loadedModule.exports,
   );
-  return module.exports;
+  return loadedModule.exports;
 }
 
-const { googleCalendarUrl, calendarFile } = load(path.resolve("lib/calendar-event.ts"));
+const { googleCalendarUrl, calendarFile } = load(
+  path.resolve("lib/calendar-event.ts"),
+);
 const game = {
   id: "broadcast-test",
   team: "wolves",
@@ -42,8 +49,19 @@ const game = {
   competitors: [],
 };
 const google = new URL(googleCalendarUrl(game));
-assert.match(google.searchParams.get("details"), /Radio \/ TV: ESPN; Wolves Radio Network/);
-assert.match(google.searchParams.get("details"), /Event details: https:\/\/example.com\/game/);
+assert.match(
+  google.searchParams.get("details"),
+  /Radio \/ TV: ESPN; Wolves Radio Network/,
+);
+assert.match(
+  google.searchParams.get("details"),
+  /Event details: https:\/\/example.com\/game/,
+);
 const ics = calendarFile(game, new Date("2026-10-19T12:00:00Z"));
-assert.match(ics.replace(/\r\n /g, ""), /DESCRIPTION:Radio \/ TV: ESPN\\; Wolves Radio Network\\nEvent details: https:\/\/example.com\/game/);
-console.log("Google Calendar and iCalendar descriptions include published Radio/TV information.");
+assert.match(
+  ics.replace(/\r\n /g, ""),
+  /DESCRIPTION:Radio \/ TV: ESPN\\; Wolves Radio Network\\nEvent details: https:\/\/example.com\/game/,
+);
+console.log(
+  "Google Calendar and iCalendar descriptions include published Radio/TV information.",
+);

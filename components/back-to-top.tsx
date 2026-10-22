@@ -28,7 +28,9 @@ export default function BackToTop() {
     updateVisibility();
     window.addEventListener("scroll", updateVisibility, { passive: true });
     document.addEventListener("scroll", updateVisibility, { passive: true });
-    window.visualViewport?.addEventListener("scroll", updateVisibility, { passive: true });
+    window.visualViewport?.addEventListener("scroll", updateVisibility, {
+      passive: true,
+    });
     window.visualViewport?.addEventListener("resize", updateVisibility);
     return () => {
       if (frame) window.cancelAnimationFrame(frame);

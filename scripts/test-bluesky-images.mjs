@@ -13,8 +13,8 @@ function loader() {
   const modules = new Map();
   function load(filename) {
     if (modules.has(filename)) return modules.get(filename).exports;
-    const module = { exports: {} };
-    modules.set(filename, module);
+    const loadedModule = { exports: {} };
+    modules.set(filename, loadedModule);
     const js = ts.transpileModule(fs.readFileSync(filename, "utf8"), {
       compilerOptions: {
         module: ts.ModuleKind.CommonJS,
@@ -28,10 +28,10 @@ function loader() {
         : require(name);
     new Function("require", "module", "exports", js)(
       localRequire,
-      module,
-      module.exports,
+      loadedModule,
+      loadedModule.exports,
     );
-    return module.exports;
+    return loadedModule.exports;
   }
   return (file) => load(path.join(root, file));
 }

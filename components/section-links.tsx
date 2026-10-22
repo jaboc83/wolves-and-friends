@@ -1,5 +1,5 @@
 "use client";
-import { sportTerms } from "../lib/sport-terms";
+import { sportTerms } from "../lib/teams/sport-terms";
 
 export default function SectionLinks({ active }: { active: string }) {
   const terms = sportTerms(active);
@@ -8,7 +8,9 @@ export default function SectionLinks({ active }: { active: string }) {
       ? [{ id: "event-calendar", label: "Calendar" }]
       : [
           { id: "event-calendar", label: "Calendar" },
-          ...(active === "disc" ? [] : [{ id: "team-roster", label: terms.roster }]),
+          ...(active === "disc"
+            ? []
+            : [{ id: "team-roster", label: terms.roster }]),
           { id: "team-standings", label: terms.standings },
         ];
   return (

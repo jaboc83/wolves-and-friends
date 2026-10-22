@@ -8,8 +8,8 @@ function loader(overrides = {}) {
   const cache = new Map();
   function load(file) {
     if (cache.has(file)) return cache.get(file).exports;
-    const module = { exports: {} };
-    cache.set(file, module);
+    const loadedModule = { exports: {} };
+    cache.set(file, loadedModule);
     const source = ts.transpileModule(fs.readFileSync(file, "utf8"), {
       compilerOptions: {
         module: ts.ModuleKind.CommonJS,
@@ -23,10 +23,10 @@ function loader(overrides = {}) {
         if (!name.startsWith(".")) return require(name);
         return load(path.resolve(path.dirname(file), name) + ".ts");
       },
-      module,
-      module.exports,
+      loadedModule,
+      loadedModule.exports,
     );
-    return module.exports;
+    return loadedModule.exports;
   }
   return load;
 }
@@ -111,10 +111,7 @@ assert.equal(
 );
 const page = fs.readFileSync("app/page.tsx", "utf8");
 assert.match(page, /\[hideScores, setHideResults\] = useState\(true\)/);
-assert.match(
-  page,
-  /setHideResults\(preference.hidden\)/,
-);
+assert.match(page, /setHideResults\(preference.hidden\)/);
 assert.match(page, /saveScorePreference\(browserStorage, hidden, ask\)/);
 assert.match(page, /hideScores \? "Show scores" : "Hide scores"/);
 assert.doesNotMatch(page, /checked=\{hideScores\}/);
@@ -166,4 +163,3 @@ try {
 console.log(
   "Social queue, next-unread refill, 7-day headlines, Palace labels, result preference wiring, pagination, and route checks passed.",
 );
-

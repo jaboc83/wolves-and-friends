@@ -1,16 +1,42 @@
 import type { Story } from "./feeds";
 import { blueskyImageUrl } from "./bluesky-images";
 import { socialQueue, SOCIAL_QUEUE_LIMIT } from "./social-queue";
+type BlueskyImage = {
+  thumb?: string;
+  fullsize?: string;
+  alt?: string;
+  aspectRatio?: { width?: number; height?: number };
+};
+type BlueskyEmbed = {
+  $type?: string;
+  external?: { title?: string };
+  record?: { value?: { text?: string } };
+  images?: BlueskyImage[];
+  media?: BlueskyEmbed;
+};
+type BlueskyPost = {
+  record?: { text?: string; reply?: unknown; createdAt?: string };
+  author?: { handle?: string; displayName?: string; avatar?: string };
+  labels?: { val?: string }[];
+  uri?: string;
+  embed?: BlueskyEmbed;
+};
+type BlueskyFeedItem = { post?: BlueskyPost; reason?: unknown };
+type BlueskyResponse = {
+  feed?: BlueskyFeedItem[];
+  posts?: BlueskyPost[];
+  cursor?: string;
+};
 export const wolvesList =
   "at://did:plc:7giugsiydb7mj2j3a5u6nuyn/app.bsky.graph.list/3lal4p6r7w62f";
 const wolvesPattern =
   /timberwolves|\bwolves\b|timbies|anthony edwards|\bant\b|naz reid|jaden mcdaniels|rudy gobert|lamelo ball|jonathan kuminga|chris finch|ayo dosunmu|canis hoopus/i;
 export function parseBlueskyFeed(
-  json: any,
+  json: BlueskyResponse,
   team = "wolves",
   pattern: RegExp = wolvesPattern,
 ): Story[] {
-  return (json.feed || []).flatMap((item: any) => {
+  return (json.feed || []).flatMap((item) => {
     const p = item.post,
       r = p?.record,
       a = p?.author;
@@ -19,8 +45,12 @@ export function parseBlueskyFeed(
       r.reply ||
       item.reason ||
       !a?.handle ||
-      p.labels?.some((l: any) =>
-        ["!hide", "!warn", "porn", "sexual", "graphic-media"].includes(l.val),
+      p.labels?.some(
+        (l) =>
+          typeof l.val === "string" &&
+          ["!hide", "!warn", "porn", "sexual", "graphic-media"].includes(
+            l.val,
+          ),
       )
     )
       return [];
@@ -34,6 +64,7 @@ export function parseBlueskyFeed(
     if (
       !pattern.test(context) ||
       !title ||
+      typeof r.createdAt !== "string" ||
       !Number.isFinite(Date.parse(r.createdAt))
     )
       return [];
@@ -50,7 +81,7 @@ export function parseBlueskyFeed(
         : p.embed;
     const images: NonNullable<Story["images"]> =
       embed?.$type === "app.bsky.embed.images#view"
-        ? (embed.images || []).slice(0, 4).flatMap((image: any) => {
+        ? (embed.images || []).slice(0, 4).flatMap((image) => {
             const src = blueskyImageUrl(image.thumb || image.fullsize, "photo");
             if (!src) return [];
             const width = Number(image.aspectRatio?.width),
@@ -96,7 +127,7 @@ export async function wolvesBluesky(limit = SOCIAL_QUEUE_LIMIT) {
       { signal: AbortSignal.timeout(10000) },
     );
     if (!r.ok) throw Error("Bluesky feed unavailable");
-    const json = (await r.json()) as any;
+    const json = (await r.json()) as BlueskyResponse;
     stories.push(...parseBlueskyFeed(json));
     cursor = json.cursor || "";
     if (!cursor || socialQueue(stories, limit).length >= limit) break;
@@ -126,10 +157,10 @@ export async function taggedBluesky(team: string, tag: string) {
       if (stories.length) break;
       throw Error("Bluesky search unavailable");
     }
-    const json = (await r.json()) as any;
+    const json = (await r.json()) as BlueskyResponse;
     stories.push(
       ...parseBlueskyFeed(
-        { feed: (json.posts || []).map((post: any) => ({ post })) },
+        { feed: (json.posts || []).map((post) => ({ post })) },
         team,
         pattern,
       ),

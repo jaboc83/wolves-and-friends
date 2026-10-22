@@ -10,8 +10,8 @@ const require = createRequire(import.meta.url),
 function load(file) {
   if (cache.has(file)) return cache.get(file).exports;
   if (file.endsWith(".json")) return JSON.parse(fs.readFileSync(file, "utf8"));
-  const module = { exports: {} };
-  cache.set(file, module);
+  const loadedModule = { exports: {} };
+  cache.set(file, loadedModule);
   const js = ts.transpileModule(fs.readFileSync(file, "utf8"), {
     compilerOptions: {
       module: ts.ModuleKind.CommonJS,
@@ -28,10 +28,10 @@ function load(file) {
         [base, base + ".ts", base + ".tsx"].find((f) => fs.existsSync(f)),
       );
     },
-    module,
-    module.exports,
+    loadedModule,
+    loadedModule.exports,
   );
-  return module.exports;
+  return loadedModule.exports;
 }
 const { parseMarchMadness, marchRound } = load(
   path.resolve("lib/march-madness.ts"),

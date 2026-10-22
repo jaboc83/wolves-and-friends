@@ -10,9 +10,9 @@ const js = ts.transpileModule(source, {
     target: ts.ScriptTarget.ES2022,
   },
 }).outputText;
-const module = { exports: {} };
-new Function("module", "exports", js)(module, module.exports);
-const { GET } = module.exports;
+const loadedModule = { exports: {} };
+new Function("module", "exports", js)(loadedModule, loadedModule.exports);
+const { GET } = loadedModule.exports;
 const originalFetch = globalThis.fetch;
 const calls = [];
 globalThis.fetch = async (url, options) => {
@@ -71,7 +71,9 @@ assert.match(calendar, /<AddToCalendar game=\{g\} compact \/>/);
 assert.match(calendar, /className="calendar-agenda-game"/);
 const backToTop = fs.readFileSync("components/back-to-top.tsx", "utf8");
 assert.ok(backToTop.includes("pageScrollTop("));
-assert.ok(backToTop.includes("createPortal(") && backToTop.includes("document.body"));
+assert.ok(
+  backToTop.includes("createPortal(") && backToTop.includes("document.body"),
+);
 assert.ok(backToTop.includes('document.addEventListener("scroll"'));
 assert.ok(backToTop.includes('visualViewport?.addEventListener("scroll"'));
 assert.match(fs.readFileSync("app/globals.css", "utf8"), /bottom: calc\(88px/);

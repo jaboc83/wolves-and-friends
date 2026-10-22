@@ -6,11 +6,12 @@ import GameBadges from "./game-badges";
 import { gameBadges } from "../lib/game-badges";
 import { useRef, useState } from "react";
 import type { Game } from "../lib/feeds";
-import { teams } from "../lib/teams";
+import Image from "next/image";
+import { teams } from "../lib/teams/teams";
 import { teamLocation } from "../lib/team-location";
 import { teamWikipediaUrl } from "../lib/team-wikipedia";
-import { sportTerms } from "../lib/sport-terms";
-import { teamLogoPath } from "../lib/team-logo";
+import { sportTerms } from "../lib/teams/sport-terms";
+import { teamLogoPath } from "../lib/teams/team-logo";
 const ct = (s: string, o: Intl.DateTimeFormatOptions = {}) =>
   new Date(s).toLocaleString("en-US", { timeZone: "America/Chicago", ...o });
 const patterns: Record<string, RegExp> = {
@@ -77,6 +78,7 @@ export default function GameCard({
   onReveal: () => void;
 }) {
   const [expanded, setExpanded] = useState(false);
+  const [renderedAt] = useState(() => Date.now());
   const detailsRef = useRef<HTMLDetailsElement>(null);
   const expandReveals = compact && g.state === "post";
   const scoreVisible = expandReveals ? expanded || revealPast : revealed;
@@ -104,7 +106,7 @@ export default function GameCard({
       )}
       <div className="game-top">
         <div className="game-identity">
-          <img src={logo} alt="" width={36} height={36} />
+          <Image unoptimized src={logo} alt="" width={36} height={36} />
           <div className="game-identity-text">
             <div className="game-title">
               <strong>
@@ -315,7 +317,7 @@ export default function GameCard({
                   })}{" "}
                   CT · odds can change
                 </small>
-                {Date.now() - Date.parse(g.odds.checked) > 15 * 60000 && (
+                {renderedAt - Date.parse(g.odds.checked) > 15 * 60000 && (
                   <small>Cached odds; check source for current prices.</small>
                 )}
               </details>
@@ -368,7 +370,7 @@ export default function GameCard({
               <span>{result}</span>
             </span>
           )}
-          <img src={logo} alt="" width={30} height={30} />
+          <Image unoptimized src={logo} alt="" width={30} height={30} />
           <span className="compact-match">
             <span className="compact-name">
               <strong>

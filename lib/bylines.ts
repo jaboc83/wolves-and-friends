@@ -20,15 +20,24 @@ const normalized = (s: string) =>
     .replace(/[^\p{L}\p{N}]/gu, "");
 export function articleAuthors(html: string): string[] {
   const names: string[] = [];
-  function walk(x: any) {
+  function walk(x: unknown) {
     if (!x || typeof x !== "object") return;
-    if (/Article|NewsArticle|BlogPosting/.test(String(x["@type"]))) {
-      for (const a of [x.author].flat().filter(Boolean)) {
+    const record = x as Record<string, unknown>;
+    if (/Article|NewsArticle|BlogPosting/.test(String(record["@type"]))) {
+      const author = record.author;
+      for (const a of (Array.isArray(author) ? author : [author]).filter(
+        (value) => value != null && value !== false && value !== "",
+      )) {
         if (typeof a === "string") names.push(a);
-        else if (a.name) names.push(a.name);
+        else if (
+          a &&
+          typeof a === "object" &&
+          typeof (a as Record<string, unknown>).name === "string"
+        )
+          names.push((a as Record<string, string>).name);
       }
     }
-    for (const v of Object.values(x)) walk(v);
+    for (const v of Object.values(record)) walk(v);
   }
   for (const m of html.matchAll(
     /<script[^>]*type=["']application\/ld\+json["'][^>]*>([\s\S]*?)<\/script>/gi,
@@ -62,11 +71,18 @@ const checks = new Map<
   string,
   { verified: boolean; authors: string[]; url: string; expires: number }
 >();
-export async function verifyAuthorFeed(author: AuthorFeed, signal?: AbortSignal) {
+export async function verifyAuthorFeed(
+  author: AuthorFeed,
+  signal?: AbortSignal,
+) {
   applyKnownBylines(author);
   let links = new Map<string, string>();
   try {
-    const r = await fetch(author.url, { signal: signal ? AbortSignal.any([signal, AbortSignal.timeout(8000)]) : AbortSignal.timeout(8000) });
+    const r = await fetch(author.url, {
+      signal: signal
+        ? AbortSignal.any([signal, AbortSignal.timeout(8000)])
+        : AbortSignal.timeout(8000),
+    });
     if (r.ok) links = authorPageLinks(await r.text(), author.url);
   } catch {}
   await Promise.all(
@@ -82,7 +98,11 @@ export async function verifyAuthorFeed(author: AuthorFeed, signal?: AbortSignal)
       }
       if (!result) {
         try {
-          const r = await fetch(direct, { signal: signal ? AbortSignal.any([signal, AbortSignal.timeout(8000)]) : AbortSignal.timeout(8000) });
+          const r = await fetch(direct, {
+            signal: signal
+              ? AbortSignal.any([signal, AbortSignal.timeout(8000)])
+              : AbortSignal.timeout(8000),
+          });
           if (!r.ok) return;
           const names = articleAuthors(await r.text());
           if (!names.length) return;
@@ -110,4 +130,3 @@ export async function verifyAuthorFeed(author: AuthorFeed, signal?: AbortSignal)
   );
   author.items = author.items.filter((item) => item.bylineVerified !== false);
 }
-

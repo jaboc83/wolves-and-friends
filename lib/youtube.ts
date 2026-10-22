@@ -128,7 +128,6 @@ export function parseYoutube(
 export function parseYoutubePage(
   html: string,
   source: (typeof officialYoutube)[number],
-  _channel: string,
 ): Story[] {
   const posts: Story[] = [];
   const seen = new Set<string>();
@@ -138,10 +137,14 @@ export function parseYoutubePage(
     const start = Math.max(0, (match.index || 0) - 2500);
     const end = Math.min(html.length, (match.index || 0) + 2500);
     const window = html.slice(start, end);
-    const rawTitle = window.match(/"title":\{"runs":\[\{"text":"((?:\\\\.|[^"\\])*)"/)?.[1];
+    const rawTitle = window.match(
+      /"title":\{"runs":\[\{"text":"((?:\\\\.|[^"\\])*)"/,
+    )?.[1];
     if (!rawTitle) continue;
     let title = rawTitle;
-    try { title = JSON.parse('"'+rawTitle.replace(/"/g, '\\"')+'"'); } catch {}
+    try {
+      title = JSON.parse('"' + rawTitle.replace(/"/g, '\\"') + '"');
+    } catch {}
     if (!title || (source.pattern && !source.pattern.test(title))) continue;
     const url = "https://www.youtube.com/watch?v=" + id;
     seen.add(id);
@@ -192,7 +195,6 @@ export async function officialYoutubePosts() {
         return parseYoutubePage(
           await getText("https://www.youtube.com/channel/" + channel),
           source,
-          channel,
         );
       }
     }),

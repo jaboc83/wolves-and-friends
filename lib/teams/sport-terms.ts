@@ -4,13 +4,7 @@ export function sportTerms(team: string) {
   const disc = team === "disc";
   const all = team === "all";
   return {
-    event: all
-      ? "event"
-      : disc
-        ? "tournament"
-        : soccer
-          ? "match"
-          : "game",
+    event: all ? "event" : disc ? "tournament" : soccer ? "match" : "game",
     events: all
       ? "events"
       : disc

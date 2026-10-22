@@ -23,6 +23,17 @@ export type MarchData = {
   games: MarchGame[];
   unavailable?: boolean;
 };
+type ProviderObject = Record<string, unknown>;
+const providerObject = (value: unknown): ProviderObject =>
+  value && typeof value === "object" ? (value as ProviderObject) : {};
+const providerArray = (value: unknown): unknown[] =>
+  Array.isArray(value) ? value : [];
+const linkHasRelation = (value: unknown, relation: string) =>
+  typeof value === "string"
+    ? value.includes(relation)
+    : providerArray(value).some(
+        (item) => typeof item === "string" && item.includes(relation),
+      );
 export const espnTeamLogoUrl = (league: string, id: string) =>
   /^\d+$/.test(id)
     ? "/api/team-logo?league=" + encodeURIComponent(league) + "&id=" + id
@@ -46,56 +57,102 @@ export function marchRound(raw: string): { name: string; order: number } {
   return { name: raw || "Published matchups", order: 0 };
 }
 export function parseMarchMadness(
-  payloads: any[],
+  payloads: unknown[],
   year: number,
   checked: string,
 ): MarchData {
   const games = new Map<string, MarchGame>();
-  for (const e of payloads.flatMap((x) => x.events || [])) {
-    if (Number(e.season?.year) !== year || Number(e.season?.type) !== 3)
+  const events = payloads.flatMap((payload) =>
+    providerArray(providerObject(payload).events),
+  );
+  for (const event of events) {
+    const e = providerObject(event);
+    const season = providerObject(e.season);
+    if (Number(season.year) !== year || Number(season.type) !== 3)
       continue;
-    const c = e.competitions?.[0];
-    const note = c?.notes
-      ?.map((n: any) => n.headline || "")
-      .find((s: string) => /NCAA Men.s Basketball Championship/i.test(s));
+    const c = providerObject(providerArray(e.competitions)[0]);
+    const note = providerArray(c.notes)
+      .map((value) => providerObject(value).headline)
+      .find(
+        (headline): headline is string =>
+          typeof headline === "string" &&
+          /NCAA Men.s Basketball Championship/i.test(headline),
+      );
     if (!note) continue;
-    const teams = (c.competitors || []).map((p: any) => ({
-      id: String(p.team?.id || ""),
-      name:
-        p.team?.shortDisplayName || p.team?.displayName || "To be announced",
-      logo: espnTeamLogoUrl(
-        "basketball/mens-college-basketball",
-        String(p.team?.id || ""),
-      ),
-      seed: Number(p.curatedRank?.current) || undefined,
-      score:
-        (c.status?.type || e.status?.type)?.state !== "pre" &&
-        p.score !== undefined
-          ? String(p.score)
-          : undefined,
-      winner: !!p.winner,
-      url: espnLink(
-        p.team?.links?.find((l: any) => l.rel?.includes("clubhouse"))?.href,
-      ),
-    }));
-    if (teams.length !== 2 || !Number.isFinite(Date.parse(e.date))) continue;
+    const competitionStatus = providerObject(c.status);
+    const eventStatus = providerObject(e.status);
+    const statusType = providerObject(
+      competitionStatus.type || eventStatus.type,
+    );
+    const teams = providerArray(c.competitors).map((competitor) => {
+      const p = providerObject(competitor);
+      const team = providerObject(p.team);
+      const curatedRank = providerObject(p.curatedRank);
+      const teamId = String(team.id || "");
+      const clubhouse = providerArray(team.links)
+        .map(providerObject)
+        .find((link) => linkHasRelation(link.rel, "clubhouse"));
+      return {
+        id: teamId,
+        name:
+          (typeof team.shortDisplayName === "string" &&
+            team.shortDisplayName) ||
+          (typeof team.displayName === "string" && team.displayName) ||
+          "To be announced",
+        logo: espnTeamLogoUrl(
+          "basketball/mens-college-basketball",
+          teamId,
+        ),
+        seed: Number(curatedRank.current) || undefined,
+        score:
+          statusType.state !== "pre" && p.score !== undefined
+            ? String(p.score)
+            : undefined,
+        winner: !!p.winner,
+        url: espnLink(
+          typeof clubhouse?.href === "string" ? clubhouse.href : "",
+        ),
+      };
+    });
+    if (
+      teams.length !== 2 ||
+      typeof e.date !== "string" ||
+      !Number.isFinite(Date.parse(e.date))
+    )
+      continue;
     const rawRound = note.split(" - ").at(-1);
-    const round = marchRound(rawRound);
+    const round = marchRound(rawRound || "");
     const region =
       note.match(/\b(East|West|South|Midwest) Region\b/i)?.[1] || "Final Four";
-    const status = c.status?.type || e.status?.type || {};
-    const url = espnLink(
-      e.links?.find((l: any) => l.rel?.includes("boxscore"))?.href ||
-        e.links?.find((l: any) => l.rel?.includes("summary"))?.href,
+    const links = providerArray(e.links).map(providerObject);
+    const boxLink = links.find((link) =>
+      linkHasRelation(link.rel, "boxscore"),
     );
-    games.set(String(e.id), {
-      id: String(e.id),
+    const summaryLink = links.find((link) =>
+      linkHasRelation(link.rel, "summary"),
+    );
+    const url = espnLink(
+      (typeof boxLink?.href === "string" && boxLink.href) ||
+        (typeof summaryLink?.href === "string" && summaryLink.href) ||
+        "",
+    );
+    const statusDetails = providerObject(
+      competitionStatus.type || eventStatus.type,
+    );
+    const id = String(e.id);
+    games.set(id, {
+      id,
       date: e.date,
       region,
       round: round.name,
       order: round.order,
-      status: status.shortDetail || status.description || "Scheduled",
-      completed: !!status.completed,
+      status:
+        (typeof statusDetails.shortDetail === "string" &&
+          statusDetails.shortDetail) ||
+        (typeof statusDetails.description === "string" &&
+          statusDetails.description) ||
+        "Scheduled",
+      completed: !!statusDetails.completed,
       url,
       teams,
     });

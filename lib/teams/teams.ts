@@ -15,7 +15,10 @@ export const teams = [
       ],
       ["Canis Hoopus", "https://www.canishoopus.com/"],
       ["Dunking with Wolves", "https://dunkingwithwolves.com/"],
-      ["Yard Barker", "https://www.yardbarker.com/nba/teams/minnesota_timberwolves/83"],
+      [
+        "Yard Barker",
+        "https://www.yardbarker.com/nba/teams/minnesota_timberwolves/83",
+      ],
       ["Howls and Growls", "https://www.youtube.com/@howlsandgrowlshoops"],
       [
         "Jon Krawczynski · The Athletic",
@@ -52,7 +55,10 @@ export const teams = [
       ],
       ["Official Wild", "https://www.nhl.com/wild/"],
       ["Gone Puck Wild", "https://gonepuckwild.com/"],
-      ["Yard Barker", "https://www.yardbarker.com/nhl/teams/minnesota_wild/115"],
+      [
+        "Yard Barker",
+        "https://www.yardbarker.com/nhl/teams/minnesota_wild/115",
+      ],
     ],
   },
   {
@@ -113,7 +119,10 @@ export const teams = [
     sources: [
       ["Official MNUFC schedule", "https://www.mnufc.com/schedule/matches"],
       ["Official MNUFC", "https://www.mnufc.com/news/"],
-      ["Yard Barker", "https://www.yardbarker.com/soccer/teams/minnesota_united/17423"],
+      [
+        "Yard Barker",
+        "https://www.yardbarker.com/soccer/teams/minnesota_united/17423",
+      ],
       [
         "Andy Greder · Pioneer Press",
         "https://www.twincities.com/author/andy-greder/",
@@ -189,10 +198,7 @@ export const teams = [
         "EuroLeague · Žalgiris news",
         "https://www.euroleaguebasketball.net/en/euroleague/news/carousels/zalgiris-kaunas/?q=%7B%22articleId%22%3A%22%22%2C%22categoryId%22%3A%22%22%2C%22linkedId%22%3A%7B%22sourceSystem%22%3A%22FS_BASKETBALL_TEAM%22%2C%22sourceSystemId%22%3A%22zal%22%2C%22text%22%3A%22%22%7D%7D&carouselTitle=Zalgiris%20Kaunas",
       ],
-      [
-        "EuroLeague standings",
-        "https://euroleague-standings.com/",
-      ],
+      ["EuroLeague standings", "https://euroleague-standings.com/"],
       [
         "Eurohoops · Žalgiris",
         "https://www.eurohoops.net/basket/zalgiris-kaunas/?lang=en",
@@ -227,10 +233,7 @@ export const teams = [
         "https://www.thepwhl.com/en/teams/minnesota-frost",
       ],
       ["The Ice Garden", "https://www.theicegarden.com/"],
-      [
-        "Official PWHL standings",
-        "https://www.thepwhl.com/en/stats/standings",
-      ],
+      ["Official PWHL standings", "https://www.thepwhl.com/en/stats/standings"],
       [
         "Official Frost schedule",
         "https://www.thepwhl.com/en/stats/schedule/2/11/all-months/homeaway?league=1",

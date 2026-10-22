@@ -22,4 +22,3 @@ export async function GET() {
     headers: { "Cache-Control": "no-store" },
   });
 }
-

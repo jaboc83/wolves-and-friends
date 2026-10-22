@@ -1,6 +1,11 @@
 import { enrichEuroleagueOdds } from "./euroleague-odds";
-import { teams } from "./teams";
+import { teams } from "./teams/teams";
 import type { Game } from "./feeds";
+type ProviderObject = Record<string, unknown>;
+const providerObject = (value: unknown): ProviderObject =>
+  value && typeof value === "object" ? (value as ProviderObject) : {};
+const providerArray = (value: unknown): unknown[] =>
+  Array.isArray(value) ? value : [];
 export type Odds = {
   favorite: string;
   lines: string[];
@@ -8,22 +13,39 @@ export type Odds = {
   checked: string;
   url: string;
 };
-const price = (o: any, market: string, side: string, key: string) =>
-  o[market]?.[side]?.close?.[key];
+const price = (
+  o: ProviderObject,
+  market: string,
+  side: string,
+  key: string,
+): unknown => providerObject(providerObject(providerObject(o[market])[side]).close)[
+  key
+];
 export function parseOdds(
-  event: any,
+  event: unknown,
   teamId: string,
   checked: string,
 ): Odds | undefined {
   const team = teams.find((t) => t.id === teamId);
   if (!team) return;
-  const c = event.competitions?.[0];
-  const o = c?.odds?.find((x: any) => x.moneyline || x.pointSpread);
+  const providerEvent = providerObject(event);
+  const c = providerObject(providerArray(providerEvent.competitions)[0]);
+  const o = providerArray(c.odds)
+    .map(providerObject)
+    .find((x) => x.moneyline || x.pointSpread);
   if (!o) return;
-  const competitors = c.competitors || [];
+  const competitors = providerArray(c.competitors).map(providerObject);
   const names: Record<string, string> = {};
-  for (const p of competitors)
-    names[p.homeAway] = p.team?.shortDisplayName || p.team?.displayName;
+  for (const p of competitors) {
+    const competitorTeam = providerObject(p.team);
+    if (typeof p.homeAway !== "string") continue;
+    const name =
+      (typeof competitorTeam.shortDisplayName === "string" &&
+        competitorTeam.shortDisplayName) ||
+      (typeof competitorTeam.displayName === "string" &&
+        competitorTeam.displayName);
+    if (name) names[p.homeAway] = name;
+  }
   if (!names.home || !names.away) return;
   const lines: string[] = [];
   const ml: Record<string, number> = {};
@@ -35,11 +57,11 @@ export function parseOdds(
       Number(val) !== 0
     ) {
       ml[side] = Number(val);
-      lines.push(names[side] + " ML " + val);
+      lines.push(names[side] + " ML " + String(val));
     }
   }
   const draw = price(o, "moneyline", "draw", "odds");
-  if (draw !== undefined) lines.push("Draw " + draw);
+  if (draw !== undefined) lines.push("Draw " + String(draw));
   let favorite = "";
   if (team.sport === "NBA" || team.sport === "WNBA" || team.sport === "NFL") {
     for (const side of ["away", "home"]) {
@@ -73,8 +95,8 @@ export function parseOdds(
           " " +
           (team.sport === "NHL" ? "puck line" : "spread") +
           " " +
-          line +
-          (odds !== undefined ? " (" + odds + ")" : ""),
+          String(line) +
+          (odds !== undefined ? " (" + String(odds) + ")" : ""),
       );
   }
   const league = team.league.split("/")[1];
@@ -82,13 +104,17 @@ export function parseOdds(
     favorite,
     lines,
     source:
-      (o.provider?.displayName || o.provider?.name || "Market") + " via ESPN",
+      ((typeof providerObject(o.provider).displayName === "string" &&
+        providerObject(o.provider).displayName) ||
+        (typeof providerObject(o.provider).name === "string" &&
+          providerObject(o.provider).name) ||
+        "Market") + " via ESPN",
     checked,
     url:
       "https://www.espn.com/" +
       (team.league.startsWith("soccer") ? "soccer/match" : league + "/game") +
       "/_/gameId/" +
-      event.id,
+      String(providerEvent.id),
   };
 }
 export function oddsLeague(g: Game) {
@@ -106,20 +132,29 @@ export function oddsLeague(g: Game) {
   }
   return team.league;
 }
-export function oddsMatch(g: Game, event: any) {
-  if (g.id === g.team + "-" + event.id) return true;
+export function oddsMatch(g: Game, event: unknown) {
+  const providerEvent = providerObject(event);
+  if (g.id === g.team + "-" + String(providerEvent.id)) return true;
   const team = teams.find((t) => t.id === g.team);
+  const eventDate =
+    typeof providerEvent.date === "string" ? providerEvent.date : "";
   if (
     !team ||
-    Math.abs(Date.parse(g.date) - Date.parse(event.date)) > 3 * 3600000 ||
-    !Number.isFinite(Date.parse(event.date))
+    Math.abs(Date.parse(g.date) - Date.parse(eventDate)) > 3 * 3600000 ||
+    !Number.isFinite(Date.parse(eventDate))
   )
     return false;
-  return !!event.competitions?.[0]?.competitors?.some(
-    (p: any) =>
-      String(p.team?.id) === team.espn ||
-      p.team?.abbreviation?.toLowerCase() === team.espn,
+  const competition = providerObject(
+    providerArray(providerEvent.competitions)[0],
   );
+  return providerArray(competition.competitors).some((competitor) => {
+    const competitorTeam = providerObject(providerObject(competitor).team);
+    return (
+      String(competitorTeam.id) === team.espn ||
+      (typeof competitorTeam.abbreviation === "string" &&
+        competitorTeam.abbreviation.toLowerCase() === team.espn)
+    );
+  });
 }
 export async function enrichOdds(games: Game[], checked: string) {
   await enrichEuroleagueOdds(games, checked);
@@ -157,8 +192,8 @@ export async function enrichOdds(games: Game[], checked: string) {
           { signal: AbortSignal.timeout(12000) },
         );
         if (!r.ok) return;
-        const json = (await r.json()) as any;
-        for (const event of json.events || []) {
+        const json = providerObject(await r.json());
+        for (const event of providerArray(json.events)) {
           for (const g of games.filter(
             (g) =>
               g.state !== "post" &&

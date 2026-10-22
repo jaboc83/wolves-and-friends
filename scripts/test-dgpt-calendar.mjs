@@ -10,8 +10,8 @@ const cache = new Map();
 function load(file) {
   if (cache.has(file)) return cache.get(file).exports;
   if (file.endsWith(".json")) return JSON.parse(fs.readFileSync(file, "utf8"));
-  const module = { exports: {} };
-  cache.set(file, module);
+  const loadedModule = { exports: {} };
+  cache.set(file, loadedModule);
   const source = ts.transpileModule(fs.readFileSync(file, "utf8"), {
     compilerOptions: {
       module: ts.ModuleKind.CommonJS,
@@ -30,10 +30,10 @@ function load(file) {
         ),
       );
     },
-    module,
-    module.exports,
+    loadedModule,
+    loadedModule.exports,
   );
-  return module.exports;
+  return loadedModule.exports;
 }
 
 const { parseDgptSchedule } = load(path.resolve("lib/dgpt.ts"));
@@ -99,7 +99,10 @@ const timed = {
 };
 const file = calendarFile(timed, now);
 assert.ok(file.includes("DTSTART:20261102T010000Z"));
-assert.ok(file.includes("DTEND:20261102T033000Z"), "timed events default to 2.5 hours");
+assert.ok(
+  file.includes("DTEND:20261102T033000Z"),
+  "timed events default to 2.5 hours",
+);
 assert.ok(file.includes("SUMMARY:Žalgiris\\, Wolves\\; test\\nInjected"));
 const long = calendarFile({ ...timed, name: "Ž".repeat(120) }, now);
 for (const line of long.split("\r\n"))

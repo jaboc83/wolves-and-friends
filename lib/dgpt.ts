@@ -85,7 +85,8 @@ export function parseDgptSchedule(html: string, now = new Date()): Game[] {
     ].map((m) => {
       const margin = champions.match(
         new RegExp(
-          m[1] + "[^|]{0,180}(?:won by|lead(?:ing)? by|margin)\\s*(\\d+)\\s*stroke",
+          m[1] +
+            "[^|]{0,180}(?:won by|lead(?:ing)? by|margin)\\s*(\\d+)\\s*stroke",
           "i",
         ),
       )?.[1];

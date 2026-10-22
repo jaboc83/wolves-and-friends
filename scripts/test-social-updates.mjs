@@ -2,7 +2,7 @@ import assert from "node:assert/strict";
 import fs from "node:fs";
 import ts from "typescript";
 function compile(file, mocks = {}) {
-  const module = { exports: {} };
+  const loadedModule = { exports: {} };
   const js = ts.transpileModule(fs.readFileSync(file, "utf8"), {
     compilerOptions: {
       module: ts.ModuleKind.CommonJS,
@@ -15,10 +15,10 @@ function compile(file, mocks = {}) {
       assert.ok(name in mocks, name);
       return mocks[name];
     },
-    module,
-    module.exports,
+    loadedModule,
+    loadedModule.exports,
   );
-  return module.exports;
+  return loadedModule.exports;
 }
 const youtube = compile("lib/youtube.ts");
 const queue = compile("lib/social-queue.ts");

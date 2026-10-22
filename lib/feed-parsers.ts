@@ -1,6 +1,54 @@
-import { teams } from "./teams";
-import { palaceCompetitions, teamPlaysCompetition } from "./competitions";
+import { teams } from "./teams/teams";
+import { palaceCompetitions, teamPlaysCompetition } from "./teams/competitions";
 import type { Story, Game } from "./feed-types";
+type GameStatus = {
+  completed?: boolean;
+  state?: string;
+  shortDetail?: string;
+  detail?: string;
+};
+type ScoreCompetitor = {
+  homeAway: string;
+  score?: string | number | { displayValue?: string; value?: string | number };
+  winner?: boolean;
+  records?: { type?: string; name?: string; summary?: string; displayValue?: string }[];
+  team?: {
+    id?: string | number;
+    abbreviation?: string;
+    displayName?: string;
+    shortDisplayName?: string;
+  };
+};
+type ScoreCompetition = {
+  notes?: { headline?: string; text?: string }[];
+  status?: { type?: GameStatus };
+  venue?: {
+    fullName?: string;
+    address?: { city?: string; state?: string; country?: string };
+  };
+  broadcasts?: { names?: string[]; media?: { shortName?: string } }[];
+  links?: { href?: string }[];
+  competitors?: ScoreCompetitor[];
+};
+type ScoreEvent = {
+  id: string | number;
+  name: string;
+  date: string;
+  notes?: { headline?: string; text?: string }[];
+  competitions?: ScoreCompetition[];
+  status?: { type?: GameStatus };
+  seasonType?: { name?: string };
+  season?: { type?: number };
+  league?: { name?: string };
+  links?: { href?: string }[];
+};
+type ScoreboardPayload = {
+  events?: ScoreEvent[];
+  leagues?: { name?: string }[];
+};
+const emptyScoreboard = (value: unknown) =>
+  (value || {}) as ScoreboardPayload;
+
 const text = (s: string) =>
   s
     .replace(/<!\[CDATA\[([\s\S]*?)\]\]>/g, "$1")
@@ -130,9 +178,10 @@ export function parsePalaceRadar(html: string, checked: string): Story[] {
       const title = tag(block, "h3");
       const rawDate = tag(block, "time");
       const parsedDate = rawDate ? new Date(`${rawDate} ${year}`) : null;
-      const date = parsedDate && Number.isFinite(parsedDate.getTime())
-        ? parsedDate.toISOString()
-        : checked;
+      const date =
+        parsedDate && Number.isFinite(parsedDate.getTime())
+          ? parsedDate.toISOString()
+          : checked;
       return {
         id: path ? base + path : "",
         title,
@@ -143,11 +192,15 @@ export function parsePalaceRadar(html: string, checked: string): Story[] {
         kind: "story",
       };
     })
-    .filter((story) => story.url && story.title && Number.isFinite(Date.parse(story.date)));
+    .filter(
+      (story) =>
+        story.url && story.title && Number.isFinite(Date.parse(story.date)),
+    );
 }
-export function parseGames(json: any, team: string, sport: string): Game[] {
+export function parseGames(data: unknown, team: string, sport: string): Game[] {
+  const json = emptyScoreboard(data);
   return (json.events || [])
-    .map((e: any) => {
+    .map((e) => {
       const c = e.competitions?.[0] || {};
       const status = c.status || e.status || {};
       const league = teams.find((t) => t.id === team)?.league || "";
@@ -162,7 +215,7 @@ export function parseGames(json: any, team: string, sport: string): Game[] {
       return {
         competitionNote:
           [...(e.notes || []), ...(c.notes || [])]
-            .map((n: any) => n.headline || n.text || "")
+            .map((n) => n.headline || n.text || "")
             .filter(Boolean)
             .join(" · ") || undefined,
         boxUrl,
@@ -177,7 +230,7 @@ export function parseGames(json: any, team: string, sport: string): Game[] {
             ? e.league?.name ||
               json.leagues?.[0]?.name ||
               (/friendl/i.test(e.seasonType?.name || "")
-                ? e.seasonType.name
+                ? e.seasonType!.name!
                 : sport)
             : e.seasonType?.name ||
               (e.season?.type === 1 ? "Preseason" : sport),
@@ -189,28 +242,28 @@ export function parseGames(json: any, team: string, sport: string): Game[] {
           .filter(Boolean)
           .join(" · "),
         broadcast: (c.broadcasts || [])
-          .flatMap((b: any) => b.names || b.media?.shortName || [])
+          .flatMap((b) => b.names || b.media?.shortName || [])
           .join(" · "),
         url: safe(
-          e.links?.find((l: any) => l.href?.startsWith("https:"))?.href ||
+          e.links?.find((l) => l.href?.startsWith("https:"))?.href ||
             c.links?.[0]?.href ||
             "",
         ),
         competitors: (c.competitors || [])
-          .sort((a: any, b: any) =>
+          .sort((a, b) =>
             a.homeAway === "away" ? -1 : b.homeAway === "away" ? 1 : 0,
           )
-          .map((p: any) => ({
+          .map((p) => ({
             name: p.team?.shortDisplayName || p.team?.displayName || "",
             record:
               (p.records || []).find(
-                (r: any) =>
+                (r) =>
                   r.type === "total" ||
                   r.name === "overall" ||
                   r.name === "Total",
               )?.summary ||
               (p.records || []).find(
-                (r: any) =>
+                (r) =>
                   r.type === "total" ||
                   r.name === "overall" ||
                   r.name === "Total",
@@ -228,11 +281,16 @@ export function parseGames(json: any, team: string, sport: string): Game[] {
     })
     .filter((g: Game) => g.date && g.competitors.length);
 }
-export function mergeLiveScoreboard(games: Game[], json: any, league: string) {
+export function mergeLiveScoreboard(
+  games: Game[],
+  data: unknown,
+  league: string,
+) {
+  const json = emptyScoreboard(data);
   for (const t of teams.filter((t) => teamPlaysCompetition(t.id, league))) {
-    const events = (json.events || []).filter((e: any) =>
+    const events = (json.events || []).filter((e) =>
       e.competitions?.[0]?.competitors?.some(
-        (p: any) =>
+        (p) =>
           String(p.team?.id) === t.espn ||
           p.team?.abbreviation?.toLowerCase() === t.espn,
       ),

@@ -1,4 +1,7 @@
 import type { Game } from "./feeds";
+type ProviderObject = Record<string, unknown>;
+const providerObject = (value: unknown): ProviderObject =>
+  value && typeof value === "object" ? (value as ProviderObject) : {};
 export function parsePalace(html: string, checked: string): Game[] {
   const flight = [...html.matchAll(/self\.__next_f\.push\((\[1,[\s\S]*?\])\)/g)]
     .map((m) => {
@@ -9,10 +12,12 @@ export function parsePalace(html: string, checked: string): Game[] {
       }
     })
     .join("");
-  const matches = new Map<string, any>();
-  function walk(x: any) {
+  const matches = new Map<string, ProviderObject>();
+  function walk(value: unknown) {
+    const x = providerObject(value);
     if (!x || typeof x !== "object") return;
-    if (x.homeTeam && x.awayTeam && x.date && x.id) matches.set(x.id, x);
+    if (x.homeTeam && x.awayTeam && x.date && x.id)
+      matches.set(String(x.id), x);
     for (const v of Object.values(x)) walk(v);
   }
   for (const line of flight.split("\n")) {
@@ -21,16 +26,24 @@ export function parsePalace(html: string, checked: string): Game[] {
     } catch {}
   }
   return [...matches.values()].map((x) => {
-    const state = /complete|finished|played|result/i.test(x.status)
+    const homeTeam = providerObject(x.homeTeam);
+    const awayTeam = providerObject(x.awayTeam);
+    const state = /complete|finished|played|result/i.test(String(x.status))
       ? "post"
-      : /live|inprogress/i.test(x.status)
+      : /live|inprogress/i.test(String(x.status))
         ? "in"
         : "pre";
+    const competition = providerObject(x.competition);
+    const venue = providerObject(x.venue);
+    const competitors: [string, ProviderObject, unknown][] = [
+      ["away", awayTeam, x.awayTeamScore],
+      ["home", homeTeam, x.homeTeamScore],
+    ];
     return {
-      id: "palace-official-" + x.id,
+      id: "palace-official-" + String(x.id),
       team: "palace",
-      name: x.awayTeam.name + " at " + x.homeTeam.name,
-      date: x.date,
+      name: String(awayTeam.name) + " at " + String(homeTeam.name),
+      date: String(x.date),
       status:
         state === "post"
           ? "Final"
@@ -38,17 +51,18 @@ export function parsePalace(html: string, checked: string): Game[] {
             ? "In progress"
             : "Scheduled",
       state,
-      league: x.competition?.name || "Soccer",
-      venue: x.venue?.name || "",
+      league:
+        (typeof competition.name === "string" && competition.name) || "Soccer",
+      venue: (typeof venue.name === "string" && venue.name) || "",
       broadcast: "",
       url: "https://www.cpfc.co.uk/matches/",
       sourceName: "Official Palace schedule",
       sourceChecked: checked,
-      competitors: [
-        ["away", x.awayTeam, x.awayTeamScore],
-        ["home", x.homeTeam, x.homeTeamScore],
-      ].map(([homeAway, t, score]: any) => ({
-        name: t.shortName || t.name,
+      competitors: competitors.map(([homeAway, team, score]) => ({
+        name:
+          (typeof team.shortName === "string" && team.shortName) ||
+          (typeof team.name === "string" && team.name) ||
+          "",
         homeAway,
         score: score == null ? "" : String(score),
         winner: false,

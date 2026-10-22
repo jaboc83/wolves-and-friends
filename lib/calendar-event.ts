@@ -14,7 +14,13 @@ const escape = (s: string) =>
     .replace(/,/g, "\\,");
 function dates(g: Game) {
   const start = g.dateOnly ? date(g.date) : utc(g.date);
-  if (!g.dateOnly) return [start, g.endDate ? utc(g.endDate) : utc(new Date(new Date(g.date).getTime() + 150 * 60000).toISOString())];
+  if (!g.dateOnly)
+    return [
+      start,
+      g.endDate
+        ? utc(g.endDate)
+        : utc(new Date(new Date(g.date).getTime() + 150 * 60000).toISOString()),
+    ];
   const end = new Date(
     (g.endDate ? eventDay(g.endDate) : eventDay(g.date)) + "T00:00:00Z",
   );

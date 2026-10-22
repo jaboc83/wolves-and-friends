@@ -1,4 +1,4 @@
-import { teams } from "./teams";
+import { teams } from "./teams/teams";
 import type { HubData, Story } from "./feeds";
 const retiredNews = (name: string) =>
   name === "EuroLeague · Google News index" ||

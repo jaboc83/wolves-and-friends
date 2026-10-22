@@ -10,8 +10,8 @@ const require = createRequire(import.meta.url);
 const cache = new Map();
 function load(file) {
   if (cache.has(file)) return cache.get(file).exports;
-  const module = { exports: {} };
-  cache.set(file, module);
+  const loadedModule = { exports: {} };
+  cache.set(file, loadedModule);
   const js = ts.transpileModule(fs.readFileSync(file, "utf8"), {
     compilerOptions: {
       module: ts.ModuleKind.CommonJS,
@@ -29,10 +29,10 @@ function load(file) {
               .find((f) => fs.existsSync(f)),
           )
         : require(name),
-    module,
-    module.exports,
+    loadedModule,
+    loadedModule.exports,
   );
-  return module.exports;
+  return loadedModule.exports;
 }
 const MatchCalendar = load(
   path.resolve("components/match-calendar.tsx"),
