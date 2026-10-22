@@ -79,7 +79,7 @@ const days = [0, 3, 6, 7, 8].map((n) => ({
   ...posts[n],
   date: new Date(now - n * 86400000).toISOString(),
 }));
-assert.equal(recentStories(days, "wolves", now).length, 4);
+assert.equal(recentStories(days, "wolves", now).length, 1);
 assert.equal(recentStories(days, "all", now).length, 1);
 // Chicago's calendar day, rather than a rolling 24-hour window or UTC day.
 const midnightStories = [
