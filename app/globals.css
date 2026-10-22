@@ -3134,10 +3134,10 @@ body:has(.score-choice[open]) {
   overflow: hidden;
 }
 .power-rankings-summary {
-  display: flex;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
   align-items: center;
-  justify-content: space-between;
-  gap: 12px;
+  gap: 8px 16px;
   padding: 14px;
   cursor: pointer;
   list-style: none;
@@ -3154,8 +3154,20 @@ body:has(.score-choice[open]) {
 }
 .power-rankings-heading {
   display: flex;
+  align-items: center;
+  min-width: 0;
+}
+.power-rankings-title {
+  display: flex;
   align-items: baseline;
-  gap: 10px;
+  gap: 8px;
+  min-width: 0;
+  flex-wrap: wrap;
+}
+.power-rankings-heading > .power-rankings-preview {
+  margin-left: 14px;
+}
+.power-rankings-heading {
   min-width: 0;
 }
 .power-rankings-heading strong {
@@ -3173,6 +3185,21 @@ body:has(.score-choice[open]) {
   font-size: 0.85rem;
   font-weight: 700;
   white-space: nowrap;
+}
+.diagnostics-export {
+  margin-top: 4px;
+  border: 1px solid var(--line, #d3d9d4);
+  border-radius: 6px;
+  padding: 7px 10px;
+  background: var(--raised, #eef1f6);
+  color: var(--ink, #192a3c);
+  font-size: 0.78rem;
+  font-weight: 700;
+  cursor: pointer;
+}
+.diagnostics-export:hover {
+  border-color: var(--team-accent, #8aa747);
+  background: var(--surface, #fffefb);
 }
 .power-rankings-chevron {
   flex: 0 0 auto;
@@ -3219,3 +3246,4 @@ body:has(.score-choice[open]) {
   letter-spacing: 0.08em;
   text-transform: uppercase;
 }
+

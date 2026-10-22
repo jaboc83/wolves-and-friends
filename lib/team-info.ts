@@ -84,6 +84,20 @@ const player = (p: any, league: string) => ({
 });
 const powerRankingLeague = (league: string) =>
   ["football/nfl", "basketball/nba", "basketball/wnba"].includes(league);
+const powerRankingTeamNames: Record<string, Record<string, string>> = {
+  "basketball/nba": {
+    "1": "Atlanta Hawks", "2": "Boston Celtics", "3": "New Orleans Pelicans",
+    "4": "Chicago Bulls", "5": "Cleveland Cavaliers", "6": "Dallas Mavericks",
+    "7": "Denver Nuggets", "8": "Detroit Pistons", "9": "Golden State Warriors",
+    "10": "Houston Rockets", "11": "Indiana Pacers", "12": "Los Angeles Clippers",
+    "13": "Los Angeles Lakers", "14": "Miami Heat", "15": "Milwaukee Bucks",
+    "16": "Minnesota Timberwolves", "17": "Brooklyn Nets", "18": "New York Knicks",
+    "19": "Orlando Magic", "20": "Philadelphia 76ers", "21": "Phoenix Suns",
+    "22": "Portland Trail Blazers", "23": "Sacramento Kings", "24": "San Antonio Spurs",
+    "25": "Oklahoma City Thunder", "26": "Utah Jazz", "27": "Washington Wizards",
+    "28": "Toronto Raptors", "29": "Memphis Grizzlies", "30": "Charlotte Hornets",
+  },
+};
 const powerRankingFallback = (
   league: string,
   teamId: string,
@@ -191,10 +205,16 @@ async function parsePowerRanking(
   // Use one team-catalog request instead of one slow request per row. The
   // catalog is fast enough for the Site worker timeout and keeps the panel
   // available when ESPN's individual team endpoints are delayed.
-  const catalogResult = await get(
-    `https://site.api.espn.com/apis/site/v2/sports/${league}/teams?limit=100`,
-    30000,
-  );
+  let catalogResult: any = {};
+  try {
+    catalogResult = await get(
+      `https://site.api.espn.com/apis/site/v2/sports/${league}/teams?limit=100`,
+      30000,
+    );
+  } catch {
+    // The rankings endpoint is authoritative; a catalog outage should not
+    // collapse a full ranking to the one-team snapshot fallback.
+  }
   const catalog = new Map(
     (catalogResult.sports?.[0]?.leagues?.[0]?.teams || [])
       .map((entry: any) => entry.team || entry)
@@ -207,7 +227,7 @@ async function parsePowerRanking(
       `https://www.espn.com/${leagueName}/team/_/id/${teamId}`;
     return {
       id: teamId,
-      name: team.displayName || team.name || teamId,
+      name: team.displayName || team.name || powerRankingTeamNames[league]?.[teamId] || `Team ${teamId}`,
       url,
       logo: team.logo || team.logos?.[0]?.href,
       cells: [String(rank.displayValue || rank.value), String(metric?.displayValue || "—")],
@@ -826,4 +846,5 @@ export function parseNHLStandings(
   );
   return [...divisions, wildcard];
 }
+
 
