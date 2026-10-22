@@ -39,18 +39,27 @@ function safeFeedError(error: unknown) {
 
 async function providerGet(url: string, signal?: AbortSignal) {
   try {
-    const r = await fetch(url, {
-      signal: signal ? AbortSignal.any([signal, AbortSignal.timeout(url.includes("eurohoops.net") ? 30000 : 12000)]) : AbortSignal.timeout(12000),
-      headers: {
-        // A stable server identifier helps publishers allow-list the feed request
-        // without forwarding any visitor/browser headers or identifiers.
-        "User-Agent": "WolvesAndFriendsFeed/1.0 (+https://wolvesandfriends.moening.org)",
-        Accept:
-          "application/json, application/rss+xml, application/atom+xml, text/xml, text/html",
-      },
-    });
-    if (!r.ok) throw new FeedError("http-" + r.status);
-    return r;
+    for (let attempt = 0; attempt < 3; attempt++) {
+      const r = await fetch(url, {
+        signal: signal ? AbortSignal.any([signal, AbortSignal.timeout(url.includes("eurohoops.net") ? 30000 : 12000)]) : AbortSignal.timeout(12000),
+        headers: {
+          // A stable server identifier helps publishers allow-list the feed request
+          // without forwarding any visitor/browser identifiers.
+          "User-Agent": "WolvesAndFriendsFeed/1.0 (+https://wolvesandfriends.moening.org)",
+          Accept:
+            "application/json, application/rss+xml, application/atom+xml, text/xml, text/html",
+        },
+      });
+      if (r.ok) return r;
+      const retryable = [403, 408, 425, 429, 500, 502, 503, 504].includes(r.status);
+      if (!retryable || attempt === 2)
+        throw new FeedError("http-" + r.status);
+      await new Promise((resolve) =>
+        setTimeout(resolve, attempt === 0 ? 250 : 750),
+      );
+      if (signal?.aborted) throw signal.reason;
+    }
+    throw new FeedError("request-failed");
   } catch (error) {
     throw error instanceof FeedError ? error : new FeedError(safeFeedError(error));
   }
