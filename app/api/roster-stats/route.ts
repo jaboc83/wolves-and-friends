@@ -2,8 +2,8 @@ import { teams } from "../../../lib/teams";
 import { parsePlayerStats, type PlayerStats } from "../../../lib/player-stats";
 const batchSize = 3,
   ttl = 15 * 60000,
-  statsDeadlineMs = 30000,
-  statsRequestTimeoutMs = 20000;
+  statsDeadlineMs = 60000,
+  statsRequestTimeoutMs = 60000;
 type Entry = { key: string; league: string; id: string; teamId: string; year: number; position: string };
 let manifest: Entry[] = [],
   expires = 0;
@@ -71,7 +71,7 @@ async function loadManifest() {
   return manifestRequest;
 }
 async function stats(entry: Entry) {
-  const cacheKey = "v5:" + entry.key + ":" + entry.teamId + ":" + entry.year;
+  const cacheKey = "v6:" + entry.key + ":" + entry.teamId + ":" + entry.year;
   const old = cache.get(cacheKey);
   if (old && old.expires > Date.now()) return old.stats;
   if (!inflight.has(cacheKey))
