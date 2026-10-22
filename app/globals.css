@@ -3165,3 +3165,14 @@ body:has(.score-choice[open]) {
 
 .table-sort-button { appearance: none; border: 0; padding: 0; background: transparent; color: inherit; font: inherit; text-transform: inherit; cursor: pointer; }
 .table-sort-button:hover, .table-sort-button:focus-visible { color: var(--accent, #0b7d4f); text-decoration: underline; }
+
+
+.release-marker {
+  display: block;
+  margin-top: 8px;
+  color: var(--muted, #64707a);
+  font-size: 0.72rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
