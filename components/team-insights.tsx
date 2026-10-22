@@ -26,15 +26,25 @@ export default function TeamInsights({
   onRosterOpen?: () => void;
 }) {
   const [selected, setSelected] = useState("wolves");
-  const [standingsOpen, setStandingsOpen] = useState(false);\n  const [powerRankingsOpen, setPowerRankingsOpen] = useState(false);
+  const [standingsOpen, setStandingsOpen] = useState(false);
+  const [powerRankingsOpen, setPowerRankingsOpen] = useState(false);
   const id = active === "all" ? selected : active;
   useEffect(() => {
     setStandingsOpen(autoOpenStandings);
   }, [id, autoOpenStandings]);
+  useEffect(() => {
+    setPowerRankingsOpen(false);
+  }, [id]);
   const terms = sportTerms(id);
   const headings = sportTerms(active);
   const t = teams.find((t) => t.id === id);
-  const info = data.find((i) => i.id === id);\n  const myPowerRanking = info?.powerRanking?.rows.find(\n    (row) =>\n      row.name === t?.name ||\n      row.id === t?.espn ||\n      Boolean(t?.espn && row.url.includes(`/${t.espn}`)),\n  );
+  const info = data.find((i) => i.id === id);
+  const myPowerRanking = info?.powerRanking?.rows.find(
+    (row) =>
+      row.name === t?.name ||
+      row.id === t?.espn ||
+      Boolean(t?.espn && row.url.includes(`/${t.espn}`)),
+  );
   const [rosterSort, setRosterSort] = useState<{ column: string; direction: "asc" | "desc" }>({ column: "Player", direction: "asc" });
   useEffect(() => { setRosterSort({ column: "Player", direction: "asc" }); }, [id]);
   const rosterGroups = useMemo(() => {
