@@ -303,7 +303,7 @@ export async function collect(
         );
         const events = scoreboards
           .flatMap((result) =>
-            result.status === "fulfilled" ? result.value.events || [] : [],
+            result.status === "fulfilled" ? (result.value as any).events || [] : [],
           )
           .filter((event: any) =>
             event.competitions?.some((competition: any) =>
@@ -324,7 +324,7 @@ export async function collect(
         );
         json = {
           injuries: summaries.flatMap((result) =>
-            result.status === "fulfilled" ? result.value.injuries || [] : [],
+            result.status === "fulfilled" ? (result.value as any).injuries || [] : [],
           ),
         };
       }
