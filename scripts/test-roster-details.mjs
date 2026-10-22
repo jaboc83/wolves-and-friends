@@ -356,7 +356,8 @@ try {
       (c) =>
         c.options.credentials === "omit" &&
         c.options.referrerPolicy === "no-referrer" &&
-        !c.options.headers,
+        c.options.headers?.Accept === "application/json, text/plain, */*" &&
+        c.options.headers?.["User-Agent"].includes("WolvesAndFriends"),
     ),
   );
 } finally {
