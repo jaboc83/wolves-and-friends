@@ -95,9 +95,9 @@ tests, and the client-asset comparison against the refreshed main branch. Run
 included when `VALIDATION_BASE_SHA` is set to a full base commit SHA. The hook
 can be bypassed with `git push --no-verify`, but GitHub's PR checks still apply.
 
-The development task stays running after debugging stops. Use Terminal →
-Terminate Task → `Wolves: dev` when finished. Stop an existing `pnpm dev` before
-starting this task: ports 5173 and 9229 must be free. The task enables the local
+The debug configuration stops its VS Code development task when debugging ends.
+Stop an existing `pnpm dev` before starting this task: ports 5173 and 9229 must
+be free. The task enables the local
 Worker inspector with `WF_DEBUG_WORKER=true`; normal development and production
 builds keep it disabled. No application logging or collection is added.
 
