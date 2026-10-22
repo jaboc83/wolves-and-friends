@@ -39,7 +39,9 @@ const { parseMarchMadness, marchRound } = load(
 const { marchMadnessYear } = load(
   path.resolve("lib/games/march-madness-config.ts"),
 );
-const snapshot = load(path.resolve("lib/march-madness-initial.json"));
+const snapshot = load(
+  path.resolve("data/snapshots/march-madness-initial.json"),
+);
 assert.equal(snapshot.year, marchMadnessYear);
 if (snapshot.year === 2026) {
   assert.equal(snapshot.games.length, 67);

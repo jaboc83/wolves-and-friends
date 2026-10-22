@@ -23,19 +23,19 @@ Headlines link to publishers rather than reproducing full articles. Deliberately
 
 ## 2. The main parts of the repository
 
-| Part               | Responsibility                                                                            | Start here                                                                               |
-| ------------------ | ----------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------- |
-| Page controller    | Holds browser state, refreshes feeds, merges data, filters teams, and assembles sections  | [app/page.tsx](app/page.tsx)                                                             |
-| Shared page shell  | Imports styles and defines metadata and the mobile viewport                               | [app/layout.tsx](app/layout.tsx)                                                         |
-| Presentation       | Responsive layout, colors, badges, spacing, and team themes                               | [app/globals.css](app/globals.css), [lib/teams/team-themes.ts](lib/teams/team-themes.ts) |
-| Team configuration | Team IDs, priority order, ESPN identifiers, matching patterns, and source links           | [lib/teams/teams.ts](lib/teams/teams.ts)                                                 |
-| Dashboard logic    | Team/read/search selection, cached-data validation, and retired-team filtering            | [lib/dashboard/](lib/dashboard/)                                                         |
-| Browser utilities  | Device storage, same-origin feed requests, score preferences, news windows, and scrolling | [lib/browser/](lib/browser/)                                                             |
-| Feed endpoints     | Return public data to the page                                                            | [app/api](app/api)                                                                       |
-| Feed adapters      | Convert each provider's JSON, RSS, HTML, or calendar into shared objects                  | [lib/feeds/](lib/feeds/) and its provider modules                                        |
-| Reusable sections  | Game cards, calendar, standings/rosters, and logo groups                                  | [components](components)                                                                 |
-| Images             | Local header and team logos                                                               | [public/logos](public/logos)                                                             |
-| Hosting            | Build and serve the application through Sites                                             | [vite.config.ts](vite.config.ts), [build/sites-worker.ts](build/sites-worker.ts)         |
+| Part               | Responsibility                                                                                | Start here                                                                               |
+| ------------------ | --------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------- |
+| Page controller    | Holds browser state, refreshes feeds, merges data, filters teams, and assembles sections      | [app/page.tsx](app/page.tsx)                                                             |
+| Shared page shell  | Imports styles and defines metadata and the mobile viewport                                   | [app/layout.tsx](app/layout.tsx)                                                         |
+| Presentation       | Responsive layout, colors, badges, spacing, and team themes                                   | [app/globals.css](app/globals.css), [lib/teams/team-themes.ts](lib/teams/team-themes.ts) |
+| Team configuration | Team IDs, priority order, ESPN identifiers, matching patterns, source links, and team helpers | [lib/teams/](lib/teams/)                                                                 |
+| Dashboard logic    | Team/read/search selection, cached-data validation, and retired-team filtering                | [lib/dashboard/](lib/dashboard/)                                                         |
+| Browser utilities  | Device storage, same-origin feed requests, score preferences, news windows, and scrolling     | [lib/browser/](lib/browser/)                                                             |
+| Feed endpoints     | Return public data to the page                                                                | [app/api](app/api)                                                                       |
+| Feed adapters      | Convert each provider's JSON, RSS, HTML, or calendar into shared objects                      | [lib/feeds/](lib/feeds/) and its provider modules                                        |
+| Reusable sections  | Game cards, calendar, standings/rosters, and logo groups                                      | [components](components)                                                                 |
+| Images             | Local header and team logos                                                                   | [public/logos](public/logos)                                                             |
+| Hosting            | Build and serve the application through Sites                                                 | [vite.config.ts](vite.config.ts), [build/sites-worker.ts](build/sites-worker.ts)         |
 
 The app uses **React and TypeScript**, with **Vinext/Vite** providing the Next-style page and API route structure. The production request handler runs as a **Cloudflare Worker** through Sites. Most of the dashboard logic is currently concentrated in `app/page.tsx`; separate components handle its larger reusable pieces.
 
@@ -105,13 +105,13 @@ Odds lookups are currently limited to eligible games within the next seven days 
 
 ## 6. Where information is stored
 
-| Storage              | Contents                                                                                                                                    | Lifetime / purpose                                               |
-| -------------------- | ------------------------------------------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------- |
-| React state          | Current filters, expanded cards, visibility settings, and loaded responses                                                                  | Current page session                                             |
-| Browser localStorage | `wf-team`, `wf-read`, `wf-saved`, and `wf-archive`                                                                                          | Device-only preferences and saved article snapshots              |
-| Browser localStorage | `wf-cache` and `wf-social-cache`                                                                                                            | Device-only caches of public feed content and inline avatars     |
-| Server module memory | Public feed responses, verification results, and avatar caches                                                                              | Temporary, shared public-data work within a Worker instance      |
-| Bundled JSON         | [initial.json](lib/initial.json), [team-info-initial.json](lib/team-info-initial.json), and [byline records](lib/feeds/byline-records.json) | Fallback snapshots and verification data shipped with the source |
+| Storage              | Contents                                                                                                                                                                                                                                   | Lifetime / purpose                                               |
+| -------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ | ---------------------------------------------------------------- |
+| React state          | Current filters, expanded cards, visibility settings, and loaded responses                                                                                                                                                                 | Current page session                                             |
+| Browser localStorage | `wf-team`, `wf-read`, `wf-saved`, and `wf-archive`                                                                                                                                                                                         | Device-only preferences and saved article snapshots              |
+| Browser localStorage | `wf-cache` and `wf-social-cache`                                                                                                                                                                                                           | Device-only caches of public feed content and inline avatars     |
+| Server module memory | Public feed responses, verification results, and avatar caches                                                                                                                                                                             | Temporary, shared public-data work within a Worker instance      |
+| Bundled JSON         | [initial.json](data/snapshots/initial.json), [team-info-initial.json](data/snapshots/team-info-initial.json), [march-madness-initial.json](data/snapshots/march-madness-initial.json), and [byline records](lib/feeds/byline-records.json) | Fallback snapshots and verification data shipped with the source |
 
 Clearing browser storage removes local read/saved history and choices. Those preferences do not sync between devices. The snapshots are fallbacks, not continuously updated files. Source-check timestamps and unavailable-feed notices help distinguish cached information from a successful refresh.
 

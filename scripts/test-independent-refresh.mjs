@@ -60,7 +60,11 @@ const mocks = {
       games[0].odds = { details: "test" };
     },
   },
-  "../initial.json": { stories: [], games: [], authors: [] },
+  "../../data/snapshots/initial.json": {
+    stories: [],
+    games: [],
+    authors: [],
+  },
 };
 function dependency(file) {
   const loadedModule = { exports: {} };
@@ -167,7 +171,7 @@ try {
   const failureModule = { exports: {} };
   new Function("require", "module", "exports", js)(
     (name) =>
-      name === "./initial.json"
+      name === "../../data/snapshots/initial.json"
         ? {
             stories: [
               {

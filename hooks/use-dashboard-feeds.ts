@@ -300,7 +300,7 @@ export function useDashboardFeeds(active: string) {
       setData(readStored<HubData | null>("wf-cache", isHubData, null));
     });
     // Split fallbacks out of the main client chunk. Never replace a live/cache response.
-    void import("../lib/initial.json")
+    void import("../data/snapshots/initial.json")
       .then(({ default: seed }) => {
         if (!alive) return;
         setData((previous) => previous || activeHub(seed as HubData));
@@ -309,7 +309,7 @@ export function useDashboardFeeds(active: string) {
         );
       })
       .catch(() => {});
-    void import("../lib/team-info-initial.json")
+    void import("../data/snapshots/team-info-initial.json")
       .then(({ default: seed }) => {
         if (alive)
           setTeamInfo((previous) =>

@@ -1,5 +1,5 @@
 import type { Story } from "./feed-types";
-import initial from "../initial.json";
+import initial from "../../data/snapshots/initial.json";
 type JsonObject = Record<string, unknown>;
 function object(value: unknown): JsonObject {
   return value && typeof value === "object" ? (value as JsonObject) : {};

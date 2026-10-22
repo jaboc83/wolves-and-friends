@@ -3,7 +3,7 @@ import {
   type MarchData,
 } from "../../../lib/games/march-madness";
 import { marchMadnessYear } from "../../../lib/games/march-madness-config";
-import initial from "../../../lib/march-madness-initial.json";
+import initial from "../../../data/snapshots/march-madness-initial.json";
 let cached = initial as MarchData,
   checked = 0;
 let inflight: Promise<MarchData> | null = null;

@@ -8,8 +8,8 @@ import { useRef, useState } from "react";
 import type { Game } from "../lib/feeds";
 import Image from "next/image";
 import { teams } from "../lib/teams/teams";
-import { teamLocation } from "../lib/team-location";
-import { teamWikipediaUrl } from "../lib/team-wikipedia";
+import { teamLocation } from "../lib/teams/team-location";
+import { teamWikipediaUrl } from "../lib/teams/team-wikipedia";
 import { sportTerms } from "../lib/teams/sport-terms";
 import { teamLogoPath } from "../lib/teams/team-logo";
 const ct = (s: string, o: Intl.DateTimeFormatOptions = {}) =>

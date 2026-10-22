@@ -1,4 +1,4 @@
-import { teams } from "./teams/teams";
+import { teams } from "./teams";
 
 const pages: Record<string, string> = {
   wolves: "Minnesota Timberwolves",

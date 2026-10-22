@@ -249,7 +249,11 @@ try {
     "./bylines": { verifyAuthorFeed: async () => {} },
     "./author-stories": { authorStories: () => [] },
     "./scoreboard": { fetchScoreboard: async () => ({ events: [] }) },
-    "../initial.json": { games: [], stories: [], authors: [] },
+    "../../data/snapshots/initial.json": {
+      games: [],
+      stories: [],
+      authors: [],
+    },
     "../teams/teams": {
       teams: [
         {

@@ -39,7 +39,7 @@ import {
 import { parseZalgiris } from "./zalgiris";
 import { parsePwhlSchedule } from "./special-team-data";
 import { enrichOdds } from "./odds";
-import initial from "../initial.json";
+import initial from "../../data/snapshots/initial.json";
 import type { Story, Game, Health, AuthorFeed, HubData } from "./feed-types";
 export type { Story, Game, Health, AuthorFeed, HubData } from "./feed-types";
 type ESPNCompetitor = {

@@ -1,6 +1,6 @@
 "use client";
 import { useEffect, useState } from "react";
-import initial from "../lib/march-madness-initial.json";
+import initial from "../data/snapshots/march-madness-initial.json";
 import type { MarchData } from "../lib/games/march-madness";
 import { espnTeamLogoUrl } from "../lib/games/march-madness";
 import BracketConnectors from "./bracket-connectors";
