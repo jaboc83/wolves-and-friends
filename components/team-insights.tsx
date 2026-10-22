@@ -5,7 +5,10 @@ import { teams } from "../lib/teams";
 import { sportTerms } from "../lib/sport-terms";
 import type { TeamInfo } from "../lib/team-info";
 import type { PlayerStats } from "../lib/player-stats";
-import { createRosterStatsTable, rosterStatValue } from "../lib/roster-stats-table";
+import {
+  createRosterStatsTable,
+  rosterStatValue,
+} from "../lib/roster-stats-table";
 import { espnTeamLogoUrl } from "../lib/march-madness";
 import BracketConnectors from "./bracket-connectors";
 export default function TeamInsights({
@@ -22,7 +25,8 @@ export default function TeamInsights({
   revealResults?: boolean;
   autoOpenStandings?: boolean;
   playerStats?: Record<string, PlayerStats>;
-  playerStatsStatus?: "idle" | "loading" | "ready" | "partial" | "empty" | "unavailable";
+  playerStatsStatus?:
+    "idle" | "loading" | "ready" | "partial" | "empty" | "unavailable";
   onRosterOpen?: (priorityKeys?: string[]) => void;
 }) {
   const [selected, setSelected] = useState("wolves");
@@ -45,8 +49,13 @@ export default function TeamInsights({
       row.id === t?.espn ||
       Boolean(t?.espn && row.url.includes(`/${t.espn}`)),
   );
-  const [rosterSort, setRosterSort] = useState<{ column: string; direction: "asc" | "desc" }>({ column: "Player", direction: "asc" });
-  useEffect(() => { setRosterSort({ column: "Player", direction: "asc" }); }, [id]);
+  const [rosterSort, setRosterSort] = useState<{
+    column: string;
+    direction: "asc" | "desc";
+  }>({ column: "Player", direction: "asc" });
+  useEffect(() => {
+    setRosterSort({ column: "Player", direction: "asc" });
+  }, [id]);
   const rosterGroups = useMemo(() => {
     if (!info?.depth) return [];
     const buckets = new Map<string, { position: string; players: any[] }>();
@@ -60,11 +69,22 @@ export default function TeamInsights({
       return position.slice(0, 4).toUpperCase();
     };
     for (const group of info.depth.groups) {
-      const columns = createRosterStatsTable(group.players, t?.league || "", playerStats).columns;
+      const columns = createRosterStatsTable(
+        group.players,
+        t?.league || "",
+        playerStats,
+      ).columns;
       const key = columns.join("\\u0001");
       const existing = buckets.get(key) || { position: "", players: [] };
-      existing.position = existing.position ? existing.position + " / " + group.position : group.position;
-      existing.players.push(...group.players.map((player) => ({ ...player, position: abbreviation(group.position) })));
+      existing.position = existing.position
+        ? existing.position + " / " + group.position
+        : group.position;
+      existing.players.push(
+        ...group.players.map((player) => ({
+          ...player,
+          position: abbreviation(group.position),
+        })),
+      );
       buckets.set(key, existing);
     }
     return [...buckets.values()];
@@ -164,7 +184,11 @@ export default function TeamInsights({
                   ))}
                 </section>
               ))}
-              <BracketConnectors key={info.postseason.checked} roundClass="bracket-round" matchClass="bracket-match" />
+              <BracketConnectors
+                key={info.postseason.checked}
+                roundClass="bracket-round"
+                matchClass="bracket-match"
+              />
             </div>
             <p className="panel-note">
               ESPN · checked{" "}
@@ -176,13 +200,21 @@ export default function TeamInsights({
           </section>
         )}
         {id === "palace" && !info?.postseason && (
-          <section className="postseason-panel" aria-label="Europa League bracket">
+          <section
+            className="postseason-panel"
+            aria-label="Europa League bracket"
+          >
             <h3>Europa League bracket · 2026/27</h3>
             <p className="panel-note">
-              The official UEFA bracket updates as knockout rounds and matchups are published.
+              The official UEFA bracket updates as knockout rounds and matchups
+              are published.
             </p>
             <p className="panel-note">
-              <a href="https://www.uefa.com/uefaeuropaleague/fixtures-results/bracket/" target="_blank" rel="noreferrer">
+              <a
+                href="https://www.uefa.com/uefaeuropaleague/fixtures-results/bracket/"
+                target="_blank"
+                rel="noreferrer"
+              >
                 Open UEFA bracket view ↗
               </a>
             </p>
@@ -284,19 +316,20 @@ export default function TeamInsights({
           <summary>
             Power Rankings
             <small>
-              {myPowerRanking
-                ? myPowerRanking.cells[0]
-                : "Ranking unavailable"}
+              {myPowerRanking ? myPowerRanking.cells[0] : "Ranking unavailable"}
             </small>
           </summary>
           <p className="panel-note">
             {info.powerRanking.note} · produced{" "}
-            {new Date(info.powerRanking.publishedAt).toLocaleDateString("en-US", {
-              timeZone: "America/Chicago",
-              month: "short",
-              day: "numeric",
-              year: "numeric",
-            })}
+            {new Date(info.powerRanking.publishedAt).toLocaleDateString(
+              "en-US",
+              {
+                timeZone: "America/Chicago",
+                month: "short",
+                day: "numeric",
+                year: "numeric",
+              },
+            )}
           </p>
           <div className="table-scroll">
             <table>
@@ -343,13 +376,15 @@ export default function TeamInsights({
             <a href={info.powerRanking.url} target="_blank" rel="noreferrer">
               {info.powerRanking.source} ↗
             </a>{" "}
-            · checked {new Date(info.powerRanking.checked).toLocaleString("en-US", {
+            · checked{" "}
+            {new Date(info.powerRanking.checked).toLocaleString("en-US", {
               timeZone: "America/Chicago",
               month: "short",
               day: "numeric",
               hour: "numeric",
               minute: "2-digit",
-            })} CT
+            })}{" "}
+            CT
           </p>
         </details>
       )}
@@ -359,12 +394,15 @@ export default function TeamInsights({
           className="data-panel"
           onToggle={(event) => {
             if (event.currentTarget.open) {
-              const priorityKeys = info?.depth?.groups.flatMap((group) =>
-                group.players.map((player: { url: string }) => {
-                  const id = player.url.match(/\/_\/id\/(\d+)/)?.[1];
-                  return id && t?.league ? `${t.league}:${id}` : "";
-                }).filter(Boolean),
-              ) || [];
+              const priorityKeys =
+                info?.depth?.groups.flatMap((group) =>
+                  group.players
+                    .map((player: { url: string }) => {
+                      const id = player.url.match(/\/_\/id\/(\d+)/)?.[1];
+                      return id && t?.league ? `${t.league}:${id}` : "";
+                    })
+                    .filter(Boolean),
+                ) || [];
               onRosterOpen(priorityKeys);
             }
           }}
@@ -384,7 +422,8 @@ export default function TeamInsights({
               )}
               {Boolean(t?.league) && playerStatsStatus === "partial" && (
                 <p className="panel-note" aria-live="polite">
-                  Some season stats could not refresh. Reopen the roster in a few minutes to retry.
+                  Some season stats could not refresh. Reopen the roster in a
+                  few minutes to retry.
                 </p>
               )}
               {Boolean(t?.league) && playerStatsStatus === "empty" && (
@@ -398,8 +437,8 @@ export default function TeamInsights({
                 </p>
               )}
               <p className="panel-note">
-                Players grouped by position. Links open player bios and
-                source profiles when available.
+                Players grouped by position. Links open player bios and source
+                profiles when available.
               </p>
               {rosterGroups.map((group, i) => {
                 const statsTable = createRosterStatsTable(
@@ -435,21 +474,22 @@ export default function TeamInsights({
                         <table className="roster-stats-table">
                           <caption>
                             {group.position} season stats
-                            {seasonTitles.length > 0 && ` · ${seasonTitles.join(" / ")}`}
+                            {seasonTitles.length > 0 &&
+                              ` · ${seasonTitles.join(" / ")}`}
                           </caption>
                           <thead>
                             <tr>
                               <th
                                 scope="col"
-                                onClick={() => toggleRosterSort("Position")}
-                              >
-                                Pos.
-                              </th>
-                              <th
-                                scope="col"
                                 onClick={() => toggleRosterSort("Player")}
                               >
                                 Player
+                              </th>
+                              <th
+                                scope="col"
+                                onClick={() => toggleRosterSort("Position")}
+                              >
+                                Pos.
                               </th>
                               {statsTable.columns.map((column) => (
                                 <th
@@ -470,43 +510,69 @@ export default function TeamInsights({
                                     ? a.player.name
                                     : rosterSort.column === "Position"
                                       ? (a.player as any).position || ""
-                                      : rosterStatValue(a.summary, rosterSort.column);
+                                      : rosterStatValue(
+                                          a.summary,
+                                          rosterSort.column,
+                                        );
                                 const bv =
                                   rosterSort.column === "Player"
                                     ? b.player.name
                                     : rosterSort.column === "Position"
                                       ? (b.player as any).position || ""
-                                      : rosterStatValue(b.summary, rosterSort.column);
+                                      : rosterStatValue(
+                                          b.summary,
+                                          rosterSort.column,
+                                        );
                                 const an = Number(av.replace(/[%,$,]/g, ""));
                                 const bn = Number(bv.replace(/[%,$,]/g, ""));
                                 const result =
                                   Number.isFinite(an) && Number.isFinite(bn)
                                     ? an - bn
                                     : av.localeCompare(bv);
-                                return rosterSort.direction === "asc" ? result : -result;
+                                return rosterSort.direction === "asc"
+                                  ? result
+                                  : -result;
                               })
                               .map(({ player: p, summary }) => (
                                 <tr key={p.url + p.name}>
-                                  <td>{(p as any).position || "—"}</td>
                                   <th scope="row">
-                                    <a href={p.url} target="_blank" rel="noreferrer">
+                                    <a
+                                      href={p.url}
+                                      target="_blank"
+                                      rel="noreferrer"
+                                    >
                                       {p.name} ↗
                                     </a>
                                     <span className="roster-player-age">
-                                      {p.age !== undefined ? `Age ${p.age}` : ""}
+                                      {p.age !== undefined
+                                        ? `Age ${p.age}`
+                                        : ""}
                                     </span>
-                                    {(p.campTeam || p.signedForSeason || p.draftPick) && (
+                                    {(p.campTeam ||
+                                      p.signedForSeason ||
+                                      p.draftPick) && (
                                       <span className="roster-table-player-meta">
-                                        {[p.campTeam, p.signedForSeason && "Signed for 2026–27", p.draftPick && "2026 draft pick"]
+                                        {[
+                                          p.campTeam,
+                                          p.signedForSeason &&
+                                            "Signed for 2026–27",
+                                          p.draftPick && "2026 draft pick",
+                                        ]
                                           .filter(Boolean)
                                           .join(" · ")}
                                       </span>
                                     )}
                                   </th>
+                                  <td>{(p as any).position || "—"}</td>
                                   {statsTable.columns.map((column) => {
-                                    const stat = summary?.values.find((value) => value.label === column);
+                                    const stat = summary?.values.find(
+                                      (value) => value.label === column,
+                                    );
                                     return (
-                                      <td key={column} title={stat?.description}>
+                                      <td
+                                        key={column}
+                                        title={stat?.description}
+                                      >
                                         {rosterStatValue(summary, column)}
                                       </td>
                                     );
@@ -518,23 +584,34 @@ export default function TeamInsights({
                       </div>
                     ) : (
                       <ol className="roster-player-list">
-                        {group.players.map((p) => (
-                          <li key={p.url + p.name}>
-                            <a href={p.url} target="_blank" rel="noreferrer">
-                              {p.name} ↗
-                            </a>
-                            {p.age !== undefined && (
-                              <span className="roster-player-age"> · Age {p.age}</span>
-                            )}
-                            {(p.campTeam || p.signedForSeason || p.draftPick) && (
-                              <span className="roster-table-player-meta">
-                                {[p.campTeam, p.signedForSeason && "Signed for 2026–27", p.draftPick && "2026 draft pick"]
-                                  .filter(Boolean)
-                                  .join(" · ")}
-                              </span>
-                            )}
-                          </li>
-                        ))}
+                        {[...group.players]
+                          .sort((a, b) => a.name.localeCompare(b.name))
+                          .map((p) => (
+                            <li key={p.url + p.name}>
+                              <a href={p.url} target="_blank" rel="noreferrer">
+                                {p.name} ↗
+                              </a>
+                              {p.age !== undefined && (
+                                <span className="roster-player-age">
+                                  {" "}
+                                  · Age {p.age}
+                                </span>
+                              )}
+                              {(p.campTeam ||
+                                p.signedForSeason ||
+                                p.draftPick) && (
+                                <span className="roster-table-player-meta">
+                                  {[
+                                    p.campTeam,
+                                    p.signedForSeason && "Signed for 2026–27",
+                                    p.draftPick && "2026 draft pick",
+                                  ]
+                                    .filter(Boolean)
+                                    .join(" · ")}
+                                </span>
+                              )}
+                            </li>
+                          ))}
                       </ol>
                     )}
                   </section>
@@ -546,7 +623,7 @@ export default function TeamInsights({
                 </a>{" "}
                 {id === "frost"
                   ? "· Preliminary names and positions from the official training-camp announcement; final roster may change."
-                  : "· Age and season stats from ESPN. Tables stay separated by position; unavailable values are shown as —."}
+                  : "· Age and season stats from ESPN. Positions sharing the same stat columns are combined; unavailable values are shown as —."}
               </p>
             </>
           ) : (
@@ -563,5 +640,3 @@ export default function TeamInsights({
     </section>
   );
 }
-
-
