@@ -73,13 +73,29 @@ async function stats(entry: Entry) {
     inflight.set(
       cacheKey,
       (async () => {
-        // Try the season-specific endpoint first with a short guard. It is
-        // fast when available, but a slow 404 must not consume the full
-        // per-player budget before the responsive common feed gets a chance.
+        // ESPN's common v3 feed is the responsive public representation for
+        // player pages. Use it first so slow season-core 404s cannot consume
+        // the full per-player budget before returning visible stats.
         const deadline = Date.now() + statsDeadlineMs;
         const remaining = () =>
           Math.min(statsRequestTimeoutMs, Math.max(1, deadline - Date.now()));
         const [sport, league] = entry.league.split("/");
+        const urls = [
+          "https://site.web.api.espn.com/apis/common/v3/sports/" + entry.league + "/athletes/" + entry.id + "/stats",
+          "https://site.web.api.espn.com/apis/common/v3/sports/" + entry.league + "/athletes/" + entry.id + "/overview",
+          "https://site.api.espn.com/apis/site/v2/sports/" + entry.league + "/athletes/" + entry.id,
+        ];
+        for (const url of urls) {
+          if (Date.now() >= deadline) break;
+          try {
+            const parsed = parsePlayerStats(await get(url, remaining()), entry.teamId);
+            if (parsed) return parsed;
+          } catch {
+            // Try the next ESPN representation.
+          }
+        }
+        // Before the new season starts, the common feed may be empty. Fall
+        // back to season-specific endpoints and try the previous season too.
         for (const year of [entry.year, entry.year - 1]) {
           if (Date.now() >= deadline) break;
           try {
@@ -93,20 +109,6 @@ async function stats(entry: Entry) {
             if (parsed) return parsed;
           } catch {
             // Missing current-season stats must not hide the last season.
-          }
-        }
-        const urls = [
-          "https://site.web.api.espn.com/apis/common/v3/sports/" + entry.league + "/athletes/" + entry.id + "/stats",
-          "https://site.web.api.espn.com/apis/common/v3/sports/" + entry.league + "/athletes/" + entry.id + "/overview",
-          "https://site.api.espn.com/apis/site/v2/sports/" + entry.league + "/athletes/" + entry.id,
-        ];
-        for (const url of urls) {
-          if (Date.now() >= deadline) break;
-          try {
-            const parsed = parsePlayerStats(await get(url, remaining()), entry.teamId);
-            if (parsed) return parsed;
-          } catch {
-            // Try the next ESPN representation.
           }
         }
         return undefined;

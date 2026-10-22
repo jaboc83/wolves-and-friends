@@ -328,15 +328,15 @@ try {
   );
   const payload = await response.json();
   assert.equal(payload.players.length, 3);
-  assert.equal(payload.players[0].stats.values[0].value, "28.8");
+  assert.equal(payload.players[0].stats.values[0].value, "20.1");
   assert.equal(
     payload.players[0].stats.title,
-    "2026 · Regular season",
+    "2025-26 · Regular Season Averages",
   );
   assert.equal(payload.players[1].stats, undefined);
   assert.ok(calls.some((c) => String(c.url).endsWith("/athletes/3/stats")));
-  assert.ok(!calls.some((c) => String(c.url).endsWith("/athletes/1/stats")),
-    "successful core stats skip the failing common-v3 endpoints");
+  assert.ok(calls.some((c) => String(c.url).endsWith("/athletes/1/stats")),
+    "responsive common-v3 stats are tried first");
   const afterFirst = calls.length;
   await GET(new Request("https://local/api/roster-stats?batch=0"));
   assert.equal(
