@@ -280,7 +280,7 @@ export async function collect(
       let json: any;
       try {
         json = (await (
-          await get("https://site.web.api.espn.com/apis/site/v2/sports/basketball/nba/injuries?region=us&lang=en")
+          await get("https://site.web.api.espn.com/apis/site/v2/sports/basketball/nba/injuries?region=us&lang=en&team=16")
         ).json()) as any;
         if (!json.injuries?.length) throw new FeedError("empty-injuries");
       } catch {
