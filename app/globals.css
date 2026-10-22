@@ -1818,9 +1818,7 @@ footer b {
   max-width: 220px;
 }
 .depth-row {
-  display: grid;
-  grid-template-columns: 130px 1fr;
-  gap: 12px;
+  display: block;
   padding: 12px 0;
   border-bottom: 1px solid var(--line, #e2e7e0);
   font-size: 12px;
@@ -1828,6 +1826,13 @@ footer b {
 .depth-row > h3 {
   margin: 0;
   font-size: 12px;
+}
+.roster-position-heading {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  margin-bottom: 8px !important;
 }
 .depth-row ol {
   margin: 0;
@@ -3000,11 +3005,6 @@ body:has(.score-choice[open]) {
 }
 .roster-player-list li {
   padding: 4px;
-}
-@media (max-width: 480px) {
-  .depth-row {
-    grid-template-columns: 80px minmax(0, 1fr);
-  }
 }
 .social-refresh:disabled {
   opacity: 0.7;

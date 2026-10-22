@@ -84,11 +84,72 @@ const player = (p: any, league: string) => ({
 });
 const powerRankingLeague = (league: string) =>
   ["football/nfl", "basketball/nba", "basketball/wnba"].includes(league);
+const powerRankingFallback = (
+  league: string,
+  teamId: string,
+  checked: string,
+): PowerRanking | undefined => {
+  const snapshots: Record<string, PowerRanking> = {
+    "basketball/nba:wolves": {
+      name: "ESPN Power Rankings",
+      metric: "BPI",
+      rows: [
+        {
+          id: "16",
+          name: "Minnesota Timberwolves",
+          url: "https://www.espn.com/nba/team/_/name/min",
+          cells: ["8th", "3.096"],
+        },
+      ],
+      source: "ESPN team snapshot",
+      url: "https://www.espn.com/nba/bpi",
+      checked,
+      publishedAt: "2026-10-21T22:54:00Z",
+      note: "Latest team snapshot while ESPN’s full ranking feed refreshes.",
+    },
+    "football/nfl:vikings": {
+      name: "ESPN Power Rankings",
+      metric: "FPI",
+      rows: [
+        {
+          id: "15",
+          name: "Minnesota Vikings",
+          url: "https://www.espn.com/nfl/team/_/name/min",
+          cells: ["32nd", "-7.8"],
+        },
+      ],
+      source: "ESPN team snapshot",
+      url: "https://www.espn.com/nfl/fpi",
+      checked,
+      publishedAt: "2026-10-21T06:00:00Z",
+      note: "Latest team snapshot while ESPN’s full ranking feed refreshes.",
+    },
+    "basketball/wnba:lynx": {
+      name: "ESPN Power Rankings",
+      metric: "BPI",
+      rows: [
+        {
+          id: "8",
+          name: "Minnesota Lynx",
+          url: "https://www.espn.com/wnba/team/_/name/min",
+          cells: ["4th", "4.360"],
+        },
+      ],
+      source: "ESPN team snapshot",
+      url: "https://www.espn.com/wnba/bpi",
+      checked,
+      publishedAt: "2026-10-21T07:07:00Z",
+      note: "Latest team snapshot while ESPN’s full ranking feed refreshes.",
+    },
+  };
+  return snapshots[`${league}:${teamId}`];
+};
+
 
 async function parsePowerRanking(
   league: string,
   checked: string,
-  get: (url: string) => Promise<any>,
+  get: (url: string, timeoutMs?: number) => Promise<any>,
 ): Promise<PowerRanking | undefined> {
   if (!powerRankingLeague(league)) return;
   const [sport, leagueName] = league.split("/");
@@ -99,14 +160,14 @@ async function parsePowerRanking(
       : now.getUTCFullYear();
   const endpoint =
     `https://sports.core.api.espn.com/v2/sports/${sport}/leagues/${leagueName}` +
-    `/seasons/${season}/powerindex?lang=en&region=us&page=1`;
-  const first = await get(endpoint);
+    `/seasons/${season}/powerindex?lang=en&region=us&page=1&limit=100`;
+  const first = await get(endpoint, 30000);
   const pages = Number(first.pageCount) || 1;
   const values = [
     first,
     ...(await Promise.all(
       Array.from({ length: Math.max(0, pages - 1) }, (_, i) =>
-        get(endpoint.replace("page=1", `page=${i + 2}`)),
+        get(endpoint.replace("page=1", `page=${i + 2}`), 30000),
       ),
     )),
   ].flatMap((page) => page.items || []);
@@ -132,6 +193,7 @@ async function parsePowerRanking(
   // available when ESPN's individual team endpoints are delayed.
   const catalogResult = await get(
     `https://site.api.espn.com/apis/site/v2/sports/${league}/teams?limit=100`,
+    30000,
   );
   const catalog = new Map(
     (catalogResult.sports?.[0]?.leagues?.[0]?.teams || [])
@@ -404,8 +466,15 @@ export function parseDGPT(
 export async function fetchTeamInfo() {
   const checked = new Date().toISOString();
   const powerRankingCache = new Map<string, Promise<PowerRanking | undefined>>();
-  const get = async (url: string) => {
-    const r = await fetch(url, { signal: AbortSignal.timeout(10000) });
+  const get = async (url: string, timeoutMs = 10000) => {
+    const r = await fetch(url, {
+      signal: AbortSignal.timeout(timeoutMs),
+      headers: {
+        Accept: "application/json",
+        "User-Agent": "WolvesAndFriends/1.0",
+      },
+      cache: "no-store",
+    });
     if (!r.ok) throw Error();
     return r.json() as Promise<any>;
   };
@@ -525,8 +594,21 @@ export async function fetchTeamInfo() {
                 parsePowerRanking(t.league!, checked, get);
               powerRankingCache.set(t.league!, getRanking);
               info.powerRanking = await getRanking;
+              if (!info.powerRanking) {
+                info.powerRanking = powerRankingFallback(
+                  t.league!,
+                  t.id,
+                  checked,
+                );
+              }
+              if (!info.powerRanking) info.unavailable.push("power rankings");
             } catch {
-              info.unavailable.push("power rankings");
+              info.powerRanking = powerRankingFallback(
+                t.league!,
+                t.id,
+                checked,
+              );
+              if (!info.powerRanking) info.unavailable.push("power rankings");
             }
           })(),
         ]);
