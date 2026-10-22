@@ -1,16 +1,23 @@
 "use client";
-import { Fragment, useEffect, useMemo, useState } from "react";
-import { decorateTable } from "../lib/standings";
-import { teams } from "../lib/teams";
-import { sportTerms } from "../lib/sport-terms";
+import { Fragment, useMemo, useState } from "react";
+import { decorateTable } from "../lib/team-info/standings";
+import { teams } from "../lib/teams/teams";
+import { sportTerms } from "../lib/teams/sport-terms";
 import type { TeamInfo } from "../lib/team-info";
-import type { PlayerStats } from "../lib/player-stats";
+import type { PlayerStats } from "../lib/team-info/player-stats";
 import {
   createRosterStatsTable,
   rosterStatValue,
-} from "../lib/roster-stats-table";
-import { espnTeamLogoUrl } from "../lib/march-madness";
+} from "../lib/team-info/roster-stats-table";
+import { espnTeamLogoUrl } from "../lib/games/march-madness";
 import BracketConnectors from "./bracket-connectors";
+import Image from "next/image";
+type RosterPlayer = NonNullable<
+  TeamInfo["depth"]
+>["groups"][number]["players"][number] & {
+  position: string;
+};
+type RosterSort = { column: string; direction: "asc" | "desc" };
 export default function TeamInsights({
   active,
   data,
@@ -30,15 +37,19 @@ export default function TeamInsights({
   onRosterOpen?: (priorityKeys?: string[]) => void;
 }) {
   const [selected, setSelected] = useState("wolves");
-  const [standingsOpen, setStandingsOpen] = useState(false);
-  const [powerRankingsOpen, setPowerRankingsOpen] = useState(false);
   const id = active === "all" ? selected : active;
-  useEffect(() => {
-    setStandingsOpen(autoOpenStandings);
-  }, [id, autoOpenStandings]);
-  useEffect(() => {
-    setPowerRankingsOpen(false);
-  }, [id]);
+  const [standingsOverride, setStandingsOverride] = useState<{
+    id: string;
+    open: boolean;
+  } | null>(null);
+  const standingsOpen =
+    standingsOverride?.id === id ? standingsOverride.open : autoOpenStandings;
+  const [powerRankingsState, setPowerRankingsState] = useState<{
+    id: string;
+    open: boolean;
+  } | null>(null);
+  const powerRankingsOpen =
+    powerRankingsState?.id === id && powerRankingsState.open;
   const terms = sportTerms(id);
   const headings = sportTerms(active);
   const t = teams.find((t) => t.id === id);
@@ -49,16 +60,20 @@ export default function TeamInsights({
       row.id === t?.espn ||
       Boolean(t?.espn && row.url.includes(`/${t.espn}`)),
   );
-  const [rosterSort, setRosterSort] = useState<{
-    column: string;
-    direction: "asc" | "desc";
-  }>({ column: "Player", direction: "asc" });
-  useEffect(() => {
-    setRosterSort({ column: "Player", direction: "asc" });
-  }, [id]);
+  const [rosterSortState, setRosterSortState] = useState<{
+    id: string;
+    value: RosterSort;
+  } | null>(null);
+  const rosterSort =
+    rosterSortState?.id === id
+      ? rosterSortState.value
+      : { column: "Player", direction: "asc" as const };
   const rosterGroups = useMemo(() => {
     if (!info?.depth) return [];
-    const buckets = new Map<string, { position: string; players: any[] }>();
+    const buckets = new Map<
+      string,
+      { position: string; players: RosterPlayer[] }
+    >();
     const abbreviation = (position: string) => {
       const value = position.toLowerCase();
       if (/goalkeeper|goaltender|\\bgk\\b/.test(value)) return "GK";
@@ -126,7 +141,9 @@ export default function TeamInsights({
         id="team-standings"
         className="data-panel"
         open={standingsOpen}
-        onToggle={(event) => setStandingsOpen(event.currentTarget.open)}
+        onToggle={(event) =>
+          setStandingsOverride({ id, open: event.currentTarget.open })
+        }
       >
         <summary>{headings.standings}</summary>
         {info?.postseason && (
@@ -156,7 +173,8 @@ export default function TeamInsights({
                     >
                       {match.teams.map((p) => (
                         <span key={p.id}>
-                          <img
+                          <Image
+                            unoptimized
                             className="bracket-team-logo"
                             src={
                               p.logo || espnTeamLogoUrl(t?.league || "", p.id)
@@ -311,7 +329,9 @@ export default function TeamInsights({
         <details
           className="data-panel power-rankings"
           open={powerRankingsOpen}
-          onToggle={(event) => setPowerRankingsOpen(event.currentTarget.open)}
+          onToggle={(event) =>
+            setPowerRankingsState({ id, open: event.currentTarget.open })
+          }
         >
           <summary>
             Power Rankings
@@ -352,7 +372,8 @@ export default function TeamInsights({
                     <th scope="row">
                       <a href={row.url} target="_blank" rel="noreferrer">
                         {row.logo && (
-                          <img
+                          <Image
+                            unoptimized
                             className="power-ranking-logo"
                             src={row.logo}
                             alt=""
@@ -454,13 +475,23 @@ export default function TeamInsights({
                   ),
                 );
                 const toggleRosterSort = (column: string) =>
-                  setRosterSort((current) => ({
-                    column,
-                    direction:
-                      current.column === column && current.direction === "asc"
-                        ? "desc"
-                        : "asc",
-                  }));
+                  setRosterSortState((current) => {
+                    const currentSort =
+                      current?.id === id
+                        ? current.value
+                        : { column: "Player", direction: "asc" as const };
+                    return {
+                      id,
+                      value: {
+                        column,
+                        direction:
+                          currentSort.column === column &&
+                          currentSort.direction === "asc"
+                            ? "desc"
+                            : "asc",
+                      },
+                    };
+                  });
                 return (
                   <section className="depth-row" key={group.position + i}>
                     <h3 className="visually-hidden">{group.position}</h3>
@@ -509,7 +540,7 @@ export default function TeamInsights({
                                   rosterSort.column === "Player"
                                     ? a.player.name
                                     : rosterSort.column === "Position"
-                                      ? (a.player as any).position || ""
+                                      ? a.player.position
                                       : rosterStatValue(
                                           a.summary,
                                           rosterSort.column,
@@ -518,7 +549,7 @@ export default function TeamInsights({
                                   rosterSort.column === "Player"
                                     ? b.player.name
                                     : rosterSort.column === "Position"
-                                      ? (b.player as any).position || ""
+                                      ? b.player.position
                                       : rosterStatValue(
                                           b.summary,
                                           rosterSort.column,
@@ -563,7 +594,7 @@ export default function TeamInsights({
                                       </span>
                                     )}
                                   </th>
-                                  <td>{(p as any).position || "—"}</td>
+                                  <td>{p.position || "—"}</td>
                                   {statsTable.columns.map((column) => {
                                     const stat = summary?.values.find(
                                       (value) => value.label === column,

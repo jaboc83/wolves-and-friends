@@ -1,6 +1,7 @@
 "use client";
 import { useEffect, useRef, useState, type ReactNode } from "react";
-import { isLocalSocialImage } from "../lib/bluesky-images";
+import Image from "next/image";
+import { isLocalSocialImage } from "../lib/social/bluesky-images";
 
 export default function SocialImage({
   src,
@@ -78,11 +79,12 @@ export default function SocialImage({
   return (
     <span ref={root} className="social-image">
       {data && failed !== src ? (
-        <img
+        <Image
+          unoptimized
           src={data}
           alt={alt}
-          width={width}
-          height={height}
+          width={width ?? 40}
+          height={height ?? 40}
           decoding="async"
           onError={() => setFailed(src)}
         />

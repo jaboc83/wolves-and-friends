@@ -1,7 +1,7 @@
 "use client";
 import { useEffect, useState } from "react";
 import { createPortal } from "react-dom";
-import { pageScrollTop } from "../lib/page-scroll";
+import { pageScrollTop } from "../lib/browser/page-scroll";
 
 export default function BackToTop() {
   const [visible, setVisible] = useState(false);
@@ -28,7 +28,9 @@ export default function BackToTop() {
     updateVisibility();
     window.addEventListener("scroll", updateVisibility, { passive: true });
     document.addEventListener("scroll", updateVisibility, { passive: true });
-    window.visualViewport?.addEventListener("scroll", updateVisibility, { passive: true });
+    window.visualViewport?.addEventListener("scroll", updateVisibility, {
+      passive: true,
+    });
     window.visualViewport?.addEventListener("resize", updateVisibility);
     return () => {
       if (frame) window.cancelAnimationFrame(frame);

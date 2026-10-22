@@ -16,8 +16,8 @@ The owner requires this site to remain free of personal-data collection. Apply t
 - Keep source changes and relevant validation in GitHub commits or pull requests.
 - The live website is still published with Sites. GitHub pushes alone do not deploy it; keep the two source copies synchronized explicitly when publishing.
 
-## Automatic deployment
+## Deployment
 
-- Merged pull requests targeting GitHub main trigger a cloud deployment task; see DEPLOYMENT.md. Direct pushes do not trigger it.
+- Automatic deployment triggers are disabled. A deployment requires the owner to explicitly request it in ChatGPT; merging a pull request or pushing to GitHub does not deploy. See DEPLOYMENT.md.
 - Verify the pinned GitHub source, privacy constraints, type check, and production build before publishing. Preserve the current live version on failure.
 - .openai/github-deployment.json is a Sites-only deployed-source checkpoint; do not push it back to GitHub or mistake an unpublished candidate for the live checkpoint.

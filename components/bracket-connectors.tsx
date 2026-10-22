@@ -11,7 +11,11 @@ export default function BracketConnectors({
   matchClass: string;
 }) {
   const svg = useRef<SVGSVGElement>(null);
-  const [drawing, setDrawing] = useState<{ width: number; height: number; segments: Segment[] }>({
+  const [drawing, setDrawing] = useState<{
+    width: number;
+    height: number;
+    segments: Segment[];
+  }>({
     width: 0,
     height: 0,
     segments: [],
@@ -24,12 +28,21 @@ export default function BracketConnectors({
       cancelAnimationFrame(frame);
       frame = requestAnimationFrame(() => {
         const bounds = container.getBoundingClientRect();
-        const rounds = [...container.querySelectorAll<HTMLElement>(`.${roundClass}`)];
+        const rounds = [
+          ...container.querySelectorAll<HTMLElement>(`.${roundClass}`),
+        ];
         const segments: Segment[] = [];
         for (let round = 0; round < rounds.length - 1; round++) {
-          const from = [...rounds[round].querySelectorAll<HTMLElement>(`.${matchClass}`)];
-          const to = [...rounds[round + 1].querySelectorAll<HTMLElement>(`.${matchClass}`)];
-          if (!from.length || !to.length || from.length % to.length !== 0) continue;
+          const from = [
+            ...rounds[round].querySelectorAll<HTMLElement>(`.${matchClass}`),
+          ];
+          const to = [
+            ...rounds[round + 1].querySelectorAll<HTMLElement>(
+              `.${matchClass}`,
+            ),
+          ];
+          if (!from.length || !to.length || from.length % to.length !== 0)
+            continue;
           const group = from.length / to.length;
           for (let i = 0; i < from.length; i++) {
             const a = from[i].getBoundingClientRect();
@@ -45,19 +58,40 @@ export default function BracketConnectors({
             });
           }
         }
-        setDrawing({ width: container.scrollWidth, height: container.scrollHeight, segments });
+        setDrawing({
+          width: container.scrollWidth,
+          height: container.scrollHeight,
+          segments,
+        });
       });
     };
     const observer = new ResizeObserver(measure);
     observer.observe(container);
-    container.querySelectorAll(`.${roundClass}, .${matchClass}`).forEach((element) => observer.observe(element));
+    container
+      .querySelectorAll(`.${roundClass}, .${matchClass}`)
+      .forEach((element) => observer.observe(element));
     measure();
-    return () => { cancelAnimationFrame(frame); observer.disconnect(); };
+    return () => {
+      cancelAnimationFrame(frame);
+      observer.disconnect();
+    };
   }, [roundClass, matchClass]);
   return (
-    <svg ref={svg} className="bracket-connectors" width={drawing.width} height={drawing.height} aria-hidden="true">
+    <svg
+      ref={svg}
+      className="bracket-connectors"
+      width={drawing.width}
+      height={drawing.height}
+      aria-hidden="true"
+    >
       {drawing.segments.map((segment, index) => (
-        <path key={index} d={segment.path} fill="none" stroke="currentColor" strokeWidth="2" />
+        <path
+          key={index}
+          d={segment.path}
+          fill="none"
+          stroke="currentColor"
+          strokeWidth="2"
+        />
       ))}
     </svg>
   );

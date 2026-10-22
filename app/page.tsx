@@ -1,17 +1,13 @@
 "use client";
-import {
-  lazy,
-  Suspense,
-  useEffect,
-  useState,
-  type CSSProperties,
-} from "react";
+import { lazy, Suspense, useEffect, useState, type CSSProperties } from "react";
+import Link from "next/link";
+import Image from "next/image";
 import { useDashboardFeeds } from "../hooks/use-dashboard-feeds";
-import { browserStorage, readStored, stringList } from "../lib/browser-storage";
-import { storedTeam } from "../lib/dashboard-storage";
-import { newsDisplayMode } from "../lib/news-page-data";
+import { browserStorage, readStored, stringList } from "../lib/browser/storage";
+import { storedTeam } from "../lib/dashboard/storage";
+import { newsDisplayMode } from "../lib/browser/news-page-data";
 import StoryCard from "../components/story-card";
-import { selectStories, selectGames } from "../lib/dashboard-selectors";
+import { selectStories, selectGames } from "../lib/dashboard/selectors";
 import GameCard from "../components/game-card";
 import BackToTop from "../components/back-to-top";
 import MatchCalendar from "../components/match-calendar";
@@ -20,18 +16,19 @@ import ScorePreferenceDialog from "../components/score-preference-dialog";
 import {
   loadScorePreference,
   saveScorePreference,
-} from "../lib/score-preference";
+} from "../lib/browser/score-preference";
 const MarchMadness = lazy(() => import("../components/march-madness"));
-import { recentStories } from "../lib/news-window";
-import { sportTerms } from "../lib/sport-terms";
+import { recentStories } from "../lib/browser/news-window";
+import { sportTerms } from "../lib/teams/sport-terms";
 import TeamInsights from "../components/team-insights";
-import { teamThemes } from "../lib/team-themes";
-import { unreadSocial } from "../lib/social-queue";
-import { communities } from "../lib/communities";
-import { teams, teamPriority } from "../lib/teams";
+import { teamThemes } from "../lib/teams/team-themes";
+import { unreadSocial } from "../lib/social/social-queue";
+import { communities } from "../lib/social/communities";
+import { teams } from "../lib/teams/teams";
+import { teamLogoPath } from "../lib/teams/team-logo";
 import type { Story, Game } from "../lib/feeds";
 import { releaseMarker } from "../lib/release-info";
-import { downloadFeedDiagnostics } from "../lib/feed-diagnostics";
+import { downloadFeedDiagnostics } from "../lib/feeds/feed-diagnostics";
 const ct = (s: string, opts: Intl.DateTimeFormatOptions = {}) =>
   new Date(s).toLocaleString("en-US", { timeZone: "America/Chicago", ...opts });
 export default function Home() {
@@ -49,22 +46,48 @@ export default function Home() {
     [resultsReady, setResultsReady] = useState(false),
     [autoOpenStandings, setAutoOpenStandings] = useState(false),
     [darkMode, setDarkMode] = useState(false);
-  const { data, teamInfo, socialData, socialUnavailable, youtubeUnavailable,
-    liveGames, scoreCheck, scoreError, loading, newsFailed, newsData, scheduleError,
-    oddsGames, playerStats, playerStatsStatus, socialRefreshing, socialRefreshError,
-    refreshSocial, refreshRosterStats, fetchNewsPage, activePage } = useDashboardFeeds(active);
+  const {
+    data,
+    teamInfo,
+    socialData,
+    socialUnavailable,
+    youtubeUnavailable,
+    liveGames,
+    scoreError,
+    loading,
+    newsFailed,
+    newsData,
+    scheduleError,
+    oddsGames,
+    playerStats,
+    playerStatsStatus,
+    socialRefreshing,
+    socialRefreshError,
+    refreshSocial,
+    refreshRosterStats,
+    fetchNewsPage,
+    activePage: activePageRef,
+  } = useDashboardFeeds(active);
   useEffect(() => {
-    setActive(storedTeam());
-    setReadIds(readStored("wf-read", stringList, []));
-    setDarkMode(browserStorage.getItem("wf-color-mode") === "dark");
-    const preference = loadScorePreference(browserStorage);
-    setHideResults(preference.hidden); setScorePrompt(preference.ask);
-    if (!preference.ask && !preference.hidden)
-      setAutoOpenStandings(window.matchMedia("(min-width: 1600px)").matches);
-    setResultsReady(true);
+    let alive = true;
+    queueMicrotask(() => {
+      if (!alive) return;
+      setActive(storedTeam());
+      setReadIds(readStored("wf-read", stringList, []));
+      setDarkMode(browserStorage.getItem("wf-color-mode") === "dark");
+      const preference = loadScorePreference(browserStorage);
+      setHideResults(preference.hidden);
+      setScorePrompt(preference.ask);
+      if (!preference.ask && !preference.hidden)
+        setAutoOpenStandings(window.matchMedia("(min-width: 1600px)").matches);
+      setResultsReady(true);
+    });
+    return () => {
+      alive = false;
+    };
   }, []);
   function choose(id: string) {
-    activePage.current = id;
+    activePageRef.current = id;
     setActive(id);
     setAutoOpenStandings(false);
     if (id !== "all") void fetchNewsPage(id);
@@ -117,14 +140,38 @@ export default function Home() {
   const team = teams.find((t) => t.id === active);
   const terms = sportTerms(active);
   const { compactNews, displayed, olderCount, newest } = selectStories({
-    newsData, active, search, readIds, showRead, showOlder,
+    newsData,
+    active,
+    search,
+    readIds,
+    showRead,
+    showOlder,
   });
-  const { teamsPlayingToday, visibleGames, availableResults, results, todayGames, futureGames } = selectGames({
-    data, oddsGames, liveGames, active, showOlderResults,
+  const {
+    teamsPlayingToday,
+    visibleGames,
+    availableResults,
+    results,
+    todayGames,
+    futureGames,
+  } = selectGames({
+    data,
+    oddsGames,
+    liveGames,
+    active,
+    showOlderResults,
   });
   const newsMode = newsDisplayMode(loading, displayed.length > 0, newsFailed);
-  const socialPosts = unreadSocial(socialData.filter((post) => post.socialPlatform !== "youtube"), active, readIds);
-  const youtubeHeadlines = unreadSocial(socialData.filter((post) => post.socialPlatform === "youtube"), active, readIds);
+  const socialPosts = unreadSocial(
+    socialData.filter((post) => post.socialPlatform !== "youtube"),
+    active,
+    readIds,
+  );
+  const youtubeHeadlines = unreadSocial(
+    socialData.filter((post) => post.socialPlatform === "youtube"),
+    active,
+    readIds,
+  );
   const failed = [
     ...(data?.health || []).filter((h) =>
       /schedule|scores|scoreboard/.test(h.name),
@@ -156,7 +203,13 @@ export default function Home() {
     );
   }
   const story = (item: Story) => (
-    <StoryCard key={item.id} story={item} choose={choose} markRead={markRead} readIds={readIds} />
+    <StoryCard
+      key={item.id}
+      story={item}
+      choose={choose}
+      markRead={markRead}
+      readIds={readIds}
+    />
   );
 
   return (
@@ -171,8 +224,9 @@ export default function Home() {
       >
         <header className="mast">
           <div className="mast-inner">
-            <a className="brand" href="/">
-              <img
+            <Link className="brand" href="/">
+              <Image
+                unoptimized
                 className="brand-emblem"
                 src="/logos/wolves-friends-neutral.png"
                 alt=""
@@ -183,7 +237,7 @@ export default function Home() {
                 Wolves<span> & Friends</span>
                 <i>YOUR TEAMS. ONE PLACE.</i>
               </div>
-            </a>
+            </Link>
             <button
               className="color-mode-toggle"
               onClick={toggleColorMode}
@@ -225,7 +279,8 @@ export default function Home() {
               className={active === "all" ? "selected" : ""}
               onClick={() => choose("all")}
             >
-              <img
+              <Image
+                unoptimized
                 className="team-tab-logo"
                 src="/logos/wolves-friends-neutral.png"
                 alt=""
@@ -243,17 +298,10 @@ export default function Home() {
                 onClick={() => choose(t.id)}
               >
                 <span className="dot" style={{ background: t.color }} />
-                <img
+                <Image
+                  unoptimized
                   className="team-tab-logo"
-                  src={
-                    t.id === "disc"
-                      ? "/logos/dgpt-tab.png"
-                      : t.id === "zalgiris"
-                        ? "/logos/zalgiris-tab.svg"
-                        : t.id === "usmnt"
-                          ? "/logos/usmnt-tab.svg"
-                          : `/logos/${t.id}.png`
-                  }
+                  src={t.id === "disc" ? "/logos/dgpt.png" : teamLogoPath(t.id)}
                   alt=""
                   width={40}
                   height={40}
@@ -275,7 +323,8 @@ export default function Home() {
               className={active === "march-madness" ? "selected" : ""}
               onClick={() => choose("march-madness")}
             >
-              <img
+              <Image
+                unoptimized
                 className="team-tab-logo"
                 src="/logos/march-madness.svg"
                 alt=""
@@ -442,7 +491,9 @@ export default function Home() {
                           <h2>Fan communities</h2>
                           <p>Permanent Reddit links</p>
                           {communities
-                            .filter((c) => active === "all" || c.team === active)
+                            .filter(
+                              (c) => active === "all" || c.team === active,
+                            )
                             .map((c) => (
                               <a
                                 key={c.url}
@@ -450,12 +501,9 @@ export default function Home() {
                                 target="_blank"
                                 rel="noreferrer"
                               >
-                                <img
-                                  src={
-                                    "/logos/" +
-                                    c.team +
-                                    (c.team === "disc" ? ".svg" : ".png")
-                                  }
+                                <Image
+                                  unoptimized
+                                  src={teamLogoPath(c.team)}
                                   alt=""
                                   width={24}
                                   height={24}
@@ -473,8 +521,8 @@ export default function Home() {
                             Source desk <span>{sources ? "−" : "+"}</span>
                           </button>
                           <p>
-                            Direct links to your trusted voices, including sources
-                            whose feeds aren’t available.
+                            Direct links to your trusted voices, including
+                            sources whose feeds aren’t available.
                           </p>
                           {sources && (
                             <div className="source-grid">
@@ -498,8 +546,9 @@ export default function Home() {
                           {failed.length > 0 && (
                             <details className="health">
                               <summary>
-                                {failed.length} feed{failed.length === 1 ? "" : "s"}{" "}
-                                unavailable · cached items may remain
+                                {failed.length} feed
+                                {failed.length === 1 ? "" : "s"} unavailable ·
+                                cached items may remain
                               </summary>
                               {failed.map((h) => (
                                 <p key={h.name}>
@@ -517,120 +566,130 @@ export default function Home() {
                       </div>
                     </div>
                     <div className="headline-column">
-                    <div className="section-heading">
-                      <h2 className="latest-heading">
-                        Latest stories <small>{displayed.length}</small>
-                      </h2>
-                      <label className="show-read">
-                        <input
-                          type="checkbox"
-                          checked={showRead}
-                          onChange={(e) => setShowRead(e.target.checked)}
-                        />{" "}
-                        Show read
-                      </label>
-                      <label className="search">
-                        <span aria-hidden="true">⌕</span>
-                        <input
-                          value={search}
-                          onChange={(e) => setSearch(e.target.value)}
-                          placeholder="Find a headline"
-                          aria-label="Search headlines"
-                        />
-                      </label>
-                    </div>
-                    {youtubeHeadlines.length > 0 && (
-                      <section className="youtube-headlines" aria-label="Latest YouTube videos">
-                        <h3>Latest videos</h3>
-                        {youtubeHeadlines.map(story)}
-                      </section>
-                    )}
-                    {youtubeUnavailable.some(
-                      (id) => active === "all" || active === id,
-                    ) && (
-                      <p className="feed-description">
-                        Some official YouTube feeds are temporarily unavailable.
-                      </p>
-                    )}
-                    {loading && displayed.length > 0 && (
-                      <p className="headline-loading" role="status">
-                        <span className="headline-spinner" aria-hidden="true" />
-                        Fetching more headlines…
-                      </p>
-                    )}
-                    {newsMode === "loading" ? (
-                      <div
-                        className="empty headline-loading"
-                        role="status"
-                        aria-live="polite"
-                      >
-                        <span className="headline-spinner" aria-hidden="true" />
-                        Fetching headlines…
+                      <div className="section-heading">
+                        <h2 className="latest-heading">
+                          Latest stories <small>{displayed.length}</small>
+                        </h2>
+                        <label className="show-read">
+                          <input
+                            type="checkbox"
+                            checked={showRead}
+                            onChange={(e) => setShowRead(e.target.checked)}
+                          />{" "}
+                          Show read
+                        </label>
+                        <label className="search">
+                          <span aria-hidden="true">⌕</span>
+                          <input
+                            value={search}
+                            onChange={(e) => setSearch(e.target.value)}
+                            placeholder="Find a headline"
+                            aria-label="Search headlines"
+                          />
+                        </label>
                       </div>
-                    ) : newsMode === "error" ? (
-                      <div className="empty" role="status">
-                        Headlines are temporarily unavailable. We’ll try again
-                        automatically.
-                      </div>
-                    ) : displayed.length ? (
-                      displayed.map(story)
-                    ) : (
-                      <div className="empty">
-                        <h3>
-                          {search
-                            ? "No matching headlines."
-                            : newest &&
-                                recentStories([newest], active).length === 0
-                              ? "No news since " +
-                                ct(newest.date, {
-                                  month: "short",
-                                  day: "numeric",
-                                  year: "numeric",
-                                })
-                              : active === "all"
-                                ? "No unread headlines from today."
-                                : "No unread headlines from the last week."}
-                        </h3>
-                        <p>
-                          {olderCount > 0
-                            ? "Use View older to catch up on earlier articles."
-                            : "Check the Source desk for more coverage."}
+                      {youtubeHeadlines.length > 0 && (
+                        <section
+                          className="youtube-headlines"
+                          aria-label="Latest YouTube videos"
+                        >
+                          <h3>Latest videos</h3>
+                          {youtubeHeadlines.map(story)}
+                        </section>
+                      )}
+                      {youtubeUnavailable.some(
+                        (id) => active === "all" || active === id,
+                      ) && (
+                        <p className="feed-description">
+                          Some official YouTube feeds are temporarily
+                          unavailable.
                         </p>
-                      </div>
-                    )}
-                    {newsData.checked && (
-                      <p className="feed-description">
-                        Last update:{" "}
-                        {ct(newsData.checked, {
-                          dateStyle: "medium",
-                          timeStyle: "short",
-                        })}{" "}
-                        CT
-                      </p>
-                    )}
-                    {!loading && newsFailed && displayed.length > 0 && (
-                      <p className="feed-description">
-                        Some headline feeds are unavailable.
-                      </p>
-                    )}
-                    {!loading && compactNews && (
-                      <div className="news-more">
-                        <p>
-                          {showOlder
-                            ? "Showing older headlines too."
-                            : active === "all"
-                              ? "Headlines from today."
-                              : "Headlines from the last week."}
+                      )}
+                      {loading && displayed.length > 0 && (
+                        <p className="headline-loading" role="status">
+                          <span
+                            className="headline-spinner"
+                            aria-hidden="true"
+                          />
+                          Fetching more headlines…
                         </p>
-                        {(olderCount > 0 || showOlder) && (
-                          <button onClick={() => setShowOlder(!showOlder)}>
+                      )}
+                      {newsMode === "loading" ? (
+                        <div
+                          className="empty headline-loading"
+                          role="status"
+                          aria-live="polite"
+                        >
+                          <span
+                            className="headline-spinner"
+                            aria-hidden="true"
+                          />
+                          Fetching headlines…
+                        </div>
+                      ) : newsMode === "error" ? (
+                        <div className="empty" role="status">
+                          Headlines are temporarily unavailable. We’ll try again
+                          automatically.
+                        </div>
+                      ) : displayed.length ? (
+                        displayed.map(story)
+                      ) : (
+                        <div className="empty">
+                          <h3>
+                            {search
+                              ? "No matching headlines."
+                              : newest &&
+                                  recentStories([newest], active).length === 0
+                                ? "No news since " +
+                                  ct(newest.date, {
+                                    month: "short",
+                                    day: "numeric",
+                                    year: "numeric",
+                                  })
+                                : active === "all"
+                                  ? "No unread headlines from today."
+                                  : "No unread headlines from the last week."}
+                          </h3>
+                          <p>
+                            {olderCount > 0
+                              ? "Use View older to catch up on earlier articles."
+                              : "Check the Source desk for more coverage."}
+                          </p>
+                        </div>
+                      )}
+                      {newsData.checked && (
+                        <p className="feed-description">
+                          Last update:{" "}
+                          {ct(newsData.checked, {
+                            dateStyle: "medium",
+                            timeStyle: "short",
+                          })}{" "}
+                          CT
+                        </p>
+                      )}
+                      {!loading && newsFailed && displayed.length > 0 && (
+                        <p className="feed-description">
+                          Some headline feeds are unavailable.
+                        </p>
+                      )}
+                      {!loading && compactNews && (
+                        <div className="news-more">
+                          <p>
                             {showOlder
-                              ? "Hide older"
-                              : "View older (" + olderCount + ")"}
-                          </button>
-                        )}
-                      </div>
-                    )}
+                              ? "Showing older headlines too."
+                              : active === "all"
+                                ? "Headlines from today."
+                                : "Headlines from the last week."}
+                          </p>
+                          {(olderCount > 0 || showOlder) && (
+                            <button onClick={() => setShowOlder(!showOlder)}>
+                              {showOlder
+                                ? "Hide older"
+                                : "View older (" + olderCount + ")"}
+                            </button>
+                          )}
+                        </div>
+                      )}
                     </div>
                   </div>
                 </section>
@@ -730,5 +789,3 @@ export default function Home() {
     </>
   );
 }
-
-

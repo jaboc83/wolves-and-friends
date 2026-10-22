@@ -3076,10 +3076,9 @@ body:has(.score-choice[open]) {
     max-width: 2200px;
   }
   .columns {
-    grid-template-columns: minmax(340px, min(24vw, 500px)) minmax(
-        600px,
-        1fr
-      ) minmax(330px, 390px);
+    grid-template-columns:
+      minmax(340px, min(24vw, 500px)) minmax(600px, 1fr)
+      minmax(330px, 390px);
     column-gap: 28px;
   }
   .columns > .today-group {

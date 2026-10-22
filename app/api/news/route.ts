@@ -1,5 +1,5 @@
 import { hubData } from "../../../lib/feeds";
-import { teams } from "../../../lib/teams";
+import { teams } from "../../../lib/teams/teams";
 export async function GET(request: Request) {
   const team = new URL(request.url).searchParams.get("team") || undefined;
   if (team && !teams.some((t) => t.id === team))
