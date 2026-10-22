@@ -1,1 +1,1 @@
-export const releaseMarker = "Release PR #pending";
+export const releaseMarker = "Release PR #148";
