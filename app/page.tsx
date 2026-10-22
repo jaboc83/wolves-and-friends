@@ -32,7 +32,7 @@ import {
 } from "../lib/dashboard/page-id";
 import { teamLogoPath } from "../lib/teams/team-logo";
 import type { Story, Game } from "../lib/feeds";
-import { releaseMarker } from "../lib/release-info";
+import { releaseCommitUrl, releaseMarker } from "../lib/release-info";
 import { downloadFeedDiagnostics } from "../lib/feeds/feed-diagnostics";
 import { useLocalTimeZone } from "../hooks/use-local-time-zone";
 import { formatInTimeZone, timeZoneLabel } from "../lib/browser/local-time";
@@ -792,9 +792,15 @@ export default function Home() {
             >
               Export diagnostics
             </button>
-            <small className="release-marker" title="Deployed Git commit">
+            <a
+              className="release-marker"
+              href={releaseCommitUrl}
+              target="_blank"
+              rel="noreferrer"
+              title="View the deployed GitHub commit"
+            >
               {releaseMarker}
-            </small>
+            </a>
           </footer>
         </div>
       </div>
