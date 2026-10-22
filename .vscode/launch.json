@@ -8,7 +8,8 @@
       "runtimeExecutable": "C:/Program Files/BraveSoftware/Brave-Browser/Application/brave.exe",
       "url": "http://127.0.0.1:5173",
       "webRoot": "${workspaceFolder}",
-      "preLaunchTask": "Wolves: dev"
+      "preLaunchTask": "Wolves: dev",
+      "postDebugTask": "Wolves: stop dev"
     },
     {
       "name": "Wolves: browser (Edge)",
@@ -16,7 +17,8 @@
       "request": "launch",
       "url": "http://127.0.0.1:5173",
       "webRoot": "${workspaceFolder}",
-      "preLaunchTask": "Wolves: dev"
+      "preLaunchTask": "Wolves: dev",
+      "postDebugTask": "Wolves: stop dev"
     },
     {
       "name": "Wolves: server (Worker)",
@@ -28,6 +30,7 @@
       "resolveSourceMapLocations": null,
       "sourceMaps": true,
       "preLaunchTask": "Wolves: dev",
+      "postDebugTask": "Wolves: stop dev",
       "timeout": 30000
     }
   ],
