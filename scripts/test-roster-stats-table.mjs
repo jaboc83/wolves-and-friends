@@ -60,8 +60,8 @@ const stats = {
 };
 const guards = createRosterStatsTable(
   [
-    { name: "Guard One", url: "https://www.espn.com/nba/player/_/id/101" },
     { name: "Guard Two", url: "https://www.espn.com/nba/player/_/id/102" },
+    { name: "Guard One", url: "https://www.espn.com/nba/player/_/id/101" },
   ],
   "basketball/nba",
   stats,
@@ -73,7 +73,7 @@ const centers = createRosterStatsTable(
 );
 assert.deepEqual(guards.columns, ["PTS", "AST"]);
 assert.deepEqual(centers.columns, ["REB", "BLK"]);
-assert.equal(rosterStatValue(guards.rows[1].summary, "AST"), "—");
+assert.equal(rosterStatValue(guards.rows[0].summary, "AST"), "—");
 
 const TeamInsights = load(path.resolve("components/team-insights.tsx")).default;
 const html = renderToStaticMarkup(
@@ -114,5 +114,12 @@ assert.ok(html.includes('<th scope="col">AST</th>'));
 assert.ok(html.includes('<th scope="col">REB</th>'));
 assert.ok(html.includes("22.4"));
 assert.ok(html.includes(">—</td>"));
+assert.ok(html.indexOf("Guard One") < html.indexOf("Guard Two"));
+assert.ok(html.indexOf(">Player</th>") < html.indexOf(">Pos.</th>"));
+const css = fs.readFileSync(path.resolve("app/globals.css"), "utf8");
+assert.match(
+  css,
+  /\.roster-stats-table tr > :nth-child\(2\)[^{]*\{[^}]*min-width:\s*44px/s,
+);
 
 console.log("Roster stats render in separate, comparable position tables.");
