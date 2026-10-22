@@ -18,7 +18,7 @@ function loader(overrides = {}) {
       if (!name.startsWith('.')) return require(name);
       const resolved = path.resolve(path.dirname(file), name);
       return load(resolved.endsWith('.json') ? resolved : resolved + '.ts');
-    }, module, module.exports);
+    }, module, module, module.exports);
     return module.exports;
   }
   return (file) => load(path.resolve(file));
@@ -65,7 +65,10 @@ try {
 } finally { globalThis.fetch = originalFetch; globalThis.setInterval = originalSet; globalThis.clearInterval = originalClear; }
 
 const { selectStories, selectGames } = loader()('lib/dashboard-selectors.ts');
-const story = { id: 'a', url: 'https://story', title: 'Wolves news', date: new Date().toISOString(), source: 'Test', teams: ['wolves'], kind: 'story' };
+const { recentStories } = loader()('lib/news-window.ts');
+const now = Date.parse('2026-10-22T23:00:00Z');
+const story = { id: 'a', url: 'https://story', title: 'Wolves news', date: '2026-10-22T18:00:00Z', source: 'Test', teams: ['wolves'], kind: 'story' };
+const yesterday = { ...story, id: 'b', url: 'https://yesterday', date: '2026-10-21T18:00:00Z' };
 const newsData = { checked: '', stories: [story], authors: [], games: [], health: [] };
 const props = { newsData, active: 'wolves', search: '', readIds: [], showRead: false, showOlder: false };
 assert.equal(selectStories(props).displayed.length, 1);
@@ -73,6 +76,7 @@ assert.equal(selectStories({ ...props, readIds: ['a'] }).displayed.length, 0);
 assert.equal(selectStories({ ...props, readIds: ['a'], showRead: true }).displayed.length, 1);
 assert.equal(selectStories({ ...props, active: 'wild' }).displayed.length, 0);
 assert.equal(selectStories({ ...props, search: 'missing' }).displayed.length, 0);
+assert.deepEqual(recentStories([story, yesterday], 'wolves', now).map(s => s.id), ['a']);
 const before = JSON.stringify(newsData); selectStories(props); assert.equal(JSON.stringify(newsData), before);
 assert.equal(selectGames({ data: null, oddsGames: [], liveGames: [], active: 'wolves', showOlderResults: false }).visibleGames.length, 0);
-console.log('Dashboard boundaries passed: safe storage, team/read selectors, generic requests, deduplication, cancellation and polling cleanup.');
+console.log('Dashboard boundaries passed: safe storage, today-only team pages, read selectors, generic requests, deduplication, cancellation and polling cleanup.');
