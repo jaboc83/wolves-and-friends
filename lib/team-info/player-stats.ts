@@ -72,6 +72,11 @@ const rounded = (value: number) =>
 const statValue = (stat: Stat | undefined) =>
   stat?.displayValue !== undefined ? String(stat.displayValue) : "";
 
+const seasonYear = (value: unknown) => {
+  const match = String(value ?? "").match(/\b(20\d{2})\b/);
+  return match ? Number(match[1]) : undefined;
+};
+
 const statByName = (stats: Stat[], names: string[]) =>
   stats.find((stat) => names.includes(String(stat.name || "")));
 
@@ -256,6 +261,7 @@ export function parsePlayerStats(
   rosterTeamId = "",
   league = "",
   position = "",
+  targetSeasonYear?: number,
 ): PlayerStats | undefined {
   const commonCategories = Array.isArray(data.categories)
     ? data.categories
@@ -267,14 +273,22 @@ export function parsePlayerStats(
   );
   if (commonCategory) {
     const rows = commonCategory.statistics || commonCategory.stats || [];
-    const row = [...rows]
-      .filter(
-        (candidate) =>
-          !rosterTeamId || String(candidate.teamId || "") === rosterTeamId,
-      )
-      .sort(
-        (a, b) => Number(b.season?.year || 0) - Number(a.season?.year || 0),
-      )[0];
+    const teamRows = rows.filter(
+      (candidate) =>
+        !rosterTeamId || String(candidate.teamId || "") === rosterTeamId,
+    );
+    const seasonRows = teamRows.filter(
+      (candidate) => candidate.season?.year !== undefined,
+    );
+    const eligibleRows =
+      targetSeasonYear && seasonRows.length
+        ? seasonRows.filter(
+            (candidate) => Number(candidate.season?.year) === targetSeasonYear,
+          )
+        : teamRows;
+    const row = [...eligibleRows].sort(
+      (a, b) => Number(b.season?.year || 0) - Number(a.season?.year || 0),
+    )[0];
     if (row) {
       const raw = (commonCategory.labels || []).map(
         (label: string, index: number) => ({
@@ -329,8 +343,12 @@ export function parsePlayerStats(
     ? data.splits
     : data.splits?.categories || [];
   const coreStats = coreCategories.flatMap((c) => c.stats || []);
+  const coreSeason = seasonYear(
+    data.season?.year || data.season?.displayName,
+  );
   if (
     coreStats.length &&
+    (!targetSeasonYear || !coreSeason || coreSeason === targetSeasonYear) &&
     !/career|projected/i.test(data.season?.displayName || "")
   ) {
     const selected = league
