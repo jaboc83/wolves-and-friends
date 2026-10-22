@@ -476,13 +476,6 @@ export default function Home() {
                             Direct links to your trusted voices, including sources
                             whose feeds aren’t available.
                           </p>
-                          <button
-                            type="button"
-                            className="diagnostics-export"
-                            onClick={() => void downloadFeedDiagnostics()}
-                          >
-                            Export diagnostics
-                          </button>
                           {sources && (
                             <div className="source-grid">
                               {(team ? [team] : teams).map((t) => (
@@ -720,7 +713,14 @@ export default function Home() {
               Feeds may be delayed or unavailable. Your preferences and read
               status stay in this browser.
             </span>
-            <small className="release-marker" title="Match this release to the GitHub pull request">
+            <button
+              type="button"
+              className="diagnostics-export"
+              onClick={() => void downloadFeedDiagnostics()}
+            >
+              Export diagnostics
+            </button>
+            <small className="release-marker" title="Deployed Git commit">
               {releaseMarker}
             </small>
           </footer>
