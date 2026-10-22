@@ -1,6 +1,8 @@
 import type { PlayerStats } from "./player-stats";
 
-const cacheKey = "wf-player-stats-cache";
+// Bump the key whenever stat selection changes so an old table cannot mask
+// corrected server data for twelve hours.
+const cacheKey = "wf-player-stats-cache-v2";
 const maxAge = 12 * 60 * 60 * 1000;
 
 type StorageLike = Pick<Storage, "getItem" | "setItem">;
@@ -43,8 +45,8 @@ export function readPlayerStatsCache(
       return {};
     }
     return Object.fromEntries(
-      Object.entries(payload.stats).filter((entry): entry is [string, PlayerStats] =>
-        isPlayerStats(entry[1]),
+      Object.entries(payload.stats).filter(
+        (entry): entry is [string, PlayerStats] => isPlayerStats(entry[1]),
       ),
     );
   } catch {
