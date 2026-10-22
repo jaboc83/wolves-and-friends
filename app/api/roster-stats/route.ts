@@ -73,11 +73,9 @@ async function stats(entry: Entry) {
     inflight.set(
       cacheKey,
       (async () => {
-        // Use ESPN's season-specific core API first. Before the new season
-        // starts it can be empty/404, so try the previous season explicitly.
-        // A cold ESPN response can take roughly 18 seconds; the old 12-second
-        // budget caused every player to fall through as "missing" even when
-        // ESPN eventually returned valid statistics.
+        // Try the season-specific endpoint first with a short guard. It is
+        // fast when available, but a slow 404 must not consume the full
+        // per-player budget before the responsive common feed gets a chance.
         const deadline = Date.now() + statsDeadlineMs;
         const remaining = () =>
           Math.min(statsRequestTimeoutMs, Math.max(1, deadline - Date.now()));
@@ -89,7 +87,7 @@ async function stats(entry: Entry) {
               "https://sports.core.api.espn.com/v2/sports/" + sport +
               "/leagues/" + league + "/seasons/" + year +
               "/types/2/athletes/" + entry.id + "/statistics/0",
-              remaining(),
+              Math.min(3000, remaining()),
             );
             const parsed = parsePlayerStats({ ...data, season: { displayName: String(year) } });
             if (parsed) return parsed;
@@ -98,20 +96,9 @@ async function stats(entry: Entry) {
           }
         }
         const urls = [
-          "https://site.web.api.espn.com/apis/common/v3/sports/" +
-            entry.league +
-            "/athletes/" +
-            entry.id +
-            "/stats",
-          "https://site.web.api.espn.com/apis/common/v3/sports/" +
-            entry.league +
-            "/athletes/" +
-            entry.id +
-            "/overview",
-          "https://site.api.espn.com/apis/site/v2/sports/" +
-            entry.league +
-            "/athletes/" +
-            entry.id,
+          "https://site.web.api.espn.com/apis/common/v3/sports/" + entry.league + "/athletes/" + entry.id + "/stats",
+          "https://site.web.api.espn.com/apis/common/v3/sports/" + entry.league + "/athletes/" + entry.id + "/overview",
+          "https://site.api.espn.com/apis/site/v2/sports/" + entry.league + "/athletes/" + entry.id,
         ];
         for (const url of urls) {
           if (Date.now() >= deadline) break;
