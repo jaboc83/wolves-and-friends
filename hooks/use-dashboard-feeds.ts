@@ -51,7 +51,7 @@ export function useDashboardFeeds(active: string) {
   const [playerStatsStatus, setPlayerStatsStatus] = useState<
     StatsStatus
   >("idle");
-  function refreshRosterStats() {
+  function refreshRosterStats(priorityKeys: string[] = []) {
     return rosterLoader.current({
       initial: playerStats,
       fetchBatch: async (batch, version, signal) => {
@@ -67,6 +67,7 @@ export function useDashboardFeeds(active: string) {
         try { writePlayerStatsCache(browserStorage, stats); } catch {}
       },
       onStatus: setPlayerStatsStatus,
+      priorityKeys,
     });
   }
 

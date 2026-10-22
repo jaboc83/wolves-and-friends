@@ -244,15 +244,20 @@ export default function GameCard({
           {g.injuries?.length ? (
             <>
               <strong>Injury report</strong>
-              <ul>
-                {g.injuries.map((injury) => (
-                  <li key={injury.player}>
-                    <span>{injury.player}</span>
-                    <span>{injury.status}</span>
-                    {injury.detail && <small>{injury.detail}</small>}
-                  </li>
-                ))}
-              </ul>
+              {Array.from(new Set(g.injuries.map((injury) => injury.team || "Team injury report"))).map((team) => (
+                <div className="injury-team" key={team}>
+                  <h4>{team}</h4>
+                  <ul>
+                    {g.injuries!.filter((injury) => (injury.team || "Team injury report") === team).map((injury) => (
+                      <li key={`${team}-${injury.player}`}>
+                        <span>{injury.player}</span>
+                        <span>{injury.status}</span>
+                        {injury.detail && <small>{injury.detail}</small>}
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              ))}
             </>
           ) : (
             <a href={injuryReportUrl(g.team)} target="_blank" rel="noreferrer">

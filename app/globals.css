@@ -3031,6 +3031,10 @@ body:has(.score-choice[open]) {
   text-transform: uppercase;
   letter-spacing: 0.08em;
 }
+.injury-team h4 {
+  margin: .7rem 0 .25rem;
+  font-size: .85rem;
+}
 .injury-report ul {
   display: grid;
   gap: 5px;

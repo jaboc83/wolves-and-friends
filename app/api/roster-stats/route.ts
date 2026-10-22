@@ -161,7 +161,12 @@ export async function GET(request: Request) {
         .map(async (entry) => ({ key: entry.key, stats: await stats(entry) })),
     );
     return Response.json(
-      { players, totalBatches: Math.ceil(manifest.length / batchSize), manifestVersion },
+      {
+        players,
+        totalBatches: Math.ceil(manifest.length / batchSize),
+        manifestVersion,
+        ...(batch === 0 ? { manifestKeys: manifest.map((entry) => entry.key) } : {}),
+      },
       { headers: { "Cache-Control": "no-store" } },
     );
   } catch {
@@ -171,4 +176,5 @@ export async function GET(request: Request) {
     );
   }
 }
+
 

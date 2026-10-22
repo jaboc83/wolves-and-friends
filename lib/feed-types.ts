@@ -16,7 +16,7 @@ export type Story = {
 };
 export type Game = {
   eventResults?: { division: string; name: string; score: string; margin?: string }[];
-  injuries?: { player: string; status: string; detail?: string }[];
+  injuries?: { player: string; status: string; detail?: string; team?: string }[];
   competitionNote?: string;
   eventOnly?: boolean;
   dateOnly?: boolean;
