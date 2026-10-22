@@ -38,8 +38,8 @@ export function gameBadges(g: Game): GameBadge[] {
         ? "KMT Cup"
         : /FA Cup/i.test(context)
           ? "FA Cup"
-          : /League Cup/i.test(context)
-            ? "League Cup"
+          : /League Cup|Carabao Cup/i.test(context)
+            ? "Carabao Cup"
             : /MLS Cup/i.test(context)
               ? "MLS Cup"
               : "Cup";
