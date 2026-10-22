@@ -282,6 +282,7 @@ export async function collect(
         json = (await (
           await get("https://site.web.api.espn.com/apis/site/v2/sports/basketball/nba/injuries?region=us&lang=en")
         ).json()) as any;
+        if (!json.injuries?.length) throw new FeedError("empty-injuries");
       } catch {
         const dates = Array.from({ length: 7 }, (_, daysAgo) =>
           new Intl.DateTimeFormat("en-CA", {
@@ -317,7 +318,7 @@ export async function collect(
         const summaries = await Promise.allSettled(
           events.slice(0, 3).map(async (event: any) =>
             (await get(
-              "https://site.api.espn.com/apis/site/v2/sports/basketball/nba/summary?event=" +
+              "https://site.web.api.espn.com/apis/site/v2/sports/basketball/nba/summary?event=" +
                 encodeURIComponent(event.id),
             )).json(),
           ),
