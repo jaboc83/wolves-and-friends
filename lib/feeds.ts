@@ -278,7 +278,7 @@ export async function collect(
       const { stories, games, health } = output;
       const get = (url: string) => providerGet(url, signal);
       const json = (await (
-        await get("https://site.api.espn.com/apis/site/v2/sports/basketball/nba/injuries")
+        await get("https://site.api.espn.com/apis/site/v2/sports/basketball/nba/injuries?region=us&lang=en")
       ).json()) as any;
       const injuries = (json.injuries || [])
         .flatMap((group: any) => group.injuries
