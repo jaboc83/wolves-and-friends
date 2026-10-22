@@ -271,23 +271,17 @@ export async function collect(
       const json = (await (
         await get("https://site.api.espn.com/apis/site/v2/sports/basketball/nba/injuries")
       ).json()) as any;
-      const pattern = new RegExp(
-        teams.find((t) => t.id === "wolves")?.pattern || "timberwolves",
-        "i",
-      );
       const injuries = (json.injuries || [])
         .flatMap((group: any) => group.injuries
           ? group.injuries.map((injury: any) => ({ ...injury, team: group.team || { displayName: group.displayName } }))
           : [group])
-        .filter((item: any) => pattern.test(
-          item.team?.displayName || item.team?.name || item.athlete?.displayName || "",
-        ))
         .map((item: any) => ({
           player: item.athlete?.displayName || item.athlete?.fullName || "Unknown player",
           status: item.status || item.type || "Unavailable",
           detail: item.details?.detail || item.details?.type || item.longComment || undefined,
+          team: item.team?.displayName || item.team?.name || undefined,
         }))
-        .filter((item: any) => item.player);
+        .filter((item: any) => item.player && item.team);
       output.injuries = injuries;
       return injuries.length;
     });
@@ -571,8 +565,15 @@ export async function collect(
     if (!unique.has(s.url)) unique.set(s.url, s);
   }
   if (wolvesInjuries)
-    for (const game of games.filter((game) => game.team === "wolves"))
-      game.injuries = wolvesInjuries;
+    for (const game of games.filter((game) => game.team === "wolves")) {
+      const teamNames = game.competitors.map((competitor) =>
+        competitor.name.toLowerCase().replace(/[^a-z0-9]+/g, " ").trim(),
+      );
+      game.injuries = wolvesInjuries.filter((injury) => {
+        const injuryTeam = (injury.team || "").toLowerCase().replace(/[^a-z0-9]+/g, " ").trim();
+        return injuryTeam && teamNames.some((name) => name === injuryTeam || name.includes(injuryTeam) || injuryTeam.includes(name));
+      });
+    }
   if (section === "all" && Date.now() - started < 20000) {
     const enriched = structuredClone(games);
     const [odds] = await runProviderTasks([{ name: "Odds", run: async () => {

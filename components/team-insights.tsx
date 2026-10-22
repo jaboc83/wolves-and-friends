@@ -23,7 +23,7 @@ export default function TeamInsights({
   autoOpenStandings?: boolean;
   playerStats?: Record<string, PlayerStats>;
   playerStatsStatus?: "idle" | "loading" | "ready" | "partial" | "empty" | "unavailable";
-  onRosterOpen?: () => void;
+  onRosterOpen?: (priorityKeys?: string[]) => void;
 }) {
   const [selected, setSelected] = useState("wolves");
   const [standingsOpen, setStandingsOpen] = useState(false);
@@ -367,7 +367,15 @@ export default function TeamInsights({
           id="team-roster"
           className="data-panel"
           onToggle={(event) => {
-            if (event.currentTarget.open) onRosterOpen();
+            if (event.currentTarget.open) {
+              const priorityKeys = info?.depth?.groups.flatMap((group) =>
+                group.players.map((player: { url: string }) => {
+                  const id = player.url.match(/\/_\/id\/(\d+)/)?.[1];
+                  return id && t?.league ? `${t.league}:${id}` : "";
+                }).filter(Boolean),
+              ) || [];
+              onRosterOpen(priorityKeys);
+            }
           }}
         >
           <summary>

@@ -4,6 +4,7 @@ export type StatsBatch = {
   players: { key: string; stats?: PlayerStats }[];
   totalBatches: number;
   manifestVersion: string;
+  manifestKeys?: string[];
 };
 // All callers crawl the same public manifest; selected teams never leave the device.
 export function createRosterStatsLoader(now = Date.now) {
@@ -17,6 +18,7 @@ export function createRosterStatsLoader(now = Date.now) {
   return function load(options: {
     initial: Record<string, PlayerStats>;
     fetchBatch: (batch: number, version: string, signal: AbortSignal) => Promise<StatsBatch>;
+    priorityKeys?: string[];
     onStats: (stats: Record<string, PlayerStats>) => void;
     onStatus: (status: StatsStatus) => void;
   }) {
@@ -29,6 +31,8 @@ export function createRosterStatsLoader(now = Date.now) {
     options.onStatus(Object.keys(known).length ? "ready" : "loading");
     inflight = (async () => {
       let received = false;
+      let batchWidth = 0;
+      let manifestKeys: string[] = [];
       async function batch(index: number) {
         try {
           const data = await options.fetchBatch(index, version, signal);
@@ -40,12 +44,14 @@ export function createRosterStatsLoader(now = Date.now) {
             version = data.manifestVersion;
             total = data.totalBatches;
             remaining = new Set(Array.from({ length: total }, (_, i) => i));
+            manifestKeys = data.manifestKeys || [];
+            batchWidth = data.players.length || 3;
           }
           received = true;
           const available = data.players.filter((player) => player.stats);
           known = { ...known, ...Object.fromEntries(available.map((p) => [p.key, p.stats!])) };
           if (available.length) options.onStats(known);
-          if (available.length === data.players.length) remaining.delete(index);
+          remaining.delete(index);
         } catch (error) {
           if (error instanceof Error && error.message === "Manifest changed") {
             version = "";
@@ -55,7 +61,15 @@ export function createRosterStatsLoader(now = Date.now) {
       }
       // Fetch zero only to discover a new manifest, otherwise retry missing pages.
       if (!version) await batch(0);
-      const queue = [...remaining].filter((i) => i !== 0 || !received);
+      const priorityBatches = new Set(
+        (options.priorityKeys || [])
+          .map((key) => manifestKeys.indexOf(key))
+          .filter((index) => index >= 0)
+          .map((index) => Math.floor(index / Math.max(1, batchWidth))),
+      );
+      const queue = [...remaining]
+        .filter((i) => i !== 0 || !received)
+        .sort((a, b) => Number(priorityBatches.has(b)) - Number(priorityBatches.has(a)));
       let next = 0;
       await Promise.all(Array.from({ length: 2 }, async () => {
         while (version && next < queue.length && now() < deadline && !signal.aborted)
