@@ -185,6 +185,46 @@ const core = parsePlayerStats({ ...coreSeason, season: { displayName: "2026" } }
 assert.equal(core.title, "2026 · Regular season");
 assert.deepEqual(core.values.map((s) => s.label), ["PTS", "REB", "AST", "FG%", "GP"]);
 assert.equal(core.values[0].value, "28.8");
+const customizedBasketball = parsePlayerStats({
+  categories: [{
+    name: "averages",
+    displayName: "Regular Season Averages",
+    labels: ["GP", "PTS", "REB", "AST", "BLK", "STL", "FG%", "3P%"],
+    displayNames: ["Games Played", "Points Per Game", "Rebounds Per Game", "Assists Per Game", "Blocks Per Game", "Steals Per Game", "Field Goal Percentage", "3-Point Field Goal Percentage"],
+    stats: [{ teamId: "16", season: { year: 2026, displayName: "2025-26" }, stats: ["10", "20.1", "4.8", "7.1", "0.8", "0.9", "40.7", "35.2"] }],
+  }],
+}, "16", "basketball/nba", "Guard");
+assert.deepEqual(customizedBasketball.values.map((s) => s.label), ["PTS", "REB", "AST", "STK", "FG%", "3P%"]);
+assert.equal(customizedBasketball.values[3].value, "1.7");
+const customizedHockeyGoalie = parsePlayerStats({
+  splits: { categories: [{ name: "goaltender", stats: [
+    { name: "wins", abbreviation: "WINS", displayValue: "7" },
+    { name: "losses", abbreviation: "L", displayValue: "3" },
+    { name: "overtimeLosses", abbreviation: "OTL", displayValue: "1" },
+    { name: "avgGoalsAgainst", abbreviation: "GAA", displayValue: "2.40" },
+    { name: "savePct", abbreviation: "SV%", displayValue: ".912" },
+    { name: "shutouts", abbreviation: "SO", displayValue: "2" },
+  ] }] }, season: { displayName: "2026" },
+}, "16", "hockey/nhl", "G");
+assert.deepEqual(customizedHockeyGoalie.values.map((s) => s.label), ["W", "L", "OTL", "GAA", "SV%", "SO"]);
+const customizedSoccer = parsePlayerStats({
+  splits: { categories: [{ name: "offensive", stats: [
+    { name: "totalGoals", abbreviation: "G", displayValue: "3" },
+    { name: "assists", abbreviation: "A", displayValue: "2" },
+    { name: "shots", abbreviation: "SH", displayValue: "14" },
+    { name: "shotsOnGoal", abbreviation: "SOG", displayValue: "8" },
+    { name: "foulsSuffered", abbreviation: "FA", displayValue: "5" },
+  ] }] }, season: { displayName: "2026" },
+}, "17362", "soccer/usa.1", "Forward");
+assert.deepEqual(customizedSoccer.values.map((s) => s.label), ["G", "A", "SH", "SOG", "FS"]);
+const customizedSoccerGoalie = parsePlayerStats({
+  splits: { categories: [{ name: "goalKeeping", stats: [
+    { name: "saves", abbreviation: "SV", displayValue: "20" },
+    { name: "cleanSheet", abbreviation: "CS", displayValue: "4" },
+    { name: "goalsAgainst", abbreviation: "GA", displayValue: "6" },
+  ] }] }, season: { displayName: "2026" },
+}, "384", "soccer/eng.1", "Goalkeeper");
+assert.deepEqual(customizedSoccerGoalie.values.map((s) => s.label), ["SV", "CS", "GA"]);
 assert.equal(parsePlayerStats({ ...coreSeason, season: { displayName: "Career" } }), undefined);
 const overviewStats = parsePlayerStats({ statistics: {
   displayName: "Stats", labels: ["GP", "MIN", "FG%"],
