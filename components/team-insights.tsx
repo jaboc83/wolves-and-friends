@@ -556,6 +556,11 @@ export default function TeamInsights({
                             <tr>
                               <th
                                 scope="col"
+                                className={
+                                  rosterSort.column === "Player"
+                                    ? "sorted-column"
+                                    : undefined
+                                }
                                 onClick={() => toggleRosterSort("Player")}
                                 onKeyDown={(event) =>
                                   handleRosterSortKeyDown(event, "Player")
@@ -567,6 +572,11 @@ export default function TeamInsights({
                               </th>
                               <th
                                 scope="col"
+                                className={
+                                  rosterSort.column === "Position"
+                                    ? "sorted-column"
+                                    : undefined
+                                }
                                 onClick={() => toggleRosterSort("Position")}
                                 onKeyDown={(event) =>
                                   handleRosterSortKeyDown(event, "Position")
@@ -580,6 +590,11 @@ export default function TeamInsights({
                                 <th
                                   scope="col"
                                   key={column}
+                                  className={
+                                    rosterSort.column === column
+                                      ? "sorted-column"
+                                      : undefined
+                                  }
                                   onClick={() => toggleRosterSort(column)}
                                   onKeyDown={(event) =>
                                     handleRosterSortKeyDown(event, column)
@@ -625,7 +640,14 @@ export default function TeamInsights({
                               })
                               .map(({ player: p, summary }) => (
                                 <tr key={p.url + p.name}>
-                                  <th scope="row">
+                                  <th
+                                    scope="row"
+                                    className={
+                                      rosterSort.column === "Player"
+                                        ? "sorted-column"
+                                        : undefined
+                                    }
+                                  >
                                     <a
                                       href={p.url}
                                       target="_blank"
@@ -653,7 +675,15 @@ export default function TeamInsights({
                                       </span>
                                     )}
                                   </th>
-                                  <td>{p.position || "—"}</td>
+                                  <td
+                                    className={
+                                      rosterSort.column === "Position"
+                                        ? "sorted-column"
+                                        : undefined
+                                    }
+                                  >
+                                    {p.position || "—"}
+                                  </td>
                                   {statsTable.columns.map((column) => {
                                     const stat = summary?.values.find(
                                       (value) => value.label === column,
@@ -662,6 +692,11 @@ export default function TeamInsights({
                                       <td
                                         key={column}
                                         title={stat?.description}
+                                        className={
+                                          rosterSort.column === column
+                                            ? "sorted-column"
+                                            : undefined
+                                        }
                                       >
                                         {rosterStatValue(summary, column)}
                                       </td>
