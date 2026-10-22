@@ -71,7 +71,7 @@ async function loadManifest() {
   return manifestRequest;
 }
 async function stats(entry: Entry) {
-  const cacheKey = "v4:" + entry.key + ":" + entry.teamId + ":" + entry.year;
+  const cacheKey = "v5:" + entry.key + ":" + entry.teamId + ":" + entry.year;
   const old = cache.get(cacheKey);
   if (old && old.expires > Date.now()) return old.stats;
   if (!inflight.has(cacheKey))
@@ -109,7 +109,7 @@ async function stats(entry: Entry) {
               "https://sports.core.api.espn.com/v2/sports/" + sport +
               "/leagues/" + league + "/seasons/" + year +
               "/types/" + seasonType + "/athletes/" + entry.id + "/statistics/0",
-              Math.min(3000, remaining()),
+              Math.min(entry.league.startsWith("soccer/") ? 20000 : 3000, remaining()),
             );
             const parsed = parsePlayerStats({ ...data, season: { displayName: String(year) } }, entry.teamId, entry.league, entry.position);
             if (parsed) return parsed;
