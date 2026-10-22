@@ -158,6 +158,54 @@ const wnbaBpiFallbackRows = [
   url: `https://www.espn.com/wnba/team/_/id/${id}`,
   cells: [rank, bpi],
 }));
+const nhlSuper16Rows = [
+  ["carolina-hurricanes", "Carolina Hurricanes", "1st", "222"],
+  ["vegas-golden-knights", "Vegas Golden Knights", "2nd", "196"],
+  ["edmonton-oilers", "Edmonton Oilers", "3rd", "175"],
+  ["colorado-avalanche", "Colorado Avalanche", "4th", "174"],
+  ["new-york-rangers", "New York Rangers", "5th", "154"],
+  ["minnesota-wild", "Minnesota Wild", "6th", "138"],
+  ["utah-mammoth", "Utah Mammoth", "7th", "125"],
+  ["tampa-bay-lightning", "Tampa Bay Lightning", "8th", "107"],
+  ["ottawa-senators", "Ottawa Senators", "9th", "99"],
+  ["winnipeg-jets", "Winnipeg Jets", "10th", "98"],
+  ["boston-bruins", "Boston Bruins", "11th", "94"],
+  ["florida-panthers", "Florida Panthers", "12th", "66"],
+  ["montreal-canadiens", "Montreal Canadiens", "13th", "64"],
+  ["anaheim-ducks", "Anaheim Ducks", "14th", "51"],
+  ["seattle-kraken", "Seattle Kraken", "15th", "48"],
+  ["dallas-stars", "Dallas Stars", "16th", "40"],
+].map(([id, name, rank, points]) => ({
+  id,
+  name,
+  url: `https://www.nhl.com/team/${id}`,
+  cells: [rank, points],
+}));
+const mlsPowerRankingRows = [
+  ["nashville-sc", "Nashville SC"], ["st-louis-city-sc", "St. Louis CITY SC"],
+  ["philadelphia-union", "Philadelphia Union"], ["vancouver-whitecaps-fc", "Vancouver Whitecaps FC"],
+  ["inter-miami-cf", "Inter Miami CF"], ["chicago-fire-fc", "Chicago Fire FC"],
+  ["fc-dallas", "FC Dallas"], ["charlotte-fc", "Charlotte FC"],
+  ["san-jose-earthquakes", "San Jose Earthquakes"], ["seattle-sounders-fc", "Seattle Sounders FC"],
+  ["new-england-revolution", "New England Revolution"], ["orlando-city", "Orlando City"],
+  ["houston-dynamo-fc", "Houston Dynamo FC"], ["los-angeles-football-club", "Los Angeles Football Club"],
+  ["colorado-rapids", "Colorado Rapids"], ["new-york-red-bulls", "Red Bull New York"],
+  ["fc-cincinnati", "FC Cincinnati"], ["columbus-crew", "Columbus Crew"],
+  ["new-york-city-football-club", "New York City Football Club"], ["la-galaxy", "LA Galaxy"],
+  ["toronto-fc", "Toronto FC"], ["portland-timbers", "Portland Timbers"],
+  ["san-diego-fc", "San Diego FC"], ["dc-united", "D.C. United"],
+  ["real-salt-lake", "Real Salt Lake"], ["austin-fc", "Austin FC"],
+  ["atlanta-united", "Atlanta United"], ["minnesota-united-fc", "Minnesota United"],
+  ["sporting-kansas-city", "Sporting Kansas City"], ["cf-montreal", "CF Montréal"],
+].map(([id, name], index) => ({
+  id,
+  name,
+  url: `https://www.mlssoccer.com/clubs/${id}`,
+  cells: [
+    `${index + 1}${index === 0 ? "st" : index === 1 ? "nd" : index === 2 ? "rd" : "th"}`,
+    "",
+  ],
+}));
 const powerRankingFallback = (
   league: string,
   teamId: string,
@@ -193,6 +241,26 @@ const powerRankingFallback = (
       checked,
       publishedAt: "2026-10-21T07:07:00Z",
       note: "Cached full ESPN BPI snapshot; live ranking feed unavailable.",
+    },
+    "hockey/nhl:wild": {
+      name: "NHL Super 16 Power Rankings",
+      metric: "Points",
+      rows: nhlSuper16Rows,
+      source: "NHL Super 16 cached snapshot",
+      url: "https://www.nhl.com/news/topic/super-16/super-16-nhl-power-rankings-october-15-2026",
+      checked,
+      publishedAt: "2026-10-14T00:00:00Z",
+      note: "Cached NHL Super 16 snapshot; live article feed unavailable.",
+    },
+    "soccer/usa.1:loons": {
+      name: "MLS Power Rankings",
+      metric: "Rank",
+      rows: mlsPowerRankingRows,
+      source: "MLS Power Rankings cached snapshot",
+      url: "https://www.mlssoccer.com/news/power-rankings-can-anyone-slow-down-st-louis-city-sc",
+      checked,
+      publishedAt: "2026-10-13T15:55:00Z",
+      note: "Cached MLS Power Rankings snapshot; live article feed unavailable.",
     },
   };
   return snapshots[`${league}:${teamId}`];
@@ -544,7 +612,10 @@ export async function fetchTeamInfo() {
           ? 30000
           : 10000,
       ),
-      headers: { Accept: "text/html" },
+        headers: {
+          Accept: "text/html",
+          "User-Agent": "WolvesAndFriends/1.0",
+        },
     });
     if (!r.ok) throw Error(String(r.status));
     return r.text();
@@ -646,11 +717,11 @@ export async function fetchTeamInfo() {
             if (!info.depth) info.unavailable.push("roster");
           })(),
           (async () => {
-            if (!powerRankingLeague(t.league!)) return;
+            if (!powerRankingLeague(t.league!) && !["wild", "loons"].includes(t.id)) return;
             try {
-              const getRanking =
-                powerRankingCache.get(t.league!) ||
-                parsePowerRanking(t.league!, checked, get);
+              const getRanking = powerRankingLeague(t.league!)
+                ? powerRankingCache.get(t.league!) || parsePowerRanking(t.league!, checked, get)
+                : Promise.resolve<PowerRanking | undefined>(undefined);
               powerRankingCache.set(t.league!, getRanking);
               info.powerRanking = await getRanking;
               if (!info.powerRanking) {
