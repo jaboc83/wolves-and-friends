@@ -16,6 +16,7 @@
       "type": "msedge",
       "request": "launch",
       "runtimeExecutable": "C:/Program Files (x86)/Microsoft/Edge/Application/msedge.exe",
+      "address": "127.0.0.1",
       "runtimeArgs": [
         "--remote-debugging-address=127.0.0.1",
         "--remote-debugging-port=9230",
