@@ -1,5 +1,5 @@
 "use client";
-import { Fragment, useMemo, useState } from "react";
+import { Fragment, useMemo, useState, type KeyboardEvent } from "react";
 import { decorateTable } from "../lib/team-info/standings";
 import { teams } from "../lib/teams/teams";
 import { sportTerms } from "../lib/teams/sport-terms";
@@ -528,7 +528,7 @@ export default function TeamInsights({
                       : "descending"
                     : "none";
                 const handleRosterSortKeyDown = (
-                  event: React.KeyboardEvent<HTMLTableCellElement>,
+                  event: KeyboardEvent<HTMLTableCellElement>,
                   column: string,
                 ) => {
                   if (event.key === "Enter" || event.key === " ") {
