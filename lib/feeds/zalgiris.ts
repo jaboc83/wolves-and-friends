@@ -1,0 +1,211 @@
+// Parses Žalgiris' official site into normalized basketball fixtures and scores.
+import type { Game } from "./feed-types";
+type JsonObject = Record<string, unknown>;
+function object(value: unknown): JsonObject {
+  return value && typeof value === "object" ? (value as JsonObject) : {};
+}
+function strings(x: unknown): string[] {
+  if (typeof x === "string") return x.startsWith("$") ? [] : [x];
+  if (typeof x === "number") return [String(x)];
+  if (Array.isArray(x)) {
+    if (x.length === 4 && x[0] === "$" && typeof x[3] === "object")
+      return strings(object(x[3]).children);
+    return x.flatMap(strings);
+  }
+  return [];
+}
+function properties(x: unknown, key: string): unknown[] {
+  if (Array.isArray(x)) return x.flatMap((v) => properties(v, key));
+  if (x && typeof x === "object") {
+    const record = object(x);
+    return [
+      ...(key in record ? [record[key]] : []),
+      ...Object.values(record).flatMap((v) => properties(v, key)),
+    ];
+  }
+  return [];
+}
+function scoreNumbers(x: unknown): string[] {
+  if (Array.isArray(x)) {
+    const element = object(x[3]);
+    if (
+      x.length === 4 &&
+      x[0] === "$" &&
+      typeof element.className === "string" &&
+      element.className.includes("tabular-nums") &&
+      /^\d+$/.test(String(element.children))
+    )
+      return [String(element.children)];
+    return x.flatMap(scoreNumbers);
+  }
+  if (x && typeof x === "object")
+    return Object.values(object(x)).flatMap(scoreNumbers);
+  return [];
+}
+function utc(
+  year: number,
+  month: number,
+  day: number,
+  hour: number,
+  minute: number,
+) {
+  const approximate = new Date(Date.UTC(year, month - 1, day, hour, minute));
+  const parts = new Intl.DateTimeFormat("en-US", {
+    timeZone: "Europe/Vilnius",
+    year: "numeric",
+    month: "2-digit",
+    day: "2-digit",
+    hour: "2-digit",
+    minute: "2-digit",
+    hourCycle: "h23",
+  }).formatToParts(approximate);
+  const p: Record<string, number> = {};
+  for (const x of parts) if (x.type !== "literal") p[x.type] = Number(x.value);
+  const offset =
+    Date.UTC(p.year, p.month - 1, p.day, p.hour, p.minute) -
+    approximate.getTime();
+  return new Date(approximate.getTime() - offset).toISOString();
+}
+export function parseZalgiris(html: string, checked: string): Game[] {
+  const chunks = [
+    ...html.matchAll(/self\.__next_f\.push\((\[[\s\S]*?\])\)<\/script>/g),
+  ]
+    .flatMap((m) => {
+      try {
+        const p = JSON.parse(m[1]);
+        return typeof p[1] === "string" ? [p[1]] : [];
+      } catch {
+        return [];
+      }
+    })
+    .join("");
+  const roots = chunks.split("\n").flatMap((l) => {
+    try {
+      return [JSON.parse(l.slice(l.indexOf(":") + 1))];
+    } catch {
+      return [];
+    }
+  });
+  const cards = new Map<
+    string,
+    { size: number; node: unknown; featured: boolean }
+  >();
+  function visit(x: unknown) {
+    if (Array.isArray(x)) {
+      if (x.length === 4 && x[0] === "$" && x[3] && typeof x[3] === "object") {
+        const visible = strings(x).join(" ");
+        const featured = properties(x, "startingAt").length > 0;
+        if (featured || /\d{2}-\d{2},\s*\d{2}:\d{2}/.test(visible)) {
+          const json = JSON.stringify(x);
+          const ids = [
+            ...new Set(
+              [...json.matchAll(/\/rungtynes\/([a-f0-9-]{36})/g)].map(
+                (m) => m[1],
+              ),
+            ),
+          ];
+          if (
+            ids.length === 1 &&
+            properties(x, "alt").filter(
+              (value) => typeof value === "string" && value,
+            ).length >= 2
+          ) {
+            const id = ids[0];
+            if (!cards.has(id) || json.length < cards.get(id)!.size)
+              cards.set(id, { size: json.length, node: x, featured });
+          }
+        }
+      }
+      x.forEach(visit);
+    } else if (x && typeof x === "object") Object.values(x).forEach(visit);
+  }
+  roots.forEach(visit);
+  const games: Game[] = [];
+  const now = new Date(checked);
+  const localParts = new Intl.DateTimeFormat("en-US", {
+    timeZone: "Europe/Vilnius",
+    year: "numeric",
+    month: "numeric",
+  }).formatToParts(now);
+  const year = Number(localParts.find((p) => p.type === "year")?.value);
+  const monthNow = Number(localParts.find((p) => p.type === "month")?.value);
+  for (const [id, card] of cards) {
+    const texts = strings(card.node);
+    const visible = texts.join(" ");
+    const names = [
+      ...new Set(
+        properties(card.node, "alt").filter(
+          (value): value is string =>
+            typeof value === "string" && !!value && !/icon/i.test(value),
+        ),
+      ),
+    ].slice(0, 2);
+    if (names.length !== 2 || !names.some((n) => /Žalgiris|Zalgiris/.test(n)))
+      continue;
+    let date = "";
+    let scores: string[] = [];
+    let state = "pre";
+    if (card.featured) {
+      const startingAt = properties(card.node, "startingAt")[0];
+      date = typeof startingAt === "string" ? startingAt : "";
+      if (visible.includes("Pasibaigė")) {
+        state = "post";
+        scores = scoreNumbers(card.node).slice(0, 2);
+      } else if (/Vyksta/.test(visible)) {
+        state = "in";
+        scores = scoreNumbers(card.node).slice(0, 2);
+      }
+    } else {
+      const m = visible.match(/(\d{2})-(\d{2}),\s*(\d{2}):(\d{2})/);
+      if (!m) continue;
+      const month = Number(m[1]);
+      date = utc(
+        year + (month < monthNow ? 1 : 0),
+        month,
+        Number(m[2]),
+        Number(m[3]),
+        Number(m[4]),
+      );
+    }
+    const league = visible.includes("Eurolyga")
+      ? "EuroLeague"
+      : visible.includes("Lietuvos Krepšinio Lyga")
+        ? "LKL"
+        : visible.includes("KMT")
+          ? "KMT"
+          : card.featured
+            ? "EuroLeague"
+            : "Basketball";
+    const broadcast = texts.find((t) => /^(TV3|BTV|Telia Play)/.test(t)) || "";
+    games.push({
+      id: "zalgiris-" + id,
+      team: "zalgiris",
+      name: names[1] + " at " + names[0],
+      date,
+      status:
+        state === "post"
+          ? "Final"
+          : state === "in"
+            ? "In progress"
+            : "Scheduled",
+      state,
+      league,
+      venue: "",
+      broadcast: broadcast ? "Lithuanian listing: " + broadcast : "",
+      url: "https://zalgiris.lt/rungtynes/" + id,
+      sourceName: "Official Žalgiris",
+      sourceChecked: checked,
+      competitors: names.map((name, i) => ({
+        name,
+        score: scores[i] || "",
+        winner:
+          state === "post" &&
+          scores.length === 2 &&
+          Number(scores[i]) > Number(scores[1 - i]),
+        homeAway: i === 0 ? "home" : "away",
+      })),
+    });
+  }
+  if (!games.length) throw Error("No official matches parsed");
+  return games;
+}
