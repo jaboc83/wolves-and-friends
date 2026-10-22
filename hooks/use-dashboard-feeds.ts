@@ -13,6 +13,7 @@ import { isLocalSocialImage } from "../lib/bluesky-images";
 import { loadedNewsData } from "../lib/news-page-data";
 import { teams } from "../lib/teams";
 import { isHubData, isStories, storedTeam } from "../lib/dashboard-storage";
+import { recordFeedDiagnostics } from "../lib/feed-diagnostics";
 const emptyHub: HubData = { checked: "", stories: [], games: [], health: [], authors: [] };
 function retainAvatars(next: HubData, previous?: HubData | null): HubData {
   const key = (s: Story) =>
@@ -158,6 +159,7 @@ export function useDashboardFeeds(active: string) {
         });
         if (!r.ok) throw Error();
         const d = activeHub((await r.json()) as HubData);
+        void recordFeedDiagnostics(d.health);
         if (
           d.health.length &&
           d.health.every((h) => h.status === "unavailable")
@@ -200,6 +202,7 @@ export function useDashboardFeeds(active: string) {
         });
         if (!r.ok) throw Error();
         const d = activeHub((await r.json()) as HubData);
+        void recordFeedDiagnostics(d.health);
         setData((previous) => {
           const merged = {
             ...(previous || d),
