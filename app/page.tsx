@@ -30,6 +30,7 @@ import { unreadSocial } from "../lib/social-queue";
 import { communities } from "../lib/communities";
 import { teams, teamPriority } from "../lib/teams";
 import type { Story, Game } from "../lib/feeds";
+import { releaseMarker } from "../lib/release-info";
 const ct = (s: string, opts: Intl.DateTimeFormatOptions = {}) =>
   new Date(s).toLocaleString("en-US", { timeZone: "America/Chicago", ...opts });
 export default function Home() {
@@ -705,6 +706,9 @@ export default function Home() {
               Feeds may be delayed or unavailable. Your preferences and read
               status stay in this browser.
             </span>
+            <small className="release-marker" title="Match this release to the GitHub pull request">
+              {releaseMarker}
+            </small>
           </footer>
         </div>
       </div>
