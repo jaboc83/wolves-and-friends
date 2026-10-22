@@ -278,9 +278,6 @@ export default function GameCard({
               Injury report ↗
             </a>
           )}
-          <a href={injuryReportUrl(g.team)} target="_blank" rel="noreferrer">
-            Full report ↗
-          </a>
         </section>
       )}
       {g.state === "post" && !g.eventOnly && (
