@@ -705,6 +705,9 @@ export default function Home() {
               Feeds may be delayed or unavailable. Your preferences and read
               status stay in this browser.
             </span>
+            <small className="release-marker" title="Match this release to the GitHub pull request">
+              Release PR #pending
+            </small>
           </footer>
         </div>
       </div>
