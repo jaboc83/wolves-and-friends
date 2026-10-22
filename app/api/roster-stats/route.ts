@@ -1,7 +1,9 @@
 import { teams } from "../../../lib/teams";
 import { parsePlayerStats, type PlayerStats } from "../../../lib/player-stats";
 const batchSize = 3,
-  ttl = 15 * 60000;
+  ttl = 15 * 60000,
+  statsDeadlineMs = 30000,
+  statsRequestTimeoutMs = 20000;
 type Entry = { key: string; league: string; id: string; teamId: string; year: number };
 let manifest: Entry[] = [],
   expires = 0;
@@ -73,8 +75,12 @@ async function stats(entry: Entry) {
       (async () => {
         // Use ESPN's season-specific core API first. Before the new season
         // starts it can be empty/404, so try the previous season explicitly.
-        const deadline = Date.now() + 12000;
-        const remaining = () => Math.min(8000, Math.max(1, deadline - Date.now()));
+        // A cold ESPN response can take roughly 18 seconds; the old 12-second
+        // budget caused every player to fall through as "missing" even when
+        // ESPN eventually returned valid statistics.
+        const deadline = Date.now() + statsDeadlineMs;
+        const remaining = () =>
+          Math.min(statsRequestTimeoutMs, Math.max(1, deadline - Date.now()));
         const [sport, league] = entry.league.split("/");
         for (const year of [entry.year, entry.year - 1]) {
           if (Date.now() >= deadline) break;
