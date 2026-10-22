@@ -115,16 +115,17 @@ export function parsePlayerStats(
 ): PlayerStats | undefined {
   const commonCategories = Array.isArray(data.categories) ? data.categories : [];
   const commonCategory = commonCategories.find((category: any) =>
-    Array.isArray(category.stats) && category.stats.length,
+    (Array.isArray(category.statistics) && category.statistics.length) ||
+    (Array.isArray(category.stats) && category.stats.length),
   );
   if (commonCategory) {
-    const rows = commonCategory.stats as any[];
+    const rows = (commonCategory.statistics || commonCategory.stats) as any[];
     const row = [...rows]
       .filter((candidate) => !rosterTeamId || String(candidate.teamId || "") === rosterTeamId)
       .sort((a, b) => Number(b.season?.year || 0) - Number(a.season?.year || 0))[0];
     if (row) {
       const raw = (commonCategory.labels || []).map((label: string, index: number) => ({
-        name: label,
+        name: commonCategory.names?.[index] || label,
         abbreviation: label,
         displayValue: row.stats?.[index],
         displayName: commonCategory.displayNames?.[index] || label,
