@@ -71,7 +71,7 @@ async function loadManifest() {
   return manifestRequest;
 }
 async function stats(entry: Entry) {
-  const cacheKey = "v3:" + entry.key + ":" + entry.teamId + ":" + entry.year;
+  const cacheKey = "v4:" + entry.key + ":" + entry.teamId + ":" + entry.year;
   const old = cache.get(cacheKey);
   if (old && old.expires > Date.now()) return old.stats;
   if (!inflight.has(cacheKey))
@@ -85,7 +85,7 @@ async function stats(entry: Entry) {
         const remaining = () =>
           Math.min(statsRequestTimeoutMs, Math.max(1, deadline - Date.now()));
         const [sport, league] = entry.league.split("/");
-        const urls = [
+        const urls = entry.league.startsWith("soccer/") ? [] : [
           "https://site.api.espn.com/apis/common/v3/sports/" + entry.league + "/athletes/" + entry.id + "/stats",
           "https://site.api.espn.com/apis/common/v3/sports/" + entry.league + "/athletes/" + entry.id + "/overview",
           "https://site.api.espn.com/apis/site/v2/sports/" + entry.league + "/athletes/" + entry.id,
