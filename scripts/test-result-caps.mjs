@@ -118,7 +118,10 @@ const completedToday = today({
   ...game("122", "104"),
   url: "https://example.com/stats",
 });
-assert.doesNotMatch(completedToday, /class="game-top"|class="competitor /);
+assert.match(completedToday, /class="game-top"/);
+assert.match(completedToday, /class="competitor /);
+assert.match(completedToday, /Minnesota Timberwolves/);
+assert.match(completedToday, /Chicago Bulls/);
 assert.match(completedToday, /class="result-score"/);
 assert.match(completedToday, /Box score/);
 assert.match(completedToday, /Find full game highlights/);
