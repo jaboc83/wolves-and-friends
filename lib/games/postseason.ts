@@ -41,6 +41,9 @@ type PostseasonEventCompetitor = {
   team?: PostseasonTeam;
   score?: string | number;
 };
+type ResolvedPostseasonCompetitor = PostseasonEventCompetitor & {
+  team: PostseasonTeam & { id: string | number; displayName: string };
+};
 type PostseasonCompetition = {
   competitors?: PostseasonEventCompetitor[];
   notes?: { headline?: string }[];
@@ -76,7 +79,7 @@ const phase = (s: SeasonData | undefined) =>
 
 export function postseasonWindow(current: PostseasonFeed, now = Date.now()) {
   const s = current.leagues?.[0]?.season;
-  if (![2, 3].includes(phase(s))) return;
+  if (!s || ![2, 3].includes(phase(s)) || !s.startDate || !s.endDate) return;
   const start = Date.parse(s.startDate),
     end = Date.parse(s.endDate);
   if (
@@ -106,10 +109,16 @@ export function parsePostseason(
     Map<string, Postseason["rounds"][number]["matchups"][number]>
   >();
   const events = [...(data.events || [])].sort(
-    (a, b) => Date.parse(a.date) - Date.parse(b.date),
+    (a, b) =>
+      (a.date ? Date.parse(a.date) : Infinity) -
+      (b.date ? Date.parse(b.date) : Infinity),
   );
   for (const e of events) {
-    if (phase(e.season) !== 3 || Number(e.season?.year) !== Number(window.year))
+    if (
+      !e.date ||
+      phase(e.season) !== 3 ||
+      Number(e.season?.year) !== Number(window.year)
+    )
       continue;
     if (
       !Number.isFinite(Date.parse(e.date)) ||
@@ -118,15 +127,11 @@ export function parsePostseason(
     )
       continue;
     const c = e.competitions?.[0];
+    if (!c) continue;
     const competitors = c?.competitors || [];
     if (
       competitors.length !== 2 ||
-      competitors.some(
-        (p) =>
-          !/^[1-9]\d*$/.test(String(p.team?.id)) ||
-          !p.team?.displayName ||
-          /\bTBD\b|\/|winner of|loser of/i.test(p.team.displayName),
-      )
+      !competitors.every(isResolvedPostseasonCompetitor)
     )
       continue;
     const note = (c.notes || []).map((n) => n.headline || "").find(Boolean);
@@ -134,7 +139,7 @@ export function parsePostseason(
       note?.replace(/\s*[-–·]\s*Game\s*\d+.*$/i, "").trim() ||
       "Postseason matchups";
     const pair = competitors
-      .map((p) => String(p.team!.id))
+      .map((p) => String(p.team.id))
       .sort()
       .join("-");
     const id = round + ":" + pair;
@@ -162,7 +167,7 @@ export function parsePostseason(
         value: c.series
           ? String(
               c.series.competitors?.find(
-                (x) => String(x.id) === String(p.team!.id),
+                (x) => String(x.id) === String(p.team.id),
               )?.wins ?? "—",
             )
           : status.state !== "pre"
@@ -178,6 +183,19 @@ export function parsePostseason(
   return result.length
     ? { season: window.name, checked, rounds: result }
     : undefined;
+}
+
+function isResolvedPostseasonCompetitor(
+  competitor: PostseasonEventCompetitor,
+): competitor is ResolvedPostseasonCompetitor {
+  const team = competitor.team;
+  return Boolean(
+    team &&
+    team.id !== undefined &&
+    /^[1-9]\d*$/.test(String(team.id)) &&
+    team.displayName &&
+    !/\bTBD\b|\/|winner of|loser of/i.test(team.displayName),
+  );
 }
 
 export async function fetchPostseason(

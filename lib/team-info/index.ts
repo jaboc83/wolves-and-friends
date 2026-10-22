@@ -175,8 +175,11 @@ type RankedTeam = {
   item: ESPNPowerIndexItem;
   teamId: string;
   rank: ESPNStat;
-  metric?: ESPNStat;
+  metric: ESPNStat | undefined;
 };
+const seasonTypeNumber = (
+  value: ESPNSeason["type"] | ESPNStandings["seasonType"],
+) => Number(typeof value === "object" ? value?.type : value);
 const safe = (s: string) => (/^https:\/\//.test(s) ? s : "");
 const player = (p: ESPNAthlete, league: string) => ({
   name: p.displayName || p.fullName || p.name || "",
@@ -610,9 +613,10 @@ async function parsePowerRanking(
     // collapse a full ranking to the one-team snapshot fallback.
   }
   const catalog = new Map(
-    (catalogResult.sports?.[0]?.leagues?.[0]?.teams || [])
-      .map((entry) => entry.team || entry)
-      .map((team) => [String(team.id), team] as const),
+    (catalogResult.sports?.[0]?.leagues?.[0]?.teams || []).flatMap(
+      ({ team }) =>
+        team?.id === undefined ? [] : [[String(team.id), team] as const],
+    ),
   );
   const rows = ranked.map(({ teamId, rank, metric }) => {
     const team = catalog.get(teamId) || {};
@@ -636,8 +640,10 @@ async function parsePowerRanking(
   });
   const metricName = league === "football/nfl" ? "FPI" : "BPI";
   const sourceUrl = `https://www.espn.com/${leagueName}/${metricName.toLowerCase()}`;
+  const topRanked = ranked[0];
+  if (!topRanked) return;
   const publishedAt =
-    ranked[0].item.lastUpdated || ranked[0].item.runCutoffDate;
+    topRanked.item.lastUpdated || topRanked.item.runCutoffDate || checked;
   return {
     name: "ESPN Power Rankings",
     metric: metricName,
@@ -709,12 +715,13 @@ export function parseRoster(
   >();
   function add(a: ESPNRosterEntry, group?: string) {
     if (a.items) {
-      for (const p of a.items) add(p, a.position || group);
+      for (const p of a.items)
+        add(p, a.position?.displayName || a.position?.name || group);
       return;
     }
     const p = {
       ...player(a, league),
-      ...rosterDetails(a, league, x.season, checked, teamId),
+      ...rosterDetails(a, league, x.season?.year ?? "", checked, teamId),
     };
     if (!p.name) return;
     const k = a.position?.displayName || a.position?.name || group || "Roster";
@@ -774,21 +781,22 @@ export function parseStandings(
             ["GB", "gamesBehind"],
           ];
   function walk(node: ESPNStandingsNode) {
-    const entries = node.standings?.entries || [];
+    const standings = node.standings;
+    const entries = standings?.entries || [];
     const owns = (e: ESPNStandingEntry) =>
       String(e.team?.id) === team.espn ||
       e.team?.abbreviation?.toLowerCase() === team.espn;
-    if (entries.some(owns)) {
+    if (standings && entries.some(owns)) {
       const url =
-        node.standings.links?.find((l) => l.href?.startsWith("https:"))?.href ||
+        standings.links?.find((l) => l.href?.startsWith("https:"))?.href ||
         "https://www.espn.com/" + league.split("/")[1] + "/standings";
       result.push({
-        name: node.name || x.name,
+        name: node.name || x.name || "Standings",
         columns: ["#", ...cols.map((c) => c[0])],
         rows: entries.map((e, i) => {
           const stat = (names: string[]) => {
             const s = e.stats?.find((s) => names.includes(s.name || ""));
-            return s?.displayValue ?? String(s?.value ?? "—");
+            return String(s?.displayValue ?? s?.value ?? "—");
           };
           const entryTeam = e.team!;
           return {
@@ -811,27 +819,18 @@ export function parseStandings(
         checked,
         seasonType:
           Number(
-            node.standings.seasonType?.type ??
-              node.standings.seasonType ??
-              x.season?.type?.type ??
-              x.season?.type,
+            seasonTypeNumber(standings.seasonType) ||
+              seasonTypeNumber(x.season?.type),
           ) || undefined,
         note: [
-          node.standings.seasonDisplayName,
-          Number(
-            node.standings.seasonType?.type ?? node.standings.seasonType,
-          ) === 1
+          standings.seasonDisplayName,
+          Number(seasonTypeNumber(standings.seasonType)) === 1
             ? league.startsWith("soccer/")
               ? "Regular Season"
               : "Preseason"
-            : Number(
-                  node.standings.seasonType?.type ?? node.standings.seasonType,
-                ) === 2
+            : Number(seasonTypeNumber(standings.seasonType)) === 2
               ? "Regular Season"
-              : Number(
-                    node.standings.seasonType?.type ??
-                      node.standings.seasonType,
-                  ) === 3
+              : Number(seasonTypeNumber(standings.seasonType)) === 3
                 ? "Postseason"
                 : "",
         ]
@@ -976,7 +975,7 @@ export async function fetchTeamInfo() {
               // During the postseason ESPN's default standings response switches
               // to playoff context. Keep the regular-season table too so the
               // final seeding and qualification lines remain visible.
-              const seasonType = Number(x.season?.type?.type ?? x.season?.type);
+              const seasonType = seasonTypeNumber(x.season?.type);
               if (seasonType === 3 && x.season?.year) {
                 try {
                   const regular = await get(
@@ -993,7 +992,8 @@ export async function fetchTeamInfo() {
               }
               if (x.season?.startDate && x.season?.endDate)
                 info.season = {
-                  name: x.season.displayName,
+                  name:
+                    x.season.displayName || String(x.season.year || "Season"),
                   start: x.season.startDate,
                   end: x.season.endDate,
                   source: "ESPN season calendar",
@@ -1071,7 +1071,7 @@ export async function fetchTeamInfo() {
             const s = x.leagues?.[0]?.season;
             if (s?.startDate && s?.endDate)
               info.season = {
-                name: s.displayName,
+                name: s.displayName || String(s.year || "Season"),
                 start: s.startDate,
                 end: s.endDate,
                 source: "ESPN season calendar",
@@ -1283,7 +1283,7 @@ export function parseNHLStandings(
     return decorateTable(
       {
         ...conference,
-        name: division.name,
+        name: division.name || "Division",
         rows: rows.map((r, i) => ({
           ...r,
           cells: [String(i + 1), ...r.cells.slice(1)],

@@ -7,7 +7,7 @@ export type PlayerStats = {
 type Stat = {
   name?: string;
   abbreviation?: string;
-  displayValue?: string | number;
+  displayValue?: string | number | null;
   displayName?: string;
   description?: string;
   value?: number;
@@ -40,7 +40,7 @@ type StatisticsOverview = {
   labels?: string[];
   names?: string[];
   displayNames?: string[];
-  splits?: StatsSplit[];
+  splits?: StatsSplit[] | { categories?: Category[] };
   categories?: Category[];
   statistics?: Stat[];
 };
@@ -387,7 +387,11 @@ export function parsePlayerStats(
   // domestic split with the competition name (for example, "2026 MLS")
   // instead of "Regular Season", so prefer the player's current team and
   // league before falling back to the generic regular-season label.
-  const overview = Array.isArray(data.statistics) ? undefined : data.statistics;
+  const overview: StatisticsOverview | undefined = Array.isArray(
+    data.statistics,
+  )
+    ? undefined
+    : data.statistics;
   const overviewSplits = Array.isArray(overview?.splits)
     ? overview.splits.filter(
         (split) => !rosterTeamId || String(split.teamId || "") === rosterTeamId,
@@ -401,15 +405,17 @@ export function parsePlayerStats(
     overviewSplits.find((split) =>
       /^regular season$/i.test(split.displayName || ""),
     );
+  const regularStats = regular?.stats;
   if (
+    overview &&
     regular &&
     Array.isArray(overview.labels) &&
-    Array.isArray(regular.stats)
+    Array.isArray(regularStats)
   ) {
     const raw = overview.labels.map((label: string, i: number) => ({
       name: overview.names?.[i] || label,
       abbreviation: label,
-      displayValue: regular.stats[i],
+      displayValue: regularStats[i],
       displayName: overview.displayNames?.[i] || label,
     }));
     const values = (
@@ -434,11 +440,18 @@ export function parsePlayerStats(
     data.statsSummary ||
     data.athlete?.statisticsSummary ||
     data.statisticsSummary;
+  const statisticsCategories = overview?.categories;
+  const statisticsSplitCategories = !Array.isArray(overview?.splits)
+    ? overview?.splits?.categories
+    : undefined;
+  const splitCategories = !Array.isArray(data.splits)
+    ? data.splits?.categories
+    : undefined;
   const categories =
     data.categories ||
-    data.statistics?.categories ||
-    data.statistics?.splits?.categories ||
-    data.splits?.categories ||
+    statisticsCategories ||
+    statisticsSplitCategories ||
+    splitCategories ||
     [];
   const category =
     categories.find((c) => /averages/i.test(c.name || c.displayName || "")) ||
@@ -459,7 +472,7 @@ export function parsePlayerStats(
     summary?.statistics ||
     data.athlete?.statistics ||
     (Array.isArray(data.statistics) ? data.statistics : undefined) ||
-    data.statistics?.statistics;
+    overview?.statistics;
   if (summaryStatistics?.length) {
     values = summaryStatistics
       .filter(
@@ -479,10 +492,11 @@ export function parsePlayerStats(
   } else if (seasonRow) {
     // ESPN common-v3 stores a row per season/team; its `totals` field can
     // aggregate across seasons, so read the chosen season row's `stats`.
+    const rowStats = seasonRow.stats || [];
     values = (category.labels || [])
       .map((label: string, index: number) => ({
         label: String(label),
-        value: String(seasonRow.stats[index] ?? ""),
+        value: String(rowStats[index] ?? ""),
         description: String(
           category.displayNames?.[index] ||
             category.descriptions?.[index] ||
@@ -493,10 +507,11 @@ export function parsePlayerStats(
       .filter((s: { value: string }) => s.value.trim() !== "")
       .slice(0, 6);
   } else if (category?.totals?.length) {
+    const totals = category.totals;
     values = (category.labels || [])
       .map((label: string, index: number) => ({
         label: String(label),
-        value: String(category.totals[index] ?? ""),
+        value: String(totals[index] ?? ""),
         description: String(
           data.glossary?.find((g) => g.abbreviation === label)?.displayName ||
             label,
@@ -512,7 +527,7 @@ export function parsePlayerStats(
       .filter(Boolean)
       .join(" · ") ||
     data.season?.displayName ||
-    data.statistics?.displayName ||
+    overview?.displayName ||
     data.displayName ||
     (data.season?.year
       ? String(data.season.year) + " season stats"
