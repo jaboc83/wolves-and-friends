@@ -59,7 +59,7 @@ try {
     "../../../lib/teams/teams": {
       teams: [{ league: "basketball/nba", espn: "min" }],
     },
-    "../../../lib/player-stats": { parsePlayerStats: () => stat },
+    "../../../lib/team-info/player-stats": { parsePlayerStats: () => stat },
   };
   const route = loader(overrides)("app/api/roster-stats/route.ts");
   const first = await (
@@ -89,7 +89,9 @@ try {
     "version identical across Workers",
   );
 
-  const { createRosterStatsLoader } = loader()("lib/roster-stats-loader.ts");
+  const { createRosterStatsLoader } = loader()(
+    "lib/team-info/roster-stats-loader.ts",
+  );
   const load = createRosterStatsLoader(() => now);
   let fail = true;
   let calls = 0;
@@ -135,7 +137,7 @@ try {
     "positive data revalidates after TTL",
   );
 
-  const { mergeTeamInfo } = loader()("lib/team-info-cache.ts");
+  const { mergeTeamInfo } = loader()("lib/team-info/team-info-cache.ts");
   const table = (name) => ({
     name,
     source: "test",

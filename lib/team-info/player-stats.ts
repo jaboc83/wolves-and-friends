@@ -350,9 +350,7 @@ export function parsePlayerStats(
       "gamesPlayed",
     ];
     const selectedFallback = coreStats.some((s) => s.name === "avgPoints")
-      ? preferred.flatMap((name) =>
-          coreStats.filter((s) => s.name === name),
-        )
+      ? preferred.flatMap((name) => coreStats.filter((s) => s.name === name))
       : coreStats
           .filter((s) => !/rank|rating|projected/i.test(s.name || ""))
           .filter((s) => {
@@ -388,13 +386,10 @@ export function parsePlayerStats(
   // domestic split with the competition name (for example, "2026 MLS")
   // instead of "Regular Season", so prefer the player's current team and
   // league before falling back to the generic regular-season label.
-  const overview = Array.isArray(data.statistics)
-    ? undefined
-    : data.statistics;
+  const overview = Array.isArray(data.statistics) ? undefined : data.statistics;
   const overviewSplits = Array.isArray(overview?.splits)
     ? overview.splits.filter(
-        (split) =>
-          !rosterTeamId || String(split.teamId || "") === rosterTeamId,
+        (split) => !rosterTeamId || String(split.teamId || "") === rosterTeamId,
       )
     : [];
   const leagueSlug = league.split("/")[1] || "";
@@ -445,9 +440,7 @@ export function parsePlayerStats(
     data.splits?.categories ||
     [];
   const category =
-    categories.find((c) =>
-      /averages/i.test(c.name || c.displayName || ""),
-    ) ||
+    categories.find((c) => /averages/i.test(c.name || c.displayName || "")) ||
     categories.find((c) => /general|offense/i.test(c.name || "")) ||
     categories[0];
   const seasons = (category?.statistics || []).filter((row) =>
@@ -457,8 +450,7 @@ export function parsePlayerStats(
     (row) => rosterTeamId && String(row.teamId || "") === rosterTeamId,
   );
   const seasonRow = [...(teamSeasons.length ? teamSeasons : seasons)].sort(
-    (a, b) =>
-      Number(b.season?.year || 0) - Number(a.season?.year || 0),
+    (a, b) => Number(b.season?.year || 0) - Number(a.season?.year || 0),
   )[0];
 
   let values: PlayerStats["values"] = [];
@@ -493,8 +485,7 @@ export function parsePlayerStats(
         description: String(
           category.displayNames?.[index] ||
             category.descriptions?.[index] ||
-            data.glossary?.find((g) => g.abbreviation === label)
-              ?.displayName ||
+            data.glossary?.find((g) => g.abbreviation === label)?.displayName ||
             label,
         ),
       }))
@@ -506,8 +497,8 @@ export function parsePlayerStats(
         label: String(label),
         value: String(category.totals[index] ?? ""),
         description: String(
-          data.glossary?.find((g) => g.abbreviation === label)
-            ?.displayName || label,
+          data.glossary?.find((g) => g.abbreviation === label)?.displayName ||
+            label,
         ),
       }))
       .filter((s: { value: string }) => s.value.trim() !== "")

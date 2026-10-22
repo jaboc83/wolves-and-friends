@@ -4,7 +4,7 @@
 
 `lib/browser-storage.ts` guards access, JSON parsing and writes; preferences never leave the device. `lib/dashboard-storage.ts` validates cached data and selected teams before applying them. Invalid read-history JSON falls back to an empty list; disabled/full storage never prevents live controls from working.
 
-`lib/dashboard-selectors.ts` derives team/read/search filters, merged games and result windows without owning request state. `components/story-card.tsx` renders a story and receives device actions. `lib/standings.ts` isolates pure table decoration from server provider code.
+`lib/dashboard-selectors.ts` derives team/read/search filters, merged games and result windows without owning request state. `components/story-card.tsx` renders a story and receives device actions. `lib/team-info/standings.ts` isolates pure table decoration from server provider code.
 
 Fallback JSON is dynamically imported after mounting, outside the main client module. A fallback cannot overwrite successfully loaded/cached schedules or team information. Seed headlines remain excluded from news pages. Splitting chunks does not establish a total-transfer saving: the validation workflow compares all client JavaScript assets (including lazy chunks) against the pinned PR base, and browser timing must be measured separately.
 

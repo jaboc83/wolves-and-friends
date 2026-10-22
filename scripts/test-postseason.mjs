@@ -34,7 +34,7 @@ function load(file) {
   return loadedModule.exports;
 }
 const { decorateTable, parseStandings, parseNHLStandings } = load(
-  path.resolve("lib/team-info.ts"),
+  path.resolve("lib/team-info/index.ts"),
 );
 const { postseasonWindow, parsePostseason, fetchPostseason } = load(
   path.resolve("lib/games/postseason.ts"),

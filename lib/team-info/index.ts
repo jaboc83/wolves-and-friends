@@ -1,7 +1,7 @@
 import { decorateTable, tableSeasonType } from "./standings";
 export { decorateTable, tableSeasonType } from "./standings";
-import { teams } from "./teams/teams";
-import { fetchPostseason, type Postseason } from "./games/postseason";
+import { teams } from "../teams/teams";
+import { fetchPostseason, type Postseason } from "../games/postseason";
 import { rosterDetails, type RosterDetails } from "./roster-details";
 import {
   parseEuroLeagueStandings,
@@ -10,7 +10,7 @@ import {
   parsePwhlRoster,
   parsePwhlStandings,
   parsePwhlTrainingCampRoster,
-} from "./feeds/special-team-data";
+} from "../feeds/special-team-data";
 export type Table = {
   stale?: boolean;
   seasonType?: number;

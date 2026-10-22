@@ -1,4 +1,4 @@
-import type { Table, TeamInfo } from "./team-info";
+import type { Table, TeamInfo } from "./index";
 function identity(table: Table) {
   return [table.source, table.url, table.name, table.seasonType || ""].join(
     ":",

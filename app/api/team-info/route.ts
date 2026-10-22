@@ -1,5 +1,5 @@
 import { fetchTeamInfo, type TeamInfo } from "../../../lib/team-info";
-import { mergeTeamInfo } from "../../../lib/team-info-cache";
+import { mergeTeamInfo } from "../../../lib/team-info/team-info-cache";
 import seed from "../../../lib/team-info-initial.json";
 let cached: TeamInfo[] = seed as TeamInfo[],
   checked = 0;

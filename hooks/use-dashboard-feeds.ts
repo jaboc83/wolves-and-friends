@@ -9,12 +9,12 @@ import {
 import {
   createRosterStatsLoader,
   type StatsStatus,
-} from "../lib/roster-stats-loader";
+} from "../lib/team-info/roster-stats-loader";
 import {
   readPlayerStatsCache,
   writePlayerStatsCache,
-} from "../lib/player-stats-cache";
-import type { PlayerStats } from "../lib/player-stats";
+} from "../lib/team-info/player-stats-cache";
+import type { PlayerStats } from "../lib/team-info/player-stats";
 import type { HubData, Story, Game } from "../lib/feeds";
 import type { TeamInfo } from "../lib/team-info";
 import { activeHub, activeStories } from "../lib/content-policy";

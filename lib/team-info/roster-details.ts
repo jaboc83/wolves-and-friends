@@ -32,7 +32,10 @@ export function rosterDetails(
     return age >= 15 && age < 100 ? { age } : {};
   }
   const age = athlete.age;
-  return typeof age === "number" && Number.isInteger(age) && age >= 15 && age < 100
+  return typeof age === "number" &&
+    Number.isInteger(age) &&
+    age >= 15 &&
+    age < 100
     ? { age }
     : {};
 }

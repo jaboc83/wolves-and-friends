@@ -1,14 +1,14 @@
 "use client";
 import { Fragment, useMemo, useState } from "react";
-import { decorateTable } from "../lib/standings";
+import { decorateTable } from "../lib/team-info/standings";
 import { teams } from "../lib/teams/teams";
 import { sportTerms } from "../lib/teams/sport-terms";
 import type { TeamInfo } from "../lib/team-info";
-import type { PlayerStats } from "../lib/player-stats";
+import type { PlayerStats } from "../lib/team-info/player-stats";
 import {
   createRosterStatsTable,
   rosterStatValue,
-} from "../lib/roster-stats-table";
+} from "../lib/team-info/roster-stats-table";
 import { espnTeamLogoUrl } from "../lib/games/march-madness";
 import BracketConnectors from "./bracket-connectors";
 import Image from "next/image";

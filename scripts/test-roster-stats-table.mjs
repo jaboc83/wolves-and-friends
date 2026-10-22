@@ -36,7 +36,7 @@ function load(file) {
 }
 
 const { createRosterStatsTable, rosterStatValue } = load(
-  path.resolve("lib/roster-stats-table.ts"),
+  path.resolve("lib/team-info/roster-stats-table.ts"),
 );
 const stats = {
   "basketball/nba:101": {

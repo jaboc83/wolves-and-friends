@@ -12,6 +12,7 @@ function load(file) {
   const loadedModule = { exports: {} };
   cache.set(file, loadedModule);
   const js = ts.transpileModule(fs.readFileSync(file, "utf8"), {
+    fileName: file,
     compilerOptions: {
       module: ts.ModuleKind.CommonJS,
       target: ts.ScriptTarget.ES2022,
@@ -33,8 +34,8 @@ function load(file) {
   );
   return loadedModule.exports;
 }
-const { rosterDetails } = load(path.resolve("lib/roster-details.ts"));
-const { parseRoster } = load(path.resolve("lib/team-info.ts"));
+const { rosterDetails } = load(path.resolve("lib/team-info/roster-details.ts"));
+const { parseRoster } = load(path.resolve("lib/team-info/index.ts"));
 const season = { year: 2027, displayName: "2026-27" };
 const athlete = {
   id: "4594268",
@@ -95,7 +96,9 @@ const html = renderToStaticMarkup(
 assert.ok(html.includes("Age 25"));
 assert.ok(!html.includes("Joined"));
 assert.ok(!html.includes("Salary"));
-const { parsePlayerStats } = load(path.resolve("lib/player-stats.ts"));
+const { parsePlayerStats } = load(
+  path.resolve("lib/team-info/player-stats.ts"),
+);
 const summary = (title, values) => ({
   athlete: {
     statsSummary: {
@@ -520,7 +523,7 @@ const statsHtml = renderToStaticMarkup(
 assert.ok(statsHtml.includes("2025-26 regular season stats"));
 assert.ok(statsHtml.includes("20.1"));
 const { readPlayerStatsCache, writePlayerStatsCache } = load(
-  path.resolve("lib/player-stats-cache.ts"),
+  path.resolve("lib/team-info/player-stats-cache.ts"),
 );
 const statsMemory = new Map();
 const statsStorage = {

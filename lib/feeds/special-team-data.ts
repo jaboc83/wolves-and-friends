@@ -1,6 +1,6 @@
 import type { Game } from "./feed-types";
-import type { Depth, Table } from "../team-info";
-import type { RosterDetails } from "../roster-details";
+import type { Depth, Table } from "../team-info/index";
+import type { RosterDetails } from "../team-info/roster-details";
 
 const decode = (s: string) =>
   s

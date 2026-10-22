@@ -1,5 +1,8 @@
 import { teams } from "../../../lib/teams/teams";
-import { parsePlayerStats, type PlayerStats } from "../../../lib/player-stats";
+import {
+  parsePlayerStats,
+  type PlayerStats,
+} from "../../../lib/team-info/player-stats";
 const batchSize = 3,
   ttl = 15 * 60000,
   statsDeadlineMs = 60000,
