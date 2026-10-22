@@ -15,6 +15,10 @@ const get = async (url: string, timeout = 8000): Promise<any> => {
   const r = await fetch(url, {
     credentials: "omit",
     referrerPolicy: "no-referrer",
+    headers: {
+      Accept: "application/json, text/plain, */*",
+      "User-Agent": "Mozilla/5.0 (compatible; WolvesAndFriends/1.0)",
+    },
     signal: AbortSignal.timeout(Math.max(1, timeout)),
   });
   if (!r.ok) throw Error("Stats unavailable");
