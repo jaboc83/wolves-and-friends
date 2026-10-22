@@ -1,4 +1,3 @@
-// Shared JSON-safe contracts for runtime connector bindings, requests, and results.
 export type Json =
   null | boolean | number | string | Json[] | { [key: string]: Json };
 

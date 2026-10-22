@@ -3096,7 +3096,7 @@ body:has(.score-choice[open]) {
   }
   .news {
     display: grid;
-    grid-template-columns: minmax(340px, min(24vw, 500px)) minmax(0, 1fr);
+    grid-template-columns: minmax(380px, min(26vw, 560px)) minmax(0, 1fr);
     column-gap: 28px;
     align-items: start;
   }
