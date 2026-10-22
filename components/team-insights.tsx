@@ -1,5 +1,5 @@
 "use client";
-import { Fragment, useMemo, useState } from "react";
+import { Fragment, useMemo, useState, type KeyboardEvent } from "react";
 import { decorateTable } from "../lib/team-info/standings";
 import { teams } from "../lib/teams/teams";
 import { sportTerms } from "../lib/teams/sport-terms";
@@ -22,6 +22,8 @@ type RosterPlayer = NonNullable<
   position: string;
 };
 type RosterSort = { column: string; direction: "asc" | "desc" };
+const defaultRosterSortDirection = (column: string): "asc" | "desc" =>
+  column === "Player" || column === "Position" ? "asc" : "desc";
 export default function TeamInsights({
   active,
   data,
@@ -225,20 +227,46 @@ export default function TeamInsights({
         {id === "palace" && !info?.postseason && (
           <section
             className="postseason-panel"
-            aria-label="Europa League bracket"
+            aria-label="Crystal Palace cup and European links"
           >
-            <h3>Europa League bracket · 2026/27</h3>
+            <h3>Europa League · 2026/27</h3>
             <p className="panel-note">
-              The official UEFA bracket updates as knockout rounds and matchups
-              are published.
+              Follow Palace&apos;s league-phase table now and the official bracket
+              once knockout rounds and matchups are published.
             </p>
             <p className="panel-note">
+              <a
+                href="https://www.uefa.com/uefaeuropaleague/standings/"
+                target="_blank"
+                rel="noreferrer"
+              >
+                Open Europa League league phase table ↗
+              </a>
+              <br />
               <a
                 href="https://www.uefa.com/uefaeuropaleague/fixtures-results/bracket/"
                 target="_blank"
                 rel="noreferrer"
               >
-                Open UEFA bracket view ↗
+                Open Europa League bracket view ↗
+              </a>
+            </p>
+            <h3>EFL Cup bracket · 2026/27</h3>
+            <p className="panel-note">
+              <a
+                href="https://www.livesport.com/soccer/england/efl-cup/bracket/dGljLaBU/draw/"
+                target="_blank"
+                rel="noreferrer"
+              >
+                Open EFL Cup bracket ↗
+              </a>
+              <br />
+              <a
+                href="https://www.efl.com/competitions/carabao-cup/"
+                target="_blank"
+                rel="noreferrer"
+              >
+                Official Carabao Cup site ↗
               </a>
             </p>
           </section>
@@ -479,18 +507,35 @@ export default function TeamInsights({
                       current?.id === id
                         ? current.value
                         : { column: "Player", direction: "asc" as const };
-                    return {
-                      id,
-                      value: {
-                        column,
-                        direction:
-                          currentSort.column === column &&
-                          currentSort.direction === "asc"
-                            ? "desc"
-                            : "asc",
-                      },
-                    };
+                    const direction =
+                      currentSort.column === column
+                        ? currentSort.direction === "asc"
+                          ? "desc"
+                          : "asc"
+                        : defaultRosterSortDirection(column);
+                    return { id, value: { column, direction } };
                   });
+                const rosterSortIndicator = (column: string) =>
+                  rosterSort.column === column
+                    ? rosterSort.direction === "asc"
+                      ? "↑"
+                      : "↓"
+                    : "";
+                const rosterSortAria = (column: string) =>
+                  rosterSort.column === column
+                    ? rosterSort.direction === "asc"
+                      ? "ascending"
+                      : "descending"
+                    : "none";
+                const handleRosterSortKeyDown = (
+                  event: KeyboardEvent<HTMLTableCellElement>,
+                  column: string,
+                ) => {
+                  if (event.key === "Enter" || event.key === " ") {
+                    event.preventDefault();
+                    toggleRosterSort(column);
+                  }
+                };
                 return (
                   <section className="depth-row" key={group.position + i}>
                     <h3 className="visually-hidden">{group.position}</h3>
@@ -511,23 +556,53 @@ export default function TeamInsights({
                             <tr>
                               <th
                                 scope="col"
+                                className={
+                                  rosterSort.column === "Player"
+                                    ? "sorted-column"
+                                    : undefined
+                                }
                                 onClick={() => toggleRosterSort("Player")}
+                                onKeyDown={(event) =>
+                                  handleRosterSortKeyDown(event, "Player")
+                                }
+                                aria-sort={rosterSortAria("Player")}
+                                tabIndex={0}
                               >
-                                Player
+                                Player {rosterSortIndicator("Player")}
                               </th>
                               <th
                                 scope="col"
+                                className={
+                                  rosterSort.column === "Position"
+                                    ? "sorted-column"
+                                    : undefined
+                                }
                                 onClick={() => toggleRosterSort("Position")}
+                                onKeyDown={(event) =>
+                                  handleRosterSortKeyDown(event, "Position")
+                                }
+                                aria-sort={rosterSortAria("Position")}
+                                tabIndex={0}
                               >
-                                Pos.
+                                Pos. {rosterSortIndicator("Position")}
                               </th>
                               {statsTable.columns.map((column) => (
                                 <th
                                   scope="col"
                                   key={column}
+                                  className={
+                                    rosterSort.column === column
+                                      ? "sorted-column"
+                                      : undefined
+                                  }
                                   onClick={() => toggleRosterSort(column)}
+                                  onKeyDown={(event) =>
+                                    handleRosterSortKeyDown(event, column)
+                                  }
+                                  aria-sort={rosterSortAria(column)}
+                                  tabIndex={0}
                                 >
-                                  {column}
+                                  {column} {rosterSortIndicator(column)}
                                 </th>
                               ))}
                             </tr>
@@ -565,7 +640,14 @@ export default function TeamInsights({
                               })
                               .map(({ player: p, summary }) => (
                                 <tr key={p.url + p.name}>
-                                  <th scope="row">
+                                  <th
+                                    scope="row"
+                                    className={
+                                      rosterSort.column === "Player"
+                                        ? "sorted-column"
+                                        : undefined
+                                    }
+                                  >
                                     <a
                                       href={p.url}
                                       target="_blank"
@@ -593,7 +675,15 @@ export default function TeamInsights({
                                       </span>
                                     )}
                                   </th>
-                                  <td>{p.position || "—"}</td>
+                                  <td
+                                    className={
+                                      rosterSort.column === "Position"
+                                        ? "sorted-column"
+                                        : undefined
+                                    }
+                                  >
+                                    {p.position || "—"}
+                                  </td>
                                   {statsTable.columns.map((column) => {
                                     const stat = summary?.values.find(
                                       (value) => value.label === column,
@@ -602,6 +692,11 @@ export default function TeamInsights({
                                       <td
                                         key={column}
                                         title={stat?.description}
+                                        className={
+                                          rosterSort.column === column
+                                            ? "sorted-column"
+                                            : undefined
+                                        }
                                       >
                                         {rosterStatValue(summary, column)}
                                       </td>
