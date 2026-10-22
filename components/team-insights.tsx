@@ -286,7 +286,7 @@ export default function TeamInsights({
         >
           <summary className="power-rankings-summary">
             <span className="power-rankings-heading">
-              <span>
+              <span className="power-rankings-title">
                 <strong>Power Rankings</strong>
                 <small>{info.powerRanking.metric}</small>
               </span>
@@ -563,4 +563,5 @@ export default function TeamInsights({
     </section>
   );
 }
+
 
