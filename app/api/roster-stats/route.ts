@@ -49,6 +49,18 @@ type Entry = {
   year: number;
   position: string;
 };
+
+function seasonIsInProgress(league: string, now = new Date()) {
+  const month = now.getUTCMonth() + 1;
+  if (league === "basketball/nba" || league === "hockey/nhl")
+    return month >= 10 || month <= 4;
+  if (league === "basketball/wnba") return month >= 5 && month <= 10;
+  if (league === "football/nfl") return month >= 9 || month <= 2;
+  if (league === "baseball/mlb") return month >= 3 && month <= 10;
+  if (league === "soccer/usa.1") return month >= 2 && month <= 11;
+  if (league === "soccer/eng.1") return month >= 8 || month <= 5;
+  return true;
+}
 let manifest: Entry[] = [],
   expires = 0;
 let manifestVersion = "";
@@ -194,9 +206,14 @@ async function stats(entry: Entry) {
             // Try the next ESPN representation.
           }
         }
-        // Before the new season starts, the common feed may be empty. Fall
-        // back to season-specific endpoints and try the previous season too.
-        for (const year of [entry.year, entry.year - 1]) {
+        // During an active season, keep players without current-season
+        // stats as dashes rather than showing a prior season. Between seasons,
+        // use the prior season only when the next season has not begun for the
+        // whole league.
+        const years = seasonIsInProgress(entry.league)
+          ? [entry.year]
+          : [entry.year, entry.year - 1];
+        for (const year of years) {
           if (Date.now() >= deadline) break;
           try {
             const seasonType = entry.league.startsWith("soccer/") ? "1" : "2";
