@@ -18,7 +18,7 @@ function loader(overrides = {}) {
       if (!name.startsWith('.')) return require(name);
       const resolved = path.resolve(path.dirname(file), name);
       return load(resolved.endsWith('.json') ? resolved : resolved + '.ts');
-    }, module, module, module.exports);
+    }, module, module.exports);
     return module.exports;
   }
   return (file) => load(path.resolve(file));
