@@ -97,11 +97,11 @@ try {
     './scoreboard': { fetchScoreboard: async () => ({ events: [] }) },
     './initial.json': { games: [], stories: [], authors: [] },
     './teams': { teams: [{ id: 'wolves', short: 'Wolves', league: 'basketball/nba', espn: 'min', sport: 'NBA', pattern: 'timberwolves' }] },
-    './competitions': { palaceCompetitions: {}, scoreboardLeagues: [], teamPlaysCompetition: () => false },
+    './competitions': { palaceCompetitions: {}, scoreboardLeagues: [], teamPlaysCompetition: () => true },
   };
-  globalThis.fetch = async (url) => ({ ok: true, json: async () => String(url).includes('/injuries') ? {
+  globalThis.fetch = async (url) => ({ ok: true, json: async () => String(url).includes('/injuries?') ? {
     injuries: [{ displayName: 'Minnesota Timberwolves', injuries: [{ athlete: { displayName: 'Player' }, status: 'Out' }] }],
-  } : { events: [{ id: '1', name: 'Fixture', date: new Date().toISOString(), competitions: [{ competitors: [{ team: { displayName: 'Minnesota Timberwolves' }, homeAway: 'home' }] }] }], season: { year: 2027 } }, text: async () => '' });
+  } : { events: [{ id: '1', name: 'Fixture', date: new Date().toISOString(), competitions: [{ competitors: [{ team: { displayName: 'Minnesota Timberwolves', abbreviation: 'MIN' }, homeAway: 'home' }] }] }], season: { year: 2027 } }, text: async () => '' });
   const { hubData } = loader(feedMocks)('lib/feeds.ts');
   const hub = await hubData('schedules');
   assert.equal(hub.games.find(g => g.team === 'wolves').injuries[0].player, 'Player');
