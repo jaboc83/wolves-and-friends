@@ -387,9 +387,39 @@ export default function TeamInsights({
                       .filter((title): title is string => Boolean(title)),
                   ),
                 );
+                const toggleRosterSort = (column: string) =>
+                  setRosterSort((current) => ({
+                    column,
+                    direction:
+                      current.column === column && current.direction === "asc"
+                        ? "desc"
+                        : "asc",
+                  }));
                 return (
                   <section className="depth-row" key={group.position + i}>
-                    <h3>{group.position}</h3>
+                    <h3 className="roster-position-heading">
+                      <span>{group.position}</span>
+                      <button
+                        type="button"
+                        className="table-sort-button"
+                        onClick={() => toggleRosterSort("Position")}
+                        aria-label="Sort players by position"
+                        aria-sort={
+                          rosterSort.column === "Position"
+                            ? rosterSort.direction === "asc"
+                              ? "ascending"
+                              : "descending"
+                            : "none"
+                        }
+                      >
+                        Position{" "}
+                        {rosterSort.column === "Position"
+                          ? rosterSort.direction === "asc"
+                            ? "↑"
+                            : "↓"
+                          : "↕"}
+                      </button>
+                    </h3>
                     {statsTable.columns.length > 0 ? (
                       <div
                         className="roster-stats-table-scroll"
@@ -404,48 +434,102 @@ export default function TeamInsights({
                           </caption>
                           <thead>
                             <tr>
-                              <th scope="col">Pos.</th>
-                              <th scope="col" onClick={() => setRosterSort((current) => ({ column: "Player", direction: current.column === "Player" && current.direction === "asc" ? "desc" : "asc" }))}>Player</th>
+                              <th scope="col">
+                                <button
+                                  type="button"
+                                  className="table-sort-button"
+                                  onClick={() => toggleRosterSort("Player")}
+                                  aria-sort={
+                                    rosterSort.column === "Player"
+                                      ? rosterSort.direction === "asc"
+                                        ? "ascending"
+                                        : "descending"
+                                      : "none"
+                                  }
+                                >
+                                  Player{" "}
+                                  {rosterSort.column === "Player"
+                                    ? rosterSort.direction === "asc"
+                                      ? "↑"
+                                      : "↓"
+                                      : "↕"}
+                                </button>
+                              </th>
                               {statsTable.columns.map((column) => (
-                                <th scope="col" key={column} onClick={() => setRosterSort((current) => ({ column, direction: current.column === column && current.direction === "asc" ? "desc" : "asc" }))}>{column}</th>
+                                <th scope="col" key={column}>
+                                  <button
+                                    type="button"
+                                    className="table-sort-button"
+                                    onClick={() => toggleRosterSort(column)}
+                                    aria-sort={
+                                      rosterSort.column === column
+                                        ? rosterSort.direction === "asc"
+                                          ? "ascending"
+                                          : "descending"
+                                        : "none"
+                                    }
+                                  >
+                                    {column}{" "}
+                                    {rosterSort.column === column
+                                      ? rosterSort.direction === "asc"
+                                        ? "↑"
+                                        : "↓"
+                                      : "↕"}
+                                  </button>
+                                </th>
                               ))}
                             </tr>
                           </thead>
                           <tbody>
-                            {[...statsTable.rows].sort((a, b) => {
-                              const av = rosterSort.column === "Player" ? a.player.name : rosterStatValue(a.summary, rosterSort.column);
-                              const bv = rosterSort.column === "Player" ? b.player.name : rosterStatValue(b.summary, rosterSort.column);
-                              const an = Number(av.replace(/[%,$,]/g, "")), bn = Number(bv.replace(/[%,$,]/g, ""));
-                              const result = Number.isFinite(an) && Number.isFinite(bn) ? an - bn : av.localeCompare(bv);
-                              return rosterSort.direction === "asc" ? result : -result;
-                            }).map(({ player: p, summary }) => (
-                              <tr key={p.url + p.name}>
-                                <td>{(p as any).position || "—"}</td>
-                                <th scope="row">
-                                  <a href={p.url} target="_blank" rel="noreferrer">
-                                    {p.name} ↗
-                                  </a>
-                                  <span className="roster-player-age">
-                                    {p.age !== undefined ? `Age ${p.age}` : ""}
-                                  </span>
-                                  {(p.campTeam || p.signedForSeason || p.draftPick) && (
-                                    <span className="roster-table-player-meta">
-                                      {[p.campTeam, p.signedForSeason && "Signed for 2026–27", p.draftPick && "2026 draft pick"]
-                                        .filter(Boolean)
-                                        .join(" · ")}
+                            {[...statsTable.rows]
+                              .sort((a, b) => {
+                                const av =
+                                  rosterSort.column === "Player"
+                                    ? a.player.name
+                                    : rosterSort.column === "Position"
+                                      ? (a.player as any).position || ""
+                                      : rosterStatValue(a.summary, rosterSort.column);
+                                const bv =
+                                  rosterSort.column === "Player"
+                                    ? b.player.name
+                                    : rosterSort.column === "Position"
+                                      ? (b.player as any).position || ""
+                                      : rosterStatValue(b.summary, rosterSort.column);
+                                const an = Number(av.replace(/[%,$,]/g, ""));
+                                const bn = Number(bv.replace(/[%,$,]/g, ""));
+                                const result =
+                                  Number.isFinite(an) && Number.isFinite(bn)
+                                    ? an - bn
+                                    : av.localeCompare(bv);
+                                return rosterSort.direction === "asc" ? result : -result;
+                              })
+                              .map(({ player: p, summary }) => (
+                                <tr key={p.url + p.name}>
+                                  <th scope="row">
+                                    <a href={p.url} target="_blank" rel="noreferrer">
+                                      {p.name} ↗
+                                    </a>
+                                    <span className="roster-player-age">
+                                      {p.age !== undefined ? `Age ${p.age}` : ""}
                                     </span>
-                                  )}
-                                </th>
-                                {statsTable.columns.map((column) => {
-                                  const stat = summary?.values.find((value) => value.label === column);
-                                  return (
-                                    <td key={column} title={stat?.description}>
-                                      {rosterStatValue(summary, column)}
-                                    </td>
-                                  );
-                                })}
-                              </tr>
-                            ))}
+                                    {(p.campTeam || p.signedForSeason || p.draftPick) && (
+                                      <span className="roster-table-player-meta">
+                                        {[p.campTeam, p.signedForSeason && "Signed for 2026–27", p.draftPick && "2026 draft pick"]
+                                          .filter(Boolean)
+                                          .join(" · ")}
+                                      </span>
+                                    )}
+                                  </th>
+                                  {statsTable.columns.map((column) => {
+                                    const stat = summary?.values.find((value) => value.label === column);
+                                    return (
+                                      <td key={column} title={stat?.description}>
+                                        {rosterStatValue(summary, column)}
+                                      </td>
+                                    );
+                                  })}
+                                </tr>
+                              ))}
                           </tbody>
                         </table>
                       </div>
