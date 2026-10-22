@@ -4,7 +4,7 @@ const batchSize = 3,
   ttl = 15 * 60000,
   statsDeadlineMs = 30000,
   statsRequestTimeoutMs = 20000;
-type Entry = { key: string; league: string; id: string; teamId: string; year: number };
+type Entry = { key: string; league: string; id: string; teamId: string; year: number; position: string };
 let manifest: Entry[] = [],
   expires = 0;
 let manifestVersion = "";
@@ -51,6 +51,7 @@ async function loadManifest() {
                   id: String(a.id),
                   teamId: String(data.team?.id || t.espn),
                   year: Number(data.season?.year) || new Date().getUTCFullYear(),
+                  position: String(a.position?.displayName || a.position?.abbreviation || ""),
                 }));
             } catch {
               return [];
@@ -92,7 +93,7 @@ async function stats(entry: Entry) {
         for (const url of urls) {
           if (Date.now() >= deadline) break;
           try {
-            const parsed = parsePlayerStats(await get(url, remaining()), entry.teamId);
+            const parsed = parsePlayerStats(await get(url, remaining()), entry.teamId, entry.league, entry.position);
             if (parsed) return parsed;
           } catch {
             // Try the next ESPN representation.
@@ -109,7 +110,7 @@ async function stats(entry: Entry) {
               "/types/2/athletes/" + entry.id + "/statistics/0",
               Math.min(3000, remaining()),
             );
-            const parsed = parsePlayerStats({ ...data, season: { displayName: String(year) } });
+            const parsed = parsePlayerStats({ ...data, season: { displayName: String(year) } }, entry.teamId, entry.league, entry.position);
             if (parsed) return parsed;
           } catch {
             // Missing current-season stats must not hide the last season.
