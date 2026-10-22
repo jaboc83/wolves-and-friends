@@ -1,7 +1,15 @@
 // Reads configured official team channels and converts their public videos into stories.
 import type { Story } from "./feed-types";
+import type { TeamId } from "../teams/teams";
 // Official channels, verified from YouTube and club-site social links (Oct 2026).
-export const officialYoutube = [
+export const officialYoutube: {
+  team: TeamId;
+  name: string;
+  channel?: string;
+  page?: string;
+  officialSite?: string;
+  pattern?: RegExp;
+}[] = [
   {
     team: "wolves",
     name: "Minnesota Timberwolves",

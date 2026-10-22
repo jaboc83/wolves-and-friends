@@ -83,8 +83,8 @@ const days = [0, 3, 6, 7, 8].map((n) => ({
   ...posts[n],
   date: new Date(now - n * 86400000).toISOString(),
 }));
-assert.equal(recentStories(days, "wolves", now).length, 1);
-assert.equal(recentStories(days, "all", now).length, 1);
+assert.equal(recentStories(days, "wolves", { now }).length, 1);
+assert.equal(recentStories(days, "all", { now }).length, 1);
 // Chicago's calendar day, rather than a rolling 24-hour window or UTC day.
 const midnightStories = [
   { ...posts[0], id: "yesterday", date: "2026-10-17T04:59:59Z" },
@@ -92,10 +92,30 @@ const midnightStories = [
   { ...posts[0], id: "invalid", date: "invalid" },
 ];
 assert.deepEqual(
-  recentStories(midnightStories, "all", Date.parse("2026-10-17T05:30:00Z")).map(
-    (s) => s.id,
-  ),
+  recentStories(midnightStories, "all", {
+    now: Date.parse("2026-10-17T05:30:00Z"),
+  }).map((s) => s.id),
   ["today"],
+);
+const localTimeStory = {
+  ...posts[0],
+  id: "local-time-today",
+  date: "2026-10-17T04:30:00Z",
+};
+assert.equal(
+  recentStories([localTimeStory], "all", {
+    now: Date.parse("2026-10-17T06:30:00Z"),
+  }).length,
+  0,
+  "default calendar day remains Chicago time",
+);
+assert.equal(
+  recentStories([localTimeStory], "all", {
+    now: Date.parse("2026-10-17T06:30:00Z"),
+    timeZone: "America/Los_Angeles",
+  }).length,
+  1,
+  "recent stories use the selected local calendar day",
 );
 const { gameBadges } = load(path.resolve("lib/games/game-badges.ts"));
 assert.deepEqual(

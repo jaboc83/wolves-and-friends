@@ -1,4 +1,5 @@
 // Maps known team names to static home locations; never reads visitor location.
+import type { TeamId } from "./teams";
 const own: Record<string, string> = {
   wolves: "Minnesota",
   wild: "Minnesota",
@@ -116,7 +117,7 @@ const key = (s: string) =>
     .toLowerCase()
     .trim();
 export function teamLocation(
-  teamId: string,
+  teamId: TeamId,
   name: string,
   league: string,
   isOwn = false,

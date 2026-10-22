@@ -1,4 +1,7 @@
-import { socialTags } from "../../../lib/social/social-tags";
+import {
+  socialTags,
+  type SocialTagTeam,
+} from "../../../lib/social/social-tags";
 import { taggedBluesky, wolvesBluesky } from "../../../lib/social/bluesky";
 import { socialQueue } from "../../../lib/social/social-queue";
 import type { Story } from "../../../lib/feeds/feed-types";
@@ -28,7 +31,8 @@ async function collect(): Promise<SocialData> {
       .catch(() => {
         unavailable.push("wolves");
       }),
-    ...Object.entries(socialTags).map(async ([team, tags]) => {
+    ...(Object.keys(socialTags) as SocialTagTeam[]).map(async (team) => {
+      const tags = socialTags[team];
       const results = await Promise.allSettled(
         tags.map((tag) => taggedBluesky(team, tag)),
       );

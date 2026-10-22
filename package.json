@@ -13,7 +13,9 @@
     "lint": "eslint .",
     "lint:fix": "eslint . --fix",
     "format": "prettier . --write",
-    "format:check": "prettier . --check"
+    "format:check": "prettier . --check",
+    "validate:pr": "node scripts/build/validate-pr.mjs",
+    "hooks:install": "node scripts/build/install-git-hooks.mjs"
   },
   "dependencies": {
     "@base-ui/react": "^1.7.0",

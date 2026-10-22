@@ -1,5 +1,6 @@
 // Parses public Bluesky posts into filtered, team-tagged social stories.
 import type { Story } from "../feeds/feed-types";
+import { TEAM_IDS, type TeamId } from "../teams/teams";
 import { blueskyImageUrl } from "./bluesky-images";
 import { socialQueue, SOCIAL_QUEUE_LIMIT } from "./social-queue";
 type BlueskyImage = {
@@ -34,7 +35,7 @@ const wolvesPattern =
   /timberwolves|\bwolves\b|timbies|anthony edwards|\bant\b|naz reid|jaden mcdaniels|rudy gobert|lamelo ball|jonathan kuminga|chris finch|ayo dosunmu|canis hoopus/i;
 export function parseBlueskyFeed(
   json: BlueskyResponse,
-  team = "wolves",
+  team: TeamId = TEAM_IDS.WOLVES,
   pattern: RegExp = wolvesPattern,
 ): Story[] {
   return (json.feed || []).flatMap((item) => {
@@ -137,7 +138,7 @@ export async function wolvesBluesky(limit = SOCIAL_QUEUE_LIMIT) {
   return latest;
 }
 
-export async function taggedBluesky(team: string, tag: string) {
+export async function taggedBluesky(team: TeamId, tag: string) {
   const stories: Story[] = [];
   let cursor = "";
   const pattern = new RegExp(

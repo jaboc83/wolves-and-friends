@@ -80,6 +80,21 @@ The Worker attachment follows the
 Run tests from the repository root; they use repository-relative fixture and
 source paths. CI discovers each `test-*.mjs` suite under `scripts/tests/`.
 
+## Validate before pushing
+
+Install the repository's local Git pre-push hook once:
+
+```sh
+pnpm hooks:install
+```
+
+Before pushing a branch, the hook fetches `origin/main`, checks for merge
+conflicts, then runs the TypeScript check, production build, all regression
+tests, and the client-asset comparison against the refreshed main branch. Run
+`pnpm validate:pr` to start those validations manually; the asset comparison is
+included when `VALIDATION_BASE_SHA` is set to a full base commit SHA. The hook
+can be bypassed with `git push --no-verify`, but GitHub's PR checks still apply.
+
 The development task stays running after debugging stops. Use Terminal →
 Terminate Task → `Wolves: dev` when finished. Stop an existing `pnpm dev` before
 starting this task: ports 5173 and 9229 must be free. The task enables the local

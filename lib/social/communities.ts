@@ -1,5 +1,6 @@
 // Team-to-community links shown alongside public social stories.
-export const communities = [
+import type { TeamId } from "../teams/teams";
+export const communities: { team: TeamId; name: string; url: string }[] = [
   {
     team: "wolves",
     name: "r/timberwolves",

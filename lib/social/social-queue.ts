@@ -1,5 +1,6 @@
 // Deduplicates and bounds social stories, then selects unread items for the active team.
 import type { Story } from "../feeds/feed-types";
+import type { DashboardPageId } from "../dashboard/page-id";
 
 export const SOCIAL_QUEUE_LIMIT = 50;
 
@@ -38,14 +39,16 @@ export function socialQueue(
 
 export function unreadSocial(
   posts: Story[],
-  active: string,
+  active: DashboardPageId,
   readIds: string[],
 ) {
   const read = new Set(readIds);
   return socialQueue(posts)
     .filter(
       (post) =>
-        (active === "all" || post.teams.includes(active)) && !read.has(post.id),
+        (active === "all" ||
+          (active !== "march-madness" && post.teams.includes(active))) &&
+        !read.has(post.id),
     )
     .slice(0, active === "all" ? 2 : 5);
 }
