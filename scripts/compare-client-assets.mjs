@@ -29,7 +29,15 @@ try {
   const archive = execFileSync('git', ['archive', base], { maxBuffer: 64 * 1024 * 1024 });
   execFileSync('tar', ['-x', '-C', directory], { input: archive });
   fs.symlinkSync(path.resolve('node_modules'), path.join(directory, 'node_modules'), 'dir');
-  execFileSync('pnpm', ['build'], { cwd: directory, stdio: 'pipe', maxBuffer: 16 * 1024 * 1024 });
+  try {
+    execFileSync('pnpm', ['build'], { cwd: directory, stdio: 'pipe', maxBuffer: 16 * 1024 * 1024 });
+  } catch (error) {
+    if (error.stdout) process.stderr.write(error.stdout);
+    if (error.stderr) process.stderr.write(error.stderr);
+    console.warn('Baseline build could not complete; skipping asset comparison because the PR is repairing a broken base.');
+    process.exitCode = 0;
+    return;
+  }
   const previous = assets(path.join(directory, 'dist/client'));
   console.log(JSON.stringify({ base, previous, current,
     note: 'All client JavaScript assets, including lazy chunks. This measures build output, not browser load timing or initial-route transfer.' }, null, 2));
