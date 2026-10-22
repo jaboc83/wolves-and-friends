@@ -277,9 +277,29 @@ export async function collect(
     await task("ESPN injury report · Timberwolves", ["wolves"], async (output, signal) => {
       const { stories, games, health } = output;
       const get = (url: string) => providerGet(url, signal);
-      const json = (await (
-        await get("https://site.api.espn.com/apis/site/v2/sports/basketball/nba/injuries?region=us&lang=en")
-      ).json()) as any;
+      let json: any;
+      try {
+        json = (await (
+          await get("https://site.api.espn.com/apis/site/v2/sports/basketball/nba/injuries?region=us&lang=en")
+        ).json()) as any;
+      } catch {
+        const schedule = (await (
+          await get("https://site.api.espn.com/apis/site/v2/sports/basketball/nba/teams/min/schedule")
+        ).json()) as any;
+        const summaries = await Promise.allSettled(
+          (schedule.events || []).slice(0, 5).map(async (event: any) =>
+            (await get(
+              "https://site.api.espn.com/apis/site/v2/sports/basketball/nba/summary?event=" +
+                encodeURIComponent(event.id),
+            )).json(),
+          ),
+        );
+        json = {
+          injuries: summaries.flatMap((result) =>
+            result.status === "fulfilled" ? result.value.injuries || [] : [],
+          ),
+        };
+      }
       const injuries = (json.injuries || [])
         .flatMap((group: any) => group.injuries
           ? group.injuries.map((injury: any) => ({ ...injury, team: group.team || { displayName: group.displayName } }))
