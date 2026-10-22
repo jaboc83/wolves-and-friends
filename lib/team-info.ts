@@ -186,7 +186,7 @@ async function parsePowerRanking(
     })
     .filter(Boolean)
     .sort((a: any, b: any) => Number(a.rank.value) - Number(b.rank.value))
-    .slice(0, 10) as any[];
+    .slice() as any[];
   if (!ranked.length) return;
   // Use one team-catalog request instead of one slow request per row. The
   // catalog is fast enough for the Site worker timeout and keeps the panel
@@ -224,7 +224,7 @@ async function parsePowerRanking(
     url: sourceUrl,
     checked,
     publishedAt,
-    note: `${season} season · top 10 teams by ${metricName}.`,
+    note: `${season} season · all teams ranked by ${metricName}.`,
   };
 }
 export function parseDepth(
