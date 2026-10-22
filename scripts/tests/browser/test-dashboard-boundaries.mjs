@@ -71,13 +71,78 @@ assert.equal(
   null,
   "SSR/disabled storage is optional",
 );
-const { storedTeam, isHubData } = loader()("lib/dashboard/storage.ts");
+const { storedDashboardPage, isHubData } = loader()("lib/dashboard/storage.ts");
 memory.set("wf-team", "unknown");
-assert.equal(storedTeam(storage), "wolves");
+assert.equal(storedDashboardPage(storage), "wolves");
 memory.set("wf-team", "wild");
-assert.equal(storedTeam(storage), "wild");
+assert.equal(storedDashboardPage(storage), "wild");
+memory.set("wf-team", "all");
+assert.equal(storedDashboardPage(storage), "all");
+memory.set("wf-team", "march-madness");
+assert.equal(storedDashboardPage(storage), "march-madness");
+const checked = new Date().toISOString();
+const validStory = {
+  id: "story",
+  title: "Story",
+  url: "https://example.com/story",
+  source: "Example",
+  date: checked,
+  kind: "story",
+  teams: ["wolves"],
+};
+const game = {
+  id: "wolves-game",
+  team: "wolves",
+  name: "Wolves game",
+  date: checked,
+  status: "Scheduled",
+  state: "pre",
+  league: "NBA",
+  venue: "",
+  broadcast: "",
+  url: "",
+  competitors: [],
+};
 assert.equal(
   isHubData({ checked: "", games: [{}], stories: [], health: [] }),
+  false,
+);
+assert.equal(
+  isHubData({
+    checked: "",
+    games: [],
+    stories: [validStory],
+    health: [],
+  }),
+  true,
+);
+assert.equal(
+  isHubData({
+    checked: "",
+    games: [],
+    stories: [{ ...validStory, teams: ["unknown"] }],
+    health: [],
+  }),
+  false,
+);
+assert.equal(
+  isHubData({
+    checked: "",
+    games: [{ ...game, team: "unknown" }],
+    stories: [],
+    health: [],
+  }),
+  false,
+);
+assert.equal(
+  isHubData({
+    checked: "",
+    games: [],
+    stories: [],
+    health: [
+      { name: "Example", status: "ok", checked, count: 1, teams: ["unknown"] },
+    ],
+  }),
   false,
 );
 

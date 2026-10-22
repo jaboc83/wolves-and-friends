@@ -1,5 +1,5 @@
 // Resolves known team/opponent names to relevant Wikipedia pages or scoped searches.
-import { teams } from "./teams";
+import { teams, type TeamId } from "./teams";
 
 const pages: Record<string, string> = {
   wolves: "Minnesota Timberwolves",
@@ -162,7 +162,7 @@ function franchisePage(teamId: string, name: string): string | undefined {
 }
 
 export function teamWikipediaUrl(
-  teamId: string,
+  teamId: TeamId,
   name?: string,
   ownTeam = false,
 ) {

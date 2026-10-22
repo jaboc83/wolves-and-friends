@@ -1,19 +1,19 @@
-// Keeps the dashboard's "recent" story list aligned to the current Chicago calendar day.
+// Keeps the dashboard's "recent" story list aligned to a calendar day.
 import type { Story } from "../feeds/feed-types";
-export const chicagoDay = (date: string) =>
-  new Intl.DateTimeFormat("en-CA", {
-    timeZone: "America/Chicago",
-    year: "numeric",
-    month: "2-digit",
-    day: "2-digit",
-  }).format(new Date(date));
+import type { DashboardPageId } from "../dashboard/page-id";
+import { dayInTimeZone } from "./local-time";
 export function recentStories(
   stories: Story[],
-  _active: string,
-  now = Date.now(),
+  _active: DashboardPageId,
+  {
+    now = Date.now(),
+    timeZone = "America/Chicago",
+  }: { now?: number; timeZone?: string } = {},
 ) {
-  const today = chicagoDay(new Date(now).toISOString());
+  const today = dayInTimeZone(new Date(now), timeZone);
   return stories.filter(
-    (s) => Number.isFinite(Date.parse(s.date)) && chicagoDay(s.date) === today,
+    (s) =>
+      Number.isFinite(Date.parse(s.date)) &&
+      dayInTimeZone(s.date, timeZone) === today,
   );
 }

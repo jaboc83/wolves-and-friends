@@ -133,7 +133,12 @@ assert.doesNotMatch(
 );
 assert.match(today(game("", "", "pre")), /class="game-top"/);
 assert.match(render(game("122", "104"), true), /class="game-top"/);
-assert.match(render(game("122", "104", "pre"), false), /Tue, Oct 13/);
+assert.match(render(game("122", "104", "pre"), false), /Wed, Oct 14/);
+assert.match(
+  render(game("122", "104", "pre"), false),
+  /12:00 AM UTC/,
+  "server rendering uses UTC until the browser timezone is available",
+);
 const soccerDraw = {
   ...game("1", "1"),
   team: "palace",

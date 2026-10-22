@@ -1,5 +1,6 @@
 // Normalizes provider news, schedule, and scoreboard responses into shared feed data.
-import { teams } from "../teams/teams";
+import { isTeamId, TEAM_IDS, teams } from "../teams/teams";
+import type { TeamId } from "../teams/teams";
 import {
   palaceCompetitions,
   teamPlaysCompetition,
@@ -86,7 +87,8 @@ export class FeedError extends Error {
 export function match(s: string) {
   return teams
     .filter((t) => new RegExp(t.pattern, "i").test(s))
-    .map((t) => t.id);
+    .map((t) => t.id)
+    .filter(isTeamId);
 }
 export function parseNbaTeamNews(
   html: string,
@@ -138,7 +140,7 @@ export function parseNbaTeamNews(
   return stories;
 }
 
-export function parseFeed(xml: string, name: string, only?: string[]): Story[] {
+export function parseFeed(xml: string, name: string, only?: TeamId[]): Story[] {
   if (!/<rss[\s>]|<feed[\s>]|<rdf:RDF[\s>]/i.test(xml))
     throw new FeedError("invalid-feed");
   const blocks =
@@ -157,7 +159,7 @@ export function parseFeed(xml: string, name: string, only?: string[]): Story[] {
         tag(b, "published") ||
         tag(b, "updated") ||
         tag(b, "dc:date");
-      const ids = only || match(title + " " + tag(b, "description"));
+      const ids: TeamId[] = only || match(title + " " + tag(b, "description"));
       return {
         id: url,
         title,
@@ -196,7 +198,7 @@ export function parsePalaceRadar(html: string, checked: string): Story[] {
         url: path ? base + path : "",
         date,
         source: "Palace Radar",
-        teams: ["palace"],
+        teams: [TEAM_IDS.PALACE],
         kind: "story",
       };
     })
@@ -205,7 +207,7 @@ export function parsePalaceRadar(html: string, checked: string): Story[] {
         story.url && story.title && Number.isFinite(Date.parse(story.date)),
     );
 }
-export function parseGames(data: unknown, team: string, sport: string): Game[] {
+export function parseGames(data: unknown, team: TeamId, sport: string): Game[] {
   const json = emptyScoreboard(data);
   return (json.events || [])
     .map((e) => {

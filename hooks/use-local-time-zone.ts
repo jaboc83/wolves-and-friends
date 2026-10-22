@@ -1,0 +1,10 @@
+"use client";
+import { useSyncExternalStore } from "react";
+import { localTimeZone } from "../lib/browser/local-time";
+
+const subscribe = () => () => {};
+const serverTimeZone = () => "UTC";
+
+export function useLocalTimeZone() {
+  return useSyncExternalStore(subscribe, localTimeZone, serverTimeZone);
+}

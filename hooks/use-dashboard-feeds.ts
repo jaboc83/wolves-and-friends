@@ -24,9 +24,14 @@ import { activeHub, activeStories } from "../lib/dashboard/content-policy";
 import { socialQueue } from "../lib/social/social-queue";
 import { isLocalSocialImage } from "../lib/social/bluesky-images";
 import { loadedNewsData } from "../lib/browser/news-page-data";
-import { teams } from "../lib/teams/teams";
-import { isHubData, isStories, storedTeam } from "../lib/dashboard/storage";
+import { isTeamId, TEAM_IDS, teams, type TeamId } from "../lib/teams/teams";
+import {
+  isHubData,
+  isStories,
+  storedDashboardPage,
+} from "../lib/dashboard/storage";
 import { recordFeedDiagnostics } from "../lib/feeds/feed-diagnostics";
+import type { DashboardPageId } from "../lib/dashboard/page-id";
 const emptyHub: HubData = {
   checked: "",
   stories: [],
@@ -51,12 +56,14 @@ function retainAvatars(next: HubData, previous?: HubData | null): HubData {
     ),
   };
 }
-export function useDashboardFeeds(active: string) {
+export function useDashboardFeeds(active: DashboardPageId) {
   const [data, setData] = useState<HubData | null>(null);
   const [teamInfo, setTeamInfo] = useState<TeamInfo[]>([]);
-  const [newsPages, setNewsPages] = useState<Record<string, HubData>>({});
+  const [newsPages, setNewsPages] = useState<Partial<Record<TeamId, HubData>>>(
+    {},
+  );
   const [newsStatus, setNewsStatus] = useState<
-    Record<string, "loading" | "ready" | "error">
+    Partial<Record<TeamId, "loading" | "ready" | "error">>
   >({});
   const [socialData, setSocialData] = useState<Story[]>([]);
   const [socialUnavailable, setSocialUnavailable] = useState<string[]>([]);
@@ -178,10 +185,9 @@ export function useDashboardFeeds(active: string) {
       }
     });
   }
-  const activePage = useRef("wolves");
-  const newsChecked = useRef(new Map<string, number>());
-  function fetchNewsPage(id: string, force = false) {
-    if (id === "march-madness") return Promise.resolve();
+  const activePage = useRef<DashboardPageId>(TEAM_IDS.WOLVES);
+  const newsChecked = useRef(new Map<TeamId, number>());
+  function fetchNewsPage(id: TeamId, force = false) {
     if (!force && Date.now() - (newsChecked.current.get(id) || 0) < 300000)
       return Promise.resolve();
     return once("news:" + id, async () => {
@@ -214,7 +220,7 @@ export function useDashboardFeeds(active: string) {
   function refreshNews() {
     return once("news-queue", async () => {
       const selected = activePage.current;
-      if (selected !== "all") await fetchNewsPage(selected, true);
+      if (isTeamId(selected)) await fetchNewsPage(selected, true);
       // Background work is bounded to one page at a time. Selecting a new page
       // can immediately start its request without waiting behind this queue.
       for (const t of teams) {
@@ -223,7 +229,12 @@ export function useDashboardFeeds(active: string) {
       }
     });
   }
-  const visibleNewsIds = active === "all" ? teams.map((t) => t.id) : [active];
+  const visibleNewsIds: TeamId[] =
+    active === "all"
+      ? teams.map((team) => team.id)
+      : isTeamId(active)
+        ? [active]
+        : [];
   const loading = visibleNewsIds.some(
     (id) => !newsStatus[id] || newsStatus[id] === "loading",
   );
@@ -292,7 +303,7 @@ export function useDashboardFeeds(active: string) {
     const publicRequests = requests.current;
     publicRequests.start();
     let alive = true;
-    activePage.current = storedTeam();
+    activePage.current = storedDashboardPage();
     queueMicrotask(() => {
       if (!alive) return;
       setPlayerStats(readPlayerStatsCache(browserStorage));

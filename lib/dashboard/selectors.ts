@@ -2,9 +2,11 @@
 import type { Game, HubData } from "../feeds/feed-types";
 import { discEvents } from "../games/event-seed";
 import { eventLifecycle, eventIsToday } from "../games/event-time";
-import { teams, teamPriority } from "../teams/teams";
+import { isTeamId, teams, teamPriority } from "../teams/teams";
 import { authorStories } from "../feeds/author-stories";
 import { recentStories } from "../browser/news-window";
+import type { DashboardPageId } from "./page-id";
+import { DASHBOARD_PAGE_IDS } from "./page-id";
 export function selectStories({
   newsData,
   active,
@@ -12,13 +14,15 @@ export function selectStories({
   readIds,
   showRead,
   showOlder,
+  timeZone = "America/Chicago",
 }: {
   newsData: HubData;
-  active: string;
+  active: DashboardPageId;
   search: string;
   readIds: string[];
   showRead: boolean;
   showOlder: boolean;
+  timeZone?: string;
 }) {
   const filtered = [
     ...new Map(
@@ -41,22 +45,27 @@ export function selectStories({
     .filter(
       (s) =>
         s.kind !== "social" &&
-        (active === "all" || s.teams.includes(active)) &&
+        (active === DASHBOARD_PAGE_IDS.ALL ||
+          (isTeamId(active) && s.teams.includes(active))) &&
         s.title.toLowerCase().includes(search.toLowerCase()) &&
         (showRead || !readIds.includes(s.id)),
     );
   const compactNews = true;
-  const recentStoriesForView = recentStories(filtered, active);
+  const recentStoriesForView = recentStories(filtered, active, { timeZone });
   // Keep the all-teams page focused on a quick daily scan while preserving
   // older same-day stories behind View older.
   const recent =
-    active === "all" ? recentStoriesForView.slice(0, 8) : recentStoriesForView;
+    active === DASHBOARD_PAGE_IDS.ALL
+      ? recentStoriesForView.slice(0, 8)
+      : recentStoriesForView;
   const displayed = compactNews && !showOlder ? recent : filtered;
   const olderCount = filtered.length - recent.length;
   const newest = (newsData.stories || [])
     .filter(
       (s) =>
-        s.kind !== "social" && (active === "all" || s.teams.includes(active)),
+        s.kind !== "social" &&
+        (active === DASHBOARD_PAGE_IDS.ALL ||
+          (isTeamId(active) && s.teams.includes(active))),
     )
     .sort((a, b) => Date.parse(b.date) - Date.parse(a.date))[0];
   return { compactNews, displayed, olderCount, newest };
@@ -67,13 +76,17 @@ export function selectGames({
   liveGames,
   active,
   showOlderResults,
+  timeZone = "America/Chicago",
 }: {
   data: HubData | null;
   oddsGames: Game[];
   liveGames: Game[];
-  active: string;
+  active: DashboardPageId;
   showOlderResults: boolean;
+  timeZone?: string;
 }) {
+  const now = new Date();
+  const isToday = (game: Game) => eventIsToday(game, now, timeZone);
   const combinedGames = [
     ...(data?.games || []),
     ...discEvents.filter(
@@ -86,7 +99,7 @@ export function selectGames({
     .filter((g) => teams.some((t) => t.id === g.team))
     .map((original) => {
       const odds = oddsGames.find((x) => x.id === original.id)?.odds;
-      const event = eventLifecycle(original);
+      const event = eventLifecycle(original, now, timeZone);
       const g = odds ? { ...event, odds } : event;
       const fresh = liveGames.find(
         (x) =>
@@ -105,19 +118,19 @@ export function selectGames({
   for (const g of liveGames)
     if (!combinedGames.some((x) => x.id === g.id)) combinedGames.push(g);
   const teamsPlayingToday = new Set(
-    combinedGames.filter((g) => eventIsToday(g)).map((g) => g.team),
+    combinedGames.filter(isToday).map((g) => g.team),
   );
   const visibleGames = combinedGames.filter(
-    (g) => active === "all" || g.team === active,
+    (g) => active === DASHBOARD_PAGE_IDS.ALL || g.team === active,
   );
   const availableResults = visibleGames
-    .filter((g) => g.state === "post" && !eventIsToday(g))
+    .filter((g) => g.state === "post" && !isToday(g))
     .sort(
       (a, b) =>
         Date.parse(b.endDate || b.date) - Date.parse(a.endDate || a.date),
     );
   const results =
-    active === "all"
+    active === DASHBOARD_PAGE_IDS.ALL
       ? availableResults.slice(0, 8)
       : showOlderResults
         ? availableResults
@@ -126,22 +139,22 @@ export function selectGames({
     .filter(
       (g) =>
         g.state !== "post" &&
-        (eventIsToday(g) || Date.parse(g.date) > Date.now() - 12 * 3600000),
+        (isToday(g) || Date.parse(g.date) > now.getTime() - 12 * 3600000),
     )
     .sort((a, b) => Date.parse(a.date) - Date.parse(b.date));
   const todayGames = visibleGames
-    .filter((g) => eventIsToday(g))
+    .filter(isToday)
     .sort(
       (a, b) =>
         Date.parse(a.date) - Date.parse(b.date) ||
         teamPriority(a.team) - teamPriority(b.team),
     );
-  const futureCandidates = upcoming.filter((g) => !eventIsToday(g));
+  const futureCandidates = upcoming.filter((g) => !isToday(g));
   const nextByTeam = new Map<string, Game>();
   for (const g of futureCandidates)
     if (!nextByTeam.has(g.team)) nextByTeam.set(g.team, g);
   const futureGames =
-    active === "all"
+    active === DASHBOARD_PAGE_IDS.ALL
       ? [...nextByTeam.values()].sort(
           (a, b) =>
             Date.parse(a.date) - Date.parse(b.date) ||
