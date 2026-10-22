@@ -26,7 +26,7 @@ export default function TeamInsights({
   onRosterOpen?: () => void;
 }) {
   const [selected, setSelected] = useState("wolves");
-  const [standingsOpen, setStandingsOpen] = useState(false);
+  const [standingsOpen, setStandingsOpen] = useState(false);\n  const [powerRankingsOpen, setPowerRankingsOpen] = useState(false);
   const id = active === "all" ? selected : active;
   useEffect(() => {
     setStandingsOpen(autoOpenStandings);
@@ -34,7 +34,7 @@ export default function TeamInsights({
   const terms = sportTerms(id);
   const headings = sportTerms(active);
   const t = teams.find((t) => t.id === id);
-  const info = data.find((i) => i.id === id);
+  const info = data.find((i) => i.id === id);\n  const myPowerRanking = info?.powerRanking?.rows.find(\n    (row) =>\n      row.name === t?.name ||\n      row.id === t?.espn ||\n      Boolean(t?.espn && row.url.includes(`/${t.espn}`)),\n  );
   const [rosterSort, setRosterSort] = useState<{ column: string; direction: "asc" | "desc" }>({ column: "Player", direction: "asc" });
   useEffect(() => { setRosterSort({ column: "Player", direction: "asc" }); }, [id]);
   const rosterGroups = useMemo(() => {
@@ -269,11 +269,25 @@ export default function TeamInsights({
         )}
       </details>
       {info?.powerRanking && (
-        <section className="power-rankings" aria-labelledby="power-rankings-title">
-          <div className="power-rankings-heading">
-            <h2 id="power-rankings-title">Power Rankings</h2>
-            <span>{info.powerRanking.metric}</span>
-          </div>
+        <details
+          className="power-rankings"
+          open={powerRankingsOpen}
+          onToggle={(event) => setPowerRankingsOpen(event.currentTarget.open)}
+        >
+          <summary className="power-rankings-summary">
+            <span className="power-rankings-heading">
+              <span>
+                <strong>Power Rankings</strong>
+                <small>{info.powerRanking.metric}</small>
+              </span>
+              <span className="power-rankings-preview">
+                {myPowerRanking
+                  ? `${t?.short}: ${myPowerRanking.cells[0]}`
+                  : "Your team’s ranking unavailable"}
+              </span>
+            </span>
+            <span className="power-rankings-chevron" aria-hidden="true">⌄</span>
+          </summary>
           <p className="panel-note">
             {info.powerRanking.note} · produced{" "}
             {new Date(info.powerRanking.publishedAt).toLocaleDateString("en-US", {
@@ -294,7 +308,10 @@ export default function TeamInsights({
               </thead>
               <tbody>
                 {info.powerRanking.rows.map((row) => (
-                  <tr key={row.id}>
+                  <tr
+                    key={row.id}
+                    className={row === myPowerRanking ? "my-team" : ""}
+                  >
                     <td>{row.cells[0]}</td>
                     <th scope="row">
                       <a href={row.url} target="_blank" rel="noreferrer">
@@ -329,7 +346,7 @@ export default function TeamInsights({
               minute: "2-digit",
             })} CT
           </p>
-        </section>
+        </details>
       )}
       {id !== "disc" && (
         <details
