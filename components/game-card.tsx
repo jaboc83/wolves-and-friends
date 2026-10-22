@@ -10,6 +10,7 @@ import { teams } from "../lib/teams";
 import { teamLocation } from "../lib/team-location";
 import { teamWikipediaUrl } from "../lib/team-wikipedia";
 import { sportTerms } from "../lib/sport-terms";
+import { teamLogoPath } from "../lib/team-logo";
 const ct = (s: string, o: Intl.DateTimeFormatOptions = {}) =>
   new Date(s).toLocaleString("en-US", { timeZone: "America/Chicago", ...o });
 const patterns: Record<string, RegExp> = {
@@ -82,7 +83,7 @@ export default function GameCard({
   const t = teams.find((t) => t.id === g.team);
   if (!t) return null;
   const hidden = g.state !== "pre" && !scoreVisible;
-  const logo = "/logos/" + t.id + (t.id === "disc" ? ".svg" : ".png");
+  const logo = teamLogoPath(t.id);
   const { club, opponent } = matchup(g);
   const result = outcome(g);
   const terms = sportTerms(g.team);

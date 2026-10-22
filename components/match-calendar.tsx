@@ -5,6 +5,7 @@ import { useState } from "react";
 import type { Game } from "../lib/feeds";
 import { teams } from "../lib/teams";
 import { sportTerms } from "../lib/sport-terms";
+import { teamLogoPath } from "../lib/team-logo";
 const key = (date: string) =>
   new Intl.DateTimeFormat("en-CA", {
     timeZone: "America/Chicago",
@@ -124,9 +125,7 @@ export default function MatchCalendar({
                   rel="noreferrer"
                 >
                   <img
-                    src={
-                      "/logos/" + g.team + (g.team === "disc" ? ".svg" : ".png")
-                    }
+                    src={teamLogoPath(g.team)}
                     alt=""
                     width={24}
                     height={24}

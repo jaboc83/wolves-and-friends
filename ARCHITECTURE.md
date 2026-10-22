@@ -108,7 +108,7 @@ Odds lookups are currently limited to eligible games within the next seven days 
 
 Clearing browser storage removes local read/saved history and choices. Those preferences do not sync between devices. The snapshots are fallbacks, not continuously updated files. Source-check timestamps and unavailable-feed notices help distinguish cached information from a successful refresh.
 
-The repository contains starter database, authentication, connector, and UI scaffolding. Its presence does not mean the dashboard uses a database, login flow, or every included component. The hosting manifest currently has no D1 database or R2 bucket binding.
+The repository contains starter authentication, connector, and UI scaffolding. Its presence does not mean the dashboard uses a login flow or every included component. The hosting manifest currently has no D1 database or R2 bucket binding.
 
 ## 7. Privacy boundary
 

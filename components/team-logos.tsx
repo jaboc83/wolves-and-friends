@@ -1,4 +1,5 @@
 import { teams } from "../lib/teams";
+import { teamLogoPath } from "../lib/team-logo";
 export default function TeamLogos({ teamIds }: { teamIds: string[] }) {
   return (
     <div className="team-logos">
@@ -8,7 +9,7 @@ export default function TeamLogos({ teamIds }: { teamIds: string[] }) {
         return (
           <span key={id} className="team-logo" title={team.name}>
             <img
-              src={"/logos/" + id + (id === "disc" ? ".svg" : ".png")}
+              src={teamLogoPath(id)}
               alt={
                 id === "disc" ? "Disc Golf Pro Tour logo" : team.name + " logo"
               }

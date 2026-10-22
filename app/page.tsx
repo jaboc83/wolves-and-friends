@@ -29,6 +29,7 @@ import { teamThemes } from "../lib/team-themes";
 import { unreadSocial } from "../lib/social-queue";
 import { communities } from "../lib/communities";
 import { teams, teamPriority } from "../lib/teams";
+import { teamLogoPath } from "../lib/team-logo";
 import type { Story, Game } from "../lib/feeds";
 import { releaseMarker } from "../lib/release-info";
 import { downloadFeedDiagnostics } from "../lib/feed-diagnostics";
@@ -247,12 +248,8 @@ export default function Home() {
                   className="team-tab-logo"
                   src={
                     t.id === "disc"
-                      ? "/logos/dgpt-tab.png"
-                      : t.id === "zalgiris"
-                        ? "/logos/zalgiris-tab.svg"
-                        : t.id === "usmnt"
-                          ? "/logos/usmnt-tab.svg"
-                          : `/logos/${t.id}.png`
+                      ? "/logos/dgpt.png"
+                      : teamLogoPath(t.id)
                   }
                   alt=""
                   width={40}
@@ -451,11 +448,7 @@ export default function Home() {
                                 rel="noreferrer"
                               >
                                 <img
-                                  src={
-                                    "/logos/" +
-                                    c.team +
-                                    (c.team === "disc" ? ".svg" : ".png")
-                                  }
+                                  src={teamLogoPath(c.team)}
                                   alt=""
                                   width={24}
                                   height={24}
@@ -730,5 +723,3 @@ export default function Home() {
     </>
   );
 }
-
-
