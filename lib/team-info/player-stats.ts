@@ -481,7 +481,15 @@ export function parsePlayerStats(
   const teamSeasons = seasons.filter(
     (row) => rosterTeamId && String(row.teamId || "") === rosterTeamId,
   );
-  const seasonRow = [...(teamSeasons.length ? teamSeasons : seasons)].sort(
+  const seasonCandidates = teamSeasons.length ? teamSeasons : seasons;
+  const eligibleSeasons = targetSeasonYear
+    ? seasonCandidates.filter(
+        (row) =>
+          seasonYear(row.season?.year || row.season?.displayName) ===
+          targetSeasonYear,
+      )
+    : seasonCandidates;
+  const seasonRow = [...eligibleSeasons].sort(
     (a, b) => Number(b.season?.year || 0) - Number(a.season?.year || 0),
   )[0];
 
