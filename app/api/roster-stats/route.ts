@@ -85,8 +85,8 @@ async function stats(entry: Entry) {
           Math.min(statsRequestTimeoutMs, Math.max(1, deadline - Date.now()));
         const [sport, league] = entry.league.split("/");
         const urls = [
-          "https://site.web.api.espn.com/apis/common/v3/sports/" + entry.league + "/athletes/" + entry.id + "/stats",
-          "https://site.web.api.espn.com/apis/common/v3/sports/" + entry.league + "/athletes/" + entry.id + "/overview",
+          "https://site.api.espn.com/apis/common/v3/sports/" + entry.league + "/athletes/" + entry.id + "/stats",
+          "https://site.api.espn.com/apis/common/v3/sports/" + entry.league + "/athletes/" + entry.id + "/overview",
           "https://site.api.espn.com/apis/site/v2/sports/" + entry.league + "/athletes/" + entry.id,
         ];
         for (const url of urls) {
