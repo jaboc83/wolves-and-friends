@@ -63,7 +63,8 @@ async function providerGet(url: string, signal?: AbortSignal) {
   } catch (error) {
     throw error instanceof FeedError ? error : new FeedError(safeFeedError(error));
   }
-}\nexport async function collect(
+}
+export async function collect(
   section: "news" | "schedules" | "all" = "all",
   team?: string,
 ): Promise<HubData> {
