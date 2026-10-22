@@ -1,3 +1,4 @@
+// Deduplicates and bounds social stories, then selects unread items for the active team.
 import type { Story } from "../feeds/feed-types";
 
 export const SOCIAL_QUEUE_LIMIT = 50;

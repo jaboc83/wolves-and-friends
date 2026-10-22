@@ -1,3 +1,4 @@
+// Selects competition and season badges displayed on game cards.
 import type { Game } from "../feeds";
 export type GameBadge = { label: string; tone: string };
 export function gameBadges(g: Game): GameBadge[] {

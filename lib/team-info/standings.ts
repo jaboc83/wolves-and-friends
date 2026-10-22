@@ -1,4 +1,6 @@
 import type { Table } from "./index";
+
+// Sorts standings and adds competition-specific postseason qualification markers.
 // Qualification lines use the table's rank scope, never a guessed division cutoff.
 export function tableSeasonType(table: Table, id = "") {
   return /preseason|pre-season|spring training/i.test(table.note || "")

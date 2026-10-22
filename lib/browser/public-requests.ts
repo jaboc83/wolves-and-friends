@@ -1,4 +1,5 @@
-// Browser-only orchestration. No preference data or visitor headers are forwarded.
+// Browser-only request lifecycle, deduplication, and polling for public same-origin feeds.
+// No preference data or visitor headers are forwarded.
 export function createPublicRequests() {
   let controller = new AbortController();
   let stopped = false;

@@ -1,3 +1,4 @@
+// Normalizes scroll offsets reported by different browser scrolling elements.
 type ScrollElement = { scrollTop: number } | null | undefined;
 
 export function pageScrollTop(

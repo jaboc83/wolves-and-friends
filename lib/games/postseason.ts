@@ -1,3 +1,4 @@
+// Normalizes league playoff schedules into rounds and team matchups.
 import { espnTeamLogoUrl } from "./march-madness";
 export type Postseason = {
   partial?: boolean;

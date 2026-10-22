@@ -1,3 +1,4 @@
+// Shared styling helper: combines conditional class names and resolves Tailwind conflicts.
 import { clsx, type ClassValue } from "clsx";
 import { twMerge } from "tailwind-merge";
 

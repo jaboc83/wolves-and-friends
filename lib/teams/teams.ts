@@ -1,3 +1,4 @@
+// Central team catalog: IDs, display names, leagues, provider matching, and source links.
 export const teams = [
   {
     id: "wolves",

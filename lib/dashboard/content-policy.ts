@@ -1,3 +1,4 @@
+// Removes retired teams and their obsolete feed sources from loaded public content.
 import { teams } from "../teams/teams";
 import type { HubData, Story } from "../feeds/feed-types";
 const retiredNews = (name: string) =>

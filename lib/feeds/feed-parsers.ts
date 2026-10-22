@@ -1,3 +1,4 @@
+// Normalizes provider news, schedule, and scoreboard responses into shared feed data.
 import { teams } from "../teams/teams";
 import {
   palaceCompetitions,

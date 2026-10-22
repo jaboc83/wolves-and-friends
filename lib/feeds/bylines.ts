@@ -1,4 +1,4 @@
-import { applyKnownBylines } from "./byline-status";
+// Extracts publisher author metadata and verifies candidate stories against author pages.
 import type { AuthorFeed } from "./feed-types";
 const clean = (s: string) =>
   s
@@ -75,7 +75,6 @@ export async function verifyAuthorFeed(
   author: AuthorFeed,
   signal?: AbortSignal,
 ) {
-  applyKnownBylines(author);
   let links = new Map<string, string>();
   try {
     const r = await fetch(author.url, {

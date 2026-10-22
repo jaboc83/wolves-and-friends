@@ -1,4 +1,5 @@
-// Per-Worker cache of public provider data; never keyed by visitor information.
+// Fetches and briefly caches public ESPN scoreboard responses per Worker instance.
+// Cache keys are league/date only, never visitor information.
 type ScoreboardResponse = {
   events?: unknown[];
   [key: string]: unknown;

@@ -1,3 +1,4 @@
+// Chooses score/details and injury-report destinations linked from game cards.
 import type { Game } from "../feeds";
 // Prefer the event's actual scoreboard; never send Powerball results to its overview.
 export function tournamentScoresUrl(g: Game) {

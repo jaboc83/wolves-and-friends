@@ -1,3 +1,4 @@
+// Validates cached feed shapes and restores a still-supported selected team.
 import type { HubData, Story } from "../feeds/feed-types";
 import { teams } from "../teams/teams";
 import { browserStorage } from "../browser/storage";

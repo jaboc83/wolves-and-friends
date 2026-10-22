@@ -1,3 +1,4 @@
+// Parses official Žalgiris/Frost news pages into the shared story shape.
 import type { Story } from "./feed-types";
 import initial from "../../data/snapshots/initial.json";
 type JsonObject = Record<string, unknown>;

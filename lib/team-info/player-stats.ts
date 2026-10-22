@@ -1,3 +1,4 @@
+// Parses provider stats and selects concise player summaries for roster displays.
 export type PlayerStats = {
   title: string;
   values: { label: string; value: string; description: string }[];

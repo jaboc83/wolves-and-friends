@@ -1,3 +1,4 @@
+// Types the local Sites connector preview binding and hosted Worker environment.
 declare module "virtual:sites-connector-preview" {
   const binding: import("./contract.mjs").ConnectorBinding;
   export default binding;

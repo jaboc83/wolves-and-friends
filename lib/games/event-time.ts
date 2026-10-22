@@ -1,3 +1,4 @@
+// Applies Chicago-time day boundaries and lifecycle labels to calendar events.
 import type { Game } from "../feeds";
 export const eventDay = (value: string | Date) =>
   new Intl.DateTimeFormat("en-CA", {

@@ -1,3 +1,4 @@
+// Team-specific hashtags used to discover public social posts.
 export const socialTags: Record<string, string[]> = {
   wild: ["#MNWild"],
   vikings: ["#Skol"],

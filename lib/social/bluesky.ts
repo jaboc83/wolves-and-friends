@@ -1,3 +1,4 @@
+// Parses public Bluesky posts into filtered, team-tagged social stories.
 import type { Story } from "../feeds/feed-types";
 import { blueskyImageUrl } from "./bluesky-images";
 import { socialQueue, SOCIAL_QUEUE_LIMIT } from "./social-queue";

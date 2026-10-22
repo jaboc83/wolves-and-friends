@@ -1,3 +1,4 @@
+// Records bounded browser-local diagnostics for unavailable public feed providers.
 import type { Health } from "./feed-types";
 
 const DB_NAME = "wolves-friends-diagnostics";

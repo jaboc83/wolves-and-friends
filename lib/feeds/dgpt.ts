@@ -1,3 +1,4 @@
+// Converts the public DGPT schedule page into normalized tournament events.
 import type { Game } from "./feed-types";
 import { eventLifecycle } from "../games/event-time";
 const clean = (s: string) =>

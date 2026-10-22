@@ -1,3 +1,4 @@
+// Reads configured official team channels and converts their public videos into stories.
 import type { Story } from "./feed-types";
 // Official channels, verified from YouTube and club-site social links (Oct 2026).
 export const officialYoutube = [

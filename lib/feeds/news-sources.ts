@@ -1,3 +1,4 @@
+// Registry of public news and author feeds that the feed coordinator refreshes.
 export const newsSources: [string, string, string[] | undefined][] = [
   ["PDGA News", "https://www.pdga.com/rss.xml", ["disc"]],
   ["Dunking with Wolves", "https://dunkingwithwolves.com/feed/", ["wolves"]],

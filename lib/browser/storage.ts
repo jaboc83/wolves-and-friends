@@ -1,3 +1,4 @@
+// Device-only localStorage access and validation for browser preferences/caches.
 // Lazy access also tolerates browsers that throw while reading localStorage itself.
 export const browserStorage = {
   getItem(key: string): string | null {

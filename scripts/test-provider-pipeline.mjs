@@ -35,6 +35,17 @@ function loader(overrides = {}) {
 }
 const { runProviderTasks } = loader()("lib/feeds/provider-tasks.ts");
 const { mergeFallbackGames } = loader()("lib/feeds/official-schedules.ts");
+const fallback = JSON.parse(
+  fs.readFileSync("data/snapshots/initial.json", "utf8"),
+);
+assert.ok(
+  fallback.authors.every((author) =>
+    author.items.every(
+      (item) => !("bylineVerified" in item) && !("actualAuthors" in item),
+    ),
+  ),
+  "bundled fallback does not freeze live byline verification",
+);
 const games = [
   { id: "fresh-wolves", team: "wolves", date: "2026-10-21T23:30:00Z" },
   { id: "fresh-loons", team: "loons", date: "2026-10-25T00:30:00Z" },
@@ -95,6 +106,7 @@ try {
   let now = Date.now();
   Date.now = () => now;
   let title = "Story 0";
+  let liveArticleAuthor = "Test Author";
   let articleFetches = 0;
   globalThis.fetch = async (url) => ({
     ok: true,
@@ -102,18 +114,19 @@ try {
       if (String(url).includes("/author/"))
         return `<a href="/article/${title.replaceAll(" ", "-")}"><h2>${title}</h2></a>`;
       articleFetches++;
-      return '<meta name="author" content="Test Author">';
+      return `<meta name="author" content="${liveArticleAuthor}">`;
     },
   });
-  const { verifyAuthorFeed } = loader({
-    "./byline-status": { applyKnownBylines: () => {} },
-  })("lib/feeds/bylines.ts");
-  const author = () => ({
-    name: "Test Author",
+  const { verifyAuthorFeed } = loader()("lib/feeds/bylines.ts");
+  const author = (name = "Test Author") => ({
+    name,
     url: "https://publisher/author/test",
     items: [{ title, url: "https://index", date: new Date().toISOString() }],
   });
-  await verifyAuthorFeed(author());
+  const first = author();
+  await verifyAuthorFeed(first);
+  assert.equal(first.items[0].bylineVerified, true);
+  assert.deepEqual(first.items[0].actualAuthors, ["Test Author"]);
   await verifyAuthorFeed(author());
   assert.equal(articleFetches, 1);
   now += 3600001;
@@ -131,6 +144,11 @@ try {
     before + 1,
     "cache evicts oldest entry at capacity",
   );
+  title = "Mismatched Story";
+  liveArticleAuthor = "Different Author";
+  const mismatch = author();
+  await verifyAuthorFeed(mismatch);
+  assert.equal(mismatch.items.length, 0, "live byline mismatch is filtered");
 } finally {
   globalThis.fetch = originalFetch;
   Date.now = originalNow;

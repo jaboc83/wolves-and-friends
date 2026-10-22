@@ -1,3 +1,4 @@
+// Coordinates public news/schedule providers, fallback data, caching, and feed aggregation.
 import { newsSources, authorSources } from "./news-sources";
 import {
   safe,

@@ -1,3 +1,4 @@
+// Joins player summaries to roster rows and derives the displayed stat columns.
 import type { PlayerStats } from "./player-stats";
 
 export type RosterStatRow<T> = {

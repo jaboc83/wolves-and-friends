@@ -1,3 +1,4 @@
+// Validates connector runtime results before they are returned by an API route.
 import { z } from "zod/v4";
 
 /** Validate and project runtime results onto the public connector response. */

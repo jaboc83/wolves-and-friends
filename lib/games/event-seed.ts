@@ -1,4 +1,5 @@
 import type { Game } from "../feeds";
+// Verified DGPT fallback events used when live schedules lack a matching event.
 // Verified DGPT schedule snapshot, 2026-10-19: https://www.dgpt.com/schedule/
 // Used only where the live schedule/cache has no matching event. Dates are all-day,
 // and historical winners are never substituted for current results.

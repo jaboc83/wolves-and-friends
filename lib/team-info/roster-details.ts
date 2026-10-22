@@ -1,3 +1,4 @@
+// Derives safe roster details such as age from public athlete data.
 export type RosterDetails = {
   age?: number;
   campTeam?: string;

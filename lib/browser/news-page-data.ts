@@ -1,3 +1,4 @@
+// Combines already-loaded team news and determines which empty/loading/error view to show.
 import type { HubData } from "../feeds/feed-types";
 // Availability and request status are independent: revalidation never removes data.
 export function loadedNewsData(

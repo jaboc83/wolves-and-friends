@@ -1,3 +1,4 @@
+// Preserves stale public standings when a refresh fails for the same competition.
 import type { Table, TeamInfo } from "./index";
 function identity(table: Table) {
   return [table.source, table.url, table.name, table.seasonType || ""].join(

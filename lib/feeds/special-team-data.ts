@@ -1,3 +1,4 @@
+// Parses specialist league data: Žalgiris, EuroLeague, LKL, and PWHL rosters/tables.
 import type { Game } from "./feed-types";
 import type { Depth, Table } from "../team-info/index";
 import type { RosterDetails } from "../team-info/roster-details";

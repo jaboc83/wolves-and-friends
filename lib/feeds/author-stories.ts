@@ -1,14 +1,9 @@
-import { knownByline, titleKey } from "./byline-status";
+// Turns byline-checked author feeds into ordinary, team-tagged headline stories.
 import type { AuthorFeed, Story } from "./feed-types";
 export function authorStories(authors: AuthorFeed[]): Story[] {
   return authors.flatMap((author) =>
     author.items
-      .filter((item) => {
-        const r = knownByline(item.title);
-        return (
-          !r || r.authors.some((n) => titleKey(n) === titleKey(author.name))
-        );
-      })
+      .filter((item) => item.bylineVerified !== false)
       .map((item) => ({
         id: item.originalId || item.url,
         url: item.url,

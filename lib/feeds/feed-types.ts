@@ -1,3 +1,4 @@
+// Shared data contracts for normalized stories, games, provider health, and feed responses.
 import type { Odds } from "./odds";
 export type Story = {
   socialPlatform?: "youtube";

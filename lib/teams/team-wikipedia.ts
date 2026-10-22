@@ -1,3 +1,4 @@
+// Resolves known team/opponent names to relevant Wikipedia pages or scoped searches.
 import { teams } from "./teams";
 
 const pages: Record<string, string> = {

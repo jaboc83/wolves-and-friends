@@ -1,3 +1,4 @@
+// Parses and enriches eligible upcoming games with readable public betting markets.
 import { enrichEuroleagueOdds } from "./euroleague-odds";
 import { teams } from "../teams/teams";
 import type { Game } from "./feed-types";

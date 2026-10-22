@@ -1,3 +1,4 @@
+// Team-to-community links shown alongside public social stories.
 export const communities = [
   {
     team: "wolves",

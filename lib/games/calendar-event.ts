@@ -1,3 +1,4 @@
+// Builds add-to-calendar links for games and all-day tournaments.
 import type { Game } from "../feeds";
 import { eventDay } from "./event-time";
 const date = (s: string) => eventDay(s).replace(/-/g, "");

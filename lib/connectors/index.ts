@@ -1,3 +1,4 @@
+// Creates the request-scoped connector facade consumed by app routes.
 import { createConnectors } from "./contract.mjs";
 import { getConnectorBinding } from "./context";
 

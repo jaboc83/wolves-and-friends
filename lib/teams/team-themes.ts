@@ -1,3 +1,4 @@
+// Static brand-color palette applied to each team's dashboard sections.
 export const teamThemes: Record<
   string,
   { primary: string; accent: string; soft: string }

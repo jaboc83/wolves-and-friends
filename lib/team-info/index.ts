@@ -1,3 +1,4 @@
+// Fetches and combines public standings, rosters, postseason, and team-season data.
 import { decorateTable, tableSeasonType } from "./standings";
 export { decorateTable, tableSeasonType } from "./standings";
 import { teams } from "../teams/teams";

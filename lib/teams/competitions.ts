@@ -1,5 +1,6 @@
 import { teams } from "./teams";
 
+// Shared league registry for team schedules and live score refreshes.
 // Club teams can play outside their domestic league. Share this registry
 // between schedule collection and the frequent live scoreboard refresh.
 export const palaceCompetitions: Record<string, string> = {

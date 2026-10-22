@@ -1,3 +1,4 @@
+// Parses official club calendars and merges their fixtures with provider schedules.
 import type { Game } from "./feed-types";
 type ProviderObject = Record<string, unknown>;
 const providerObject = (value: unknown): ProviderObject =>

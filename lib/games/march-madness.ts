@@ -1,3 +1,4 @@
+// Parses NCAA tournament results, builds bracket data, and supplies team-logo URLs.
 export type MarchGame = {
   id: string;
   date: string;

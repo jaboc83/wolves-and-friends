@@ -1,5 +1,6 @@
 import type { PlayerStats } from "./player-stats";
 
+// Validates and stores a short-lived device-only cache of roster player statistics.
 // Bump the key whenever stat selection changes so an old table cannot mask
 // corrected server data for twelve hours.
 const cacheKey = "wf-player-stats-cache-v2";

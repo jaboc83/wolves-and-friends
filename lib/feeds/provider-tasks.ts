@@ -1,3 +1,4 @@
+// Runs provider fetch tasks with bounded concurrency, cancellation, and a shared deadline.
 export type ProviderTask<T> = {
   name: string;
   run: (signal: AbortSignal) => Promise<T>;

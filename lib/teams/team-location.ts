@@ -1,4 +1,4 @@
-// Static team geography only; never reads or sends a visitor's location.
+// Maps known team names to static home locations; never reads visitor location.
 const own: Record<string, string> = {
   wolves: "Minnesota",
   wild: "Minnesota",

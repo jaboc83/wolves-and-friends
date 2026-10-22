@@ -1,3 +1,4 @@
+// Validates Bluesky image renditions and maps them to the site's local image proxy.
 export type BlueskyImageKind = "avatar" | "photo";
 
 // Accept only public Bluesky image renditions, never an arbitrary proxy URL.

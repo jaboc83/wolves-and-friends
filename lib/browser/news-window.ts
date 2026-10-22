@@ -1,3 +1,4 @@
+// Keeps the dashboard's "recent" story list aligned to the current Chicago calendar day.
 import type { Story } from "../feeds/feed-types";
 export const chicagoDay = (date: string) =>
   new Intl.DateTimeFormat("en-CA", {

@@ -1,3 +1,4 @@
+// Reads and persists the device-only prompt and visibility choices for game results.
 export function loadScorePreference(storage: Pick<Storage, "getItem">) {
   try {
     const ask = storage.getItem("wf-ask-scores") !== "false";

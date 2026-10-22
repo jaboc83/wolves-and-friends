@@ -1,3 +1,4 @@
+// Extracts the public EuroLeague market for an upcoming Žalgiris fixture.
 import type { Game } from "./feed-types";
 import type { Odds } from "./odds";
 

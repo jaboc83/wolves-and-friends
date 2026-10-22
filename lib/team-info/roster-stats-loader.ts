@@ -1,4 +1,6 @@
 import type { PlayerStats } from "./player-stats";
+
+// Loads shared roster-stat batches with retry, priority, and progress handling.
 export type StatsStatus =
   "idle" | "loading" | "ready" | "partial" | "empty" | "unavailable";
 export type StatsBatch = {

@@ -1,3 +1,4 @@
+// Parses Žalgiris' official site into normalized basketball fixtures and scores.
 import type { Game } from "./feed-types";
 type JsonObject = Record<string, unknown>;
 function object(value: unknown): JsonObject {

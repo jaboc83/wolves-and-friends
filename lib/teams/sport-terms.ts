@@ -1,3 +1,4 @@
+// Chooses sport-appropriate labels for games, tournaments, standings, and stats.
 /** Presentation vocabulary only; feed field names remain unchanged. */
 export function sportTerms(team: string) {
   const soccer = ["loons", "palace", "usmnt"].includes(team);
