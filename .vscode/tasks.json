@@ -51,6 +51,20 @@
       "runOptions": { "instanceLimit": 1 }
     },
     {
+      "label": "Wolves: stop dev",
+      "type": "process",
+      "command": "${env:SystemRoot}/System32/WindowsPowerShell/v1.0/powershell.exe",
+      "args": [
+        "-NoProfile",
+        "-ExecutionPolicy",
+        "Bypass",
+        "-File",
+        "${workspaceFolder}/scripts/stop-dev.ps1"
+      ],
+      "options": { "cwd": "${workspaceFolder}" },
+      "problemMatcher": []
+    },
+    {
       "label": "Wolves: build",
       "type": "process",
       "command": "node",
