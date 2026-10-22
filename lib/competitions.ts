@@ -7,7 +7,7 @@ export const palaceCompetitions: Record<string, string> = {
   "soccer/uefa.europa.conf": "UEFA Conference League",
   "soccer/uefa.champions": "UEFA Champions League",
   "soccer/eng.fa": "FA Cup",
-  "soccer/eng.league_cup": "League Cup",
+  "soccer/eng.league_cup": "Carabao Cup",
   "soccer/eng.charity": "Community Shield",
 };
 
