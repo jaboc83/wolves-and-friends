@@ -159,7 +159,9 @@ export function parsePlayerStats(
 
   // The core API uses stat objects inside splits.categories (not the
   // season-row arrays returned by common-v3). Do not select career totals.
-  const coreCategories = data.splits?.categories || [];
+  const coreCategories = Array.isArray(data.splits)
+    ? data.splits
+    : data.splits?.categories || [];
   const coreStats = coreCategories.flatMap(
     (c: any) => c.stats || [],
   );
