@@ -31,6 +31,7 @@ import { communities } from "../lib/communities";
 import { teams, teamPriority } from "../lib/teams";
 import type { Story, Game } from "../lib/feeds";
 import { releaseMarker } from "../lib/release-info";
+import { downloadFeedDiagnostics } from "../lib/feed-diagnostics";
 const ct = (s: string, opts: Intl.DateTimeFormatOptions = {}) =>
   new Date(s).toLocaleString("en-US", { timeZone: "America/Chicago", ...opts });
 export default function Home() {
@@ -482,6 +483,13 @@ export default function Home() {
                             Direct links to your trusted voices, including sources
                             whose feeds aren’t available.
                           </p>
+                          <button
+                            type="button"
+                            className="diagnostics-export"
+                            onClick={() => void downloadFeedDiagnostics()}
+                          >
+                            Export diagnostics
+                          </button>
                           {sources && (
                             <div className="source-grid">
                               {(team ? [team] : teams).map((t) => (
@@ -716,4 +724,5 @@ export default function Home() {
     </>
   );
 }
+
 
