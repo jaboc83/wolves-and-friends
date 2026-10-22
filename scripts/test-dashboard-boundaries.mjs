@@ -34,7 +34,7 @@ function loader(overrides = {}) {
   return (file) => load(path.resolve(file));
 }
 const { readStored, writeStored, stringList, browserStorage } = loader()(
-  "lib/browser-storage.ts",
+  "lib/browser/storage.ts",
 );
 const memory = new Map();
 const storage = {
@@ -69,7 +69,7 @@ assert.equal(
   null,
   "SSR/disabled storage is optional",
 );
-const { storedTeam, isHubData } = loader()("lib/dashboard-storage.ts");
+const { storedTeam, isHubData } = loader()("lib/dashboard/storage.ts");
 memory.set("wf-team", "unknown");
 assert.equal(storedTeam(storage), "wolves");
 memory.set("wf-team", "wild");
@@ -80,7 +80,7 @@ assert.equal(
 );
 
 const { createPublicRequests, pollPublicFeeds } = loader()(
-  "lib/public-requests.ts",
+  "lib/browser/public-requests.ts",
 );
 const originalFetch = globalThis.fetch,
   originalSet = globalThis.setInterval,
@@ -150,7 +150,7 @@ try {
   globalThis.clearInterval = originalClear;
 }
 
-const { selectStories, selectGames } = loader()("lib/dashboard-selectors.ts");
+const { selectStories, selectGames } = loader()("lib/dashboard/selectors.ts");
 const story = {
   id: "a",
   url: "https://story",

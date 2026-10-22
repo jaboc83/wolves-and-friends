@@ -74,7 +74,7 @@ assert.equal(
   50,
   "refresh keeps older queue items",
 );
-const { recentStories } = load(path.resolve("lib/news-window.ts"));
+const { recentStories } = load(path.resolve("lib/browser/news-window.ts"));
 const days = [0, 3, 6, 7, 8].map((n) => ({
   ...posts[n],
   date: new Date(now - n * 86400000).toISOString(),

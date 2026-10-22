@@ -1,11 +1,14 @@
 "use client";
 import { useEffect, useRef, useState } from "react";
-import { createPublicRequests, pollPublicFeeds } from "../lib/public-requests";
+import {
+  createPublicRequests,
+  pollPublicFeeds,
+} from "../lib/browser/public-requests";
 import {
   browserStorage,
   readStored,
   writeStored,
-} from "../lib/browser-storage";
+} from "../lib/browser/storage";
 import {
   createRosterStatsLoader,
   type StatsStatus,
@@ -17,12 +20,12 @@ import {
 import type { PlayerStats } from "../lib/team-info/player-stats";
 import type { HubData, Story, Game } from "../lib/feeds";
 import type { TeamInfo } from "../lib/team-info";
-import { activeHub, activeStories } from "../lib/content-policy";
+import { activeHub, activeStories } from "../lib/dashboard/content-policy";
 import { socialQueue } from "../lib/social-queue";
 import { isLocalSocialImage } from "../lib/bluesky-images";
-import { loadedNewsData } from "../lib/news-page-data";
+import { loadedNewsData } from "../lib/browser/news-page-data";
 import { teams } from "../lib/teams/teams";
-import { isHubData, isStories, storedTeam } from "../lib/dashboard-storage";
+import { isHubData, isStories, storedTeam } from "../lib/dashboard/storage";
 import { recordFeedDiagnostics } from "../lib/feeds/feed-diagnostics";
 const emptyHub: HubData = {
   checked: "",

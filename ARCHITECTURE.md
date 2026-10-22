@@ -23,17 +23,19 @@ Headlines link to publishers rather than reproducing full articles. Deliberately
 
 ## 2. The main parts of the repository
 
-| Part               | Responsibility                                                                           | Start here                                                                               |
-| ------------------ | ---------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------- |
-| Page controller    | Holds browser state, refreshes feeds, merges data, filters teams, and assembles sections | [app/page.tsx](app/page.tsx)                                                             |
-| Shared page shell  | Imports styles and defines metadata and the mobile viewport                              | [app/layout.tsx](app/layout.tsx)                                                         |
-| Presentation       | Responsive layout, colors, badges, spacing, and team themes                              | [app/globals.css](app/globals.css), [lib/teams/team-themes.ts](lib/teams/team-themes.ts) |
-| Team configuration | Team IDs, priority order, ESPN identifiers, matching patterns, and source links          | [lib/teams/teams.ts](lib/teams/teams.ts)                                                 |
-| Feed endpoints     | Return public data to the page                                                           | [app/api](app/api)                                                                       |
-| Feed adapters      | Convert each provider's JSON, RSS, HTML, or calendar into shared objects                 | [lib/feeds/](lib/feeds/) and its provider modules                                        |
-| Reusable sections  | Game cards, calendar, standings/rosters, and logo groups                                 | [components](components)                                                                 |
-| Images             | Local header and team logos                                                              | [public/logos](public/logos)                                                             |
-| Hosting            | Build and serve the application through Sites                                            | [vite.config.ts](vite.config.ts), [build/sites-worker.ts](build/sites-worker.ts)         |
+| Part               | Responsibility                                                                            | Start here                                                                               |
+| ------------------ | ----------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------- |
+| Page controller    | Holds browser state, refreshes feeds, merges data, filters teams, and assembles sections  | [app/page.tsx](app/page.tsx)                                                             |
+| Shared page shell  | Imports styles and defines metadata and the mobile viewport                               | [app/layout.tsx](app/layout.tsx)                                                         |
+| Presentation       | Responsive layout, colors, badges, spacing, and team themes                               | [app/globals.css](app/globals.css), [lib/teams/team-themes.ts](lib/teams/team-themes.ts) |
+| Team configuration | Team IDs, priority order, ESPN identifiers, matching patterns, and source links           | [lib/teams/teams.ts](lib/teams/teams.ts)                                                 |
+| Dashboard logic    | Team/read/search selection, cached-data validation, and retired-team filtering            | [lib/dashboard/](lib/dashboard/)                                                         |
+| Browser utilities  | Device storage, same-origin feed requests, score preferences, news windows, and scrolling | [lib/browser/](lib/browser/)                                                             |
+| Feed endpoints     | Return public data to the page                                                            | [app/api](app/api)                                                                       |
+| Feed adapters      | Convert each provider's JSON, RSS, HTML, or calendar into shared objects                  | [lib/feeds/](lib/feeds/) and its provider modules                                        |
+| Reusable sections  | Game cards, calendar, standings/rosters, and logo groups                                  | [components](components)                                                                 |
+| Images             | Local header and team logos                                                               | [public/logos](public/logos)                                                             |
+| Hosting            | Build and serve the application through Sites                                             | [vite.config.ts](vite.config.ts), [build/sites-worker.ts](build/sites-worker.ts)         |
 
 The app uses **React and TypeScript**, with **Vinext/Vite** providing the Next-style page and API route structure. The production request handler runs as a **Cloudflare Worker** through Sites. Most of the dashboard logic is currently concentrated in `app/page.tsx`; separate components handle its larger reusable pieces.
 
@@ -81,7 +83,7 @@ A story can belong to several teams. A game belongs to one tracked team. ESPN ga
 | [team-info/index.ts](lib/team-info/index.ts)                                                                                         | Parses ESPN tables/rosters and DGPT standings from StatMando. Sorts ranks and adds supported qualification lines; NHL tables separate division places from wild cards.                                                                           |
 | [team-info/player-stats.ts](lib/team-info/player-stats.ts), [team-info/roster-stats-loader.ts](lib/team-info/roster-stats-loader.ts) | Parses public player statistics and loads them in bounded roster batches.                                                                                                                                                                        |
 | [event-seed.ts](lib/games/event-seed.ts)                                                                                             | Supplies explicitly entered, verified DGPT event dates. This is not a complete live disc-golf schedule service.                                                                                                                                  |
-| [content-policy.ts](lib/content-policy.ts), [news-window.ts](lib/news-window.ts)                                                     | Remove retired team IDs from cached content and apply the headline age windows.                                                                                                                                                                  |
+| [dashboard/content-policy.ts](lib/dashboard/content-policy.ts), [browser/news-window.ts](lib/browser/news-window.ts)                 | Remove retired team IDs from cached content and apply the headline age windows.                                                                                                                                                                  |
 
 Odds lookups are currently limited to eligible games within the next seven days and a bounded set of league/date requests. An unavailable market remains unlabeled. Competition-aware odds do not imply that every cup competition also has complete live-score coverage.
 
@@ -148,7 +150,7 @@ See [README.md](README.md) for local setup commands. A clean clone defaults to t
 | ----------------------------------------------- | ------------------------------------------------------------------------------------- |
 | Team order, source links, or team matching      | `lib/teams/teams.ts`                                                                  |
 | Colors, mobile spacing, or layout               | `app/globals.css`, `lib/teams/team-themes.ts`, sometimes `app/page.tsx`               |
-| Headline age/read/saved behavior                | `app/page.tsx`, `lib/news-window.ts`                                                  |
+| Headline age/read/saved behavior                | `app/page.tsx`, `lib/browser/news-window.ts`                                          |
 | New news or schedule provider                   | A parser/adapter in `lib/feeds/`, then its collection call in `lib/feeds/index.ts`    |
 | Game and event rules                            | `lib/games/` for event dates, calendar exports, badges, links, and postseason logic   |
 | Game-card details or score hiding               | `components/game-card.tsx`                                                            |

@@ -1,6 +1,6 @@
-import type { HubData, Story } from "./feeds";
-import { teams } from "./teams/teams";
-import { browserStorage } from "./browser-storage";
+import type { HubData, Story } from "../feeds/feed-types";
+import { teams } from "../teams/teams";
+import { browserStorage } from "../browser/storage";
 const object = (value: unknown): value is Record<string, unknown> =>
   Boolean(value) && typeof value === "object";
 export function isStories(value: unknown): value is Story[] {

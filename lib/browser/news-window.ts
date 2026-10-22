@@ -1,4 +1,4 @@
-import type { Story } from "./feeds";
+import type { Story } from "../feeds/feed-types";
 export const chicagoDay = (date: string) =>
   new Intl.DateTimeFormat("en-CA", {
     timeZone: "America/Chicago",

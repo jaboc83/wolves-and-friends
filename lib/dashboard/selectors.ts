@@ -1,10 +1,10 @@
-import type { Game, HubData } from "./feeds";
-import { discEvents } from "./games/event-seed";
-import { eventLifecycle, eventIsToday } from "./games/event-time";
-import { teams, teamPriority } from "./teams/teams";
-import { validAuthorStory } from "./feeds/byline-status";
-import { authorStories } from "./feeds/author-stories";
-import { recentStories } from "./news-window";
+import type { Game, HubData } from "../feeds/feed-types";
+import { discEvents } from "../games/event-seed";
+import { eventLifecycle, eventIsToday } from "../games/event-time";
+import { teams, teamPriority } from "../teams/teams";
+import { validAuthorStory } from "../feeds/byline-status";
+import { authorStories } from "../feeds/author-stories";
+import { recentStories } from "../browser/news-window";
 export function selectStories({
   newsData,
   active,

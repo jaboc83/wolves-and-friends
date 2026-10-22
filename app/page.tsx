@@ -3,11 +3,11 @@ import { lazy, Suspense, useEffect, useState, type CSSProperties } from "react";
 import Link from "next/link";
 import Image from "next/image";
 import { useDashboardFeeds } from "../hooks/use-dashboard-feeds";
-import { browserStorage, readStored, stringList } from "../lib/browser-storage";
-import { storedTeam } from "../lib/dashboard-storage";
-import { newsDisplayMode } from "../lib/news-page-data";
+import { browserStorage, readStored, stringList } from "../lib/browser/storage";
+import { storedTeam } from "../lib/dashboard/storage";
+import { newsDisplayMode } from "../lib/browser/news-page-data";
 import StoryCard from "../components/story-card";
-import { selectStories, selectGames } from "../lib/dashboard-selectors";
+import { selectStories, selectGames } from "../lib/dashboard/selectors";
 import GameCard from "../components/game-card";
 import BackToTop from "../components/back-to-top";
 import MatchCalendar from "../components/match-calendar";
@@ -16,9 +16,9 @@ import ScorePreferenceDialog from "../components/score-preference-dialog";
 import {
   loadScorePreference,
   saveScorePreference,
-} from "../lib/score-preference";
+} from "../lib/browser/score-preference";
 const MarchMadness = lazy(() => import("../components/march-madness"));
-import { recentStories } from "../lib/news-window";
+import { recentStories } from "../lib/browser/news-window";
 import { sportTerms } from "../lib/teams/sport-terms";
 import TeamInsights from "../components/team-insights";
 import { teamThemes } from "../lib/teams/team-themes";

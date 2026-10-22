@@ -2,7 +2,7 @@ import assert from "node:assert/strict";
 import fs from "node:fs";
 import ts from "typescript";
 
-const source = fs.readFileSync("lib/page-scroll.ts", "utf8");
+const source = fs.readFileSync("lib/browser/page-scroll.ts", "utf8");
 const compiled = ts.transpileModule(source, {
   compilerOptions: {
     module: ts.ModuleKind.CommonJS,

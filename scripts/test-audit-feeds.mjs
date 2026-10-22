@@ -208,7 +208,9 @@ try {
   await assert.rejects(fetchScoreboard("basketball/nba", "20261022"));
   assert.equal(failureCalls, 2, "failed upstream not latched");
 
-  const { loadedNewsData, newsDisplayMode } = loader()("lib/news-page-data.ts");
+  const { loadedNewsData, newsDisplayMode } = loader()(
+    "lib/browser/news-page-data.ts",
+  );
   assert.equal(
     newsDisplayMode(true, true, false),
     "stories",

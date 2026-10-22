@@ -550,7 +550,7 @@ assert.match(
 );
 assert.match(rosterStatsRouteSource, /commonBase \+ "\/overview"/);
 const { loadScorePreference, saveScorePreference } = load(
-  path.resolve("lib/score-preference.ts"),
+  path.resolve("lib/browser/score-preference.ts"),
 );
 const memory = new Map();
 const storage = {

@@ -1,5 +1,5 @@
-import { teams } from "./teams/teams";
-import type { HubData, Story } from "./feeds";
+import { teams } from "../teams/teams";
+import type { HubData, Story } from "../feeds/feed-types";
 const retiredNews = (name: string) =>
   name === "EuroLeague · Google News index" ||
   name.startsWith("Official Žalgiris");

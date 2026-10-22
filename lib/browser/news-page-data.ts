@@ -1,4 +1,4 @@
-import type { HubData } from "./feeds";
+import type { HubData } from "../feeds/feed-types";
 // Availability and request status are independent: revalidation never removes data.
 export function loadedNewsData(
   ids: string[],
