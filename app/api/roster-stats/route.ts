@@ -200,6 +200,7 @@ async function stats(entry: Entry) {
               entry.teamId,
               entry.league,
               entry.position,
+              entry.year,
             );
             if (parsed) return parsed;
           } catch {
@@ -239,6 +240,7 @@ async function stats(entry: Entry) {
               entry.teamId,
               entry.league,
               entry.position,
+              year,
             );
             if (parsed) return parsed;
           } catch {
