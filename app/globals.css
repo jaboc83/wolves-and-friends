@@ -3201,18 +3201,19 @@ body:has(.score-choice[open]) {
 }
 .diagnostics-export {
   margin-top: 4px;
-  border: 1px solid var(--line, #d3d9d4);
-  border-radius: 6px;
-  padding: 7px 10px;
-  background: var(--raised, #eef1f6);
-  color: var(--ink, #192a3c);
+  padding: 0;
+  border: 0;
+  background: transparent;
+  color: var(--muted, #64707a);
   font-size: 0.78rem;
-  font-weight: 700;
+  font-weight: 600;
+  text-decoration: underline;
+  text-underline-offset: 2px;
   cursor: pointer;
 }
-.diagnostics-export:hover {
-  border-color: var(--team-accent, #8aa747);
-  background: var(--surface, #fffefb);
+.diagnostics-export:hover,
+.diagnostics-export:focus-visible {
+  color: var(--team-accent, #8aa747);
 }
 .power-rankings-chevron {
   flex: 0 0 auto;

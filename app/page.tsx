@@ -787,7 +787,7 @@ export default function Home() {
             </span>
             <button
               type="button"
-              className="diagnostics-export"
+              className="diagnostics-export diagnostics-export-link"
               onClick={() => void downloadFeedDiagnostics()}
             >
               Export diagnostics
