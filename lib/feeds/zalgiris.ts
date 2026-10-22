@@ -1,9 +1,7 @@
-import type { Game } from "./feeds";
+import type { Game } from "./feed-types";
 type JsonObject = Record<string, unknown>;
 function object(value: unknown): JsonObject {
-  return value && typeof value === "object"
-    ? (value as JsonObject)
-    : {};
+  return value && typeof value === "object" ? (value as JsonObject) : {};
 }
 function strings(x: unknown): string[] {
   if (typeof x === "string") return x.startsWith("$") ? [] : [x];
@@ -109,8 +107,7 @@ export function parseZalgiris(html: string, checked: string): Game[] {
             ids.length === 1 &&
             properties(x, "alt").filter(
               (value) => typeof value === "string" && value,
-            )
-              .length >= 2
+            ).length >= 2
           ) {
             const id = ids[0];
             if (!cards.has(id) || json.length < cards.get(id)!.size)

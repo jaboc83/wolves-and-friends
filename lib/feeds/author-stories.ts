@@ -1,5 +1,5 @@
 import { knownByline, titleKey } from "./byline-status";
-import type { AuthorFeed, Story } from "./feeds";
+import type { AuthorFeed, Story } from "./feed-types";
 export function authorStories(authors: AuthorFeed[]): Story[] {
   return authors.flatMap((author) =>
     author.items

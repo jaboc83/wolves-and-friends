@@ -20,7 +20,7 @@ function compile(file, mocks = {}) {
   );
   return loadedModule.exports;
 }
-const youtube = compile("lib/youtube.ts");
+const youtube = compile("lib/feeds/youtube.ts");
 const queue = compile("lib/social-queue.ts");
 const wolves = youtube.officialYoutube.find((s) => s.team === "wolves");
 const xml = (channel, title = "Practice &amp; interviews") =>
@@ -75,7 +75,7 @@ const route = compile("app/api/social/route.ts", {
     },
   },
   "../../../lib/social-queue": queue,
-  "../../../lib/youtube": {
+  "../../../lib/feeds/youtube": {
     officialYoutubePosts: async () => ({ posts: [], unavailable: ["wild"] }),
   },
 });

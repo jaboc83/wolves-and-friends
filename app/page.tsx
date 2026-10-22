@@ -28,7 +28,7 @@ import { teams } from "../lib/teams/teams";
 import { teamLogoPath } from "../lib/teams/team-logo";
 import type { Story, Game } from "../lib/feeds";
 import { releaseMarker } from "../lib/release-info";
-import { downloadFeedDiagnostics } from "../lib/feed-diagnostics";
+import { downloadFeedDiagnostics } from "../lib/feeds/feed-diagnostics";
 const ct = (s: string, opts: Intl.DateTimeFormatOptions = {}) =>
   new Date(s).toLocaleString("en-US", { timeZone: "America/Chicago", ...opts });
 export default function Home() {

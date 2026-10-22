@@ -178,7 +178,7 @@ try {
     await Promise.resolve();
     return { ok: true, json: async () => ({ events: [] }) };
   };
-  const { fetchScoreboard } = loader()("lib/scoreboard.ts");
+  const { fetchScoreboard } = loader()("lib/feeds/scoreboard.ts");
   const data = await Promise.all(
     Array.from({ length: 3 }, () =>
       fetchScoreboard("basketball/nba", "20261021"),
@@ -188,7 +188,7 @@ try {
   data[0].events.push("mutated");
   assert.equal(data[1].events.length, 0);
   const scoreRoute = loader({
-    "../../../lib/scoreboard": { fetchScoreboard },
+    "../../../lib/feeds/scoreboard": { fetchScoreboard },
     "../../../lib/teams/competitions": {
       scoreboardLeagues: ["basketball/nba"],
     },
@@ -245,8 +245,8 @@ try {
     "./bylines": { verifyAuthorFeed: async () => {} },
     "./author-stories": { authorStories: () => [] },
     "./scoreboard": { fetchScoreboard: async () => ({ events: [] }) },
-    "./initial.json": { games: [], stories: [], authors: [] },
-    "./teams": {
+    "../initial.json": { games: [], stories: [], authors: [] },
+    "../teams/teams": {
       teams: [
         {
           id: "wolves",
@@ -258,7 +258,7 @@ try {
         },
       ],
     },
-    "./competitions": {
+    "../teams/competitions": {
       palaceCompetitions: {},
       scoreboardLeagues: [],
       teamPlaysCompetition: () => true,
@@ -303,7 +303,7 @@ try {
           },
     text: async () => "",
   });
-  const { hubData } = loader(feedMocks)("lib/feeds.ts");
+  const { hubData } = loader(feedMocks)("lib/feeds/index.ts");
   const hub = await hubData("schedules");
   assert.equal(
     hub.games.find((g) => g.team === "wolves").injuries[0].player,

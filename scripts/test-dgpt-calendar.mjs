@@ -36,7 +36,7 @@ function load(file) {
   return loadedModule.exports;
 }
 
-const { parseDgptSchedule } = load(path.resolve("lib/dgpt.ts"));
+const { parseDgptSchedule } = load(path.resolve("lib/feeds/dgpt.ts"));
 const { eventLifecycle, eventIsToday } = load(
   path.resolve("lib/games/event-time.ts"),
 );

@@ -1,4 +1,4 @@
-import { fetchScoreboard } from "../../../lib/scoreboard";
+import { fetchScoreboard } from "../../../lib/feeds/scoreboard";
 import { scoreboardLeagues } from "../../../lib/teams/competitions";
 import { mergeLiveScoreboard, type Game } from "../../../lib/feeds";
 type ScoreData = { checked: string; games: Game[]; unavailable: string[] };

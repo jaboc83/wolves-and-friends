@@ -1,4 +1,4 @@
-import type { Story } from "./feeds";
+import type { Story } from "./feed-types";
 // Official channels, verified from YouTube and club-site social links (Oct 2026).
 export const officialYoutube = [
   {

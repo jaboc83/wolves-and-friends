@@ -1,5 +1,5 @@
 import records from "./byline-records.json";
-import type { AuthorFeed, Story } from "./feeds";
+import type { AuthorFeed, Story } from "./feed-types";
 export const titleKey = (s: string) =>
   s
     .replace(

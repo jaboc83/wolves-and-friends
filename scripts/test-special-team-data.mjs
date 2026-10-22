@@ -5,7 +5,7 @@ import { createRequire } from "node:module";
 import ts from "typescript";
 
 const require = createRequire(import.meta.url);
-const source = fs.readFileSync("lib/special-team-data.ts", "utf8");
+const source = fs.readFileSync("lib/feeds/special-team-data.ts", "utf8");
 const js = ts.transpileModule(source, {
   compilerOptions: {
     module: ts.ModuleKind.CommonJS,

@@ -33,8 +33,8 @@ function loader(overrides = {}) {
   }
   return (file) => load(path.resolve(file));
 }
-const { runProviderTasks } = loader()("lib/provider-tasks.ts");
-const { mergeFallbackGames } = loader()("lib/official-schedules.ts");
+const { runProviderTasks } = loader()("lib/feeds/provider-tasks.ts");
+const { mergeFallbackGames } = loader()("lib/feeds/official-schedules.ts");
 const games = [
   { id: "fresh-wolves", team: "wolves", date: "2026-10-21T23:30:00Z" },
   { id: "fresh-loons", team: "loons", date: "2026-10-25T00:30:00Z" },
@@ -107,7 +107,7 @@ try {
   });
   const { verifyAuthorFeed } = loader({
     "./byline-status": { applyKnownBylines: () => {} },
-  })("lib/bylines.ts");
+  })("lib/feeds/bylines.ts");
   const author = () => ({
     name: "Test Author",
     url: "https://publisher/author/test",

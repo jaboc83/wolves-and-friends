@@ -1,11 +1,9 @@
-import type { Game } from "./feeds";
+import type { Game } from "./feed-types";
 import type { Odds } from "./odds";
 
 type JsonObject = Record<string, unknown>;
 function object(value: unknown): JsonObject {
-  return value && typeof value === "object"
-    ? (value as JsonObject)
-    : {};
+  return value && typeof value === "object" ? (value as JsonObject) : {};
 }
 
 export const euroleagueOddsUrl =
@@ -35,11 +33,7 @@ export function parseEuroleagueOdds(
   function walk(value: unknown) {
     if (!value || typeof value !== "object") return;
     const record = object(value);
-    if (
-      record["home-name"] &&
-      record["away-name"] &&
-      record.encodeEventId
-    )
+    if (record["home-name"] && record["away-name"] && record.encodeEventId)
       rows.push(record);
     if (record.event && Array.isArray(record.odds)) markets.push(record);
     for (const child of Object.values(record)) walk(child);

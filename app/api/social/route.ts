@@ -2,7 +2,7 @@ import { socialTags } from "../../../lib/social-tags";
 import { taggedBluesky, wolvesBluesky } from "../../../lib/bluesky";
 import { socialQueue } from "../../../lib/social-queue";
 import type { Story } from "../../../lib/feeds";
-import { officialYoutubePosts } from "../../../lib/youtube";
+import { officialYoutubePosts } from "../../../lib/feeds/youtube";
 type SocialData = {
   posts: Story[];
   unavailable: string[];

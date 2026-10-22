@@ -19,9 +19,9 @@ const oddsGate = new Promise((resolve) => {
 let oddsCalls = 0;
 const mocks = {
   "./scoreboard": { fetchScoreboard: async () => ({ events: [] }) },
-  "./games/event-seed": { discEvents: [] },
+  "../games/event-seed": { discEvents: [] },
   "./dgpt": { parseDgptSchedule: () => [] },
-  "./games/event-time": { eventLifecycle: (g) => g },
+  "../games/event-time": { eventLifecycle: (g) => g },
   "./bylines": { verifyAuthorFeed: async () => {} },
   "./club-news": {
     parseZalgirisNews: () => [],
@@ -35,7 +35,7 @@ const mocks = {
     mergeOfficial: () => {},
     mergeFallbackGames: (games, fallback) => games.push(...fallback),
   },
-  "./teams/teams": {
+  "../teams/teams": {
     teams: [
       {
         id: "wolves",
@@ -46,7 +46,7 @@ const mocks = {
       },
     ],
   },
-  "./teams/competitions": {
+  "../teams/competitions": {
     palaceCompetitions: {},
     scoreboardLeagues: [],
     teamPlaysCompetition: () => false,
@@ -60,12 +60,12 @@ const mocks = {
       games[0].odds = { details: "test" };
     },
   },
-  "./initial.json": { stories: [], games: [], authors: [] },
+  "../initial.json": { stories: [], games: [], authors: [] },
 };
 function dependency(file) {
   const loadedModule = { exports: {} };
   const js = ts.transpileModule(
-    fs.readFileSync("lib/" + file + ".ts", "utf8"),
+    fs.readFileSync("lib/feeds/" + file + ".ts", "utf8"),
     {
       compilerOptions: {
         module: ts.ModuleKind.CommonJS,
@@ -98,7 +98,7 @@ globalThis.fetch = async (url) => {
 };
 try {
   const js = ts.transpileModule(
-    fs.readFileSync(new URL("../lib/feeds.ts", import.meta.url), "utf8"),
+    fs.readFileSync(new URL("../lib/feeds/index.ts", import.meta.url), "utf8"),
     {
       compilerOptions: {
         module: ts.ModuleKind.CommonJS,

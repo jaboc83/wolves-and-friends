@@ -23,7 +23,7 @@ import { isLocalSocialImage } from "../lib/bluesky-images";
 import { loadedNewsData } from "../lib/news-page-data";
 import { teams } from "../lib/teams/teams";
 import { isHubData, isStories, storedTeam } from "../lib/dashboard-storage";
-import { recordFeedDiagnostics } from "../lib/feed-diagnostics";
+import { recordFeedDiagnostics } from "../lib/feeds/feed-diagnostics";
 const emptyHub: HubData = {
   checked: "",
   stories: [],

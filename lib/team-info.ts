@@ -10,7 +10,7 @@ import {
   parsePwhlRoster,
   parsePwhlStandings,
   parsePwhlTrainingCampRoster,
-} from "./special-team-data";
+} from "./feeds/special-team-data";
 export type Table = {
   stale?: boolean;
   seasonType?: number;

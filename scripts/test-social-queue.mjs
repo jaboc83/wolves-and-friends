@@ -142,7 +142,7 @@ try {
   assert.equal((await taggedBluesky("palace", "#CPFC")).length, 50);
   assert.equal(calls, 2, "pagination fills the queue then stops");
   const routeLoad = loader({
-    "../../../lib/youtube": {
+    "../../../lib/feeds/youtube": {
       officialYoutubePosts: async () => ({ posts: [], unavailable: [] }),
     },
     "../../../lib/bluesky": {

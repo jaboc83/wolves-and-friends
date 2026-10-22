@@ -1,10 +1,8 @@
-import type { Story } from "./feeds";
-import initial from "./initial.json";
+import type { Story } from "./feed-types";
+import initial from "../initial.json";
 type JsonObject = Record<string, unknown>;
 function object(value: unknown): JsonObject {
-  return value && typeof value === "object"
-    ? (value as JsonObject)
-    : {};
+  return value && typeof value === "object" ? (value as JsonObject) : {};
 }
 function walk(x: unknown, visit: (x: JsonObject) => void) {
   if (!x || typeof x !== "object") return;

@@ -1,6 +1,6 @@
 import { enrichEuroleagueOdds } from "./euroleague-odds";
-import { teams } from "./teams/teams";
-import type { Game } from "./feeds";
+import { teams } from "../teams/teams";
+import type { Game } from "./feed-types";
 type ProviderObject = Record<string, unknown>;
 const providerObject = (value: unknown): ProviderObject =>
   value && typeof value === "object" ? (value as ProviderObject) : {};
@@ -18,9 +18,8 @@ const price = (
   market: string,
   side: string,
   key: string,
-): unknown => providerObject(providerObject(providerObject(o[market])[side]).close)[
-  key
-];
+): unknown =>
+  providerObject(providerObject(providerObject(o[market])[side]).close)[key];
 export function parseOdds(
   event: unknown,
   teamId: string,

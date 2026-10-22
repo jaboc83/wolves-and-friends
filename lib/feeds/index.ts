@@ -18,9 +18,9 @@ export {
 } from "./feed-parsers";
 import { runProviderTasks, type ProviderTask } from "./provider-tasks";
 import { fetchScoreboard } from "./scoreboard";
-import { discEvents } from "./games/event-seed";
+import { discEvents } from "../games/event-seed";
 import { parseDgptSchedule } from "./dgpt";
-import { eventLifecycle } from "./games/event-time";
+import { eventLifecycle } from "../games/event-time";
 import { verifyAuthorFeed } from "./bylines";
 import { parseFrostNews } from "./club-news";
 import { authorStories } from "./author-stories";
@@ -30,16 +30,16 @@ import {
   mergeOfficial,
   mergeFallbackGames,
 } from "./official-schedules";
-import { teams } from "./teams/teams";
+import { teams } from "../teams/teams";
 import {
   palaceCompetitions,
   scoreboardLeagues,
   teamPlaysCompetition,
-} from "./teams/competitions";
+} from "../teams/competitions";
 import { parseZalgiris } from "./zalgiris";
 import { parsePwhlSchedule } from "./special-team-data";
 import { enrichOdds } from "./odds";
-import initial from "./initial.json";
+import initial from "../initial.json";
 import type { Story, Game, Health, AuthorFeed, HubData } from "./feed-types";
 export type { Story, Game, Health, AuthorFeed, HubData } from "./feed-types";
 type ESPNCompetitor = {

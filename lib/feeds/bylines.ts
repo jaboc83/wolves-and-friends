@@ -1,5 +1,5 @@
 import { applyKnownBylines } from "./byline-status";
-import type { AuthorFeed } from "./feeds";
+import type { AuthorFeed } from "./feed-types";
 const clean = (s: string) =>
   s
     .replace(/<[^>]*>/g, " ")

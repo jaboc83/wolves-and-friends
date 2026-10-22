@@ -1,4 +1,4 @@
-import type { Game } from "./feeds";
+import type { Game } from "./feed-types";
 type ProviderObject = Record<string, unknown>;
 const providerObject = (value: unknown): ProviderObject =>
   value && typeof value === "object" ? (value as ProviderObject) : {};

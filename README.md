@@ -17,8 +17,8 @@ Read the [Architecture overview](ARCHITECTURE.md) for a plain-English guide to t
 - `components/game-card.tsx`: compact games and hidden/revealed results.
 - `components/match-calendar.tsx`: past and upcoming calendar events.
 - `components/team-insights.tsx`: standings and rosters.
-- `lib/feeds.ts`: news and schedule collection.
-- `lib/odds.ts`: competition-aware odds lookups and fixture matching.
+- `lib/feeds/index.ts`: news and schedule collection.
+- `lib/feeds/odds.ts`: competition-aware odds lookups and fixture matching.
 - `lib/bluesky.ts`: social feeds and server-fetched inline avatars.
 - `app/api/`: same-origin public feed endpoints.
 - `public/logos/`: local team and header images.

@@ -1,5 +1,8 @@
-import { teams } from "./teams/teams";
-import { palaceCompetitions, teamPlaysCompetition } from "./teams/competitions";
+import { teams } from "../teams/teams";
+import {
+  palaceCompetitions,
+  teamPlaysCompetition,
+} from "../teams/competitions";
 import type { Story, Game } from "./feed-types";
 type GameStatus = {
   completed?: boolean;
@@ -11,7 +14,12 @@ type ScoreCompetitor = {
   homeAway: string;
   score?: string | number | { displayValue?: string; value?: string | number };
   winner?: boolean;
-  records?: { type?: string; name?: string; summary?: string; displayValue?: string }[];
+  records?: {
+    type?: string;
+    name?: string;
+    summary?: string;
+    displayValue?: string;
+  }[];
   team?: {
     id?: string | number;
     abbreviation?: string;
@@ -46,8 +54,7 @@ type ScoreboardPayload = {
   events?: ScoreEvent[];
   leagues?: { name?: string }[];
 };
-const emptyScoreboard = (value: unknown) =>
-  (value || {}) as ScoreboardPayload;
+const emptyScoreboard = (value: unknown) => (value || {}) as ScoreboardPayload;
 
 const text = (s: string) =>
   s
