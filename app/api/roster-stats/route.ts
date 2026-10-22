@@ -104,10 +104,11 @@ async function stats(entry: Entry) {
         for (const year of [entry.year, entry.year - 1]) {
           if (Date.now() >= deadline) break;
           try {
+            const seasonType = entry.league.startsWith("soccer/") ? "1" : "2";
             const data = await get(
               "https://sports.core.api.espn.com/v2/sports/" + sport +
               "/leagues/" + league + "/seasons/" + year +
-              "/types/2/athletes/" + entry.id + "/statistics/0",
+              "/types/" + seasonType + "/athletes/" + entry.id + "/statistics/0",
               Math.min(3000, remaining()),
             );
             const parsed = parsePlayerStats({ ...data, season: { displayName: String(year) } }, entry.teamId, entry.league, entry.position);
