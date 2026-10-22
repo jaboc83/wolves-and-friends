@@ -1,1 +1,1 @@
-export const releaseMarker = "Release main @ 64d8282";
+export const releaseMarker = "Release PR #151 · main 64d8282";
