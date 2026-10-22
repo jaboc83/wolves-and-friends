@@ -12,8 +12,9 @@ import { teamLocation } from "../lib/teams/team-location";
 import { teamWikipediaUrl } from "../lib/teams/team-wikipedia";
 import { sportTerms } from "../lib/teams/sport-terms";
 import { teamLogoPath } from "../lib/teams/team-logo";
-const ct = (s: string, o: Intl.DateTimeFormatOptions = {}) =>
-  new Date(s).toLocaleString("en-US", { timeZone: "America/Chicago", ...o });
+import type { TeamId } from "../lib/teams/teams";
+import { useLocalTimeZone } from "../hooks/use-local-time-zone";
+import { formatInTimeZone, timeZoneLabel } from "../lib/browser/local-time";
 const patterns: Record<string, RegExp> = {
   wolves: /timberwolves|wolves/i,
   wild: /wild/i,
@@ -49,7 +50,7 @@ function Location({
   league,
   own = false,
 }: {
-  team: string;
+  team: TeamId;
   name: string;
   league: string;
   own?: boolean;
@@ -77,6 +78,9 @@ export default function GameCard({
   today?: boolean;
   onReveal: () => void;
 }) {
+  const timeZone = useLocalTimeZone();
+  const localDateTime = (s: string, o: Intl.DateTimeFormatOptions = {}) =>
+    formatInTimeZone(s, timeZone, o);
   const [expanded, setExpanded] = useState(false);
   const [renderedAt] = useState(() => Date.now());
   const detailsRef = useRef<HTMLDetailsElement>(null);
@@ -90,6 +94,7 @@ export default function GameCard({
   const result = outcome(g);
   const terms = sportTerms(g.team);
   const hasBadges = gameBadges(g).length > 0;
+  const zoneLabel = timeZoneLabel(timeZone, g.date);
   const full = (
     <article className="game">
       {compact && (
@@ -135,7 +140,7 @@ export default function GameCard({
                 ? g.eventOnly
                   ? "IN PROGRESS"
                   : "LIVE"
-                : ct(g.date, {
+                : localDateTime(g.date, {
                     weekday: "short",
                     month: "short",
                     day: "numeric",
@@ -147,7 +152,7 @@ export default function GameCard({
       {g.eventOnly ? (
         <div className="event-details">
           <h3 className="event-name">{g.name}</h3>
-          <p>{eventDateLabel(g)}</p>
+          <p>{eventDateLabel(g, timeZone)}</p>
           {g.state === "post" &&
             (scoreVisible ? (
               g.eventResults?.length ? (
@@ -206,7 +211,9 @@ export default function GameCard({
               ? "All-day event · tee times not listed"
               : g.status
             : g.state === "pre"
-              ? ct(g.date, { hour: "numeric", minute: "2-digit" }) + " CT"
+              ? localDateTime(g.date, { hour: "numeric", minute: "2-digit" }) +
+                " " +
+                zoneLabel
               : hidden
                 ? g.state === "post"
                   ? "Final · result hidden"
@@ -286,7 +293,11 @@ export default function GameCard({
                 " " +
                 t.name +
                 " " +
-                ct(g.date, { year: "numeric", month: "long", day: "numeric" }) +
+                localDateTime(g.date, {
+                  year: "numeric",
+                  month: "long",
+                  day: "numeric",
+                }) +
                 ` full ${terms.event} highlights`,
             )
           }
@@ -309,13 +320,13 @@ export default function GameCard({
                 </a>
                 <small>
                   Checked{" "}
-                  {ct(g.odds.checked, {
+                  {localDateTime(g.odds.checked, {
                     month: "short",
                     day: "numeric",
                     hour: "numeric",
                     minute: "2-digit",
                   })}{" "}
-                  CT · odds can change
+                  {timeZoneLabel(timeZone, g.odds.checked)} · odds can change
                 </small>
                 {renderedAt - Date.parse(g.odds.checked) > 15 * 60000 && (
                   <small>Cached odds; check source for current prices.</small>
@@ -419,16 +430,25 @@ export default function GameCard({
           )}
           <span className="compact-upcoming-actions">
             <span className="compact-date">
-              {eventDateLabel(g)}
+              {eventDateLabel(g, timeZone)}
               {!g.dateOnly &&
                 (g.state === "post" ? (
                   <>
                     {" "}
-                    · {ct(g.date, { hour: "numeric", minute: "2-digit" })} CT
+                    ·{" "}
+                    {localDateTime(g.date, {
+                      hour: "numeric",
+                      minute: "2-digit",
+                    })}{" "}
+                    {zoneLabel}
                   </>
                 ) : (
                   <small>
-                    {ct(g.date, { hour: "numeric", minute: "2-digit" })} CT
+                    {localDateTime(g.date, {
+                      hour: "numeric",
+                      minute: "2-digit",
+                    })}{" "}
+                    {zoneLabel}
                   </small>
                 ))}
               {g.state === "post" &&

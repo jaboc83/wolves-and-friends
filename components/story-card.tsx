@@ -4,10 +4,13 @@ import { teams, teamPriority } from "../lib/teams/teams";
 import SocialImage from "./social-image";
 import TeamLogos from "./team-logos";
 import { isLocalSocialImage } from "../lib/social/bluesky-images";
-const ct = (s: string, opts: Intl.DateTimeFormatOptions = {}) =>
-  new Date(s).toLocaleString("en-US", { timeZone: "America/Chicago", ...opts });
-const day = (s: string) =>
-  ct(s, { year: "numeric", month: "2-digit", day: "2-digit" });
+import type { DashboardPageId } from "../lib/dashboard/page-id";
+import { useLocalTimeZone } from "../hooks/use-local-time-zone";
+import {
+  dayInTimeZone,
+  formatInTimeZone,
+  timeZoneLabel,
+} from "../lib/browser/local-time";
 const age = (s: string) => {
   const h = Math.max(0, Math.floor((Date.now() - Date.parse(s)) / 3600000));
   return h < 1
@@ -23,17 +26,21 @@ export default function StoryCard({
   readIds,
 }: {
   story: Story;
-  choose: (id: string) => void;
+  choose: (id: DashboardPageId) => void;
   markRead: (id: string) => void;
   readIds: string[];
 }) {
+  const timeZone = useLocalTimeZone();
+  const localDateTime = (s: string, opts: Intl.DateTimeFormatOptions = {}) =>
+    formatInTimeZone(s, timeZone, opts);
   let s = original;
   s = {
     ...s,
     teams: [...s.teams].sort((a, b) => teamPriority(a) - teamPriority(b)),
   };
   const isToday =
-    s.kind !== "social" && day(s.date) === day(new Date().toISOString());
+    s.kind !== "social" &&
+    dayInTimeZone(s.date, timeZone) === dayInTimeZone(new Date(), timeZone);
   return (
     <article
       className={
@@ -134,17 +141,22 @@ export default function StoryCard({
             })}
             <time
               title={
-                ct(s.date, { dateStyle: "medium", timeStyle: "short" }) + " CT"
+                localDateTime(s.date, {
+                  dateStyle: "medium",
+                  timeStyle: "short",
+                }) +
+                " " +
+                timeZoneLabel(timeZone, s.date)
               }
             >
               {s.dateApproximate ? "Approx. " : ""}
-              {ct(s.date, {
+              {localDateTime(s.date, {
                 month: "short",
                 day: "numeric",
                 hour: "numeric",
                 minute: "2-digit",
               })}{" "}
-              CT
+              {timeZoneLabel(timeZone, s.date)}
             </time>
           </div>
           <button className="read-toggle" onClick={() => markRead(s.id)}>

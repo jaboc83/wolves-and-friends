@@ -6,46 +6,62 @@ import type { Game } from "../lib/feeds";
 import { teams } from "../lib/teams/teams";
 import { sportTerms } from "../lib/teams/sport-terms";
 import { teamLogoPath } from "../lib/teams/team-logo";
+import type { DashboardPageId } from "../lib/dashboard/page-id";
 import Image from "next/image";
-const key = (date: string) =>
-  new Intl.DateTimeFormat("en-CA", {
-    timeZone: "America/Chicago",
-    year: "numeric",
-    month: "2-digit",
-    day: "2-digit",
-  }).format(new Date(date));
+import { useLocalTimeZone } from "../hooks/use-local-time-zone";
+import { gameDay } from "../lib/games/event-time";
+import {
+  dayInTimeZone,
+  formatInTimeZone,
+  timeZoneLabel,
+} from "../lib/browser/local-time";
 export default function MatchCalendar({
   games,
   team = "all",
 }: {
   games: Game[];
-  team?: string;
+  team?: DashboardPageId;
 }) {
+  const timeZone = useLocalTimeZone();
   const terms = sportTerms(team);
-  const today = key(new Date().toISOString());
-  const [month, setMonth] = useState(() => today.slice(0, 7)),
-    [selected, setSelected] = useState(today);
+  const today = dayInTimeZone(new Date(), timeZone);
+  const zoneLabel = timeZoneLabel(timeZone);
+  const [calendarSelection, setCalendarSelection] = useState<{
+    timeZone: string;
+    month: string;
+    selected: string;
+  } | null>(null);
+  const calendar =
+    calendarSelection?.timeZone === timeZone
+      ? calendarSelection
+      : { timeZone, month: today.slice(0, 7), selected: today };
+  const { month, selected } = calendar;
   const [year, num] = month.split("-").map(Number),
     start = new Date(Date.UTC(year, num - 1, 1)),
     days = new Date(Date.UTC(year, num, 0)).getUTCDate();
   function shift(delta: number) {
     const d = new Date(Date.UTC(year, num - 1 + delta, 1));
-    setMonth(d.toISOString().slice(0, 7));
-    setSelected(d.toISOString().slice(0, 10));
+    setCalendarSelection({
+      timeZone,
+      month: d.toISOString().slice(0, 7),
+      selected: d.toISOString().slice(0, 10),
+    });
   }
   const matches = (day: string) =>
     games.filter(
       (g) =>
-        key(g.date) === day ||
-        (g.endDate && key(g.date) <= day && key(g.endDate) >= day),
+        gameDay(g, g.date, timeZone) === day ||
+        (g.endDate &&
+          gameDay(g, g.date, timeZone) <= day &&
+          gameDay(g, g.endDate, timeZone) >= day),
     );
   const active = matches(selected);
   return (
     <details id="event-calendar" className="calendar-panel data-panel">
       <summary>{terms.calendar}</summary>
       <p className="panel-note">
-        Past and upcoming {terms.events} · Central Time · available schedule
-        feeds
+        Past and upcoming {terms.events} · Times shown in {zoneLabel} ·
+        available schedule feeds
       </p>
       <div className="calendar-controls">
         <button aria-label="Previous month" onClick={() => shift(-1)}>
@@ -92,7 +108,9 @@ export default function MatchCalendar({
                 (events.length === 1 ? terms.event : terms.events)
               }
               aria-pressed={selected === date}
-              onClick={() => setSelected(date)}
+              onClick={() =>
+                setCalendarSelection({ ...calendar, selected: date })
+              }
             >
               <b>{i + 1}</b>
               <span className="calendar-dots">
@@ -137,11 +155,12 @@ export default function MatchCalendar({
                     <small>
                       {g.dateOnly
                         ? "Time not listed"
-                        : new Date(g.date).toLocaleTimeString("en-US", {
-                            timeZone: "America/Chicago",
+                        : formatInTimeZone(g.date, timeZone, {
                             hour: "numeric",
                             minute: "2-digit",
-                          }) + " CT"}
+                          }) +
+                          " " +
+                          timeZoneLabel(timeZone, g.date)}
                     </small>
                   </span>
                 </a>

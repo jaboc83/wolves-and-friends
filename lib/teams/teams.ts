@@ -1,7 +1,27 @@
 // Central team catalog: IDs, display names, leagues, provider matching, and source links.
+export const TEAM_IDS = {
+  WOLVES: "wolves",
+  WILD: "wild",
+  VIKINGS: "vikings",
+  TWINS: "twins",
+  LOONS: "loons",
+  PALACE: "palace",
+  DISC: "disc",
+  LYNX: "lynx",
+  ZALGIRIS: "zalgiris",
+  FROST: "frost",
+  USMNT: "usmnt",
+} as const;
+
+export type TeamId = (typeof TEAM_IDS)[keyof typeof TEAM_IDS];
+
+const teamIdSet: ReadonlySet<string> = new Set(Object.values(TEAM_IDS));
+export const isTeamId = (value: unknown): value is TeamId =>
+  typeof value === "string" && teamIdSet.has(value);
+
 export const teams = [
   {
-    id: "wolves",
+    id: TEAM_IDS.WOLVES,
     name: "Minnesota Timberwolves",
     short: "Wolves",
     sport: "NBA",
@@ -33,7 +53,7 @@ export const teams = [
     ],
   },
   {
-    id: "wild",
+    id: TEAM_IDS.WILD,
     name: "Minnesota Wild",
     short: "Wild",
     sport: "NHL",
@@ -63,7 +83,7 @@ export const teams = [
     ],
   },
   {
-    id: "vikings",
+    id: TEAM_IDS.VIKINGS,
     name: "Minnesota Vikings",
     short: "Vikings",
     sport: "NFL",
@@ -89,7 +109,7 @@ export const teams = [
     ],
   },
   {
-    id: "twins",
+    id: TEAM_IDS.TWINS,
     name: "Minnesota Twins",
     short: "Twins",
     sport: "MLB",
@@ -109,7 +129,7 @@ export const teams = [
     ],
   },
   {
-    id: "loons",
+    id: TEAM_IDS.LOONS,
     name: "Minnesota United",
     short: "Loons",
     sport: "MLS",
@@ -131,7 +151,7 @@ export const teams = [
     ],
   },
   {
-    id: "palace",
+    id: TEAM_IDS.PALACE,
     name: "Crystal Palace",
     short: "Palace",
     sport: "Premier League",
@@ -150,7 +170,7 @@ export const teams = [
     ],
   },
   {
-    id: "disc",
+    id: TEAM_IDS.DISC,
     name: "Pro Disc Golf",
     short: "Disc golf",
     sport: "DGPT / PDGA",
@@ -168,7 +188,7 @@ export const teams = [
     ],
   },
   {
-    id: "lynx",
+    id: TEAM_IDS.LYNX,
     name: "Minnesota Lynx",
     short: "Lynx",
     sport: "WNBA",
@@ -182,7 +202,7 @@ export const teams = [
     ],
   },
   {
-    id: "zalgiris",
+    id: TEAM_IDS.ZALGIRIS,
     name: "Žalgiris Kaunas",
     short: "Žalgiris",
     sport: "EuroLeague / LKL",
@@ -216,7 +236,7 @@ export const teams = [
     ],
   },
   {
-    id: "frost",
+    id: TEAM_IDS.FROST,
     name: "Minnesota Frost",
     short: "Frost",
     sport: "PWHL",
@@ -246,7 +266,7 @@ export const teams = [
     ],
   },
   {
-    id: "usmnt",
+    id: TEAM_IDS.USMNT,
     name: "U.S. Men’s National Team",
     short: "USMNT",
     sport: "International soccer",
@@ -260,6 +280,9 @@ export const teams = [
       ["Stars and Stripes FC", "https://www.starsandstripesfc.com/"],
     ],
   },
-];
+] as const satisfies readonly {
+  id: TeamId;
+  [key: string]: unknown;
+}[];
 
-export const teamPriority = (id: string) => teams.findIndex((t) => t.id === id);
+export const teamPriority = (id: TeamId) => teams.findIndex((t) => t.id === id);

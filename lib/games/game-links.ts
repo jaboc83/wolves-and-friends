@@ -1,5 +1,6 @@
 // Chooses score/details and injury-report destinations linked from game cards.
 import type { Game } from "../feeds";
+import type { TeamId } from "../teams/teams";
 // Prefer the event's actual scoreboard; never send Powerball results to its overview.
 export function tournamentScoresUrl(g: Game) {
   if (
@@ -9,7 +10,7 @@ export function tournamentScoresUrl(g: Game) {
     return "https://www.dgpt.com/event-scores/?id=96421";
   return g.boxUrl || g.url;
 }
-export function injuryReportUrl(team: string): string | undefined {
+export function injuryReportUrl(team: TeamId): string | undefined {
   if (team === "loons")
     return "https://www.mlssoccer.com/league-reports/player-availability-report/";
   if (team === "palace")

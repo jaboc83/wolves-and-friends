@@ -1,4 +1,4 @@
-import { teams } from "./teams";
+import { teams, type TeamId } from "./teams";
 
 // Shared league registry for team schedules and live score refreshes.
 // Club teams can play outside their domestic league. Share this registry
@@ -12,7 +12,7 @@ export const palaceCompetitions: Record<string, string> = {
   "soccer/eng.charity": "Community Shield",
 };
 
-export function teamPlaysCompetition(team: string, league: string) {
+export function teamPlaysCompetition(team: TeamId, league: string) {
   return (
     teams.find((t) => t.id === team)?.league === league ||
     (team === "palace" && league in palaceCompetitions)

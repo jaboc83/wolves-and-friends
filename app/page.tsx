@@ -4,7 +4,7 @@ import Link from "next/link";
 import Image from "next/image";
 import { useDashboardFeeds } from "../hooks/use-dashboard-feeds";
 import { browserStorage, readStored, stringList } from "../lib/browser/storage";
-import { storedTeam } from "../lib/dashboard/storage";
+import { storedDashboardPage } from "../lib/dashboard/storage";
 import { newsDisplayMode } from "../lib/browser/news-page-data";
 import StoryCard from "../components/story-card";
 import { selectStories, selectGames } from "../lib/dashboard/selectors";
@@ -25,14 +25,23 @@ import { teamThemes } from "../lib/teams/team-themes";
 import { unreadSocial } from "../lib/social/social-queue";
 import { communities } from "../lib/social/communities";
 import { teams } from "../lib/teams/teams";
+import { isTeamId, TEAM_IDS } from "../lib/teams/teams";
+import {
+  DASHBOARD_PAGE_IDS,
+  type DashboardPageId,
+} from "../lib/dashboard/page-id";
 import { teamLogoPath } from "../lib/teams/team-logo";
 import type { Story, Game } from "../lib/feeds";
 import { releaseMarker } from "../lib/release-info";
 import { downloadFeedDiagnostics } from "../lib/feeds/feed-diagnostics";
-const ct = (s: string, opts: Intl.DateTimeFormatOptions = {}) =>
-  new Date(s).toLocaleString("en-US", { timeZone: "America/Chicago", ...opts });
+import { useLocalTimeZone } from "../hooks/use-local-time-zone";
+import { formatInTimeZone, timeZoneLabel } from "../lib/browser/local-time";
 export default function Home() {
-  const [active, setActive] = useState("wolves"),
+  const timeZone = useLocalTimeZone();
+  const localDateTime = (s: string, opts: Intl.DateTimeFormatOptions = {}) =>
+    formatInTimeZone(s, timeZone, opts);
+  const zoneLabel = timeZoneLabel(timeZone);
+  const [active, setActive] = useState<DashboardPageId>(TEAM_IDS.WOLVES),
     [search, setSearch] = useState(""),
     [sources, setSources] = useState(false),
     [teamMenuOpen, setTeamMenuOpen] = useState(false),
@@ -72,7 +81,7 @@ export default function Home() {
     let alive = true;
     queueMicrotask(() => {
       if (!alive) return;
-      setActive(storedTeam());
+      setActive(storedDashboardPage());
       setReadIds(readStored("wf-read", stringList, []));
       setDarkMode(browserStorage.getItem("wf-color-mode") === "dark");
       const preference = loadScorePreference(browserStorage);
@@ -86,11 +95,11 @@ export default function Home() {
       alive = false;
     };
   }, []);
-  function choose(id: string) {
+  function choose(id: DashboardPageId) {
     activePageRef.current = id;
     setActive(id);
     setAutoOpenStandings(false);
-    if (id !== "all") void fetchNewsPage(id);
+    if (isTeamId(id)) void fetchNewsPage(id);
     setTeamMenuOpen(false);
     setShowOlder(false);
     setShowOlderResults(false);
@@ -146,6 +155,7 @@ export default function Home() {
     readIds,
     showRead,
     showOlder,
+    timeZone,
   });
   const {
     teamsPlayingToday,
@@ -160,6 +170,7 @@ export default function Home() {
     liveGames,
     active,
     showOlderResults,
+    timeZone,
   });
   const newsMode = newsDisplayMode(loading, displayed.length > 0, newsFailed);
   const socialPosts = unreadSocial(
@@ -181,7 +192,8 @@ export default function Home() {
     (h) =>
       h.name !== "BasketNews" &&
       h.status === "unavailable" &&
-      (active === "all" || h.teams.includes(active)),
+      (active === DASHBOARD_PAGE_IDS.ALL ||
+        (isTeamId(active) && h.teams.includes(active))),
   );
   function game(g: Game, compact = false, today = false) {
     return (
@@ -396,11 +408,11 @@ export default function Home() {
                       Today’s {terms.events} <small>{todayGames.length}</small>
                     </h2>
                     <span>
-                      {ct(new Date().toISOString(), {
+                      {localDateTime(new Date().toISOString(), {
                         month: "short",
                         day: "numeric",
                       })}{" "}
-                      · CT
+                      · {zoneLabel}
                     </span>
                   </div>
                   {todayGames.length ? (
@@ -553,11 +565,11 @@ export default function Home() {
                               {failed.map((h) => (
                                 <p key={h.name}>
                                   {h.name} · checked{" "}
-                                  {ct(h.checked, {
+                                  {localDateTime(h.checked, {
                                     hour: "numeric",
                                     minute: "2-digit",
                                   })}{" "}
-                                  CT
+                                  {zoneLabel}
                                 </p>
                               ))}
                             </details>
@@ -639,9 +651,10 @@ export default function Home() {
                             {search
                               ? "No matching headlines."
                               : newest &&
-                                  recentStories([newest], active).length === 0
+                                  recentStories([newest], active, { timeZone })
+                                    .length === 0
                                 ? "No news since " +
-                                  ct(newest.date, {
+                                  localDateTime(newest.date, {
                                     month: "short",
                                     day: "numeric",
                                     year: "numeric",
@@ -660,11 +673,11 @@ export default function Home() {
                       {newsData.checked && (
                         <p className="feed-description">
                           Last update:{" "}
-                          {ct(newsData.checked, {
+                          {localDateTime(newsData.checked, {
                             dateStyle: "medium",
                             timeStyle: "short",
                           })}{" "}
-                          CT
+                          {zoneLabel}
                         </p>
                       )}
                       {!loading && newsFailed && displayed.length > 0 && (

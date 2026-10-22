@@ -1,26 +1,40 @@
-// Applies Chicago-time day boundaries and lifecycle labels to calendar events.
+// Applies calendar-day boundaries and lifecycle labels to calendar events.
 import type { Game } from "../feeds";
-export const eventDay = (value: string | Date) =>
-  new Intl.DateTimeFormat("en-CA", {
-    timeZone: "America/Chicago",
-    year: "numeric",
-    month: "2-digit",
-    day: "2-digit",
-  }).format(new Date(value));
-export function eventIsToday(g: Game, now = new Date()) {
-  const today = eventDay(now);
+import { dayInTimeZone } from "../browser/local-time";
+const defaultTimeZone = "America/Chicago";
+export const eventDay = (value: string | Date, timeZone = defaultTimeZone) =>
+  dayInTimeZone(value, timeZone);
+export function gameDay(
+  game: Pick<Game, "dateOnly">,
+  value: string,
+  timeZone = defaultTimeZone,
+) {
+  return game.dateOnly ? value.slice(0, 10) : eventDay(value, timeZone);
+}
+export function eventIsToday(
+  g: Game,
+  now = new Date(),
+  timeZone = defaultTimeZone,
+) {
+  const today = eventDay(now, timeZone);
   return (
-    eventDay(g.date) === today ||
+    gameDay(g, g.date, timeZone) === today ||
     Boolean(
-      g.endDate && eventDay(g.date) <= today && eventDay(g.endDate) >= today,
+      g.endDate &&
+      gameDay(g, g.date, timeZone) <= today &&
+      gameDay(g, g.endDate, timeZone) >= today,
     )
   );
 }
-export function eventLifecycle(g: Game, now = new Date()): Game {
+export function eventLifecycle(
+  g: Game,
+  now = new Date(),
+  timeZone = defaultTimeZone,
+): Game {
   if (!g.eventOnly) return g;
-  const today = eventDay(now),
-    start = eventDay(g.date),
-    end = eventDay(g.endDate || g.date);
+  const today = eventDay(now, timeZone),
+    start = gameDay(g, g.date, timeZone),
+    end = gameDay(g, g.endDate || g.date, timeZone);
   const state = today > end ? "post" : today >= start ? "in" : "pre";
   return {
     ...g,
@@ -33,17 +47,22 @@ export function eventLifecycle(g: Game, now = new Date()): Game {
           : "Scheduled",
   };
 }
-export function eventDateLabel(g: Game) {
-  const fmt = (date: string) =>
-    new Date(date).toLocaleDateString("en-US", {
-      timeZone: "America/Chicago",
+export function eventDateLabel(g: Game, timeZone = defaultTimeZone) {
+  const fmt = (date: string) => {
+    const value = g.dateOnly
+      ? new Date(`${date.slice(0, 10)}T00:00:00Z`)
+      : new Date(date);
+    return value.toLocaleDateString("en-US", {
+      timeZone: g.dateOnly ? "UTC" : timeZone,
       weekday: "short",
       month: "short",
       day: "numeric",
     });
+  };
   return (
     fmt(g.date) +
-    (g.endDate && eventDay(g.endDate) !== eventDay(g.date)
+    (g.endDate &&
+    gameDay(g, g.endDate, timeZone) !== gameDay(g, g.date, timeZone)
       ? " – " + fmt(g.endDate)
       : "")
   );

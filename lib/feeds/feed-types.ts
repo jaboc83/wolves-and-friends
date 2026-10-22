@@ -1,5 +1,6 @@
 // Shared data contracts for normalized stories, games, provider health, and feed responses.
 import type { Odds } from "./odds";
+import type { TeamId } from "../teams/teams";
 export type Story = {
   socialPlatform?: "youtube";
   avatar?: string;
@@ -12,7 +13,7 @@ export type Story = {
   url: string;
   source: string;
   date: string;
-  teams: string[];
+  teams: TeamId[];
   kind: string;
 };
 export type Game = {
@@ -37,7 +38,7 @@ export type Game = {
   sourceChecked?: string;
   odds?: Odds;
   id: string;
-  team: string;
+  team: TeamId;
   name: string;
   date: string;
   status: string;
@@ -59,7 +60,7 @@ export type Health = {
   status: string;
   checked: string;
   count: number;
-  teams: string[];
+  teams: TeamId[];
   /** Safe diagnostic code for operators; never contains request or visitor data. */
   error?: string;
 };

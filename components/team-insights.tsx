@@ -12,6 +12,10 @@ import {
 import { espnTeamLogoUrl } from "../lib/games/march-madness";
 import BracketConnectors from "./bracket-connectors";
 import Image from "next/image";
+import { isTeamId, TEAM_IDS, type TeamId } from "../lib/teams/teams";
+import type { DashboardPageId } from "../lib/dashboard/page-id";
+import { useLocalTimeZone } from "../hooks/use-local-time-zone";
+import { formatInTimeZone, timeZoneLabel } from "../lib/browser/local-time";
 type RosterPlayer = NonNullable<
   TeamInfo["depth"]
 >["groups"][number]["players"][number] & {
@@ -27,7 +31,7 @@ export default function TeamInsights({
   playerStatsStatus = "loading",
   onRosterOpen = () => {},
 }: {
-  active: string;
+  active: DashboardPageId;
   data: TeamInfo[];
   revealResults?: boolean;
   autoOpenStandings?: boolean;
@@ -36,8 +40,9 @@ export default function TeamInsights({
     "idle" | "loading" | "ready" | "partial" | "empty" | "unavailable";
   onRosterOpen?: (priorityKeys?: string[]) => void;
 }) {
-  const [selected, setSelected] = useState("wolves");
-  const id = active === "all" ? selected : active;
+  const timeZone = useLocalTimeZone();
+  const [selected, setSelected] = useState<TeamId>(TEAM_IDS.WOLVES);
+  const id: TeamId = isTeamId(active) ? active : selected;
   const [standingsOverride, setStandingsOverride] = useState<{
     id: string;
     open: boolean;
@@ -127,7 +132,9 @@ export default function TeamInsights({
           Team data{" "}
           <select
             value={selected}
-            onChange={(e) => setSelected(e.target.value)}
+            onChange={(e) => {
+              if (isTeamId(e.target.value)) setSelected(e.target.value);
+            }}
           >
             {teams.map((t) => (
               <option key={t.id} value={t.id}>
@@ -210,10 +217,8 @@ export default function TeamInsights({
             </div>
             <p className="panel-note">
               ESPN · checked{" "}
-              {new Date(info.postseason.checked).toLocaleString("en-US", {
-                timeZone: "America/Chicago",
-              })}{" "}
-              CT
+              {formatInTimeZone(info.postseason.checked, timeZone)}{" "}
+              {timeZoneLabel(timeZone, info.postseason.checked)}
             </p>
           </section>
         )}
@@ -301,14 +306,13 @@ export default function TeamInsights({
                     {table.source} ↗
                   </a>{" "}
                   · checked{" "}
-                  {new Date(table.checked).toLocaleString("en-US", {
-                    timeZone: "America/Chicago",
+                  {formatInTimeZone(table.checked, timeZone, {
                     month: "short",
                     day: "numeric",
                     hour: "numeric",
                     minute: "2-digit",
                   })}{" "}
-                  CT
+                  {timeZoneLabel(timeZone, table.checked)}
                   {table.stale && " · cached data; source unavailable"}
                 </p>
               </section>
@@ -341,15 +345,11 @@ export default function TeamInsights({
           </summary>
           <p className="panel-note">
             {info.powerRanking.note} · produced{" "}
-            {new Date(info.powerRanking.publishedAt).toLocaleDateString(
-              "en-US",
-              {
-                timeZone: "America/Chicago",
-                month: "short",
-                day: "numeric",
-                year: "numeric",
-              },
-            )}
+            {formatInTimeZone(info.powerRanking.publishedAt, timeZone, {
+              month: "short",
+              day: "numeric",
+              year: "numeric",
+            })}
           </p>
           <div className="table-scroll">
             <table>
@@ -398,14 +398,13 @@ export default function TeamInsights({
               {info.powerRanking.source} ↗
             </a>{" "}
             · checked{" "}
-            {new Date(info.powerRanking.checked).toLocaleString("en-US", {
-              timeZone: "America/Chicago",
+            {formatInTimeZone(info.powerRanking.checked, timeZone, {
               month: "short",
               day: "numeric",
               hour: "numeric",
               minute: "2-digit",
             })}{" "}
-            CT
+            {timeZoneLabel(timeZone, info.powerRanking.checked)}
           </p>
         </details>
       )}

@@ -1,7 +1,8 @@
 "use client";
 import { sportTerms } from "../lib/teams/sport-terms";
+import type { DashboardPageId } from "../lib/dashboard/page-id";
 
-export default function SectionLinks({ active }: { active: string }) {
+export default function SectionLinks({ active }: { active: DashboardPageId }) {
   const terms = sportTerms(active);
   const links =
     active === "all"

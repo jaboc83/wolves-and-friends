@@ -1,6 +1,7 @@
-// Validates cached feed shapes and restores a still-supported selected team.
+// Validates cached feed shapes and restores a supported dashboard page.
 import type { HubData, Story } from "../feeds/feed-types";
-import { teams } from "../teams/teams";
+import { isTeamId, TEAM_IDS } from "../teams/teams";
+import { isDashboardPageId, type DashboardPageId } from "./page-id";
 import { browserStorage } from "../browser/storage";
 const object = (value: unknown): value is Record<string, unknown> =>
   Boolean(value) && typeof value === "object";
@@ -14,7 +15,7 @@ export function isStories(value: unknown): value is Story[] {
           (key) => typeof story[key] === "string",
         ) &&
         Array.isArray(story.teams) &&
-        story.teams.every((team) => typeof team === "string"),
+        story.teams.every(isTeamId),
     )
   );
 }
@@ -39,6 +40,7 @@ export function isHubData(value: unknown): value is HubData {
           "broadcast",
           "url",
         ].every((key) => typeof game[key] === "string") &&
+        isTeamId(game.team) &&
         Number.isFinite(Date.parse(game.date as string)) &&
         Array.isArray(game.competitors) &&
         game.competitors.every(
@@ -57,19 +59,16 @@ export function isHubData(value: unknown): value is HubData {
         typeof health.status === "string" &&
         typeof health.checked === "string" &&
         Array.isArray(health.teams) &&
-        health.teams.every((team) => typeof team === "string"),
+        health.teams.every(isTeamId),
     )
   );
 }
-export function storedTeam(storage: Pick<Storage, "getItem"> = browserStorage) {
+export function storedDashboardPage(
+  storage: Pick<Storage, "getItem"> = browserStorage,
+): DashboardPageId {
   let id: string | null = null;
   try {
     id = storage.getItem("wf-team");
   } catch {}
-  return id &&
-    (id === "all" ||
-      id === "march-madness" ||
-      teams.some((team) => team.id === id))
-    ? id
-    : "wolves";
+  return isDashboardPageId(id) ? id : TEAM_IDS.WOLVES;
 }

@@ -39,7 +39,7 @@ function load(file) {
 }
 
 const { parseDgptSchedule } = load(path.resolve("lib/feeds/dgpt.ts"));
-const { eventLifecycle, eventIsToday } = load(
+const { eventLifecycle, eventIsToday, gameDay, eventDateLabel } = load(
   path.resolve("lib/games/event-time.ts"),
 );
 const { calendarFile, googleCalendarUrl } = load(
@@ -78,6 +78,41 @@ assert.equal(
 assert.equal(
   eventLifecycle(power, new Date("2026-10-19T05:00:00Z")).state,
   "post",
+);
+const localDayEvent = {
+  ...power,
+  dateOnly: false,
+  date: "2026-10-17T04:30:00Z",
+  endDate: "2026-10-17T04:30:00Z",
+};
+assert.equal(
+  eventIsToday(localDayEvent, new Date("2026-10-17T06:30:00Z")),
+  false,
+  "default event day remains Chicago time",
+);
+assert.equal(
+  eventIsToday(
+    localDayEvent,
+    new Date("2026-10-17T06:30:00Z"),
+    "America/Los_Angeles",
+  ),
+  true,
+  "event day can follow the visitor's local timezone",
+);
+const allDayEvent = {
+  ...localDayEvent,
+  dateOnly: true,
+  date: "2026-10-17T00:00:00-04:00",
+  endDate: "2026-10-18T00:00:00-04:00",
+};
+assert.equal(
+  gameDay(allDayEvent, allDayEvent.date, "America/Los_Angeles"),
+  "2026-10-17",
+  "all-day events keep their published calendar date",
+);
+assert.equal(
+  eventDateLabel(allDayEvent, "America/Los_Angeles"),
+  "Sat, Oct 17 – Sun, Oct 18",
 );
 assert.ok(discEvents.some((g) => eventLifecycle(g, now).state === "pre"));
 const ics = calendarFile(power, now);

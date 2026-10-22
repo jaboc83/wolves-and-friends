@@ -5,6 +5,8 @@ import type { MarchData } from "../lib/games/march-madness";
 import { espnTeamLogoUrl } from "../lib/games/march-madness";
 import BracketConnectors from "./bracket-connectors";
 import Image from "next/image";
+import { useLocalTimeZone } from "../hooks/use-local-time-zone";
+import { formatInTimeZone, timeZoneLabel } from "../lib/browser/local-time";
 export default function MarchMadness({
   revealResults,
   onToggleResults,
@@ -12,6 +14,7 @@ export default function MarchMadness({
   revealResults: boolean;
   onToggleResults: () => void;
 }) {
+  const timeZone = useLocalTimeZone();
   const [data, setData] = useState<MarchData>(initial as MarchData);
   const [region, setRegion] = useState("All regions");
   useEffect(() => {
@@ -139,15 +142,15 @@ export default function MarchMadness({
                       {games.map((g) => (
                         <article className="march-game" key={g.id}>
                           <p className="march-date">
-                            {new Date(g.date).toLocaleString("en-US", {
-                              timeZone: "America/Chicago",
+                            {formatInTimeZone(g.date, timeZone, {
                               month: "short",
                               day: "numeric",
                               ...(g.completed
                                 ? {}
                                 : { hour: "numeric", minute: "2-digit" }),
                             })}
-                            {!g.completed && " CT"}
+                            {!g.completed &&
+                              " " + timeZoneLabel(timeZone, g.date)}
                           </p>
                           {g.teams.map((t, i) => (
                             <div
@@ -209,11 +212,8 @@ export default function MarchMadness({
           </section>
         ))}
       <p className="panel-note">
-        Results: ESPN · Last update:{" "}
-        {new Date(data.checked).toLocaleString("en-US", {
-          timeZone: "America/Chicago",
-        })}{" "}
-        CT
+        Results: ESPN · Last update: {formatInTimeZone(data.checked, timeZone)}{" "}
+        {timeZoneLabel(timeZone, data.checked)}
       </p>
     </section>
   );

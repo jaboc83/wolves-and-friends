@@ -1,6 +1,8 @@
 // Chooses sport-appropriate labels for games, tournaments, standings, and stats.
+import type { DashboardPageId } from "../dashboard/page-id";
+
 /** Presentation vocabulary only; feed field names remain unchanged. */
-export function sportTerms(team: string) {
+export function sportTerms(team: DashboardPageId) {
   const soccer = ["loons", "palace", "usmnt"].includes(team);
   const disc = team === "disc";
   const all = team === "all";

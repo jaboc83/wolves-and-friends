@@ -46,7 +46,7 @@ try {
   fs.symlinkSync(
     path.resolve("node_modules"),
     path.join(directory, "node_modules"),
-    "dir",
+    process.platform === "win32" ? "junction" : "dir",
   );
   let baselineBuildFailed = false;
   try {

@@ -32,6 +32,7 @@ import {
   mergeFallbackGames,
 } from "./official-schedules";
 import { teams } from "../teams/teams";
+import type { TeamId } from "../teams/teams";
 import {
   palaceCompetitions,
   scoreboardLeagues,
@@ -123,7 +124,7 @@ async function providerGet(url: string, signal?: AbortSignal) {
 }
 export async function collect(
   section: "news" | "schedules" | "all" = "all",
-  team?: string,
+  team?: TeamId,
 ): Promise<HubData> {
   const started = Date.now();
   const cached = sectionCache[team ? `${section}:${team}` : section] || null;
@@ -143,10 +144,10 @@ export async function collect(
     failed?: boolean;
   };
   const tasks: ProviderTask<Output>[] = [];
-  const taskTeams: string[][] = [];
+  const taskTeams: TeamId[][] = [];
   async function task(
     name: string,
-    ids: string[],
+    ids: TeamId[],
     f: (output: Output, signal: AbortSignal) => Promise<number>,
   ) {
     if (team && !ids.includes(team)) return;
@@ -846,7 +847,7 @@ export async function collect(
 }
 export function hubData(
   section: "news" | "schedules" | "all" = "all",
-  team?: string,
+  team?: TeamId,
 ) {
   const key = team ? `${section}:${team}` : section;
   const cached = sectionCache[key];

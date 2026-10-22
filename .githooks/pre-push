@@ -1,0 +1,43 @@
+#!/bin/sh
+set -eu
+
+root=$(git rev-parse --show-toplevel)
+cd "$root"
+
+push_sha=
+while read -r local_ref local_sha remote_ref remote_sha; do
+  case "$local_sha" in
+    0000000000000000000000000000000000000000) continue ;;
+  esac
+  case "$local_ref" in
+    refs/heads/*)
+      if [ "$push_sha" ] && [ "$push_sha" != "$local_sha" ]; then
+        echo "Push one branch at a time so the correct PR can be validated." >&2
+        exit 1
+      fi
+      push_sha=$local_sha
+      ;;
+  esac
+done
+
+if [ -z "$push_sha" ]; then
+  echo "No branch update to validate."
+  exit 0
+fi
+
+head_sha=$(git rev-parse HEAD)
+if [ "$push_sha" != "$head_sha" ]; then
+  echo "The pre-push check only validates the current HEAD; push the current branch tip." >&2
+  exit 1
+fi
+
+echo "Refreshing origin/main before checking PR mergeability..."
+git fetch origin refs/heads/main:refs/remotes/origin/main
+if ! git merge-tree --write-tree origin/main "$push_sha" >/dev/null; then
+  echo "This branch conflicts with origin/main. Resolve the conflicts before pushing." >&2
+  exit 1
+fi
+
+VALIDATION_BASE_SHA=$(git rev-parse origin/main)
+export VALIDATION_BASE_SHA
+pnpm run validate:pr
