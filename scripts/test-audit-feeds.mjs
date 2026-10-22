@@ -99,7 +99,7 @@ try {
     './teams': { teams: [{ id: 'wolves', short: 'Wolves', league: 'basketball/nba', espn: 'min', sport: 'NBA', pattern: 'timberwolves' }] },
     './competitions': { palaceCompetitions: {}, scoreboardLeagues: [], teamPlaysCompetition: () => false },
   };
-  globalThis.fetch = async (url) => ({ ok: true, json: async () => String(url).endsWith('/injuries') ? {
+  globalThis.fetch = async (url) => ({ ok: true, json: async () => String(url).includes('/injuries') ? {
     injuries: [{ displayName: 'Minnesota Timberwolves', injuries: [{ athlete: { displayName: 'Player' }, status: 'Out' }] }],
   } : { events: [{ id: '1', name: 'Fixture', date: new Date().toISOString(), competitions: [{ competitors: [{ team: { displayName: 'Minnesota Timberwolves' }, homeAway: 'home' }] }] }], season: { year: 2027 } }, text: async () => '' });
   const { hubData } = loader(feedMocks)('lib/feeds.ts');
