@@ -87,7 +87,6 @@ export default function GameCard({
   const result = outcome(g);
   const terms = sportTerms(g.team);
   const hasBadges = gameBadges(g).length > 0;
-  const summaryHasResult = today && compact && g.state === "post";
   const full = (
     <article className="game">
       {compact && (
@@ -102,100 +101,94 @@ export default function GameCard({
           Hide details ↑
         </button>
       )}
-      {!summaryHasResult && (
-        <>
-          <div className="game-top">
-            <div className="game-identity">
-              <img src={logo} alt="" width={36} height={36} />
-              <div className="game-identity-text">
-                <div className="game-title">
-                  <strong>
-                    {t.id === "disc" ? (
-                      t.name
-                    ) : (
-                      <a
-                        href={teamWikipediaUrl(t.id, undefined, true)}
-                        target="_blank"
-                        rel="noreferrer"
-                      >
-                        {t.name}
-                      </a>
-                    )}
-                  </strong>
-                  <Location team={g.team} name={t.name} league={g.league} own />
-                </div>
-                {!hasBadges && <span className="muted">{g.league}</span>}
-              </div>
-            </div>
-            <div className="game-meta">
-              <span className={g.state === "in" ? "live" : ""}>
-                {g.state === "post"
-                  ? "FINAL"
-                  : g.state === "in"
-                    ? g.eventOnly
-                      ? "IN PROGRESS"
-                      : "LIVE"
-                    : ct(g.date, {
-                        weekday: "short",
-                        month: "short",
-                        day: "numeric",
-                      })}
-              </span>
-              <GameBadges game={g} />
-            </div>
-          </div>
-          {g.eventOnly ? (
-            <div className="event-details">
-              <h3 className="event-name">{g.name}</h3>
-              <p>{eventDateLabel(g)}</p>
-              {g.state === "post" &&
-                (scoreVisible ? (
-                  g.eventResults?.length ? (
-                    g.eventResults.map((r) => (
-                      <p key={r.division}>
-                        <b>{r.division}:</b> {r.name} · {r.score}
-                        {r.margin && <small> · Won by {r.margin} strokes</small>}
-                      </p>
-                    ))
-                  ) : null
+      <div className="game-top">
+        <div className="game-identity">
+          <img src={logo} alt="" width={36} height={36} />
+          <div className="game-identity-text">
+            <div className="game-title">
+              <strong>
+                {t.id === "disc" ? (
+                  t.name
                 ) : (
-                  <p>Results hidden</p>
-                ))}
-            </div>
-          ) : (
-            g.competitors.map((p) => (
-              <div
-                className={
-                  "competitor " + (p.winner && !hidden ? "winner" : "")
-                }
-                key={p.name}
-              >
-                <span>
                   <a
-                    href={teamWikipediaUrl(t.id, p.name, p === club)}
+                    href={teamWikipediaUrl(t.id, undefined, true)}
                     target="_blank"
                     rel="noreferrer"
                   >
-                    {p.name}
+                    {t.name}
                   </a>
-                  <Location
-                    team={g.team}
-                    name={p.name}
-                    league={g.league}
-                    own={p === club}
-                  />
-                  {p.record && (!hidden || g.state === "pre") && (
-                    <span className="team-record"> ({p.record})</span>
-                  )}
-                  <small>{p.homeAway === "home" ? "HOME" : "AWAY"}</small>
-                </span>
-                {g.state !== "pre" && (
-                  <b>{hidden ? "••" : p.score || "Unavailable"}</b>
                 )}
-              </div>
-            ))
-          )}
-        </>
+              </strong>
+              <Location team={g.team} name={t.name} league={g.league} own />
+            </div>
+            {!hasBadges && <span className="muted">{g.league}</span>}
+          </div>
+        </div>
+        <div className="game-meta">
+          <span className={g.state === "in" ? "live" : ""}>
+            {g.state === "post"
+              ? "FINAL"
+              : g.state === "in"
+                ? g.eventOnly
+                  ? "IN PROGRESS"
+                  : "LIVE"
+                : ct(g.date, {
+                    weekday: "short",
+                    month: "short",
+                    day: "numeric",
+                  })}
+          </span>
+          <GameBadges game={g} />
+        </div>
+      </div>
+      {g.eventOnly ? (
+        <div className="event-details">
+          <h3 className="event-name">{g.name}</h3>
+          <p>{eventDateLabel(g)}</p>
+          {g.state === "post" &&
+            (scoreVisible ? (
+              g.eventResults?.length ? (
+                g.eventResults.map((r) => (
+                  <p key={r.division}>
+                    <b>{r.division}:</b> {r.name} · {r.score}
+                    {r.margin && <small> · Won by {r.margin} strokes</small>}
+                  </p>
+                ))
+              ) : null
+            ) : (
+              <p>Results hidden</p>
+            ))}
+        </div>
+      ) : (
+        g.competitors.map((p) => (
+          <div
+            className={"competitor " + (p.winner && !hidden ? "winner" : "")}
+            key={p.name}
+          >
+            <span>
+              <a
+                href={teamWikipediaUrl(t.id, p.name, p === club)}
+                target="_blank"
+                rel="noreferrer"
+              >
+                {p.name}
+              </a>
+              <Location
+                team={g.team}
+                name={p.name}
+                league={g.league}
+                own={p === club}
+              />
+              {p.record && (!hidden || g.state === "pre") && (
+                <span className="team-record"> ({p.record})</span>
+              )}
+              <small>{p.homeAway === "home" ? "HOME" : "AWAY"}</small>
+            </span>
+            {g.state !== "pre" && (
+              <b>{hidden ? "••" : p.score || "Unavailable"}</b>
+            )}
+          </div>
+        ))
       )}
       {g.state !== "pre" && !expandReveals && (
         <button className="score-reveal" onClick={onReveal}>
@@ -244,17 +237,28 @@ export default function GameCard({
           {g.injuries?.length ? (
             <>
               <strong>Injury report</strong>
-              {Array.from(new Set(g.injuries.map((injury) => injury.team || "Team injury report"))).map((team) => (
+              {Array.from(
+                new Set(
+                  g.injuries.map(
+                    (injury) => injury.team || "Team injury report",
+                  ),
+                ),
+              ).map((team) => (
                 <div className="injury-team" key={team}>
                   <h4>{team}</h4>
                   <ul>
-                    {g.injuries!.filter((injury) => (injury.team || "Team injury report") === team).map((injury) => (
-                      <li key={`${team}-${injury.player}`}>
-                        <span>{injury.player}</span>
-                        <span>{injury.status}</span>
-                        {injury.detail && <small>{injury.detail}</small>}
-                      </li>
-                    ))}
+                    {g
+                      .injuries!.filter(
+                        (injury) =>
+                          (injury.team || "Team injury report") === team,
+                      )
+                      .map((injury) => (
+                        <li key={`${team}-${injury.player}`}>
+                          <span>{injury.player}</span>
+                          <span>{injury.status}</span>
+                          {injury.detail && <small>{injury.detail}</small>}
+                        </li>
+                      ))}
                   </ul>
                 </div>
               ))}
