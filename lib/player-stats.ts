@@ -92,12 +92,12 @@ function selectedValues(
       return [
         make("SV", "Saves", statByName(stats, ["saves"]) || statByLabel(stats, ["SV"])),
         make("CS", "Clean Sheets", statByName(stats, ["cleanSheet", "cleanSheets"]) || statByLabel(stats, ["CS"])),
-        make("GA", "Goals Against", statByName(stats, ["goalsAgainst", "totalGoalsAgainst"]) || statByLabel(stats, ["GA"])),
+        make("GA", "Goals Against", statByName(stats, ["goalsAgainst", "goalsConceded", "totalGoalsAgainst"]) || statByLabel(stats, ["GA"])),
       ].filter((stat) => stat.value.trim() !== "");
     }
     return [
       make("G", "Goals", statByName(stats, ["totalGoals", "goals"]) || statByLabel(stats, ["G"])),
-      make("A", "Assists", statByName(stats, ["assists"]) || statByLabel(stats, ["A"])),
+      make("A", "Assists", statByName(stats, ["assists", "goalAssists"]) || statByLabel(stats, ["A"])),
       make("SH", "Shots", statByName(stats, ["shots", "totalShots"]) || statByLabel(stats, ["SH"])),
       make("SOG", "Shots on Goal", statByName(stats, ["shotsOnGoal", "shotsOnTarget"]) || statByLabel(stats, ["SOG"])),
       make("FS", "Fouls Suffered", statByName(stats, ["foulsSuffered"]) || statByLabel(stats, ["FS", "FA"])),
