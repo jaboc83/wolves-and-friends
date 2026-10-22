@@ -434,48 +434,19 @@ export default function TeamInsights({
                           </caption>
                           <thead>
                             <tr>
-                              <th scope="col">
-                                <button
-                                  type="button"
-                                  className="table-sort-button"
-                                  onClick={() => toggleRosterSort("Player")}
-                                  aria-sort={
-                                    rosterSort.column === "Player"
-                                      ? rosterSort.direction === "asc"
-                                        ? "ascending"
-                                        : "descending"
-                                      : "none"
-                                  }
-                                >
-                                  Player{" "}
-                                  {rosterSort.column === "Player"
-                                    ? rosterSort.direction === "asc"
-                                      ? "↑"
-                                      : "↓"
-                                      : "↕"}
-                                </button>
+                              <th
+                                scope="col"
+                                onClick={() => toggleRosterSort("Player")}
+                              >
+                                Player
                               </th>
                               {statsTable.columns.map((column) => (
-                                <th scope="col" key={column}>
-                                  <button
-                                    type="button"
-                                    className="table-sort-button"
-                                    onClick={() => toggleRosterSort(column)}
-                                    aria-sort={
-                                      rosterSort.column === column
-                                        ? rosterSort.direction === "asc"
-                                          ? "ascending"
-                                          : "descending"
-                                        : "none"
-                                    }
-                                  >
-                                    {column}{" "}
-                                    {rosterSort.column === column
-                                      ? rosterSort.direction === "asc"
-                                        ? "↑"
-                                        : "↓"
-                                      : "↕"}
-                                  </button>
+                                <th
+                                  scope="col"
+                                  key={column}
+                                  onClick={() => toggleRosterSort(column)}
+                                >
+                                  {column}
                                 </th>
                               ))}
                             </tr>
