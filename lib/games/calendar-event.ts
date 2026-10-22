@@ -1,4 +1,4 @@
-import type { Game } from "./feeds";
+import type { Game } from "../feeds";
 import { eventDay } from "./event-time";
 const date = (s: string) => eventDay(s).replace(/-/g, "");
 const utc = (s: string) =>

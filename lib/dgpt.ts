@@ -1,5 +1,5 @@
 import type { Game } from "./feeds";
-import { eventLifecycle } from "./event-time";
+import { eventLifecycle } from "./games/event-time";
 const clean = (s: string) =>
   s
     .replace(/<script\b[^>]*>[\s\S]*?<\/script>/gi, "")

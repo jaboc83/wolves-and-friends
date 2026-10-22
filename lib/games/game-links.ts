@@ -1,4 +1,4 @@
-import type { Game } from "./feeds";
+import type { Game } from "../feeds";
 // Prefer the event's actual scoreboard; never send Powerball results to its overview.
 export function tournamentScoresUrl(g: Game) {
   if (

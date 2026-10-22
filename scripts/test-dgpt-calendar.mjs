@@ -38,12 +38,12 @@ function load(file) {
 
 const { parseDgptSchedule } = load(path.resolve("lib/dgpt.ts"));
 const { eventLifecycle, eventIsToday } = load(
-  path.resolve("lib/event-time.ts"),
+  path.resolve("lib/games/event-time.ts"),
 );
 const { calendarFile, googleCalendarUrl } = load(
-  path.resolve("lib/calendar-event.ts"),
+  path.resolve("lib/games/calendar-event.ts"),
 );
-const { discEvents } = load(path.resolve("lib/event-seed.ts"));
+const { discEvents } = load(path.resolve("lib/games/event-seed.ts"));
 const now = new Date("2026-10-19T19:00:00Z");
 const html = `<h3><a href="https://www.dgpt.com/event/2026-powerball-cup/">2026 Powerball Cup</a></h3><p>October 15th - 18th<br>Lynchburg, VA</p><p>2025 Champions: FPO: Prior Winner | -19</p><h3>2024 Champions</h3><h3><a href="/event/2026-test-open/">2026 Test Open</a></h3><p>July 30th - August 2nd<br>Peoria, IL</p><p>2026 Champions: FPO: Test Player | -21 MPO: Other Player | -28</p><a>Watch Full Coverage</a><h3><a href="https://evil.example/event/2026-bad/">2026 Bad</a></h3><p>October 15th - 18th</p>`;
 const parsed = parseDgptSchedule(html, now);

@@ -1,6 +1,6 @@
 import type { Game, HubData } from "./feeds";
-import { discEvents } from "./event-seed";
-import { eventLifecycle, eventIsToday } from "./event-time";
+import { discEvents } from "./games/event-seed";
+import { eventLifecycle, eventIsToday } from "./games/event-time";
 import { teams, teamPriority } from "./teams/teams";
 import { validAuthorStory } from "./byline-status";
 import { authorStories } from "./author-stories";

@@ -64,7 +64,7 @@ try {
   globalThis.fetch = originalFetch;
 }
 
-const helper = fs.readFileSync("lib/march-madness.ts", "utf8");
+const helper = fs.readFileSync("lib/games/march-madness.ts", "utf8");
 assert.match(helper, /\/api\/team-logo\?league=/);
 const calendar = fs.readFileSync("components/match-calendar.tsx", "utf8");
 assert.match(calendar, /<AddToCalendar game=\{g\} compact \/>/);

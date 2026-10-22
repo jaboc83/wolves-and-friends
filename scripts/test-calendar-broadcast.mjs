@@ -33,7 +33,7 @@ function load(file) {
 }
 
 const { googleCalendarUrl, calendarFile } = load(
-  path.resolve("lib/calendar-event.ts"),
+  path.resolve("lib/games/calendar-event.ts"),
 );
 const game = {
   id: "broadcast-test",

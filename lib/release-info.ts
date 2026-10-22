@@ -1,1 +1,1 @@
-export const releaseMarker = "3ef4c06";
+export const releaseMarker = "5936430";

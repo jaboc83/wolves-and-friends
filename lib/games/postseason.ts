@@ -128,9 +128,7 @@ export function parsePostseason(
       )
     )
       continue;
-    const note = (c.notes || [])
-      .map((n) => n.headline || "")
-      .find(Boolean);
+    const note = (c.notes || []).map((n) => n.headline || "").find(Boolean);
     const round =
       note?.replace(/\s*[-–·]\s*Game\s*\d+.*$/i, "").trim() ||
       "Postseason matchups";

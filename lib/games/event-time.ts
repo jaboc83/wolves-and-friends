@@ -1,4 +1,4 @@
-import type { Game } from "./feeds";
+import type { Game } from "../feeds";
 export const eventDay = (value: string | Date) =>
   new Intl.DateTimeFormat("en-CA", {
     timeZone: "America/Chicago",

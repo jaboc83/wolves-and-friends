@@ -9,7 +9,7 @@ import {
   createRosterStatsTable,
   rosterStatValue,
 } from "../lib/roster-stats-table";
-import { espnTeamLogoUrl } from "../lib/march-madness";
+import { espnTeamLogoUrl } from "../lib/games/march-madness";
 import BracketConnectors from "./bracket-connectors";
 import Image from "next/image";
 type RosterPlayer = NonNullable<

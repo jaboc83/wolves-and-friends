@@ -34,9 +34,11 @@ function load(file) {
   return loadedModule.exports;
 }
 const { parseMarchMadness, marchRound } = load(
-  path.resolve("lib/march-madness.ts"),
+  path.resolve("lib/games/march-madness.ts"),
 );
-const { marchMadnessYear } = load(path.resolve("lib/march-madness-config.ts"));
+const { marchMadnessYear } = load(
+  path.resolve("lib/games/march-madness-config.ts"),
+);
 const snapshot = load(path.resolve("lib/march-madness-initial.json"));
 assert.equal(snapshot.year, marchMadnessYear);
 if (snapshot.year === 2026) {

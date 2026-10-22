@@ -1,9 +1,9 @@
 "use client";
 import AddToCalendar from "./add-to-calendar";
-import { injuryReportUrl, tournamentScoresUrl } from "../lib/game-links";
-import { eventDateLabel } from "../lib/event-time";
+import { injuryReportUrl, tournamentScoresUrl } from "../lib/games/game-links";
+import { eventDateLabel } from "../lib/games/event-time";
 import GameBadges from "./game-badges";
-import { gameBadges } from "../lib/game-badges";
+import { gameBadges } from "../lib/games/game-badges";
 import { useRef, useState } from "react";
 import type { Game } from "../lib/feeds";
 import Image from "next/image";

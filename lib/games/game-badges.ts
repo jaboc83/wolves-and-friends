@@ -1,4 +1,4 @@
-import type { Game } from "./feeds";
+import type { Game } from "../feeds";
 export type GameBadge = { label: string; tone: string };
 export function gameBadges(g: Game): GameBadge[] {
   const context = [g.league, g.competitionNote, g.eventOnly ? g.name : ""]

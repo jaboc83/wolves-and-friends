@@ -37,7 +37,7 @@ const { decorateTable, parseStandings, parseNHLStandings } = load(
   path.resolve("lib/team-info.ts"),
 );
 const { postseasonWindow, parsePostseason, fetchPostseason } = load(
-  path.resolve("lib/postseason.ts"),
+  path.resolve("lib/games/postseason.ts"),
 );
 const base = {
   name: "Western Conference",

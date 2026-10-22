@@ -19,9 +19,9 @@ const oddsGate = new Promise((resolve) => {
 let oddsCalls = 0;
 const mocks = {
   "./scoreboard": { fetchScoreboard: async () => ({ events: [] }) },
-  "./event-seed": { discEvents: [] },
+  "./games/event-seed": { discEvents: [] },
   "./dgpt": { parseDgptSchedule: () => [] },
-  "./event-time": { eventLifecycle: (g) => g },
+  "./games/event-time": { eventLifecycle: (g) => g },
   "./bylines": { verifyAuthorFeed: async () => {} },
   "./club-news": {
     parseZalgirisNews: () => [],

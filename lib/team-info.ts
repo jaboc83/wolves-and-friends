@@ -1,7 +1,7 @@
 import { decorateTable, tableSeasonType } from "./standings";
 export { decorateTable, tableSeasonType } from "./standings";
 import { teams } from "./teams/teams";
-import { fetchPostseason, type Postseason } from "./postseason";
+import { fetchPostseason, type Postseason } from "./games/postseason";
 import { rosterDetails, type RosterDetails } from "./roster-details";
 import {
   parseEuroLeagueStandings,

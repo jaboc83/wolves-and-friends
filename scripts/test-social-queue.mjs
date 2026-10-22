@@ -93,7 +93,7 @@ assert.deepEqual(
   ),
   ["today"],
 );
-const { gameBadges } = load(path.resolve("lib/game-badges.ts"));
+const { gameBadges } = load(path.resolve("lib/games/game-badges.ts"));
 assert.deepEqual(
   gameBadges({ team: "palace", league: "English Premier League" }),
   [{ label: "Premier", tone: "premier" }],

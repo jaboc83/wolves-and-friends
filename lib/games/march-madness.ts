@@ -68,8 +68,7 @@ export function parseMarchMadness(
   for (const event of events) {
     const e = providerObject(event);
     const season = providerObject(e.season);
-    if (Number(season.year) !== year || Number(season.type) !== 3)
-      continue;
+    if (Number(season.year) !== year || Number(season.type) !== 3) continue;
     const c = providerObject(providerArray(e.competitions)[0]);
     const note = providerArray(c.notes)
       .map((value) => providerObject(value).headline)
@@ -99,10 +98,7 @@ export function parseMarchMadness(
             team.shortDisplayName) ||
           (typeof team.displayName === "string" && team.displayName) ||
           "To be announced",
-        logo: espnTeamLogoUrl(
-          "basketball/mens-college-basketball",
-          teamId,
-        ),
+        logo: espnTeamLogoUrl("basketball/mens-college-basketball", teamId),
         seed: Number(curatedRank.current) || undefined,
         score:
           statusType.state !== "pre" && p.score !== undefined
@@ -125,9 +121,7 @@ export function parseMarchMadness(
     const region =
       note.match(/\b(East|West|South|Midwest) Region\b/i)?.[1] || "Final Four";
     const links = providerArray(e.links).map(providerObject);
-    const boxLink = links.find((link) =>
-      linkHasRelation(link.rel, "boxscore"),
-    );
+    const boxLink = links.find((link) => linkHasRelation(link.rel, "boxscore"));
     const summaryLink = links.find((link) =>
       linkHasRelation(link.rel, "summary"),
     );

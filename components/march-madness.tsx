@@ -1,8 +1,8 @@
 "use client";
 import { useEffect, useState } from "react";
 import initial from "../lib/march-madness-initial.json";
-import type { MarchData } from "../lib/march-madness";
-import { espnTeamLogoUrl } from "../lib/march-madness";
+import type { MarchData } from "../lib/games/march-madness";
+import { espnTeamLogoUrl } from "../lib/games/march-madness";
 import BracketConnectors from "./bracket-connectors";
 import Image from "next/image";
 export default function MarchMadness({
