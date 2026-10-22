@@ -283,11 +283,39 @@ export async function collect(
           await get("https://site.api.espn.com/apis/site/v2/sports/basketball/nba/injuries?region=us&lang=en")
         ).json()) as any;
       } catch {
-        const schedule = (await (
-          await get("https://site.api.espn.com/apis/site/v2/sports/basketball/nba/teams/min/schedule")
-        ).json()) as any;
+        const dates = Array.from({ length: 7 }, (_, daysAgo) =>
+          new Intl.DateTimeFormat("en-CA", {
+            timeZone: "America/Chicago",
+            year: "numeric",
+            month: "2-digit",
+            day: "2-digit",
+          })
+            .format(new Date(Date.now() - daysAgo * 86400000))
+            .replace(/-/g, ""),
+        );
+        const scoreboards = await Promise.allSettled(
+          dates.map(async (date) =>
+            (await get(
+              "https://site.api.espn.com/apis/site/v2/sports/basketball/nba/scoreboard?dates=" +
+                date,
+            )).json(),
+          ),
+        );
+        const events = scoreboards
+          .flatMap((result) =>
+            result.status === "fulfilled" ? (result.value as any).events || [] : [],
+          )
+          .filter((event: any) =>
+            event.competitions?.some((competition: any) =>
+              competition.competitors?.some(
+                (competitor: any) =>
+                  competitor.team?.id === "16" ||
+                  competitor.team?.abbreviation === "MIN",
+              ),
+            ),
+          );
         const summaries = await Promise.allSettled(
-          (schedule.events || []).slice(0, 5).map(async (event: any) =>
+          events.slice(0, 3).map(async (event: any) =>
             (await get(
               "https://site.api.espn.com/apis/site/v2/sports/basketball/nba/summary?event=" +
                 encodeURIComponent(event.id),
@@ -296,7 +324,7 @@ export async function collect(
         );
         json = {
           injuries: summaries.flatMap((result) =>
-            result.status === "fulfilled" ? result.value.injuries || [] : [],
+            result.status === "fulfilled" ? (result.value as any).injuries || [] : [],
           ),
         };
       }
