@@ -52,7 +52,11 @@ type ESPNEvent = {
   competitions?: { competitors?: ESPNCompetitor[] }[];
 };
 type ESPNInjury = {
-  athlete?: { displayName?: string; fullName?: string };
+  athlete?: {
+    displayName?: string;
+    fullName?: string;
+    team?: { displayName?: string; name?: string };
+  };
   status?: string;
   type?: string;
   details?: { detail?: string; type?: string };
@@ -483,7 +487,12 @@ export async function collect(
               item.details?.type ||
               item.longComment ||
               undefined,
-            team: item.team?.displayName || item.team?.name || undefined,
+            team:
+              item.team?.displayName ||
+              item.team?.name ||
+              item.athlete?.team?.displayName ||
+              item.athlete?.team?.name ||
+              undefined,
           }))
           .filter((item) => item.player && item.team);
         output.injuries = injuries;
@@ -711,7 +720,7 @@ export async function collect(
   // so slow upstreams cannot consume the deadline before later feeds start.
   const outcomes = await runProviderTasks(
     tasks,
-    section === "news" && team ? { concurrency: tasks.length } : {},
+    section === "news" ? { concurrency: tasks.length } : {},
   );
   for (const [index, outcome] of outcomes.entries()) {
     const output = outcome.value;

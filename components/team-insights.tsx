@@ -231,8 +231,8 @@ export default function TeamInsights({
           >
             <h3>Europa League · 2026/27</h3>
             <p className="panel-note">
-              Follow Palace&apos;s league-phase table now and the official bracket
-              once knockout rounds and matchups are published.
+              Follow Palace&apos;s league-phase table now and the official
+              bracket once knockout rounds and matchups are published.
             </p>
             <p className="panel-note">
               <a
@@ -557,11 +557,14 @@ export default function TeamInsights({
                             <tr>
                               <th
                                 scope="col"
-                                className={
+                                className={[
+                                  "roster-player-header",
                                   rosterSort.column === "Player"
                                     ? "sorted-column"
-                                    : undefined
-                                }
+                                    : "",
+                                ]
+                                  .filter(Boolean)
+                                  .join(" ")}
                                 onClick={() => toggleRosterSort("Player")}
                                 onKeyDown={(event) =>
                                   handleRosterSortKeyDown(event, "Player")

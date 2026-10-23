@@ -36,6 +36,16 @@ assert.equal(started, 9);
 assert.equal(results[8].value, "last feed completed");
 assert.ok(results.slice(0, 8).every((result) => result.error && !result.value));
 
+const defaultTasks = Array.from({ length: 9 }, (_, i) => ({
+  name: String(i),
+  run: async () => "completed",
+}));
+const defaultResults = await runProviderTasks(defaultTasks, {
+  concurrency: defaultTasks.length,
+  timeoutMs: 100,
+});
+assert.ok(defaultResults.every((result) => result.value === "completed"));
+
 const { authorSources } = await loadModule("../lib/feeds/news-sources.ts");
 const { newsSources } = await loadModule("../lib/feeds/news-sources.ts");
 assert.equal(
