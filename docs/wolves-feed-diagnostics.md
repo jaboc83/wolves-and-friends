@@ -1,5 +1,21 @@
 # Wolves headline investigation, October 22, 2026
 
+The flaky Howls and Growls YouTube RSS provider has been removed from headline
+collection. The team's clickable YouTube source link remains available in the
+team catalog; removing the feed does not remove that external link.
+
+Jon Krawczynski's Google News query is scoped to `site:nytimes.com/athletic` and
+the collector requires New York Times results mentioning the Timberwolves or
+Wolves. A live check returned five relevant stories, excluding unrelated search
+results from other publishers.
+
+The same review narrowed Alec Lewis to `site:nytimes.com/athletic` and applied
+the existing Vikings/New York Times filter. Britt Robson's direct MinnPost feed
+was reachable but also contained unrelated Twin Cities arts stories, so its
+collector now retains only Timberwolves-relevant headlines. Jess Myers, Will
+Ragatz, Ben Goessling, and Michael Russo already had effective publisher/team
+filters.
+
 The supplied export repeatedly records Yardbarker and ESPN HTTP 403 responses,
 Howls and Growls YouTube HTTP 404 responses, official NBA request failures, and
 Google News author search timeouts. These are distinct upstream failures.
