@@ -88,6 +88,9 @@ function selectedValues(
   league: string,
   position: string,
 ): PlayerStats["values"] {
+  const games =
+    statByName(stats, ["gamesPlayed"]) || statByLabel(stats, ["GP"]);
+  if (games && Number(games.value ?? games.displayValue) === 0) return [];
   const basketball = league.startsWith("basketball/");
   const hockey = league === "hockey/nhl";
   const soccer = league.startsWith("soccer/");
@@ -280,15 +283,17 @@ export function parsePlayerStats(
     const seasonRows = teamRows.filter(
       (candidate) => candidate.season?.year !== undefined,
     );
-    const eligibleRows =
-      targetSeasonYear && seasonRows.length
-        ? seasonRows.filter(
-            (candidate) => Number(candidate.season?.year) === targetSeasonYear,
-          )
-        : teamRows;
+    const eligibleRows = targetSeasonYear
+      ? seasonRows.filter(
+          (candidate) => Number(candidate.season?.year) === targetSeasonYear,
+        )
+      : teamRows;
     const row = [...eligibleRows].sort(
       (a, b) => Number(b.season?.year || 0) - Number(a.season?.year || 0),
     )[0];
+    // A season table is authoritative. Never fall through to career totals
+    // or a seasonless summary when this player has no requested-season row.
+    if (targetSeasonYear && !row) return;
     if (row) {
       const raw = (commonCategory.labels || []).map(
         (label: string, index: number) => ({
@@ -298,6 +303,9 @@ export function parsePlayerStats(
           displayName: commonCategory.displayNames?.[index] || label,
         }),
       );
+      const games =
+        statByName(raw, ["gamesPlayed"]) || statByLabel(raw, ["GP"]);
+      if (games && Number(games.displayValue) === 0) return;
       let values = league
         ? selectedValues(raw, league, position)
         : raw.slice(0, 6).map((stat: Stat) => ({
@@ -343,14 +351,15 @@ export function parsePlayerStats(
     ? data.splits
     : data.splits?.categories || [];
   const coreStats = coreCategories.flatMap((c) => c.stats || []);
-  const coreSeason = seasonYear(
-    data.season?.year || data.season?.displayName,
-  );
+  const coreSeason = seasonYear(data.season?.year || data.season?.displayName);
   if (
     coreStats.length &&
-    (!targetSeasonYear || !coreSeason || coreSeason === targetSeasonYear) &&
+    (!targetSeasonYear || coreSeason === targetSeasonYear) &&
     !/career|projected/i.test(data.season?.displayName || "")
   ) {
+    const games =
+      statByName(coreStats, ["gamesPlayed"]) || statByLabel(coreStats, ["GP"]);
+    if (games && Number(games.value ?? games.displayValue) === 0) return;
     const selected = league
       ? selectedValues(coreStats, league, position)
       : undefined;
@@ -424,8 +433,15 @@ export function parsePlayerStats(
       /^regular season$/i.test(split.displayName || ""),
     );
   const regularStats = regular?.stats;
+  const overviewSeason = seasonYear(
+    data.season?.year ||
+      data.season?.displayName ||
+      overview?.displayName ||
+      regular?.displayName,
+  );
   if (
     overview &&
+    (!targetSeasonYear || overviewSeason === targetSeasonYear) &&
     regular &&
     Array.isArray(overview.labels) &&
     Array.isArray(regularStats)
@@ -481,7 +497,15 @@ export function parsePlayerStats(
   const teamSeasons = seasons.filter(
     (row) => rosterTeamId && String(row.teamId || "") === rosterTeamId,
   );
-  const seasonRow = [...(teamSeasons.length ? teamSeasons : seasons)].sort(
+  const seasonCandidates = teamSeasons.length ? teamSeasons : seasons;
+  const eligibleSeasons = targetSeasonYear
+    ? seasonCandidates.filter(
+        (row) =>
+          seasonYear(row.season?.year || row.season?.displayName) ===
+          targetSeasonYear,
+      )
+    : seasonCandidates;
+  const seasonRow = [...eligibleSeasons].sort(
     (a, b) => Number(b.season?.year || 0) - Number(a.season?.year || 0),
   )[0];
 
@@ -491,7 +515,19 @@ export function parsePlayerStats(
     data.athlete?.statistics ||
     (Array.isArray(data.statistics) ? data.statistics : undefined) ||
     overview?.statistics;
-  if (summaryStatistics?.length) {
+  // Generic summaries and aggregate totals carry no reliable season row.
+  // Only accept summaries explicitly tied to the season being requested.
+  const summarySeason = seasonYear(
+    data.season?.year || data.season?.displayName || summary?.displayName,
+  );
+  if (
+    summaryStatistics?.length &&
+    (!targetSeasonYear || summarySeason === targetSeasonYear)
+  ) {
+    const games =
+      statByName(summaryStatistics, ["gamesPlayed"]) ||
+      statByLabel(summaryStatistics, ["GP"]);
+    if (games && Number(games.value ?? games.displayValue) === 0) return;
     values = summaryStatistics
       .filter(
         (s) =>
@@ -524,7 +560,7 @@ export function parsePlayerStats(
       }))
       .filter((s: { value: string }) => s.value.trim() !== "")
       .slice(0, 6);
-  } else if (category?.totals?.length) {
+  } else if (!targetSeasonYear && category?.totals?.length) {
     const totals = category.totals;
     values = (category.labels || [])
       .map((label: string, index: number) => ({
