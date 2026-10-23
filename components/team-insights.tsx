@@ -484,10 +484,6 @@ export default function TeamInsights({
                   ESPN season stats are temporarily unavailable.
                 </p>
               )}
-              <p className="panel-note">
-                Players grouped by position. Links open player bios and source
-                profiles when available.
-              </p>
               {rosterGroups.map((group, i) => {
                 const statsTable = createRosterStatsTable(
                   group.players,
@@ -748,7 +744,7 @@ export default function TeamInsights({
                 </a>{" "}
                 {id === "frost"
                   ? "· Preliminary names and positions from the official training-camp announcement; final roster may change."
-                  : "· Age and season stats from ESPN. Positions sharing the same stat columns are combined; unavailable values are shown as —."}
+                  : ""}
               </p>
             </>
           ) : (
