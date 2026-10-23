@@ -6,6 +6,12 @@
       "type": "chrome",
       "request": "launch",
       "runtimeExecutable": "C:/Program Files/BraveSoftware/Brave-Browser/Application/brave.exe",
+      "port": 9231,
+      "runtimeArgs": [
+        "--remote-debugging-address=127.0.0.1",
+        "--remote-debugging-port=9231",
+        "http://127.0.0.1:5173"
+      ],
       "url": "http://127.0.0.1:5173",
       "webRoot": "${workspaceFolder}",
       "preLaunchTask": "Wolves: dev",
@@ -16,6 +22,7 @@
       "type": "msedge",
       "request": "launch",
       "runtimeExecutable": "C:/Program Files (x86)/Microsoft/Edge/Application/msedge.exe",
+      "port": 9230,
       "runtimeArgs": [
         "--remote-debugging-address=127.0.0.1",
         "--remote-debugging-port=9230",
