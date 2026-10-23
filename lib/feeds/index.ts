@@ -150,7 +150,7 @@ export async function collect(
     games: Game[];
     health: Health[];
     authors: AuthorFeed[];
-    injuries?: Game["injuries"];
+    injuries?: Game["injuries"];\n    injuryTeam?: TeamId;
     count: number;
     failed?: boolean;
     error?: string;
@@ -416,13 +416,27 @@ export async function collect(
           "ESPN injury report · " + teamName,
           [source.team],
           async (output, signal) => {
-            const response = await providerGet(
+            const injuryUrls = [
+              "https://site.api.espn.com/apis/site/v2/sports/" +
+                source.sport +
+                "/injuries?region=us&lang=en&team=" +
+                source.espnId,
               "https://site.web.api.espn.com/apis/site/v2/sports/" +
                 source.sport +
                 "/injuries?region=us&lang=en&team=" +
                 source.espnId,
-              signal,
-            );
+            ];
+            let response: Response | null = null;
+            let lastError: unknown;
+            for (const url of injuryUrls) {
+              try {
+                response = await providerGet(url, signal);
+                break;
+              } catch (error) {
+                lastError = error;
+              }
+            }
+            if (!response) throw lastError || new FeedError("request-failed");
             const json = (await response.json()) as ESPNResponse;
             if (!json.injuries?.length) throw new FeedError("empty-injuries");
             const injuries = (json.injuries || [])
