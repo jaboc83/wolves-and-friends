@@ -72,9 +72,10 @@ export const authorSources = [
   },
   {
     name: "Britt Robson",
-    label: "Google News index · bylines unverified",
+    label: "MinnPost author feed",
     url: "https://www.minnpost.com/author/britt-robson/",
-    feed: "https://news.google.com/rss/search?q=%22Britt+Robson%22+site%3Aminnpost.com+when%3A14d&hl=en-US&gl=US&ceid=US%3Aen",
+    feed: "https://www.minnpost.com/author/britt-robson/feed/",
+    publisherAuthorFeed: true,
   },
   {
     name: "Michael Russo",
