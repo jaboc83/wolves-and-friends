@@ -39,11 +39,6 @@ export const newsSources: [string, string, TeamId[] | undefined][] = [
     "https://www.starsandstripesfc.com/rss/index.xml",
     ["usmnt"],
   ],
-  [
-    "Howls and Growls",
-    "https://www.youtube.com/feeds/videos.xml?channel_id=UCHQf4fxeaf1MHDz9fW2mhsw",
-    ["wolves"],
-  ],
 ];
 export const authorSources = [
   {
@@ -56,7 +51,7 @@ export const authorSources = [
     name: "Alec Lewis",
     label: "Google News index · bylines unverified",
     url: "https://www.nytimes.com/athletic/author/alec-lewis/",
-    feed: "https://news.google.com/rss/search?q=%22Alec%20Lewis%22%20site%3Anytimes.com%20when%3A14d&hl=en-US&gl=US&ceid=US%3Aen",
+    feed: "https://news.google.com/rss/search?q=%22Alec%20Lewis%22%20site%3Anytimes.com%2Fathletic%20when%3A14d&hl=en-US&gl=US&ceid=US%3Aen",
   },
   {
     name: "Will Ragatz",
@@ -87,6 +82,6 @@ export const authorSources = [
     name: "Jon Krawczynski",
     label: "Google News index · bylines unverified",
     url: "https://www.nytimes.com/athletic/author/jon-krawczynski/",
-    feed: "https://news.google.com/rss/search?q=%22Jon+Krawczynski%22+when%3A14d&hl=en-US&gl=US&ceid=US%3Aen",
+    feed: "https://news.google.com/rss/search?q=%22Jon+Krawczynski%22+site%3Anytimes.com%2Fathletic+when%3A14d&hl=en-US&gl=US&ceid=US%3Aen",
   },
 ];

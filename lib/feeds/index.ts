@@ -276,11 +276,10 @@ export async function collect(
                       / - The New York Times$/.test(s.title) ||
                       /timberwolves|wolves/i.test(s.title),
                   );
-                if (
-                  source.name === "Britt Robson" &&
-                  !source.publisherAuthorFeed
-                )
-                  parsed = parsed.filter((s) => / - MinnPost$/.test(s.title));
+                if (source.name === "Britt Robson")
+                  parsed = parsed.filter((s) =>
+                    /timberwolves|wolves|edwards|finch/i.test(s.title),
+                  );
                 if (
                   source.name === "Jess Myers" ||
                   source.name === "Michael Russo"
@@ -303,6 +302,12 @@ export async function collect(
                     (s) =>
                       /vikings/i.test(s.title) &&
                       / - (?:The Minnesota )?Star Tribune$/.test(s.title),
+                  );
+                else if (source.name === "Jon Krawczynski")
+                  parsed = parsed.filter(
+                    (s) =>
+                      / - The New York Times$/.test(s.title) &&
+                      /timberwolves|wolves/i.test(s.title),
                   );
                 else
                   parsed = parsed.filter((s) =>

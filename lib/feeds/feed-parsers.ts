@@ -100,31 +100,38 @@ export function parseNbaTeamNews(
       .replace(/\\u0026/g, "&")
       .replace(/\\u002F/g, "/")
       .replace(/\\u0022/g, '"')
+      .replace(/\\"/g, '"')
       .replace(/&amp;/g, "&")
       .replace(/&#39;|&apos;/g, "'")
       .replace(/&quot;/g, '"');
   const stories: Story[] = [];
   const seen = new Set<string>();
   const patterns = [
+    // Current NBA pages embed article records as title/permalink/date JSON.
+    /"title"\s*:\s*"([^"]+)"[\s\S]{0,1800}?"permalink"\s*:\s*"(https?:\\?\/\\?\/www\.nba\.com\\?\/timberwolves\\?\/news\\?\/[^"\\]+)"[\s\S]{0,500}?"date"\s*:\s*"([^"]+)"/gi,
     /"url"\s*:\s*"(\/timberwolves\/news\/[^"]+)"[\s\S]{0,1200}?"(?:title|headline)"\s*:\s*"([^"]+)"/gi,
     /href=["'](\/timberwolves\/news\/[^"'#?]+)["'][^>]*>[\s\S]{0,300}?(?:<h[1-6][^>]*>)?([^<]{12,180})</gi,
   ];
   for (const pattern of patterns) {
     for (const match of html.matchAll(pattern)) {
-      const url = "https://www.nba.com" + decode(match[1]);
-      const title = text(decode(match[2]));
+      const currentFormat = pattern === patterns[0];
+      const url = currentFormat
+        ? decode(match[2])
+        : "https://www.nba.com" + decode(match[1]);
+      const title = text(decode(currentFormat ? match[1] : match[2]));
       if (!title || seen.has(url)) continue;
       seen.add(url);
       const context = html.slice(
         Math.max(0, (match.index || 0) - 800),
         (match.index || 0) + 1400,
       );
-      const published =
-        context.match(
-          /(?:datePublished|published_at|publishDate)\\?"?\s*:\s*\\?"([^"]+)/i,
-        )?.[1] ||
-        context.match(/datetime=["']([^"']+)["']/i)?.[1] ||
-        checked;
+      const published = currentFormat
+        ? decode(match[3])
+        : context.match(
+            /(?:datePublished|published_at|publishDate)\\?"?\s*:\s*\\?"([^"]+)/i,
+          )?.[1] ||
+          context.match(/datetime=["']([^"']+)["']/i)?.[1] ||
+          checked;
       stories.push({
         id: url,
         title,

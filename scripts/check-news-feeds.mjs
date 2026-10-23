@@ -37,9 +37,18 @@ assert.equal(results[8].value, "last feed completed");
 assert.ok(results.slice(0, 8).every((result) => result.error && !result.value));
 
 const { authorSources } = await loadModule("../lib/feeds/news-sources.ts");
+const { newsSources } = await loadModule("../lib/feeds/news-sources.ts");
+assert.equal(
+  newsSources.some(([name]) => name === "Howls and Growls"),
+  false,
+);
 const britt = authorSources.find((source) => source.name === "Britt Robson");
 assert.equal(britt.feed, "https://www.minnpost.com/author/britt-robson/feed/");
 assert.equal(britt.publisherAuthorFeed, true);
+const alec = authorSources.find((source) => source.name === "Alec Lewis");
+assert.match(alec.feed, /site%3Anytimes\.com%2Fathletic/);
+const jon = authorSources.find((source) => source.name === "Jon Krawczynski");
+assert.match(jon.feed, /site%3Anytimes\.com%2Fathletic/);
 const { verifyAuthorFeed } = await loadModule("../lib/feeds/bylines.ts");
 const originalFetch = globalThis.fetch;
 globalThis.fetch = () => {
