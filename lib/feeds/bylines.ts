@@ -75,6 +75,7 @@ export async function verifyAuthorFeed(
   author: AuthorFeed,
   signal?: AbortSignal,
 ) {
+  if (!author.items.some((item) => item.bylineVerified === undefined)) return;
   let links = new Map<string, string>();
   try {
     const r = await fetch(author.url, {
