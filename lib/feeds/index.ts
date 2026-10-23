@@ -100,7 +100,14 @@ async function providerGet(url: string, signal?: AbortSignal) {
           // A stable server identifier helps publishers allow-list the feed request
           // without forwarding any visitor/browser identifiers.
           "User-Agent":
-            "WolvesAndFriendsFeed/1.0 (+https://wolvesandfriends.moening.org)",
+            // These publishers reject the URL-bearing identifier with HTTP 403.
+            [
+              "www.yardbarker.com",
+              "site.api.espn.com",
+              "site.web.api.espn.com",
+            ].includes(new URL(url).hostname)
+              ? "WolvesAndFriendsFeed/1.0"
+              : "WolvesAndFriendsFeed/1.0 (+https://wolvesandfriends.moening.org)",
           Accept:
             "application/json, application/rss+xml, application/atom+xml, text/xml, text/html",
         },
@@ -142,6 +149,7 @@ export async function collect(
     injuries?: Game["injuries"];
     count: number;
     failed?: boolean;
+    error?: string;
   };
   const tasks: ProviderTask<Output>[] = [];
   const taskTeams: TeamId[][] = [];
@@ -268,7 +276,10 @@ export async function collect(
                       / - The New York Times$/.test(s.title) ||
                       /timberwolves|wolves/i.test(s.title),
                   );
-                if (source.name === "Britt Robson")
+                if (
+                  source.name === "Britt Robson" &&
+                  !source.publisherAuthorFeed
+                )
                   parsed = parsed.filter((s) => / - MinnPost$/.test(s.title));
                 if (
                   source.name === "Jess Myers" ||
@@ -299,16 +310,22 @@ export async function collect(
                   );
                 const author: AuthorFeed = {
                   ...source,
-                  items: parsed
-                    .slice(0, 4)
-                    .map(({ title, url, date }) => ({ title, url, date })),
+                  items: parsed.slice(0, 4).map(({ title, url, date }) => ({
+                    title,
+                    url,
+                    date,
+                    ...(source.publisherAuthorFeed
+                      ? { bylineVerified: true }
+                      : {}),
+                  })),
                   checked,
                   status: "ok",
                 };
                 await verifyAuthorFeed(author, signal);
                 authors.push(author);
-              } catch {
+              } catch (error) {
                 output.failed = true;
+                output.error = safeFeedError(error);
                 const old = (cached?.authors || initial.authors || []).find(
                   (a) => a.name === source.name,
                 );
@@ -685,7 +702,12 @@ export async function collect(
       ),
     );
   }
-  const outcomes = await runProviderTasks(tasks);
+  // A team news refresh is a small, bounded set. Start its providers together
+  // so slow upstreams cannot consume the deadline before later feeds start.
+  const outcomes = await runProviderTasks(
+    tasks,
+    section === "news" && team ? { concurrency: tasks.length } : {},
+  );
   for (const [index, outcome] of outcomes.entries()) {
     const output = outcome.value;
     health.push({
@@ -696,7 +718,7 @@ export async function collect(
       count: output?.count || 0,
       ...(output && !output.failed
         ? {}
-        : { error: safeFeedError(outcome.error) }),
+        : { error: output?.error || safeFeedError(outcome.error) }),
     });
     if (!output) continue;
     stories.push(...output.stories);
