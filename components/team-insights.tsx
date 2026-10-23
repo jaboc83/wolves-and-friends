@@ -399,11 +399,16 @@ export default function TeamInsights({
                     <td>{row.cells[0]}</td>
                     <th scope="row">
                       <a href={row.url} target="_blank" rel="noreferrer">
-                        {row.logo && (
+                        {(espnTeamLogoUrl(t?.league || "", row.id) ||
+                          row.logo) && (
                           <Image
                             unoptimized
                             className="power-ranking-logo"
-                            src={row.logo}
+                            src={
+                              espnTeamLogoUrl(t?.league || "", row.id) ||
+                              row.logo ||
+                              ""
+                            }
                             alt=""
                             width={22}
                             height={22}
