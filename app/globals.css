@@ -2984,6 +2984,9 @@ body:has(.score-choice[open]) {
   font-size: 10px;
   text-transform: uppercase;
 }
+.roster-stats-table thead .roster-player-header {
+  text-align: left;
+}
 .roster-stats-table tr > :first-child {
   position: sticky;
   left: 0;
