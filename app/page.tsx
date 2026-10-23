@@ -501,7 +501,6 @@ export default function Home() {
                       <div className="news-resources">
                         <section className="community-panel">
                           <h2>Fan communities</h2>
-                          <p>Permanent Reddit links</p>
                           {communities
                             .filter(
                               (c) => active === "all" || c.team === active,
@@ -688,11 +687,6 @@ export default function Home() {
                       {!loading && compactNews && (
                         <div className="news-more">
                           <p>
-                            {showOlder
-                              ? "Showing older headlines too."
-                              : active === "all"
-                                ? "Headlines from today."
-                                : "Headlines from the last week."}
                           </p>
                           {(olderCount > 0 || showOlder) && (
                             <button onClick={() => setShowOlder(!showOlder)}>
@@ -719,7 +713,6 @@ export default function Home() {
                   )}
                   <div className="rail-heading results">
                     <h2>Recent results</h2>
-                    <span>Latest available</span>
                   </div>
                   <button
                     type="button"

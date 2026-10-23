@@ -160,7 +160,7 @@ async function loadManifest() {
   return manifestRequest;
 }
 async function stats(entry: Entry) {
-  const cacheKey = "v7:" + entry.key + ":" + entry.teamId + ":" + entry.year;
+  const cacheKey = "v8:" + entry.key + ":" + entry.teamId + ":" + entry.year;
   const old = cache.get(cacheKey);
   if (old && old.expires > Date.now()) return old.stats;
   if (!inflight.has(cacheKey))

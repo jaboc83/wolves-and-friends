@@ -2996,7 +2996,7 @@ body:has(.score-choice[open]) {
 }
 .roster-stats-table .sorted-column {
   background: var(--raised, #f2f4ee);
-  box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--team-accent, #8aa747) 28%, transparent);
+  box-shadow: none;
 }
 .roster-stats-table thead .sorted-column {
   color: var(--ink, #192a3c);
