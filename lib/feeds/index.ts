@@ -142,7 +142,7 @@ export async function collect(
   const checked = new Date().toISOString();
   const stories: Story[] = [];
   const games: Game[] = [];
-  let wolvesInjuries: Game["injuries"];
+  const injuriesByTeam: Partial<Record<TeamId, Game["injuries"]>> = {};
   const health: Health[] = [];
   const authors: AuthorFeed[] = [];
   type Output = {
@@ -400,104 +400,64 @@ export async function collect(
     );
   }
   if (section !== "news") {
-    await task(
-      "ESPN injury report · Timberwolves",
-      ["wolves"],
-      async (output, signal) => {
-        const get = (url: string) => providerGet(url, signal);
-        let json: ESPNResponse;
-        try {
-          json = (await (
-            await get(
-              "https://site.web.api.espn.com/apis/site/v2/sports/basketball/nba/injuries?region=us&lang=en&team=16",
-            )
-          ).json()) as ESPNResponse;
-          if (!json.injuries?.length) throw new FeedError("empty-injuries");
-        } catch {
-          const dates = Array.from({ length: 7 }, (_, daysAgo) =>
-            new Intl.DateTimeFormat("en-CA", {
-              timeZone: "America/Chicago",
-              year: "numeric",
-              month: "2-digit",
-              day: "2-digit",
-            })
-              .format(new Date(Date.now() - daysAgo * 86400000))
-              .replace(/-/g, ""),
-          );
-          const scoreboards = await Promise.allSettled(
-            dates.map(
-              async (date) =>
-                (
-                  await get(
-                    "https://site.api.espn.com/apis/site/v2/sports/basketball/nba/scoreboard?dates=" +
-                      date,
-                  )
-                ).json() as Promise<ESPNResponse>,
-            ),
-          );
-          const events = scoreboards
-            .flatMap((result) =>
-              result.status === "fulfilled" ? result.value.events || [] : [],
-            )
-            .filter((event) =>
-              event.competitions?.some((competition) =>
-                competition.competitors?.some(
-                  (competitor) =>
-                    competitor.team?.id === "16" ||
-                    competitor.team?.abbreviation === "MIN",
-                ),
-              ),
+    const injurySources = [
+      { team: "wolves" as TeamId, sport: "basketball/nba", espnId: "16" },
+      { team: "wild" as TeamId, sport: "hockey/nhl", espnId: "30" },
+      { team: "vikings" as TeamId, sport: "football/nfl", espnId: "16" },
+      { team: "twins" as TeamId, sport: "baseball/mlb", espnId: "15" },
+      { team: "lynx" as TeamId, sport: "basketball/wnba", espnId: "16" },
+    ];
+    await Promise.all(
+      injurySources.map(async (source) => {
+        const teamName =
+          teams.find((candidate) => candidate.id === source.team)?.name ||
+          source.team;
+        await task(
+          "ESPN injury report · " + teamName,
+          [source.team],
+          async (output, signal) => {
+            const response = await providerGet(
+              "https://site.web.api.espn.com/apis/site/v2/sports/" +
+                source.sport +
+                "/injuries?region=us&lang=en&team=" +
+                source.espnId,
+              signal,
             );
-          const summaries = await Promise.allSettled(
-            events
-              .slice(0, 3)
-              .map(
-                async (event) =>
-                  (
-                    await get(
-                      "https://site.web.api.espn.com/apis/site/v2/sports/basketball/nba/summary?event=" +
-                        encodeURIComponent(event.id),
-                    )
-                  ).json() as Promise<ESPNResponse>,
-              ),
-          );
-          json = {
-            injuries: summaries.flatMap((result) =>
-              result.status === "fulfilled" ? result.value.injuries || [] : [],
-            ),
-          };
-        }
-        const injuries = (json.injuries || [])
-          .flatMap((group) =>
-            group.injuries
-              ? group.injuries.map((injury) => ({
-                  ...injury,
-                  team: group.team || { displayName: group.displayName },
-                }))
-              : [group],
-          )
-          .map((item) => ({
-            player:
-              item.athlete?.displayName ||
-              item.athlete?.fullName ||
-              "Unknown player",
-            status: item.status || item.type || "Unavailable",
-            detail:
-              item.details?.detail ||
-              item.details?.type ||
-              item.longComment ||
-              undefined,
-            team:
-              item.team?.displayName ||
-              item.team?.name ||
-              item.athlete?.team?.displayName ||
-              item.athlete?.team?.name ||
-              undefined,
-          }))
-          .filter((item) => item.player && item.team);
-        output.injuries = injuries;
-        return injuries.length;
-      },
+            const json = (await response.json()) as ESPNResponse;
+            if (!json.injuries?.length) throw new FeedError("empty-injuries");
+            const injuries = (json.injuries || [])
+              .flatMap((group) =>
+                group.injuries
+                  ? group.injuries.map((injury) => ({
+                      ...injury,
+                      team: group.team || { displayName: group.displayName },
+                    }))
+                  : [group],
+              )
+              .map((item) => ({
+                player:
+                  item.athlete?.displayName ||
+                  item.athlete?.fullName ||
+                  "Unknown player",
+                status: item.status || item.type || "Unavailable",
+                detail:
+                  item.details?.detail ||
+                  item.details?.type ||
+                  item.longComment ||
+                  undefined,
+                team:
+                  item.team?.displayName ||
+                  item.team?.name ||
+                  item.athlete?.team?.displayName ||
+                  item.athlete?.team?.name ||
+                  teamName,
+              }))
+              .filter((item) => item.player);
+            output.injuries = injuries;
+            return injuries.length;
+          },
+        );
+      }),
     );
     await Promise.all(
       teams
@@ -738,7 +698,10 @@ export async function collect(
     stories.push(...output.stories);
     authors.push(...output.authors);
     health.push(...output.health);
-    if (output.injuries) wolvesInjuries = output.injuries;
+    if (output.injuries) {
+      const injuryTeam = taskTeams[index]?.[0];
+      if (injuryTeam) injuriesByTeam[injuryTeam] = output.injuries;
+    }
     if (/^Official (Palace schedule|MNUFC calendar)/.test(outcome.name))
       mergeOfficial(games, output.games);
     else
@@ -821,30 +784,31 @@ export async function collect(
   )) {
     if (!unique.has(s.url)) unique.set(s.url, s);
   }
-  if (wolvesInjuries)
-    for (const game of games.filter((game) => game.team === "wolves")) {
-      const teamNames = game.competitors.map((competitor) =>
-        competitor.name
-          .toLowerCase()
-          .replace(/[^a-z0-9]+/g, " ")
-          .trim(),
+  for (const game of games) {
+    const teamInjuries = injuriesByTeam[game.team];
+    if (!teamInjuries) continue;
+    const teamNames = game.competitors.map((competitor) =>
+      competitor.name
+        .toLowerCase()
+        .replace(/[^a-z0-9]+/g, " ")
+        .trim(),
+    );
+    game.injuries = teamInjuries.filter((injury) => {
+      const injuryTeam = (injury.team || "")
+        .toLowerCase()
+        .replace(/[^a-z0-9]+/g, " ")
+        .trim();
+      return (
+        injuryTeam &&
+        teamNames.some(
+          (name) =>
+            name === injuryTeam ||
+            name.includes(injuryTeam) ||
+            injuryTeam.includes(name),
+        )
       );
-      game.injuries = wolvesInjuries.filter((injury) => {
-        const injuryTeam = (injury.team || "")
-          .toLowerCase()
-          .replace(/[^a-z0-9]+/g, " ")
-          .trim();
-        return (
-          injuryTeam &&
-          teamNames.some(
-            (name) =>
-              name === injuryTeam ||
-              name.includes(injuryTeam) ||
-              injuryTeam.includes(name),
-          )
-        );
-      });
-    }
+    });
+  }
   if (section === "all" && Date.now() - started < 20000) {
     const enriched = structuredClone(games);
     const [odds] = await runProviderTasks(
