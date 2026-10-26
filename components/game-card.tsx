@@ -244,42 +244,45 @@ export default function GameCard({
         </span>
       </div>
       {today && injuryReportUrl(g.team) && (
-        <section className="injury-report" aria-label="Injury report">
+        <details className="injury-report" aria-label="Injury report">
+          <summary>
+            <strong>Injury report</strong>
+            <span className="injury-report-chevron" aria-hidden="true">
+              ⌄
+            </span>
+          </summary>
           {g.injuries?.length ? (
-            <>
-              <strong>Injury report</strong>
-              {Array.from(
-                new Set(
-                  g.injuries.map(
-                    (injury) => injury.team || "Team injury report",
-                  ),
+            Array.from(
+              new Set(
+                g.injuries.map(
+                  (injury) => injury.team || "Team injury report",
                 ),
-              ).map((team) => (
-                <div className="injury-team" key={team}>
-                  <h4>{team}</h4>
-                  <ul>
-                    {g
-                      .injuries!.filter(
-                        (injury) =>
-                          (injury.team || "Team injury report") === team,
-                      )
-                      .map((injury) => (
-                        <li key={`${team}-${injury.player}`}>
-                          <span>{injury.player}</span>
-                          <span>{injury.status}</span>
-                          {injury.detail && <small>{injury.detail}</small>}
-                        </li>
-                      ))}
-                  </ul>
-                </div>
-              ))}
-            </>
+              ),
+            ).map((team) => (
+              <div className="injury-team" key={team}>
+                <h4>{team}</h4>
+                <ul>
+                  {g
+                    .injuries!.filter(
+                      (injury) =>
+                        (injury.team || "Team injury report") === team,
+                    )
+                    .map((injury) => (
+                      <li key={`${team}-${injury.player}`}>
+                        <span>{injury.player}</span>
+                        <span>{injury.status}</span>
+                        {injury.detail && <small>{injury.detail}</small>}
+                      </li>
+                    ))}
+                </ul>
+              </div>
+            ))
           ) : (
             <a href={injuryReportUrl(g.team)} target="_blank" rel="noreferrer">
               Injury report ↗
             </a>
           )}
-        </section>
+        </details>
       )}
       {g.state === "post" && !g.eventOnly && (
         <a
