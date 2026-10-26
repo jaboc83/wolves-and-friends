@@ -40,7 +40,7 @@ export function gameBadges(g: Game): GameBadge[] {
             : /MLS Cup/i.test(context)
               ? "MLS Cup"
               : "Cup";
-    badges.push({ label, tone: "cup" });
+    badges.push({ label, tone: nbaCup ? "nba-cup" : "cup" });
   }
   if (/EuroLeague|Eurolyga/i.test(context))
     badges.push({ label: "EuroLeague", tone: "euroleague" });
