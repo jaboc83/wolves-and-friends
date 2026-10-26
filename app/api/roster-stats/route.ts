@@ -284,6 +284,18 @@ export async function GET(request: Request) {
       );
     if (batch >= Math.max(1, Math.ceil(manifest.length / batchSize)))
       return Response.json({ error: "Invalid batch" }, { status: 400 });
+    if (new URL(request.url).searchParams.get("manifest") === "1") {
+      return Response.json(
+        {
+          players: [],
+          totalBatches: Math.ceil(manifest.length / batchSize),
+          manifestVersion,
+          manifestKeys: manifest.map((entry) => entry.key),
+          batchSize,
+        },
+        { headers: { "Cache-Control": "no-store" } },
+      );
+    }
     const players = await Promise.all(
       manifest
         .slice(batch * batchSize, (batch + 1) * batchSize)

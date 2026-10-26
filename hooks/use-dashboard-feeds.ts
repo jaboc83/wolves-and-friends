@@ -84,6 +84,18 @@ export function useDashboardFeeds(active: DashboardPageId) {
   function refreshRosterStats(priorityKeys: string[] = []) {
     const request = rosterLoader.current({
       initial: playerStats,
+      fetchManifest: async (version, signal) => {
+        const response = await requests.current.fetch(
+          "/api/roster-stats?manifest=1" +
+            (version ? "&version=" + encodeURIComponent(version) : ""),
+          { credentials: "omit", referrerPolicy: "no-referrer", signal },
+        );
+        if (!response.ok)
+          throw Error(
+            response.status === 409 ? "Manifest changed" : "Stats unavailable",
+          );
+        return response.json();
+      },
       fetchBatch: async (batch, version, signal) => {
         const response = await requests.current.fetch(
           "/api/roster-stats?batch=" +
