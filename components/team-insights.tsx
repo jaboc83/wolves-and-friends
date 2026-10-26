@@ -51,6 +51,11 @@ export default function TeamInsights({
   } | null>(null);
   const standingsOpen =
     standingsOverride?.id === id ? standingsOverride.open : autoOpenStandings;
+  const [standingsGroupOverride, setStandingsGroupOverride] = useState<{
+    id: string;
+    name: string;
+    open: boolean;
+  } | null>(null);
   const [powerRankingsState, setPowerRankingsState] = useState<{
     id: string;
     open: boolean;
@@ -295,9 +300,25 @@ export default function TeamInsights({
         {info?.tables.length ? (
           info.tables.map((raw) => {
             const table = decorateTable(raw, id);
+            const groupOpen =
+              standingsGroupOverride?.id === id &&
+              standingsGroupOverride.name === table.name
+                ? standingsGroupOverride.open
+                : table.rows.some((row) => row.highlight);
             return (
-              <section key={table.name}>
-                <h3>{table.name}</h3>
+              <details
+                key={table.name}
+                className="standings-group"
+                open={groupOpen}
+                onToggle={(event) =>
+                  setStandingsGroupOverride({
+                    id,
+                    name: table.name,
+                    open: event.currentTarget.open,
+                  })
+                }
+              >
+                <summary><h3>{table.name}</h3></summary>
                 {table.note && <p className="panel-note">{table.note}</p>}
                 <div className="table-scroll">
                   <table>
@@ -364,7 +385,7 @@ export default function TeamInsights({
                   {timeZoneLabel(timeZone, table.checked)}
                   {table.stale && " · cached data; source unavailable"}
                 </p>
-              </section>
+              </details>
             );
           })
         ) : (
