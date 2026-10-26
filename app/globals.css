@@ -3054,6 +3054,24 @@ body:has(.score-choice[open]) {
   border-left: 3px solid var(--team-accent, var(--accent, #79bc43));
   background: var(--raised, #f2f4ee);
 }
+.injury-report > summary {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  cursor: pointer;
+  list-style: none;
+}
+.injury-report > summary::-webkit-details-marker {
+  display: none;
+}
+.injury-report-chevron {
+  font-size: 1rem;
+  line-height: 1;
+  transition: transform 0.15s ease;
+}
+.injury-report[open] .injury-report-chevron {
+  transform: rotate(180deg);
+}
 .injury-report strong {
   font-size: 0.78rem;
   text-transform: uppercase;
