@@ -1758,6 +1758,10 @@ footer b {
   font-size: 15px;
   margin-top: 20px;
 }
+.standings-group > summary > h3 {
+  display: inline;
+  margin: 0;
+}
 .panel-note {
   font-size: 11px;
   color: var(--muted, #687b84);
