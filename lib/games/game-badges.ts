@@ -29,7 +29,8 @@ export function gameBadges(g: Game): GameBadge[] {
   else if (/play[- ]?in/i.test(context))
     badges.push({ label: "Play-In", tone: "playoffs" });
   if (/\bcup\b|\bKMT\b/i.test(context) && !/stanley cup/i.test(context)) {
-    const nbaCup = /NBA Cup/i.test(context);\n    const label = nbaCup
+    const nbaCup = /NBA Cup/i.test(context);
+    const label = nbaCup
       ? "NBA Cup"
       : /KMT/i.test(context)
         ? "KMT Cup"
