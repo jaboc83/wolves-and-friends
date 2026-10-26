@@ -20,7 +20,6 @@ export type Game = {
   eventResults?: {
     division: string;
     name: string;
-    teamId?: string;
     score: string;
     margin?: string;
   }[];
@@ -51,6 +50,7 @@ export type Game = {
   competitors: {
     record?: string;
     name: string;
+    teamId?: string;
     score: string;
     winner: boolean;
     homeAway: string;
