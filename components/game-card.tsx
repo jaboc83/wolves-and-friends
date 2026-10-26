@@ -9,7 +9,7 @@ import type { Game } from "../lib/feeds";
 import Image from "next/image";
 import { teams } from "../lib/teams/teams";
 import { teamLocation } from "../lib/teams/team-location";
-import { teamWikipediaUrl } from "../lib/teams/team-wikipedia";
+import { gameTeamUrl } from "../lib/teams/game-team-url";
 import { sportTerms } from "../lib/teams/sport-terms";
 import { teamLogoPath } from "../lib/teams/team-logo";
 import type { TeamId } from "../lib/teams/teams";
@@ -91,6 +91,7 @@ export default function GameCard({
   const hidden = g.state !== "pre" && !scoreVisible;
   const logo = teamLogoPath(t.id);
   const { club, opponent } = matchup(g);
+  const opponentCompetitor = g.competitors.find((p) => p !== club);
   const result = outcome(g);
   const terms = sportTerms(g.team);
   const hasBadges = gameBadges(g).length > 0;
@@ -119,7 +120,7 @@ export default function GameCard({
                   t.name
                 ) : (
                   <a
-                    href={teamWikipediaUrl(t.id, undefined, true)}
+                    href={gameTeamUrl(g.team, t.name, true, club?.teamId)}
                     target="_blank"
                     rel="noreferrer"
                   >
@@ -175,7 +176,7 @@ export default function GameCard({
           >
             <span>
               <a
-                href={teamWikipediaUrl(t.id, p.name, p === club)}
+                href={gameTeamUrl(g.team, p.name, p === club, p.teamId)}
                 target="_blank"
                 rel="noreferrer"
               >
@@ -386,7 +387,7 @@ export default function GameCard({
                   t.short
                 ) : (
                   <a
-                    href={teamWikipediaUrl(t.id, undefined, true)}
+                    href={gameTeamUrl(g.team, t.name, true, club?.teamId)}
                     target="_blank"
                     rel="noreferrer"
                     onClick={(e) => e.stopPropagation()}
@@ -404,7 +405,7 @@ export default function GameCard({
               <span>
                 vs.{" "}
                 <a
-                  href={teamWikipediaUrl(t.id, opponent)}
+                  href={gameTeamUrl(g.team, opponent, false, opponentCompetitor?.teamId)}
                   target="_blank"
                   rel="noreferrer"
                   onClick={(e) => e.stopPropagation()}

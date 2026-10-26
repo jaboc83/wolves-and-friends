@@ -50,6 +50,7 @@ export type Game = {
   competitors: {
     record?: string;
     name: string;
+    teamId?: string;
     score: string;
     winner: boolean;
     homeAway: string;
