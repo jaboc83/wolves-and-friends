@@ -224,6 +224,27 @@ export default function TeamInsights({
             </p>
           </section>
         )}
+        {id === "wolves" && (
+          <section
+            className="postseason-panel"
+            aria-label="Emirates NBA Cup standings and bracket"
+          >
+            <h3>Emirates NBA Cup · 2026</h3>
+            <p className="panel-note">
+              Cup games are marked with an NBA Cup label throughout the
+              schedule and calendar.
+            </p>
+            <p className="panel-note">
+              <a
+                href="https://www.nba.com/nba-cup/2026/standings"
+                target="_blank"
+                rel="noreferrer"
+              >
+                Open official NBA Cup standings and knockout picture ↗
+              </a>
+            </p>
+          </section>
+        )}
         {id === "palace" && !info?.postseason && (
           <section
             className="postseason-panel"

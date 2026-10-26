@@ -2128,6 +2128,11 @@ footer b {
   color: #765409;
   border-color: #d9b957;
 }
+.badge-nba-cup {
+  background: #231f54;
+  color: #fff4bd;
+  border-color: #d8b85a;
+}
 .badge-euroleague {
   background: #fff0df;
   color: #8a410a;
