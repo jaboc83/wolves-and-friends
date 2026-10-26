@@ -3059,21 +3059,43 @@ body:has(.score-choice[open]) {
   text-transform: uppercase;
   letter-spacing: 0.08em;
 }
+.injury-team {
+  margin-top: 0.15rem;
+}
 .injury-team h4 {
-  margin: 0.7rem 0 0.25rem;
-  font-size: 0.85rem;
+  display: inline-flex;
+  align-items: center;
+  margin: 0.65rem 0 0.35rem;
+  padding: 0.25rem 0.55rem;
+  border-left: 3px solid var(--team-accent, var(--accent, #79bc43));
+  border-radius: 0.25rem;
+  background: color-mix(
+    in srgb,
+    var(--team-accent, var(--accent, #79bc43)) 14%,
+    var(--raised, #f2f4ee)
+  );
+  color: var(--ink, #192a3c);
+  font-size: 0.8rem;
+  font-weight: 700;
+  line-height: 1.3;
 }
 .injury-report ul {
   display: grid;
   gap: 5px;
-  margin: 0;
-  padding: 0;
+  margin: 0 0 0 0.45rem;
+  padding: 0 0 0 0.65rem;
+  border-left: 2px solid
+    color-mix(in srgb, var(--team-accent, var(--accent, #79bc43)) 35%, transparent);
   list-style: none;
 }
 .injury-report li {
   display: grid;
   grid-template-columns: minmax(0, 1fr) auto;
   gap: 3px 10px;
+  padding: 0.1rem 0;
+}
+.injury-report li > span:first-child {
+  font-weight: 600;
 }
 .injury-report li small {
   grid-column: 1 / -1;
