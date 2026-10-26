@@ -1,18 +1,26 @@
-// Records bounded browser-local diagnostics for unavailable public feed providers.
+// Records bounded browser-local diagnostics for feed, request, and component failures.
 import type { Health } from "./feed-types";
 
 const DB_NAME = "wolves-friends-diagnostics";
 const STORE_NAME = "feed-errors";
-const MAX_ENTRIES = 200;
+const MAX_ENTRIES = 500;
 const MAX_AGE_MS = 7 * 86400000;
 
+export type DiagnosticKind = "feed" | "request" | "component";
+
 export type FeedDiagnostic = {
+  kind: DiagnosticKind;
   provider: string;
   teams: string[];
   error: string;
   checked: string;
   recordedAt: string;
   count: number;
+  detail?: string;
+};
+
+type DiagnosticInput = Omit<FeedDiagnostic, "recordedAt"> & {
+  recordedAt?: string;
 };
 
 function openDatabase(): Promise<IDBDatabase> {
@@ -34,22 +42,50 @@ function openDatabase(): Promise<IDBDatabase> {
   });
 }
 
-export async function recordFeedDiagnostics(health: Health[]) {
-  const failed = health.filter((item) => item.status === "unavailable");
-  if (!failed.length || typeof window === "undefined") return;
+function errorText(error: unknown) {
+  if (error instanceof Error) return error.message || error.name;
+  if (typeof error === "string") return error;
+  return "unknown";
+}
+
+function pruneDiagnostics(db: IDBDatabase) {
+  return new Promise<void>((resolve, reject) => {
+    const tx = db.transaction(STORE_NAME, "readwrite");
+    const store = tx.objectStore(STORE_NAME);
+    const cutoff = Date.now() - MAX_AGE_MS;
+    const oldKeys: IDBValidKey[] = [];
+    const request = store.openCursor();
+    request.onsuccess = () => {
+      const cursor = request.result;
+      if (!cursor) {
+        for (const key of oldKeys) store.delete(key);
+        return;
+      }
+      const value = cursor.value as FeedDiagnostic;
+      if (Date.parse(value.recordedAt) < cutoff) oldKeys.push(cursor.primaryKey);
+      cursor.continue();
+    };
+    request.onerror = () =>
+      reject(request.error || new Error("IndexedDB read failed"));
+    tx.oncomplete = () => resolve();
+    tx.onerror = () => reject(tx.error || new Error("IndexedDB prune failed"));
+    tx.onabort = () => reject(tx.error || new Error("IndexedDB prune aborted"));
+  });
+}
+
+export async function recordDiagnostics(entries: DiagnosticInput[]) {
+  if (!entries.length || typeof window === "undefined") return;
   try {
     const db = await openDatabase();
     const tx = db.transaction(STORE_NAME, "readwrite");
     const store = tx.objectStore(STORE_NAME);
     const recordedAt = new Date().toISOString();
-    for (const item of failed) {
+    for (const item of entries) {
       store.add({
-        provider: item.name,
-        teams: item.teams,
-        error: item.error || "unknown",
-        checked: item.checked,
-        recordedAt,
-        count: item.count || 0,
+        ...item,
+        kind: item.kind || "request",
+        detail: item.detail?.slice(0, 500),
+        recordedAt: item.recordedAt || recordedAt,
       } satisfies FeedDiagnostic);
     }
     await new Promise<void>((resolve, reject) => {
@@ -59,26 +95,7 @@ export async function recordFeedDiagnostics(health: Health[]) {
       tx.onabort = () =>
         reject(tx.error || new Error("IndexedDB write aborted"));
     });
-    const prune = db.transaction(STORE_NAME, "readwrite");
-    const cutoff = Date.now() - MAX_AGE_MS;
-    const keys: IDBValidKey[] = [];
-    await new Promise<void>((resolve, reject) => {
-      const request = prune.objectStore(STORE_NAME).openCursor();
-      request.onsuccess = () => {
-        const cursor = request.result;
-        if (!cursor) return resolve();
-        const value = cursor.value as FeedDiagnostic;
-        if (Date.parse(value.recordedAt) < cutoff) keys.push(cursor.primaryKey);
-        cursor.continue();
-      };
-      request.onerror = () =>
-        reject(request.error || new Error("IndexedDB read failed"));
-    });
-    for (const key of keys) prune.objectStore(STORE_NAME).delete(key);
-    await new Promise<void>((resolve) => {
-      prune.oncomplete = () => resolve();
-      prune.onerror = () => resolve();
-    });
+    await pruneDiagnostics(db);
     const trim = db.transaction(STORE_NAME, "readwrite");
     const trimKeys: IDBValidKey[] = [];
     await new Promise<void>((resolve, reject) => {
@@ -94,10 +111,65 @@ export async function recordFeedDiagnostics(health: Health[]) {
         reject(request.error || new Error("IndexedDB read failed"));
     });
     for (const key of trimKeys) trim.objectStore(STORE_NAME).delete(key);
+    await new Promise<void>((resolve) => {
+      trim.oncomplete = () => resolve();
+      trim.onerror = () => resolve();
+    });
     db.close();
   } catch {
-    // Diagnostics are optional and must never affect the feed refresh.
+    // Diagnostics are optional and must never affect the app.
   }
+}
+
+export async function recordFeedDiagnostics(health: Health[]) {
+  const failed = health.filter((item) => item.status === "unavailable");
+  await recordDiagnostics(
+    failed.map((item) => ({
+      kind: "feed" as const,
+      provider: item.name,
+      teams: item.teams,
+      error: item.error || "unknown",
+      checked: item.checked,
+      count: item.count || 0,
+    })),
+  );
+}
+
+export async function recordRequestDiagnostic(
+  provider: string,
+  teams: string[] = [],
+  error: unknown = "request-failed",
+  detail?: string,
+) {
+  const checked = new Date().toISOString();
+  await recordDiagnostics([
+    {
+      kind: "request",
+      provider,
+      teams,
+      error: errorText(error),
+      checked,
+      count: 0,
+      detail,
+    },
+  ]);
+}
+
+export async function recordComponentDiagnostic(
+  component: string,
+  error: unknown,
+) {
+  const checked = new Date().toISOString();
+  await recordDiagnostics([
+    {
+      kind: "component",
+      provider: component,
+      teams: [],
+      error: errorText(error),
+      checked,
+      count: 0,
+    },
+  ]);
 }
 
 export async function exportFeedDiagnostics() {
@@ -107,14 +179,22 @@ export async function exportFeedDiagnostics() {
       .transaction(STORE_NAME, "readonly")
       .objectStore(STORE_NAME)
       .getAll();
-    request.onsuccess = () => resolve(request.result as FeedDiagnostic[]);
+    request.onsuccess = () =>
+      resolve(
+        (request.result as FeedDiagnostic[]).map((row) => ({
+          ...row,
+          kind: row.kind || "feed",
+        })),
+      );
     request.onerror = () =>
       reject(request.error || new Error("IndexedDB read failed"));
   });
   db.close();
-  return rows.sort(
-    (a, b) => Date.parse(b.recordedAt) - Date.parse(a.recordedAt),
-  );
+  return rows
+    .filter((row) => Date.parse(row.recordedAt) >= Date.now() - MAX_AGE_MS)
+    .sort(
+      (a, b) => Date.parse(b.recordedAt) - Date.parse(a.recordedAt),
+    );
 }
 
 export async function downloadFeedDiagnostics() {

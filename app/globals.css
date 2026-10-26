@@ -3301,3 +3301,22 @@ body:has(.score-choice[open]) {
   letter-spacing: 0.08em;
   text-transform: uppercase;
 }
+
+
+.app-error {
+  display: grid;
+  min-height: 50vh;
+  place-content: center;
+  gap: 12px;
+  padding: 24px;
+  text-align: center;
+}
+.app-error button {
+  justify-self: center;
+  border: 1px solid var(--line, #cbd5cf);
+  border-radius: 999px;
+  background: var(--surface, #fffefb);
+  padding: 8px 16px;
+  color: var(--ink, #192a3c);
+  cursor: pointer;
+}

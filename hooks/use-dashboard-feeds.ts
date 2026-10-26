@@ -30,7 +30,10 @@ import {
   isStories,
   storedDashboardPage,
 } from "../lib/dashboard/storage";
-import { recordFeedDiagnostics } from "../lib/feeds/feed-diagnostics";
+import {
+  recordFeedDiagnostics,
+  recordRequestDiagnostic,
+} from "../lib/feeds/feed-diagnostics";
 import type { DashboardPageId } from "../lib/dashboard/page-id";
 const emptyHub: HubData = {
   checked: "",
@@ -79,7 +82,7 @@ export function useDashboardFeeds(active: DashboardPageId) {
   const [playerStatsStatus, setPlayerStatsStatus] =
     useState<StatsStatus>("idle");
   function refreshRosterStats(priorityKeys: string[] = []) {
-    return rosterLoader.current({
+    const request = rosterLoader.current({
       initial: playerStats,
       fetchBatch: async (batch, version, signal) => {
         const response = await requests.current.fetch(
@@ -107,6 +110,10 @@ export function useDashboardFeeds(active: DashboardPageId) {
       onStatus: setPlayerStatsStatus,
       priorityKeys,
     });
+    void request.catch((error) =>
+      recordRequestDiagnostic("Roster stats request", [], error),
+    );
+    return request;
   }
 
   const once = requests.current.once;
@@ -118,7 +125,9 @@ export function useDashboardFeeds(active: DashboardPageId) {
           referrerPolicy: "no-referrer",
         });
         if (r.ok) setTeamInfo((await r.json()) as TeamInfo[]);
-      } catch {}
+      } catch (error) {
+        void recordRequestDiagnostic("Team info request", [], error);
+      }
     });
   }
   const [socialRefreshing, setSocialRefreshing] = useState(false);
@@ -155,7 +164,8 @@ export function useDashboardFeeds(active: DashboardPageId) {
         });
         setSocialUnavailable(d.unavailable);
         setYoutubeUnavailable(d.youtubeUnavailable || []);
-      } catch {
+      } catch (error) {
+        void recordRequestDiagnostic("Social feed request", teams.map((t) => t.id), error);
         setSocialUnavailable(teams.map((t) => t.id));
         setSocialRefreshError(true);
       } finally {
@@ -180,7 +190,8 @@ export function useDashboardFeeds(active: DashboardPageId) {
         setLiveGames(d.games);
         setScoreCheck(d.checked);
         setScoreError(d.unavailable.length > 0);
-      } catch {
+      } catch (error) {
+        void recordRequestDiagnostic("Live scores request", [], error);
         setScoreError(true);
       }
     });
@@ -212,7 +223,8 @@ export function useDashboardFeeds(active: DashboardPageId) {
         setNewsPages((pages) => ({ ...pages, [id]: d }));
         newsChecked.current.set(id, Date.now());
         setNewsStatus((s) => ({ ...s, [id]: "ready" }));
-      } catch {
+      } catch (error) {
+        void recordRequestDiagnostic("News request", [id], error);
         setNewsStatus((s) => ({ ...s, [id]: "error" }));
       }
     });
@@ -273,7 +285,8 @@ export function useDashboardFeeds(active: DashboardPageId) {
         });
         setScheduleError(false);
         void refreshOdds();
-      } catch {
+      } catch (error) {
+        void recordRequestDiagnostic("Schedule request", [], error);
         setScheduleError(true);
       }
     });
@@ -285,10 +298,15 @@ export function useDashboardFeeds(active: DashboardPageId) {
           credentials: "omit",
           referrerPolicy: "no-referrer",
         });
-        if (!r.ok) return;
+        if (!r.ok) {
+          void recordRequestDiagnostic("Odds request", [], "http-" + r.status);
+          return;
+        }
         const d = (await r.json()) as { games: Game[] };
         setOddsGames(d.games);
-      } catch {}
+      } catch (error) {
+        void recordRequestDiagnostic("Odds request", [], error);
+      }
     });
   }
   function refresh() {
