@@ -1167,7 +1167,11 @@ export function parseStandings(
     const owns = (e: ESPNStandingEntry) =>
       String(e.team?.id) === team.espn ||
       e.team?.abbreviation?.toLowerCase() === team.espn;
-    if (standings && entries.some(owns)) {
+    const isNbaConference =
+      id === "wolves" &&
+      /conference/i.test(node.name || "") &&
+      entries.length > 0;
+    if (standings && (entries.some(owns) || isNbaConference)) {
       const url =
         standings.links?.find((l) => l.href?.startsWith("https:"))?.href ||
         "https://www.espn.com/" + league.split("/")[1] + "/standings";
