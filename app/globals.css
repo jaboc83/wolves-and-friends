@@ -3065,8 +3065,8 @@ body:has(.score-choice[open]) {
   display: none;
 }
 .injury-report-chevron {
-  font-size: 1rem;
-  line-height: 1;
+  display: block;
+  flex: 0 0 16px;
   transition: transform 0.15s ease;
 }
 .injury-report[open] .injury-report-chevron {
