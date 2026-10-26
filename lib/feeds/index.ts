@@ -150,7 +150,8 @@ export async function collect(
     games: Game[];
     health: Health[];
     authors: AuthorFeed[];
-    injuries?: Game["injuries"];\n    injuryTeam?: TeamId;
+    injuries?: Game["injuries"];
+    injuryTeam?: TeamId;
     count: number;
     failed?: boolean;
     error?: string;
