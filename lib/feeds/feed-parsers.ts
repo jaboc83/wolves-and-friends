@@ -272,6 +272,7 @@ export function parseGames(data: unknown, team: TeamId, sport: string): Game[] {
           )
           .map((p) => ({
             name: p.team?.shortDisplayName || p.team?.displayName || "",
+            teamId: p.team?.id === undefined ? undefined : String(p.team.id),
             record:
               (p.records || []).find(
                 (r) =>
