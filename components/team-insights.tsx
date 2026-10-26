@@ -51,11 +51,9 @@ export default function TeamInsights({
   } | null>(null);
   const standingsOpen =
     standingsOverride?.id === id ? standingsOverride.open : autoOpenStandings;
-  const [standingsGroupOverride, setStandingsGroupOverride] = useState<{
-    id: string;
-    name: string;
-    open: boolean;
-  } | null>(null);
+  const [standingsGroupOverrides, setStandingsGroupOverrides] = useState<
+    Record<string, boolean>
+  >({});
   const [powerRankingsState, setPowerRankingsState] = useState<{
     id: string;
     open: boolean;
@@ -300,23 +298,22 @@ export default function TeamInsights({
         {info?.tables.length ? (
           info.tables.map((raw) => {
             const table = decorateTable(raw, id);
+            const groupKey = `${id}:${table.name}`;
             const groupOpen =
-              standingsGroupOverride?.id === id &&
-              standingsGroupOverride.name === table.name
-                ? standingsGroupOverride.open
-                : table.rows.some((row) => row.highlight);
+              standingsGroupOverrides[groupKey] ??
+              table.rows.some((row) => row.highlight);
             return (
               <details
                 key={table.name}
                 className="standings-group"
                 open={groupOpen}
-                onToggle={(event) =>
-                  setStandingsGroupOverride({
-                    id,
-                    name: table.name,
-                    open: event.currentTarget.open,
-                  })
-                }
+                onToggle={(event) => {
+                  const open = event.currentTarget.open;
+                  setStandingsGroupOverrides((current) => ({
+                    ...current,
+                    [groupKey]: open,
+                  }));
+                }}
               >
                 <summary><h3>{table.name}</h3></summary>
                 {table.note && <p className="panel-note">{table.note}</p>}

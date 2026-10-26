@@ -160,17 +160,10 @@ type ProviderResponse = ESPNStandingsNode & {
   seasons?: { id?: string | number; name?: string }[];
   current_season_id?: string | number;
   current_league_id?: string | number;
-  groups?: ESPNGroup[];
   [key: string]: unknown;
   division?: { type?: string; ranking?: ESPNRankingEntry[] }[];
   lastUpdated?: string;
 };
-type ESPNGroup = {
-  name?: string;
-  teams?: ESPNTeam[];
-  children?: ESPNGroup[];
-};
-type ESPNGroupsResponse = { groups?: ESPNGroup[] };
 type RankedTeam = {
   item: ESPNPowerIndexItem;
   teamId: string;
@@ -1343,16 +1336,8 @@ export async function fetchTeamInfo() {
                 t.league +
                 "/standings";
               const x = await get(standingsUrl);
-              const parseTables = async (value: ProviderResponse) =>
-                t.id === "wild"
-                  ? parseNHLStandings(
-                      value,
-                      await get(
-                        "https://site.api.espn.com/apis/site/v2/sports/hockey/nhl/groups",
-                      ),
-                      checked,
-                    )
-                  : parseStandings(value, t.id, checked);
+              const parseTables = (value: ProviderResponse) =>
+                parseStandings(value, t.id, checked);
               const currentTables = await parseTables(x);
               info.tables = currentTables;
               // During the postseason ESPN's default standings response switches
@@ -1654,50 +1639,3 @@ export async function fetchTeamInfo() {
   );
 }
 
-export function parseNHLStandings(
-  x: ProviderResponse,
-  groups: ESPNGroupsResponse,
-  checked: string,
-): Table[] {
-  const conference = parseStandings(x, "wild", checked)[0];
-  if (!conference) return [];
-  if (tableSeasonType(conference) !== 2) return [conference];
-  const selected = groups.groups?.find((g) =>
-    g.children?.some((d) =>
-      d.teams?.some((t) => t.abbreviation?.toLowerCase() === "min"),
-    ),
-  );
-  if (!selected?.children?.length) return [conference];
-  const qualified = new Set<string>();
-  const divisions: Table[] = selected.children.map((division) => {
-    const ids = new Set((division.teams || []).map((t) => String(t.id)));
-    const rows = conference.rows.filter((r) => ids.has(r.id));
-    rows.slice(0, 3).forEach((r) => qualified.add(r.id));
-    return decorateTable(
-      {
-        ...conference,
-        name: division.name || "Division",
-        rows: rows.map((r, i) => ({
-          ...r,
-          cells: [String(i + 1), ...r.cells.slice(1)],
-        })),
-        note: (conference.note || "") + " · Division rank",
-      },
-      "wild",
-    );
-  });
-  const wildcard = decorateTable(
-    {
-      ...conference,
-      name: selected.name + " · Wild Card",
-      rows: conference.rows
-        .filter((r) => !qualified.has(r.id))
-        .map((r, i) => ({ ...r, cells: [String(i + 1), ...r.cells.slice(1)] })),
-      note:
-        (conference.note || "") +
-        " · Remaining teams, excluding automatic division places",
-    },
-    "wild",
-  );
-  return [...divisions, wildcard];
-}
