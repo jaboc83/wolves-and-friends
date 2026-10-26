@@ -10,7 +10,7 @@ export function gameTeamUrl(
 ) {
   const team = teams.find((candidate) => candidate.id === teamId);
   const league = team?.league || "";
-  if (espnTeamId && /^\\d+$/.test(espnTeamId) && league) {
+  if (espnTeamId && /^\d+$/.test(espnTeamId) && league) {
     const route = league.startsWith("soccer/")
       ? "soccer"
       : league.split("/")[1];
