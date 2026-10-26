@@ -1167,11 +1167,11 @@ export function parseStandings(
     const owns = (e: ESPNStandingEntry) =>
       String(e.team?.id) === team.espn ||
       e.team?.abbreviation?.toLowerCase() === team.espn;
-    const isNbaConference =
-      id === "wolves" &&
-      /conference/i.test(node.name || "") &&
-      entries.length > 0;
-    if (standings && (entries.some(owns) || isNbaConference)) {
+    const sharedStandingsGroup =
+      entries.length > 0 &&
+      ((id === "wolves" && /conference/i.test(node.name || "")) ||
+        (id === "wild" && /division|wild[ -]?card/i.test(node.name || "")));
+    if (standings && (entries.some(owns) || sharedStandingsGroup)) {
       const url =
         standings.links?.find((l) => l.href?.startsWith("https:"))?.href ||
         "https://www.espn.com/" + league.split("/")[1] + "/standings";
