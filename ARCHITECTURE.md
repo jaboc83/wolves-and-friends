@@ -2,21 +2,21 @@
 
 Wolves & Friends is a sports dashboard that brings public news, schedules, scores, odds, social posts, standings, and rosters into one page. It consists of a browser interface and a small server-side feed aggregator. There is no application database or user-account system.
 
-This guide describes the implementation as of October 15, 2026. Start with the big picture, then use the file links to explore a feature.
+This guide describes the implementation as of October 27, 2026. Start with the big picture, then use the file links to explore a feature.
 
 ## 1. The big picture
 
 ```mermaid
 flowchart TD
     Sources["Public sports and news sources"] --> Server["Server: fetch, parse, combine and cache"]
-    Server --> API["Four same-origin API endpoints"]
+    Server --> API["Same-origin API routes"]
     Seeds["Bundled tournament snapshot"] --> Server
     API --> Page["React dashboard in the browser"]
     Local["Device-only localStorage"] <--> Page
     Page --> Links["Publisher pages opened by the reader"]
 ```
 
-The browser asks **our own server** for generic public feeds. The server contacts ESPN, publishers, club websites, and Bluesky, then returns a common data format. Choosing a team filters the returned data in the browser; that choice is not sent to the feeds.
+The browser asks **our own server** for public feeds. Team-specific news requests include the selected public team ID in the same-origin `/api/news` query; read and saved state are not sent. The server contacts ESPN, publishers, club websites, and Bluesky, then returns a common data format without forwarding visitor headers.
 
 Headlines link to publishers rather than reproducing full articles. Deliberately opening a link takes the reader to that external site.
 
@@ -24,7 +24,8 @@ Headlines link to publishers rather than reproducing full articles. Deliberately
 
 | Part               | Responsibility                                                                            | Start here                                                                               |
 | ------------------ | ----------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------- |
-| Page controller    | Holds browser state, refreshes feeds, merges data, filters teams, and assembles sections  | [app/page.tsx](app/page.tsx)                                                             |
+| Page composition   | Holds page selection and assembles dashboard sections                                     | [app/page.tsx](app/page.tsx)                                                             |
+| Feed lifecycle     | Requests feeds, manages feed responses and refreshes, and loads roster stats              | [hooks/use-dashboard-feeds.ts](hooks/use-dashboard-feeds.ts)                             |
 | Shared page shell  | Imports styles and defines metadata and the mobile viewport                               | [app/layout.tsx](app/layout.tsx)                                                         |
 | Presentation       | Responsive layout, colors, badges, spacing, and team themes                               | [app/globals.css](app/globals.css), [lib/teams/team-themes.ts](lib/teams/team-themes.ts) |
 | Team configuration | One folder per team: identity, links, IDs, feed URLs, and team-specific behavior          | [lib/teams/](lib/teams/) (see [Team folders](#team-folders))                             |
@@ -36,7 +37,7 @@ Headlines link to publishers rather than reproducing full articles. Deliberately
 | Images             | Local header and team logos                                                               | [public/logos](public/logos)                                                             |
 | Hosting            | Build and serve the application through Sites                                             | [vite.config.ts](vite.config.ts), [build/sites-worker.ts](build/sites-worker.ts)         |
 
-The app uses **React and TypeScript**, with **Vinext/Vite** providing the Next-style page and API route structure. The production request handler runs as a **Cloudflare Worker** through Sites. Most of the dashboard logic is currently concentrated in `app/page.tsx`; separate components handle its larger reusable pieces.
+The app uses **React and TypeScript**, with **Vinext/Vite** providing the Next-style page and API route structure. The production request handler runs as a **Cloudflare Worker** through Sites. Page composition lives in `app/page.tsx`; feed request lifecycle and related state live in `hooks/use-dashboard-feeds.ts`, while separate components handle reusable sections.
 
 ### Team folders
 
@@ -54,18 +55,23 @@ Each team has a folder, `lib/teams/<id>/`, so its external URLs, IDs, and specia
 
 1. The page renders its layout immediately; feed sections fill in as data arrives.
 2. On the device, it restores cached public content and local preferences. A first visit selects Wolves; later visits restore the last valid team.
-3. It requests the four API endpoints below. These requests do not contain the selected team, read IDs, saved stories, or browser identifiers.
+3. It requests same-origin API routes for separate feed sections. The news request includes the selected team ID; read/saved state and browser identifiers are not included.
 4. React updates each section as responses arrive. A separate score feed can update game status without waiting for the larger news refresh.
 5. While the page stays open, timers request updates. The Refresh button also requests fresh endpoint responses, subject to each server cache.
 
-| Endpoint         | Data                                                   | Browser refresh                       | Server cache lifetime |
-| ---------------- | ------------------------------------------------------ | ------------------------------------- | --------------------- |
-| `/api/hub`       | News, author feeds, schedules, source health, and odds | On load, Refresh, and every 5 minutes | 5 minutes             |
-| `/api/scores`    | Today's ESPN scoreboard data                           | On load, Refresh, and every minute    | 30 seconds            |
-| `/api/social`    | Public Bluesky posts and inline avatars                | On load, Refresh, and every minute    | 1 minute              |
-| `/api/team-info` | Standings, rosters, and available season metadata      | With the main refresh                 | 15 minutes            |
+| Endpoint                | Data                                    | Browser request timing                                | Server memory cache                                  |
+| ----------------------- | --------------------------------------- | ----------------------------------------------------- | ---------------------------------------------------- |
+| `/api/news?team=<team>` | News and author feeds for one team      | On load, team selection, Refresh, and every 5 minutes | 5 minutes per section/team                           |
+| `/api/schedules`        | Schedules and source health             | On load, Refresh, and every 5 minutes                 | 5 minutes                                            |
+| `/api/odds`             | Odds enrichment for eligible games      | After schedules load and on Refresh                   | 5 minutes                                            |
+| `/api/scores`           | Today's ESPN scoreboard data            | On load, Refresh, and every minute                    | 30 seconds                                           |
+| `/api/social`           | Public Bluesky posts and inline avatars | On load, Refresh, and every minute                    | 1 minute; Refresh can request a forced update        |
+| `/api/team-info`        | Standings, rosters, and season metadata | On load and with the main refresh                     | 15 minutes                                           |
+| `/api/roster-stats`     | Player statistics in fixed batches      | When roster statistics are requested                  | 15 minutes for available stats; 2 minutes for misses |
 
-These are **request-driven, in-memory caches**. They can disappear when a Worker instance is restarted, and different instances need not share them. There is no background scheduler continuously refreshing the site while nobody is viewing it. The server cache lifetime also does not guarantee a provider has published newer information.
+The API also has support routes for validated team/social images and tournament data. `/api/hub` remains an aggregate feed route; the dashboard currently requests news, schedules, and odds separately.
+
+These feed and team-info caches are **request-driven, in-memory caches**. They can disappear when a Worker instance is restarted, and different instances need not share them. There is no background scheduler continuously refreshing the site while nobody is viewing it. The server cache lifetime also does not guarantee a provider has published newer information.
 
 ## 4. How provider data becomes page content
 
@@ -101,7 +107,7 @@ Odds lookups are currently limited to eligible games within the next seven days 
 
 ## 5. How the interface is assembled
 
-[app/page.tsx](app/page.tsx) holds the selected team, search text, read/saved state, feed responses, and result-visibility controls. Its main sections are:
+[app/page.tsx](app/page.tsx) holds page selection, search text, read/saved state, and result-visibility controls. [use-dashboard-feeds](hooks/use-dashboard-feeds.ts) owns feed responses and refresh behavior. The page's main sections are:
 
 - **Today's games:** placed in the right rail on desktop and first in the mobile single-column content flow when games exist.
 - **Latest Social Media:** separate from the headlines, showing two unread posts for All Teams and up to five for a selected team, within what the feed returned.
@@ -133,8 +139,8 @@ The repository contains starter authentication, connector, and UI scaffolding. I
 [AGENTS.md](AGENTS.md) contains requirements for every future change:
 
 - No analytics, advertising trackers, accounts, fingerprinting, or application logging of user/browser identifiers.
-- Preferences remain on the device. Browser feed requests are generic, same-origin, with credentials omitted and no referrer.
-- Public third-party feeds and avatar images are fetched server-side without forwarding visitor headers.
+- Read and saved preferences remain on the device. Browser feed requests are same-origin, omit credentials and referrers, and the news request includes the selected public team ID.
+- Public third-party feeds and avatar images are fetched server-side without forwarding visitor headers or read/saved state.
 - Logos are local and avatars are inline image data. There are no third-party social embeds or background browser connections to those providers.
 - External links suppress referrers. A deliberate visit to another website is then subject to that website's behavior.
 

@@ -71,14 +71,14 @@ The Worker attachment follows the
 
 ## Project scripts
 
-- `scripts/tests/` contains Node regression tests grouped by feature area.
+- `tests/` contains the Node regression tests run by `pnpm test`.
 - `scripts/install/` contains package-manager installation entry points and helpers.
 - `scripts/runtime/` contains the app runner, local environment setup, and VS Code Node launcher.
 - `scripts/build/` contains build-output checks used by CI.
 - `scripts/connector-preview/` contains the local-only connector preview host.
 
 Run tests from the repository root; they use repository-relative fixture and
-source paths. CI discovers each `test-*.mjs` suite under `scripts/tests/`.
+source paths. CI runs the same `pnpm test` command.
 
 ## Validate before pushing
 

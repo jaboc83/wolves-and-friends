@@ -42,18 +42,8 @@ jobs:
       - name: Production build
         run: pnpm run build
 
-      - name: Run application checks
-        shell: bash
-        run: |
-          set -euo pipefail
-          for test_dir in scripts/tests/*/; do
-            for test_file in "${test_dir}"test-*.mjs; do
-              [[ -e "${test_file}" ]] || continue
-              echo "::group::${test_file}"
-              node "${test_file}"
-              echo "::endgroup::"
-            done
-          done
+      - name: Run application tests
+        run: pnpm test
 
       - name: Compare client assets with PR base
         if: github.event_name == 'pull_request'
