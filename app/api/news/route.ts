@@ -1,15 +1,7 @@
 import { hubData } from "../../../lib/feeds";
-import { isTeamId, type TeamId } from "../../../lib/teams/teams";
-export async function GET(request: Request) {
-  const team = new URL(request.url).searchParams.get("team") || undefined;
-  let teamId: TeamId | undefined;
-  if (team) {
-    if (!isTeamId(team))
-      return Response.json({ error: "Unknown team" }, { status: 400 });
-    teamId = team;
-  }
+export async function GET() {
   try {
-    return Response.json(await hubData("news", teamId), {
+    return Response.json(await hubData("news"), {
       headers: { "Cache-Control": "private, no-store" },
     });
   } catch {
