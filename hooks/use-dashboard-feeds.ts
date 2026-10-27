@@ -24,6 +24,8 @@ import { activeHub, activeStories } from "../lib/dashboard/content-policy";
 import { socialQueue } from "../lib/social/social-queue";
 import { isLocalSocialImage } from "../lib/social/bluesky-images";
 import { loadedNewsData } from "../lib/browser/news-page-data";
+import { loadPageBeforeBackground } from "../lib/browser/page-first-feeds";
+import type { MarchData } from "../lib/games/march-madness";
 import { isTeamId, TEAM_IDS, teams, type TeamId } from "../lib/teams/teams";
 import {
   isHubData,
@@ -74,6 +76,8 @@ export function useDashboardFeeds(active: DashboardPageId) {
   const [liveGames, setLiveGames] = useState<Game[]>([]);
   const [scoreCheck, setScoreCheck] = useState("");
   const [scoreError, setScoreError] = useState(false);
+  const [marchData, setMarchData] = useState<MarchData | null>(null);
+  const [marchUnavailable, setMarchUnavailable] = useState(false);
   const requests = useRef(createPublicRequests());
   const rosterLoader = useRef(createRosterStatsLoader());
   const [playerStats, setPlayerStats] = useState<Record<string, PlayerStats>>(
@@ -268,18 +272,6 @@ export function useDashboardFeeds(active: DashboardPageId) {
       }
     });
   }
-  function refreshNews() {
-    return once("news-queue", async () => {
-      const selected = activePage.current;
-      if (isTeamId(selected)) await fetchNewsPage(selected, true);
-      // Background work is bounded to one page at a time. Selecting a new page
-      // can immediately start its request without waiting behind this queue.
-      for (const t of teams) {
-        if (!requests.current.running) break;
-        if (t.id !== selected) await fetchNewsPage(t.id);
-      }
-    });
-  }
   const visibleNewsIds: TeamId[] =
     active === "all"
       ? teams.map((team) => team.id)
@@ -323,7 +315,6 @@ export function useDashboardFeeds(active: DashboardPageId) {
           return merged;
         });
         setScheduleError(false);
-        void refreshOdds();
       } catch (error) {
         void recordRequestDiagnostic("Schedule request", [], error);
         setScheduleError(true);
@@ -348,14 +339,87 @@ export function useDashboardFeeds(active: DashboardPageId) {
       }
     });
   }
-  function refresh() {
-    void refreshInfo();
-    void refreshScores();
-    void refreshSocial();
-    void refreshSchedules();
-    void refreshNews();
+  const marchChecked = useRef(0);
+  function refreshMarchMadness(force = false) {
+    if (!force && Date.now() - marchChecked.current < 60000)
+      return Promise.resolve();
+    return once("march-madness", async () => {
+      try {
+        const response = await requests.current.fetch("/api/march-madness", {
+          cache: "no-store",
+        });
+        if (!response.ok) throw Error();
+        setMarchData((await response.json()) as MarchData);
+        setMarchUnavailable(false);
+      } catch {
+        setMarchUnavailable(true);
+      } finally {
+        marchChecked.current = Date.now();
+      }
+    });
   }
-  const pollingCallbacks = useRef({ refresh, refreshScores, refreshSocial });
+  const dashboardChecked = useRef(0);
+  function refreshDashboardContent(force = false) {
+    if (!force && Date.now() - dashboardChecked.current < 300000)
+      return Promise.resolve();
+    return once("dashboard-content", async () => {
+      await Promise.all([
+        refreshInfo(),
+        refreshScores(),
+        refreshSocial(),
+        refreshSchedules().then(() => {
+          if (requests.current.running) return refreshOdds();
+        }),
+      ]);
+      dashboardChecked.current = Date.now();
+    });
+  }
+  async function refreshPage(page: DashboardPageId, force = false) {
+    if (page === "march-madness") {
+      await refreshMarchMadness(force);
+      return;
+    }
+    await Promise.all([
+      refreshDashboardContent(force),
+      ...(isTeamId(page)
+        ? [fetchNewsPage(page, force)]
+        : teams.map((team) => fetchNewsPage(team.id, force))),
+    ]);
+  }
+  function selectPage(page: DashboardPageId) {
+    activePage.current = page;
+    void refreshPage(page);
+  }
+  function refresh() {
+    return once("page-feeds", async () => {
+      let firstPage = true;
+      await loadPageBeforeBackground({
+        currentPage: () => activePage.current,
+        loadPage: (page) => {
+          const force = firstPage;
+          firstPage = false;
+          return refreshPage(page, force);
+        },
+        background: [
+          () => refreshDashboardContent(),
+          ...teams.map((team) => () => fetchNewsPage(team.id)),
+        ],
+        isRunning: () => requests.current.running,
+      });
+    });
+  }
+  function refreshLive() {
+    if (activePage.current === "march-madness") {
+      void refreshMarchMadness(true);
+    } else {
+      void refreshScores();
+      void refreshSocial();
+    }
+  }
+  const pollingCallbacks = useRef({ refresh, refreshLive });
+  useEffect(() => {
+    pollingCallbacks.current = { refresh, refreshLive };
+  });
   useEffect(() => {
     const publicRequests = requests.current;
     publicRequests.start();
@@ -371,10 +435,7 @@ export function useDashboardFeeds(active: DashboardPageId) {
     });
     const stopPolling = pollPublicFeeds(
       () => pollingCallbacks.current.refresh(),
-      () => {
-        pollingCallbacks.current.refreshScores();
-        pollingCallbacks.current.refreshSocial();
-      },
+      () => pollingCallbacks.current.refreshLive(),
     );
     return () => {
       alive = false;
@@ -398,11 +459,12 @@ export function useDashboardFeeds(active: DashboardPageId) {
     oddsGames,
     playerStats,
     playerStatsStatus,
+    marchData,
+    marchUnavailable,
     socialRefreshing,
     socialRefreshError,
     refreshSocial,
     refreshRosterStats,
-    fetchNewsPage,
-    activePage,
+    selectPage,
   };
 }
