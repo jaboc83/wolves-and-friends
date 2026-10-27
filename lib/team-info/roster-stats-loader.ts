@@ -32,9 +32,10 @@ export function createRosterStatsLoader() {
     priorityKeys?: string[];
     onStats: (stats: Record<string, PlayerStats>) => void;
     onStatus: (status: StatsStatus) => void;
-  }) {
+  }): Promise<void> {
     known = { ...options.initial, ...known };
-    if (inflight) return inflight;
+    // A request for another team's keys must not be dropped while one is running.
+    if (inflight) return inflight.then(() => load(options));
 
     const wanted = new Set(options.priorityKeys || []);
     if (!wanted.size) {

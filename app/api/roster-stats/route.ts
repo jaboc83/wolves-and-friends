@@ -10,10 +10,13 @@ const batchSize = 3,
 type RosterPerson = {
   id?: string | number;
   items?: RosterPerson[];
-  position?: {
-    displayName?: string;
-    abbreviation?: string;
-  };
+  // NHL group rows carry position as a plain string (e.g. "Centers").
+  position?:
+    | string
+    | {
+        displayName?: string;
+        abbreviation?: string;
+      };
 };
 type RosterResponse = {
   athletes?: RosterPerson[];
@@ -34,6 +37,7 @@ function isRosterPerson(value: unknown): value is RosterPerson {
     (person.items === undefined ||
       (Array.isArray(person.items) && person.items.every(isRosterPerson))) &&
     (position === undefined ||
+      typeof position === "string" ||
       (isRecord(position) &&
         ["displayName", "abbreviation"].every((key) => {
           const field = position[key];
@@ -130,11 +134,14 @@ async function loadManifest() {
                   teamId: String(data.team?.id || t.espn),
                   year:
                     Number(data.season?.year) || new Date().getUTCFullYear(),
-                  position: String(
-                    person.position?.displayName ||
-                      person.position?.abbreviation ||
-                      "",
-                  ),
+                  position:
+                    typeof person.position === "object"
+                      ? String(
+                          person.position.displayName ||
+                            person.position.abbreviation ||
+                            "",
+                        )
+                      : "",
                 }));
             } catch {
               return [];
