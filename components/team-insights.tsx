@@ -1,5 +1,11 @@
 "use client";
-import { Fragment, useMemo, useState, type KeyboardEvent } from "react";
+import {
+  Fragment,
+  useEffect,
+  useMemo,
+  useState,
+  type KeyboardEvent,
+} from "react";
 import { decorateTable } from "../lib/team-info/standings";
 import { teams } from "../lib/teams/teams";
 import { sportTerms } from "../lib/teams/sport-terms";
@@ -70,14 +76,30 @@ export default function TeamInsights({
       row.id === t?.espn ||
       Boolean(t?.espn && row.url.includes(`/${t.espn}`)),
   );
+  const rosterLeague = t?.league;
+  const rosterPriorityKeys = useMemo(
+    () =>
+      info?.depth?.groups.flatMap((group) =>
+        group.players
+          .map((player: { url: string }) => {
+            const playerId = player.url.match(/\/_\/id\/(\d+)/)?.[1];
+            return playerId && rosterLeague ? `${rosterLeague}:${playerId}` : "";
+          })
+          .filter(Boolean),
+      ) || [],
+    [info?.depth, rosterLeague],
+  );
+  // Preload as soon as the team's roster is known, not when the panel opens.
+  useEffect(() => {
+    if (rosterPriorityKeys.length) onRosterOpen(rosterPriorityKeys);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [rosterPriorityKeys]);
   const [rosterSortState, setRosterSortState] = useState<{
     id: string;
     value: RosterSort;
   } | null>(null);
-  const rosterSort =
-    rosterSortState?.id === id
-      ? rosterSortState.value
-      : { column: "Player", direction: "asc" as const };
+  const rosterSortOverride =
+    rosterSortState?.id === id ? rosterSortState.value : null;
   const rosterGroups = useMemo(() => {
     if (!info?.depth) return [];
     const buckets = new Map<
@@ -485,18 +507,7 @@ export default function TeamInsights({
           id="team-roster"
           className="data-panel"
           onToggle={(event) => {
-            if (event.currentTarget.open) {
-              const priorityKeys =
-                info?.depth?.groups.flatMap((group) =>
-                  group.players
-                    .map((player: { url: string }) => {
-                      const id = player.url.match(/\/_\/id\/(\d+)/)?.[1];
-                      return id && t?.league ? `${t.league}:${id}` : "";
-                    })
-                    .filter(Boolean),
-                ) || [];
-              onRosterOpen(priorityKeys);
-            }
+            if (event.currentTarget.open) onRosterOpen(rosterPriorityKeys);
           }}
         >
           <summary>{headings.roster}</summary>
@@ -541,12 +552,15 @@ export default function TeamInsights({
                       .filter((title): title is string => Boolean(title)),
                   ),
                 );
+                const defaultColumn = statsTable.columns[0] ?? "Player";
+                const rosterSort: RosterSort = rosterSortOverride ?? {
+                  column: defaultColumn,
+                  direction: defaultRosterSortDirection(defaultColumn),
+                };
                 const toggleRosterSort = (column: string) =>
                   setRosterSortState((current) => {
                     const currentSort =
-                      current?.id === id
-                        ? current.value
-                        : { column: "Player", direction: "asc" as const };
+                      current?.id === id ? current.value : rosterSort;
                     const direction =
                       currentSort.column === column
                         ? currentSort.direction === "asc"

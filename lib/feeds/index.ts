@@ -21,7 +21,7 @@ import { runProviderTasks, type ProviderTask } from "./provider-tasks";
 import { fetchScoreboard } from "./scoreboard";
 import { discEvents } from "../games/event-seed";
 import { parseDgptSchedule } from "./dgpt";
-import { eventLifecycle } from "../games/event-time";
+import { eventIsToday, eventLifecycle } from "../games/event-time";
 import { verifyAuthorFeed } from "./bylines";
 import { parseFrostNews } from "./club-news";
 import { authorStories } from "./author-stories";
@@ -81,6 +81,13 @@ type ESPNResponse = {
 };
 const sectionCache: Partial<Record<string, HubData>> = {};
 const sectionInflight: Partial<Record<string, Promise<HubData>>> = {};
+const injurySources = [
+  { team: "wolves" as TeamId, sport: "basketball/nba", espnId: "16" },
+  { team: "wild" as TeamId, sport: "hockey/nhl", espnId: "30" },
+  { team: "vikings" as TeamId, sport: "football/nfl", espnId: "16" },
+  { team: "twins" as TeamId, sport: "baseball/mlb", espnId: "15" },
+  { team: "lynx" as TeamId, sport: "basketball/wnba", espnId: "16" },
+];
 function safeFeedError(error: unknown) {
   if (error instanceof FeedError) return error.code;
   if (error instanceof DOMException && error.name === "TimeoutError")
@@ -133,6 +140,62 @@ async function providerGet(url: string, signal?: AbortSignal) {
       : new FeedError(safeFeedError(error));
   }
 }
+async function fetchESPNInjuries(
+  sport: string,
+  espnId: string,
+  teamName: string,
+  signal: AbortSignal,
+): Promise<NonNullable<Game["injuries"]>> {
+  const injuryUrls = [
+    "https://site.api.espn.com/apis/site/v2/sports/" +
+      sport +
+      "/injuries?region=us&lang=en&team=" +
+      espnId,
+    "https://site.web.api.espn.com/apis/site/v2/sports/" +
+      sport +
+      "/injuries?region=us&lang=en&team=" +
+      espnId,
+  ];
+  let response: Response | null = null;
+  let lastError: unknown;
+  for (const url of injuryUrls) {
+    try {
+      response = await providerGet(url, signal);
+      break;
+    } catch (error) {
+      lastError = error;
+    }
+  }
+  if (!response) throw lastError || new FeedError("request-failed");
+  const json = (await response.json()) as ESPNResponse;
+  if (!json.injuries?.length) throw new FeedError("empty-injuries");
+  return (json.injuries || [])
+    .flatMap((group) =>
+      group.injuries
+        ? group.injuries.map((injury) => ({
+            ...injury,
+            team: group.team || { displayName: group.displayName },
+          }))
+        : [group],
+    )
+    .map((item) => ({
+      player:
+        item.athlete?.displayName || item.athlete?.fullName || "Unknown player",
+      status: item.status || item.type || "Unavailable",
+      detail:
+        item.details?.detail ||
+        item.details?.type ||
+        item.longComment ||
+        undefined,
+      team:
+        item.team?.displayName ||
+        item.team?.name ||
+        item.athlete?.team?.displayName ||
+        item.athlete?.team?.name ||
+        teamName,
+    }))
+    .filter((item) => item.player);
+}
 export async function collect(
   section: "news" | "schedules" | "all" = "all",
   team?: TeamId,
@@ -158,6 +221,10 @@ export async function collect(
   };
   const tasks: ProviderTask<Output>[] = [];
   const taskTeams: TeamId[][] = [];
+  const opponentInjuriesByTeam: Record<
+    string,
+    NonNullable<Game["injuries"]>
+  > = {};
   async function task(
     name: string,
     ids: TeamId[],
@@ -401,13 +468,6 @@ export async function collect(
     );
   }
   if (section !== "news") {
-    const injurySources = [
-      { team: "wolves" as TeamId, sport: "basketball/nba", espnId: "16" },
-      { team: "wild" as TeamId, sport: "hockey/nhl", espnId: "30" },
-      { team: "vikings" as TeamId, sport: "football/nfl", espnId: "16" },
-      { team: "twins" as TeamId, sport: "baseball/mlb", espnId: "15" },
-      { team: "lynx" as TeamId, sport: "basketball/wnba", espnId: "16" },
-    ];
     await Promise.all(
       injurySources.map(async (source) => {
         const teamName =
@@ -800,6 +860,50 @@ export async function collect(
       if (!games.some((next) => next.id === g.id))
         games.push(eventLifecycle(g));
   }
+  if (section !== "news") {
+    const opponentTeams = new Map<
+      string,
+      { league: string; espnId: string; name: string }
+    >();
+    for (const game of games) {
+      if (!eventIsToday(game)) continue;
+      const source = injurySources.find(
+        (candidate) => candidate.team === game.team,
+      );
+      const league = teams.find(
+        (candidate) => candidate.id === game.team,
+      )?.league;
+      if (!source || !league) continue;
+      for (const competitor of game.competitors) {
+        if (!competitor.teamId || competitor.teamId === source.espnId) continue;
+        const key = `${league}:${competitor.teamId}`;
+        if (!opponentTeams.has(key))
+          opponentTeams.set(key, {
+            league,
+            espnId: competitor.teamId,
+            name: competitor.name,
+          });
+      }
+    }
+    const opponentReports = await runProviderTasks(
+      [...opponentTeams].map(([key, source]) => ({
+        name: "ESPN opponent injury report · " + source.name,
+        run: async (signal) => ({
+          key,
+          injuries: await fetchESPNInjuries(
+            source.league,
+            source.espnId,
+            source.name,
+            signal,
+          ),
+        }),
+      })),
+      { concurrency: 5, timeoutMs: 12000 },
+    );
+    for (const report of opponentReports)
+      if (report.value)
+        opponentInjuriesByTeam[report.value.key] = report.value.injuries;
+  }
   const baseline = cached || (initial as HubData);
   for (const h of health.filter((h) => h.status === "unavailable")) {
     if (section !== "news")
@@ -842,15 +946,23 @@ export async function collect(
     if (!unique.has(s.url)) unique.set(s.url, s);
   }
   for (const game of games) {
-    const teamInjuries = injuriesByTeam[game.team];
-    if (!teamInjuries) continue;
+    const teamInjuries = injuriesByTeam[game.team] || [];
+    const league = teams.find((team) => team.id === game.team)?.league;
+    const opponentInjuries = league
+      ? game.competitors.flatMap(
+          (competitor) =>
+            (competitor.teamId &&
+              opponentInjuriesByTeam[`${league}:${competitor.teamId}`]) ||
+            [],
+        )
+      : [];
     const teamNames = game.competitors.map((competitor) =>
       competitor.name
         .toLowerCase()
         .replace(/[^a-z0-9]+/g, " ")
         .trim(),
     );
-    game.injuries = teamInjuries.filter((injury) => {
+    game.injuries = [...teamInjuries, ...opponentInjuries].filter((injury) => {
       const injuryTeam = (injury.team || "")
         .toLowerCase()
         .replace(/[^a-z0-9]+/g, " ")
