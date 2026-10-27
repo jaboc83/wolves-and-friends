@@ -111,9 +111,9 @@ Odds lookups are currently limited to eligible games within the next seven days 
 | Browser localStorage | `wf-team`, `wf-read`, `wf-saved`, and `wf-archive`                                                                                                                                        | Device-only preferences and saved article snapshots          |
 | Browser localStorage | `wf-cache` and `wf-social-cache`                                                                                                                                                          | Device-only caches of public feed content and inline avatars |
 | Server module memory | Public feed responses, verification results, and avatar caches                                                                                                                            | Temporary, shared public-data work within a Worker instance  |
-| Bundled JSON         | [initial.json](data/snapshots/initial.json), [team-info-initial.json](data/snapshots/team-info-initial.json), and [march-madness-initial.json](data/snapshots/march-madness-initial.json) | Public-data fallback snapshots shipped with the source       |
+| Bundled JSON         | [march-madness-initial.json](data/snapshots/march-madness-initial.json) | Public-data fallback for the tournament bracket              |
 
-Clearing browser storage removes local read/saved history and choices. Those preferences do not sync between devices. The snapshots are fallbacks, not continuously updated files. Source-check timestamps and unavailable-feed notices help distinguish cached information from a successful refresh.
+Clearing browser storage removes local read/saved history and choices. Those preferences do not sync between devices. Dashboard feeds and team info start empty until live responses arrive, unless device-local feed caches are available. The tournament snapshot is a fallback, not a continuously updated file. Source-check timestamps and unavailable-feed notices help distinguish cached information from a successful refresh.
 
 The repository contains starter authentication, connector, and UI scaffolding. Its presence does not mean the dashboard uses a login flow or every included component. The hosting manifest currently has no D1 database or R2 bucket binding.
 

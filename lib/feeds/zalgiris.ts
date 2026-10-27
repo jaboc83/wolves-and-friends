@@ -1,5 +1,6 @@
 // Parses Žalgiris' official site into normalized basketball fixtures and scores.
 import type { Game } from "./feed-types";
+import { zalgirisProviders } from "../teams/zalgiris/providers";
 type JsonObject = Record<string, unknown>;
 function object(value: unknown): JsonObject {
   return value && typeof value === "object" ? (value as JsonObject) : {};
@@ -192,7 +193,7 @@ export function parseZalgiris(html: string, checked: string): Game[] {
       league,
       venue: "",
       broadcast: broadcast ? "Lithuanian listing: " + broadcast : "",
-      url: "https://zalgiris.lt/rungtynes/" + id,
+      url: zalgirisProviders.urls.officialSchedule + id,
       sourceName: "Official Žalgiris",
       sourceChecked: checked,
       competitors: names.map((name, i) => ({

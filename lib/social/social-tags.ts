@@ -1,15 +1,7 @@
-// Team-specific hashtags used to discover public social posts.
+// Team-specific hashtags used to discover public social posts; edit them in team providers.
 import type { TeamId } from "../teams/teams";
-export const socialTags = {
-  wild: ["#MNWild"],
-  vikings: ["#Skol"],
-  twins: ["#MNTwins"],
-  loons: ["#MNUFC"],
-  palace: ["#CPFC"],
-  disc: ["#DGPT", "#PDGA"],
-  lynx: ["#MinnesotaLynx"],
-  zalgiris: ["#Zalgiris"],
-  frost: ["#MinnesotaFrost"],
-  usmnt: ["#USMNT"],
-} as const satisfies Partial<Record<TeamId, readonly string[]>>;
-export type SocialTagTeam = keyof typeof socialTags;
+import { teamProviders } from "../teams/providers";
+export const socialTags: { team: TeamId; tags: readonly string[] }[] =
+  teamProviders.flatMap((p) =>
+    p.socialTags?.length ? [{ team: p.team, tags: p.socialTags }] : [],
+  );

@@ -2,6 +2,8 @@
 import type { Game } from "./feed-types";
 import type { Depth, Table } from "../team-info/index";
 import type { RosterDetails } from "../team-info/roster-details";
+import { zalgirisProviders } from "../teams/zalgiris/providers";
+import { frostProviders } from "../teams/frost/providers";
 
 const decode = (s: string) =>
   s
@@ -317,9 +319,9 @@ export function parseZalgirisRoster(
   return rosterFromRows(
     html,
     checked,
-    "https://www.be-basketball.com",
+    new URL(zalgirisProviders.urls.roster).origin,
     "BeBasket · current roster",
-    "https://www.be-basketball.com/team/zalgiris-kaunas/players",
+    zalgirisProviders.urls.roster,
   );
 }
 
@@ -346,9 +348,9 @@ export function parsePwhlRoster(
   return rosterFromRows(
     html,
     checked,
-    "https://www.thepwhl.com",
+    new URL(frostProviders.urls.roster).origin,
     "PWHL · Minnesota Frost roster",
-    "https://www.thepwhl.com/en/stats/roster/2/10?league=1",
+    frostProviders.urls.roster,
   );
 }
 
@@ -445,8 +447,7 @@ export function parsePwhlStandings(
   };
 }
 
-const trainingCampRosterUrl =
-  "https://www.thepwhl.com/en/teams/minnesota-frost/news/2026/october/07/minnesota-frost-announce-2026-27-training-camp-roster";
+const trainingCampRosterUrl = frostProviders.urls.trainingCampRoster;
 
 export function parsePwhlTrainingCampRoster(
   html: string,
@@ -589,7 +590,7 @@ function dateTimeFromText(
 export function parsePwhlSchedule(
   html: string,
   checked: string,
-  sourceUrl = "https://www.thepwhl.com/en/stats/schedule/2/11/all-months/homeaway?league=1",
+  sourceUrl: string = frostProviders.urls.schedule,
 ): Game[] {
   const output = new Map<string, Game>();
   const candidates = rows(html).map((r) => ({
@@ -653,7 +654,7 @@ export function parsePwhlSchedule(
         .match(/(?:TV|Radio|Broadcast|Watch)\s*[:·-]\s*([^|\n]+)/i)?.[1]
         ?.trim() || "";
     const eventUrl =
-      absolute(candidate.href || "", "https://www.thepwhl.com") || sourceUrl;
+      absolute(candidate.href || "", new URL(sourceUrl).origin) || sourceUrl;
     const id = `pwhl-frost-${dateTime.date.slice(0, 10)}-${other.toLowerCase().replace(/[^a-z0-9]+/g, "-")}`;
     output.set(id, {
       id,

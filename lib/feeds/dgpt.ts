@@ -1,6 +1,51 @@
-// Converts the public DGPT schedule page into normalized tournament events.
+// Converts public DGPT schedule and StatMando standings pages into shared shapes.
 import type { Game } from "./feed-types";
+import type { Table } from "../team-info/index";
 import { eventLifecycle } from "../games/event-time";
+import { discProviders } from "../teams/disc/providers";
+const plain = (s: string) =>
+  s
+    .replace(/<[^>]*>/g, " ")
+    .replace(/&amp;/g, "&")
+    .replace(/\s+/g, " ")
+    .trim();
+export function parseDGPT(
+  html: string,
+  division: string,
+  checked: string,
+): Table {
+  const rankingsUrl = discProviders.urls.rankings;
+  const tbody = html.match(/<tbody[^>]*>([\s\S]*?)<\/tbody>/)?.[1] || "";
+  const rows = [...tbody.matchAll(/<tr[^>]*>([\s\S]*?)<\/tr>/g)]
+    .slice(0, 10)
+    .flatMap((m) => {
+      const cells = [...m[1].matchAll(/<td[^>]*>([\s\S]*?)<\/td>/g)].map(
+        (c) => c[1],
+      );
+      const link = cells[2]?.match(
+        /<a[^>]*href="([^"]+)"[^>]*>([\s\S]*?)<\/a>/,
+      );
+      if (!link || cells.length < 4) return [];
+      return [
+        {
+          id: link[1],
+          name: plain(link[2]),
+          url: new URL(rankingsUrl).origin + link[1],
+          cells: [plain(cells[0]), plain(cells[3])],
+        },
+      ];
+    });
+  const week = html.match(/Week:[\s\S]{0,250}?(202\d-\d{2})/)?.[1];
+  return {
+    name: "DGPT " + division + " · Top 10",
+    columns: ["#", "Points"],
+    rows,
+    source: "DGPT standings · StatMando",
+    url: rankingsUrl + division.toLowerCase(),
+    checked,
+    note: week ? "Standings week " + week : undefined,
+  };
+}
 const clean = (s: string) =>
   s
     .replace(/<script\b[^>]*>[\s\S]*?<\/script>/gi, "")
@@ -30,7 +75,7 @@ export function parseDgptSchedule(html: string, now = new Date()): Game[] {
     if (!href || !year) continue;
     let url: URL;
     try {
-      url = new URL(href, "https://www.dgpt.com");
+      url = new URL(href, new URL(discProviders.urls.officialSchedule).origin);
     } catch {
       continue;
     }

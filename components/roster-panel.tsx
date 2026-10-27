@@ -7,6 +7,7 @@ import {
   type KeyboardEvent,
 } from "react";
 import type { TeamInfo } from "../lib/team-info";
+import { teamProfile } from "../lib/teams/teams";
 import type { PlayerStats } from "../lib/team-info/player-stats";
 import type { StatsStatus } from "../lib/team-info/roster-stats-loader";
 import {
@@ -96,6 +97,7 @@ export default function RosterPanel({
   playerStatsStatus: StatsStatus;
   onRosterOpen: (priorityKeys?: string[]) => void;
 }) {
+  const rosterNote = teamProfile(teamId)?.rosterNote;
   const priorityKeys = useMemo(
     () =>
       depth?.groups.flatMap((group) =>
@@ -328,9 +330,7 @@ export default function RosterPanel({
             <a href={depth.url} target="_blank" rel="noreferrer">
               {depth.source} ↗
             </a>{" "}
-            {teamId === "frost"
-              ? "· Preliminary names and positions from the official training-camp announcement; final roster may change."
-              : ""}
+            {rosterNote ? "· " + rosterNote : ""}
           </p>
         </>
       ) : (

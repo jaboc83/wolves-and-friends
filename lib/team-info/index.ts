@@ -2,16 +2,10 @@
 import { decorateTable } from "./standings";
 export { decorateTable, tableSeasonType } from "./standings";
 import { teams } from "../teams/teams";
+import { teamProviders } from "../teams/providers";
+import { serverHooksFor } from "../teams/server";
 import { fetchPostseason, type Postseason } from "../games/postseason";
 import { rosterDetails, type RosterDetails } from "./roster-details";
-import {
-  parseEuroLeagueStandings,
-  parseLklStandings,
-  parseZalgirisRoster,
-  parsePwhlRoster,
-  parsePwhlStandings,
-  parsePwhlTrainingCampRoster,
-} from "../feeds/special-team-data";
 export type Table = {
   stale?: boolean;
   seasonType?: number;
@@ -147,7 +141,7 @@ type ESPNRankingEntry = {
   contestantId?: string | number;
   contestantName?: string;
 };
-type ProviderResponse = ESPNStandingsNode & {
+export type ProviderResponse = ESPNStandingsNode & {
   pageCount?: string | number;
   items?: ESPNPowerIndexItem[];
   sports?: {
@@ -1219,48 +1213,6 @@ export function parseStandings(
   walk(x);
   return result.map((table) => decorateTable(table, id));
 }
-const plain = (s: string) =>
-  s
-    .replace(/<[^>]*>/g, " ")
-    .replace(/&amp;/g, "&")
-    .replace(/\s+/g, " ")
-    .trim();
-export function parseDGPT(
-  html: string,
-  division: string,
-  checked: string,
-): Table {
-  const tbody = html.match(/<tbody[^>]*>([\s\S]*?)<\/tbody>/)?.[1] || "";
-  const rows = [...tbody.matchAll(/<tr[^>]*>([\s\S]*?)<\/tr>/g)]
-    .slice(0, 10)
-    .flatMap((m) => {
-      const cells = [...m[1].matchAll(/<td[^>]*>([\s\S]*?)<\/td>/g)].map(
-        (c) => c[1],
-      );
-      const link = cells[2]?.match(
-        /<a[^>]*href="([^"]+)"[^>]*>([\s\S]*?)<\/a>/,
-      );
-      if (!link || cells.length < 4) return [];
-      return [
-        {
-          id: link[1],
-          name: plain(link[2]),
-          url: "https://statmando.com" + link[1],
-          cells: [plain(cells[0]), plain(cells[3])],
-        },
-      ];
-    });
-  const week = html.match(/Week:[\s\S]{0,250}?(202\d-\d{2})/)?.[1];
-  return {
-    name: "DGPT " + division + " · Top 10",
-    columns: ["#", "Points"],
-    rows,
-    source: "DGPT standings · StatMando",
-    url: "https://statmando.com/rankings/dgpt/" + division.toLowerCase(),
-    checked,
-    note: week ? "Standings week " + week : undefined,
-  };
-}
 export async function fetchTeamInfo() {
   const checked = new Date().toISOString();
   const powerRankingCache = new Map<
@@ -1392,23 +1344,22 @@ export async function fetchTeamInfo() {
             if (!info.depth) info.unavailable.push("roster");
           })(),
           (async () => {
-            if (
-              !powerRankingLeague(t.league!) &&
-              !["wild", "loons", "palace", "twins"].includes(t.id)
-            )
-              return;
+            const rankingSource = teamProviders.find(
+              (p) => p.team === t.id,
+            )?.powerRankingSource;
+            if (!powerRankingLeague(t.league!) && !rankingSource) return;
             try {
-              if (t.id === "palace") {
+              if (rankingSource === "opta-epl") {
                 info.powerRanking = parseAnalystPremierLeaguePowerRanking(
                   await get(analystPremierLeaguePowerRankingsEndpoint, 30000),
                   checked,
                 );
-              } else if (t.id === "twins") {
+              } else if (rankingSource === "cbs-mlb") {
                 info.powerRanking = parseCbsMlbPowerRanking(
                   await getText("https://www.cbssports.com/mlb/powerrankings/"),
                   checked,
                 );
-              } else if (t.id === "wild") {
+              } else if (rankingSource === "cbs-nhl") {
                 info.powerRanking = parseCbsNhlPowerRanking(
                   await getText("https://www.cbssports.com/nhl/powerrankings/"),
                   checked,
@@ -1462,180 +1413,15 @@ export async function fetchTeamInfo() {
           } catch {}
         }
       }
-      if (t.id === "disc") {
-        await Promise.all(
-          ["MPO", "FPO"].map(async (division) => {
-            try {
-              const r = await fetch(
-                "https://statmando.com/rankings/dgpt/" + division.toLowerCase(),
-                { signal: AbortSignal.timeout(10000) },
-              );
-              if (!r.ok) throw Error();
-              const table = parseDGPT(await r.text(), division, checked);
-              if (table.rows.length !== 10) throw Error();
-              info.tables.push(table);
-            } catch {
-              info.unavailable.push(division + " standings");
-            }
-          }),
-        );
-        info.tables.sort(
-          (a, b) =>
-            Number(b.name.includes("MPO")) - Number(a.name.includes("MPO")),
-        );
-        info.season = {
-          name: "2026 DGPT",
-          start: "2026-02-27",
-          end: "2026-10-18",
-          source: "DGPT official schedule",
-          url: "https://www.dgpt.com/schedule/",
-          note: "Tour opener through the Powerball Cup.",
-        };
-      }
-      if (t.id === "zalgiris") {
-        await Promise.all([
-          (async () => {
-            try {
-              const table = parseEuroLeagueStandings(
-                await getText(
-                  "https://www.eurohoops.net/euroleague-standings/",
-                ),
-                checked,
-              );
-              if (!table) throw Error("No standings table parsed");
-              info.tables.push(table);
-            } catch {
-              info.unavailable.push("EuroLeague standings");
-            }
-          })(),
-          (async () => {
-            try {
-              const table = parseLklStandings(
-                await getText("https://en.lkl.lt/turnyrine-lentele"),
-                checked,
-              );
-              if (!table) throw Error("No LKL standings table parsed");
-              info.tables.push(table);
-            } catch {
-              info.unavailable.push("LKL standings");
-            }
-          })(),
-          (async () => {
-            try {
-              info.depth = parseZalgirisRoster(
-                await getText(
-                  "https://www.be-basketball.com/team/zalgiris-kaunas/players",
-                ),
-                checked,
-              );
-              if (!info.depth) throw Error("No roster parsed");
-            } catch {
-              info.unavailable.push("roster");
-            }
-          })(),
-        ]);
-      }
-      if (t.id === "frost") {
-        await Promise.all([
-          (async () => {
-            try {
-              const standingsPage = await getText(
-                "https://www.thepwhl.com/en/stats/standings",
-              );
-              const appKey = standingsPage.match(
-                /\bappKey\s*=\s*['\"]([^'\"]+)['\"]/i,
-              )?.[1];
-              if (!appKey) throw Error("PWHL stats key not found");
-              const siteId =
-                standingsPage.match(/\bsite_id\s*=\s*(\d+)/i)?.[1] || "0";
-              const bootstrapResult = await getJsonp({
-                feed: "statviewfeed",
-                view: "bootstrap",
-                season: "latest",
-                game_id: "",
-                pageName: "teams",
-                key: appKey,
-                client_code: "pwhl",
-                site_id: siteId,
-                league_id: "",
-                league_code: "",
-                conference: "-1",
-                division: "-1",
-                lang: "en",
-                callback: "wolvesFriendsCallback",
-              });
-              const bootstrap: ProviderResponse = Array.isArray(bootstrapResult)
-                ? bootstrapResult[0] || {}
-                : bootstrapResult;
-              const seasonId = String(bootstrap?.current_season_id || "");
-              const leagueId = String(bootstrap?.current_league_id || "");
-              const seasonName =
-                bootstrap?.seasons?.find(
-                  (season) => String(season.id) === seasonId,
-                )?.name || "current season";
-              if (!seasonId || !leagueId)
-                throw Error("PWHL season unavailable");
-              const standingsResult = await getJsonp({
-                feed: "statviewfeed",
-                view: "teams",
-                groupTeamsBy: "league",
-                context: "overall",
-                site_id: siteId,
-                season: seasonId,
-                special: "false",
-                key: appKey,
-                client_code: "pwhl",
-                league_id: leagueId,
-                conference: "-1",
-                division: "undefined",
-                sort: "points",
-                order_direction: "normal",
-                lang: "en",
-                callback: "wolvesFriendsCallback",
-              });
-              const standings = parsePwhlStandings(
-                `wolvesFriendsCallback(${JSON.stringify(standingsResult)})`,
-                checked,
-                seasonName,
-              );
-              if (!standings) throw Error("No PWHL standings parsed");
-              info.tables.push(standings);
-            } catch {
-              info.unavailable.push("standings");
-            }
-          })(),
-          (async () => {
-            try {
-              const rosterPage = await getText(
-                "https://www.thepwhl.com/en/stats/roster/2/10?league=1",
-              );
-              info.depth = parsePwhlRoster(rosterPage, checked);
-              if (!info.depth) {
-                const trainingCampPage = await getText(
-                  "https://www.thepwhl.com/en/teams/minnesota-frost/news/2026/october/07/minnesota-frost-announce-2026-27-training-camp-roster",
-                );
-                info.depth = parsePwhlTrainingCampRoster(
-                  trainingCampPage,
-                  checked,
-                );
-              }
-              if (!info.depth) throw Error("No Frost roster parsed");
-            } catch {
-              info.unavailable.push("roster");
-            }
-          })(),
-        ]);
-      }
-      if (t.id === "frost")
-        info.season = {
-          name: "2026–27 regular season",
-          start: "2026-12-05",
-          end: "2027-04-18",
-          source: "PWHL official announcement",
-          url: "https://www.thepwhl.com/en/news/2026/october/02/pwhl-announces-2026-27-regular-season-schedule",
-        };
+      await serverHooksFor(t.id)?.loadTeamInfo?.({
+        info,
+        checked,
+        getText,
+        getJsonp,
+      });
+      const fixedSeason = teamProviders.find((p) => p.team === t.id)?.season;
+      if (fixedSeason) info.season = { ...fixedSeason };
       return info;
     }),
   );
 }
-

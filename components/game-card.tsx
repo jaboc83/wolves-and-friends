@@ -7,7 +7,7 @@ import { gameBadges } from "../lib/games/game-badges";
 import { useRef, useState } from "react";
 import type { Game } from "../lib/feeds";
 import Image from "next/image";
-import { teams } from "../lib/teams/teams";
+import { teamProfile } from "../lib/teams/teams";
 import { teamLocation } from "../lib/teams/team-location";
 import { gameTeamUrl } from "../lib/teams/game-team-url";
 import { sportTerms } from "../lib/teams/sport-terms";
@@ -86,7 +86,7 @@ export default function GameCard({
   const detailsRef = useRef<HTMLDetailsElement>(null);
   const expandReveals = compact && g.state === "post";
   const scoreVisible = expandReveals ? expanded || revealPast : revealed;
-  const t = teams.find((t) => t.id === g.team);
+  const t = teamProfile(g.team);
   if (!t) return null;
   const hidden = g.state !== "pre" && !scoreVisible;
   const logo = teamLogoPath(t.id);
@@ -116,7 +116,7 @@ export default function GameCard({
           <div className="game-identity-text">
             <div className="game-title">
               <strong>
-                {t.id === "disc" ? (
+                {t.individual ? (
                   t.name
                 ) : (
                   <a
@@ -265,9 +265,7 @@ export default function GameCard({
           {g.injuries?.length ? (
             Array.from(
               new Set(
-                g.injuries.map(
-                  (injury) => injury.team || "Team injury report",
-                ),
+                g.injuries.map((injury) => injury.team || "Team injury report"),
               ),
             ).map((team) => (
               <div className="injury-team" key={team}>
@@ -397,7 +395,7 @@ export default function GameCard({
           <span className="compact-match">
             <span className="compact-name">
               <strong>
-                {t.id === "disc" ? (
+                {t.individual ? (
                   t.short
                 ) : (
                   <a
@@ -419,7 +417,12 @@ export default function GameCard({
               <span>
                 vs.{" "}
                 <a
-                  href={gameTeamUrl(g.team, opponent, false, opponentCompetitor?.teamId)}
+                  href={gameTeamUrl(
+                    g.team,
+                    opponent,
+                    false,
+                    opponentCompetitor?.teamId,
+                  )}
                   target="_blank"
                   rel="noreferrer"
                   onClick={(e) => e.stopPropagation()}

@@ -4,9 +4,7 @@ import {
   safe,
   match,
   FeedError,
-  parseNbaTeamNews,
   parseFeed,
-  parsePalaceRadar,
   parseGames,
   mergeLiveScoreboard,
 } from "./feed-parsers";
@@ -19,31 +17,26 @@ export {
 } from "./feed-parsers";
 import { runProviderTasks, type ProviderTask } from "./provider-tasks";
 import { fetchScoreboard } from "./scoreboard";
-import { discEvents } from "../games/event-seed";
-import { parseDgptSchedule } from "./dgpt";
 import { eventIsToday, eventLifecycle } from "../games/event-time";
 import { verifyAuthorFeed } from "./bylines";
-import { parseFrostNews } from "./club-news";
 import { authorStories } from "./author-stories";
-import {
-  parsePalace,
-  parseLoonsCalendar,
-  mergeOfficial,
-  mergeFallbackGames,
-} from "./official-schedules";
+import { mergeOfficial, mergeFallbackGames } from "./official-schedules";
 import { teams } from "../teams/teams";
+import { teamProviders } from "../teams/providers";
+import { serverHooksFor, teamServerHooks } from "../teams/server";
+import type { TeamFeedTask } from "../teams/server-types";
 import type { TeamId } from "../teams/teams";
-import {
-  palaceCompetitions,
-  scoreboardLeagues,
-  teamPlaysCompetition,
-} from "../teams/competitions";
-import { parseZalgiris } from "./zalgiris";
-import { parsePwhlSchedule } from "./special-team-data";
+import { scoreboardLeagues, teamPlaysCompetition } from "../teams/competitions";
 import { enrichOdds } from "./odds";
-import initial from "../../data/snapshots/initial.json";
 import type { Story, Game, Health, AuthorFeed, HubData } from "./feed-types";
 export type { Story, Game, Health, AuthorFeed, HubData } from "./feed-types";
+const emptyHub: HubData = {
+  checked: "",
+  stories: [],
+  games: [],
+  health: [],
+  authors: [],
+};
 type ESPNCompetitor = {
   team?: { id?: string; abbreviation?: string };
 };
@@ -81,13 +74,12 @@ type ESPNResponse = {
 };
 const sectionCache: Partial<Record<string, HubData>> = {};
 const sectionInflight: Partial<Record<string, Promise<HubData>>> = {};
-const injurySources = [
-  { team: "wolves" as TeamId, sport: "basketball/nba", espnId: "16" },
-  { team: "wild" as TeamId, sport: "hockey/nhl", espnId: "30" },
-  { team: "vikings" as TeamId, sport: "football/nfl", espnId: "16" },
-  { team: "twins" as TeamId, sport: "baseball/mlb", espnId: "15" },
-  { team: "lynx" as TeamId, sport: "basketball/wnba", espnId: "16" },
-];
+const injurySources = teamProviders.flatMap((p) => {
+  const league = teams.find((t) => t.id === p.team)?.league;
+  return p.espnTeamId && league
+    ? [{ team: p.team, sport: league, espnId: p.espnTeamId }]
+    : [];
+});
 function safeFeedError(error: unknown) {
   if (error instanceof FeedError) return error.code;
   if (error instanceof DOMException && error.name === "TimeoutError")
@@ -247,144 +239,63 @@ export async function collect(
       },
     });
   }
-  if (section !== "schedules") {
-    await task(
-      "Official Timberwolves news",
-      ["wolves"],
-      async (output, signal) => {
-        const { stories } = output;
-        const get = (url: string) => providerGet(url, signal);
-        const parsed = parseNbaTeamNews(
-          await (await get("https://www.nba.com/timberwolves/news")).text(),
-        );
-        if (!parsed.length) throw new Error("No NBA team stories");
-        stories.push(...parsed);
-        return parsed.length;
-      },
-    );
-    await Promise.all(
-      newsSources.map(([name, url, ids]) =>
-        task(
-          name,
-          ids ||
-            (name === "Canis Hoopus"
-              ? ["wolves", "lynx"]
-              : name === "The Ice Garden"
-                ? ["frost"]
-                : ["zalgiris"]),
-          async (output, signal) => {
-            const { stories } = output;
-            const get = (url: string) => providerGet(url, signal);
-            const parsed = parseFeed(await (await get(url)).text(), name, ids);
-            stories.push(
-              ...(name.startsWith("EuroLeague")
-                ? parsed.filter((s) => /zalgiris|žalgiris/i.test(s.title))
-                : parsed),
-            );
-            return parsed.length;
-          },
-        ),
+  const teamTasks = (section: TeamFeedTask["section"]) =>
+    Promise.all(
+      teamServerHooks.flatMap((hooks) =>
+        (hooks.feedTasks || [])
+          .filter((t) => t.section === section)
+          .map((t) =>
+            task(t.name, [hooks.team], async (output, signal) => {
+              const result = await t.run({
+                checked,
+                get: (url) => providerGet(url, signal),
+                baseline: cached || emptyHub,
+              });
+              output.stories.push(...(result.stories || []));
+              output.games.push(...(result.games || []));
+              return result.count;
+            }),
+          ),
       ),
     );
-    await Promise.all([
-      task("Palace Radar", ["palace"], async (output, signal) => {
-        const { stories } = output;
-        const get = (url: string) => providerGet(url, signal);
-        const parsed = parsePalaceRadar(
-          await (await get("https://www.palaceradar.co.uk/")).text(),
-          checked,
-        );
-        if (!parsed.length) throw Error("No Palace Radar stories");
-        stories.push(...parsed);
-        return parsed.length;
-      }),
-      task("Official Minnesota Frost", ["frost"], async (output, signal) => {
-        const { stories } = output;
-        const get = (url: string) => providerGet(url, signal);
-        const parsed = parseFrostNews(
-          await (
-            await get("https://www.thepwhl.com/en/teams/minnesota-frost/news")
-          ).text(),
-        );
-        if (!parsed.length) throw Error("No club news");
-        stories.push(...parsed);
-        return parsed.length;
-      }),
-    ]);
+  if (section !== "schedules") {
+    await Promise.all(
+      newsSources.map(({ name, url, teams: ids, tagByContent }) =>
+        task(name, ids, async (output, signal) => {
+          const { stories } = output;
+          const get = (url: string) => providerGet(url, signal);
+          const parsed = parseFeed(
+            await (await get(url)).text(),
+            name,
+            tagByContent ? undefined : ids,
+          );
+          stories.push(
+            ...(name.startsWith("EuroLeague")
+              ? parsed.filter((s) => /zalgiris|žalgiris/i.test(s.title))
+              : parsed),
+          );
+          return parsed.length;
+        }),
+      ),
+    );
+    await teamTasks("news");
     await Promise.all(
       authorSources
-        .filter(
-          (source) =>
-            !team ||
-            (source.name === "Jess Myers" || source.name === "Michael Russo"
-              ? team === "wild"
-              : ["Alec Lewis", "Will Ragatz", "Ben Goessling"].includes(
-                    source.name,
-                  )
-                ? team === "vikings"
-                : team === "wolves"),
-        )
-        .map((source) =>
+        .filter((source) => !team || source.team === team)
+        .map(({ titleFilters, ...source }) =>
           task(
             "Author news · " + source.name,
-            [
-              source.name === "Jess Myers" || source.name === "Michael Russo"
-                ? "wild"
-                : ["Alec Lewis", "Will Ragatz", "Ben Goessling"].includes(
-                      source.name,
-                    )
-                  ? "vikings"
-                  : "wolves",
-            ],
+            [source.team],
             async (output, signal) => {
               const { authors } = output;
               const get = (url: string) => providerGet(url, signal);
               try {
                 const xml = await (await get(source.feed)).text();
-                let parsed = parseFeed(xml, source.name, ["wolves"]);
-                if (source.name === "Jon Krawczynski")
-                  parsed = parsed.filter(
-                    (s) =>
-                      / - The New York Times$/.test(s.title) ||
-                      /timberwolves|wolves/i.test(s.title),
-                  );
-                if (source.name === "Britt Robson")
-                  parsed = parsed.filter((s) =>
-                    /timberwolves|wolves|edwards|finch/i.test(s.title),
-                  );
-                if (
-                  source.name === "Jess Myers" ||
-                  source.name === "Michael Russo"
-                )
-                  parsed = parsed.filter((s) => /wild/i.test(s.title));
-                else if (source.name === "Alec Lewis")
-                  parsed = parsed.filter(
-                    (s) =>
-                      /vikings/i.test(s.title) &&
-                      / - The New York Times$/.test(s.title),
-                  );
-                else if (source.name === "Will Ragatz")
-                  parsed = parsed.filter(
-                    (s) =>
-                      /vikings/i.test(s.title) &&
-                      / - Sports Illustrated$/.test(s.title),
-                  );
-                else if (source.name === "Ben Goessling")
-                  parsed = parsed.filter(
-                    (s) =>
-                      /vikings/i.test(s.title) &&
-                      / - (?:The Minnesota )?Star Tribune$/.test(s.title),
-                  );
-                else if (source.name === "Jon Krawczynski")
-                  parsed = parsed.filter(
-                    (s) =>
-                      / - The New York Times$/.test(s.title) &&
-                      /timberwolves|wolves/i.test(s.title),
-                  );
-                else
-                  parsed = parsed.filter((s) =>
-                    /timberwolves|wolves|lynx|finch|edwards/i.test(s.title),
-                  );
+                const parsed = parseFeed(xml, source.name, [
+                  source.team,
+                ]).filter((s) =>
+                  titleFilters.every((filter) => filter.test(s.title)),
+                );
                 const author: AuthorFeed = {
                   ...source,
                   items: parsed.slice(0, 4).map(({ title, url, date }) => ({
@@ -403,7 +314,7 @@ export async function collect(
               } catch (error) {
                 output.failed = true;
                 output.error = safeFeedError(error);
-                const old = (cached?.authors || initial.authors || []).find(
+                const old = (cached?.authors || []).find(
                   (a) => a.name === source.name,
                 );
                 authors.push({
@@ -541,223 +452,42 @@ export async function collect(
           task("ESPN scores · " + t.short, [t.id], async (output, signal) => {
             const { games, health } = output;
             const get = (url: string) => providerGet(url, signal);
-            const currentYear = new Date().getFullYear();
+            const hooks = serverHooksFor(t.id);
+            const scheduleUrl =
+              "https://site.api.espn.com/apis/site/v2/sports/" +
+              t.league +
+              "/teams/" +
+              t.espn +
+              "/schedule";
             const json = await (
               await get(
-                "https://site.api.espn.com/apis/site/v2/sports/" +
-                  t.league +
-                  "/teams/" +
-                  t.espn +
-                  "/schedule" +
-                  (t.id === "twins"
-                    ? "?season=" + currentYear + "&seasontype=2"
-                    : ""),
+                scheduleUrl +
+                  (hooks?.espnScheduleQuery?.(new Date().getFullYear()) || ""),
               )
             ).json();
             const parsed = parseGames(json, t.id, t.sport);
-            if (t.id === "twins") {
-              const nextYear = currentYear + 1;
-              try {
-                const next = parseGames(
-                  await (
-                    await get(
-                      "https://site.api.espn.com/apis/site/v2/sports/" +
-                        t.league +
-                        "/teams/" +
-                        t.espn +
-                        "/schedule?season=" +
-                        nextYear +
-                        "&seasontype=2",
-                    )
-                  ).json(),
+            await hooks?.extendEspnSchedule?.({
+              checked,
+              get,
+              baseline: cached || emptyHub,
+              team: t,
+              json,
+              games: parsed,
+              health,
+              schedule: async (query) =>
+                parseGames(
+                  await (await get(scheduleUrl + query)).json(),
                   t.id,
                   t.sport,
-                ).filter(
-                  (game) => new Date(game.date).getUTCFullYear() === nextYear,
-                );
-                if (next.length) parsed.push(...next);
-                else
-                  parsed.push(
-                    ...(cached || (initial as HubData)).games.filter(
-                      (game) =>
-                        game.team === "twins" &&
-                        new Date(game.date).getUTCFullYear() === nextYear,
-                    ),
-                  );
-              } catch {
-                // A not-yet-published or temporarily unavailable future feed must
-                // not erase a previously verified next-season schedule.
-                parsed.push(
-                  ...(cached || (initial as HubData)).games.filter(
-                    (game) =>
-                      game.team === "twins" &&
-                      new Date(game.date).getUTCFullYear() === nextYear,
-                  ),
-                );
-              }
-            }
-            if (t.id === "wolves") {
-              const season =
-                json && typeof json === "object" && "season" in json
-                  ? json.season
-                  : undefined;
-              const responseYear =
-                season && typeof season === "object" && "year" in season
-                  ? season.year
-                  : undefined;
-              const year =
-                ((typeof responseYear === "number" ||
-                  typeof responseYear === "string") &&
-                  responseYear) ||
-                new Date().getFullYear() + (new Date().getMonth() >= 8 ? 1 : 0);
-              const phases = await Promise.allSettled(
-                [1, 2, 3].map(async (phase) =>
-                  parseGames(
-                    await (
-                      await get(
-                        "https://site.api.espn.com/apis/site/v2/sports/" +
-                          t.league +
-                          "/teams/" +
-                          t.espn +
-                          "/schedule?season=" +
-                          year +
-                          "&seasontype=" +
-                          phase,
-                      )
-                    ).json(),
-                    t.id,
-                    t.sport,
-                  ),
                 ),
-              );
-              for (const phase of phases)
-                if (phase.status === "fulfilled") parsed.push(...phase.value);
-              if (phases.some((p) => p.status === "rejected")) {
-                health.push({
-                  name: "ESPN full-season schedule · Wolves",
-                  teams: ["wolves"],
-                  checked,
-                  status: "unavailable",
-                  count: 0,
-                });
-                parsed.push(
-                  ...(cached || (initial as HubData)).games.filter(
-                    (g) =>
-                      g.team === "wolves" &&
-                      Date.parse(g.date) > Date.now() - 86400000 &&
-                      !parsed.some((p) => p.id === g.id),
-                  ),
-                );
-              }
-            }
+            });
             const unique = [...new Map(parsed.map((g) => [g.id, g])).values()];
             games.push(...unique);
             return unique.length;
           }),
         ),
     );
-    await task(
-      "Official Žalgiris schedule",
-      ["zalgiris"],
-      async (output, signal) => {
-        const { games } = output;
-        const get = (url: string) => providerGet(url, signal);
-        const r = await get("https://zalgiris.lt/rungtynes/");
-        const parsed = parseZalgiris(await r.text(), checked);
-        games.push(...parsed);
-        return parsed.length;
-      },
-    );
-    await task(
-      "Official PWHL schedule · Frost",
-      ["frost"],
-      async (output, signal) => {
-        const { games } = output;
-        const get = (url: string) => providerGet(url, signal);
-        const primaryUrl =
-          "https://www.thepwhl.com/en/stats/schedule/2/11/all-months/homeaway?league=1";
-        let parsed = parsePwhlSchedule(
-          await (await get(primaryUrl)).text(),
-          checked,
-          primaryUrl,
-        );
-        if (!parsed.length) {
-          const fallbackUrl =
-            "https://www.thepwhl.com/en/teams/minnesota-frost/schedule";
-          parsed = parsePwhlSchedule(
-            await (await get(fallbackUrl)).text(),
-            checked,
-            fallbackUrl,
-          );
-        }
-        if (!parsed.length) throw Error("No PWHL schedule events parsed");
-        games.push(...parsed);
-        return parsed.length;
-      },
-    );
-    await Promise.all([
-      ...Object.entries(palaceCompetitions).map(([league, name]) =>
-        task(
-          "ESPN Palace schedule · " + name,
-          ["palace"],
-          async (output, signal) => {
-            const { games } = output;
-            const get = (url: string) => providerGet(url, signal);
-            const json = await (
-              await get(
-                "https://site.api.espn.com/apis/site/v2/sports/" +
-                  league +
-                  "/teams/384/schedule",
-              )
-            ).json();
-            mergeLiveScoreboard(games, json, league);
-            return json &&
-              typeof json === "object" &&
-              "events" in json &&
-              Array.isArray(json.events)
-              ? json.events.length
-              : 0;
-          },
-        ),
-      ),
-      task("Official Palace schedule", ["palace"], async (output, signal) => {
-        const { games } = output;
-        const get = (url: string) => providerGet(url, signal);
-        const parsed = parsePalace(
-          await (await get("https://www.cpfc.co.uk/matches/")).text(),
-          checked,
-        );
-        if (!parsed.length) throw Error("No fixtures");
-        mergeOfficial(games, parsed);
-        return parsed.length;
-      }),
-      task("Official MNUFC calendar", ["loons"], async (output, signal) => {
-        const { games } = output;
-        const get = (url: string) => providerGet(url, signal);
-        const parsed = parseLoonsCalendar(
-          await (
-            await get(
-              "https://images.mlssoccer.com/raw/upload/assets/min/calendar/mnufc" +
-                new Date().getFullYear() +
-                ".ics",
-            )
-          ).text(),
-          checked,
-        );
-        mergeOfficial(games, parsed);
-        return parsed.length;
-      }),
-    ]);
-    await task("DGPT official schedule", ["disc"], async (output, signal) => {
-      const { games } = output;
-      const get = (url: string) => providerGet(url, signal);
-      const parsed = parseDgptSchedule(
-        await (await get("https://www.dgpt.com/schedule/")).text(),
-      );
-      if (!parsed.length) throw Error("No DGPT events parsed");
-      games.push(...parsed);
-      return parsed.length;
-    });
+    await teamTasks("schedules");
   }
   if (section !== "news") {
     const scoreDates = [
@@ -799,6 +529,13 @@ export async function collect(
     tasks,
     section === "news" ? { concurrency: tasks.length } : {},
   );
+  const hookTasks = teamServerHooks.flatMap((hooks) => hooks.feedTasks || []);
+  const officialTasks = new Set(
+    hookTasks.filter((t) => t.official).map((t) => t.name),
+  );
+  const labelledSources = new Set(
+    hookTasks.filter((t) => t.preserveLabels).map((t) => t.name),
+  );
   for (const [index, outcome] of outcomes.entries()) {
     const output = outcome.value;
     health.push({
@@ -819,8 +556,7 @@ export async function collect(
       const injuryTeam = taskTeams[index]?.[0];
       if (injuryTeam) injuriesByTeam[injuryTeam] = output.injuries;
     }
-    if (/^Official (Palace schedule|MNUFC calendar)/.test(outcome.name))
-      mergeOfficial(games, output.games);
+    if (officialTasks.has(outcome.name)) mergeOfficial(games, output.games);
     else
       for (const fresh of output.games) {
         const index = games.findIndex(
@@ -833,14 +569,12 @@ export async function collect(
         if (index < 0) games.push(fresh);
         else {
           const existing = games[index];
-          const preserveOfficialPalace =
-            existing.team === "palace" &&
-            existing.sourceName === "Official Palace schedule";
+          const preserveLabels = labelledSources.has(existing.sourceName || "");
           games[index] = {
             ...existing,
             ...fresh,
             competitionNote: fresh.competitionNote || existing.competitionNote,
-            ...(preserveOfficialPalace
+            ...(preserveLabels
               ? {
                   league: existing.league,
                   sourceName: existing.sourceName,
@@ -852,11 +586,10 @@ export async function collect(
       }
   }
   if (section !== "news") {
-    const fallback = [
-      ...(cached?.games || []).filter((g) => g.team === "disc"),
-      ...discEvents,
-    ];
-    for (const g of fallback)
+    const seeded = teamServerHooks.flatMap(
+      (hooks) => hooks.seedGames?.(cached?.games || []) || [],
+    );
+    for (const g of seeded)
       if (!games.some((next) => next.id === g.id))
         games.push(eventLifecycle(g));
   }
@@ -904,18 +637,17 @@ export async function collect(
       if (report.value)
         opponentInjuriesByTeam[report.value.key] = report.value.injuries;
   }
-  const baseline = cached || (initial as HubData);
+  const baseline = cached || emptyHub;
   for (const h of health.filter((h) => h.status === "unavailable")) {
+    const teamFallback = teamServerHooks.find(
+      (hooks) => hooks.fallbacks?.[h.name],
+    )?.fallbacks?.[h.name];
     if (section !== "news")
       stories.push(
         ...baseline.stories.filter(
           (s) =>
             s.source === h.name ||
-            (h.name === "Bluesky · Wolves starter pack" &&
-              s.kind === "social" &&
-              s.teams.includes("wolves")) ||
-            (h.name === "Official Žalgiris news" &&
-              s.source.startsWith("Official Žalgiris")) ||
+            Boolean(teamFallback?.stories?.(s)) ||
             (h.name.startsWith("ESPN news") &&
               s.source === "ESPN" &&
               s.teams.some((id) => h.teams.includes(id))),
@@ -925,14 +657,7 @@ export async function collect(
       games,
       baseline.games.filter(
         (g) =>
-          (h.name === "Official Žalgiris schedule" && g.team === "zalgiris") ||
-          (h.name === "Official PWHL schedule · Frost" && g.team === "frost") ||
-          (h.name === "Official Palace schedule" &&
-            g.team === "palace" &&
-            g.sourceName === h.name) ||
-          (h.name === "Official MNUFC calendar" &&
-            g.team === "loons" &&
-            g.sourceName === h.name) ||
+          Boolean(teamFallback?.games?.(g)) ||
           h.name ===
             "ESPN scores · " + teams.find((t) => t.id === g.team)?.short,
       ),
