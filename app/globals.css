@@ -232,6 +232,7 @@ summary:focus-visible {
   position: relative;
   border: 1px solid var(--line, #d3d9d4);
   border-left: 3px solid var(--team-accent);
+  background: var(--raised, #eef1f6);
   border-radius: 6px;
   padding: 12px;
   margin: auto 0;
@@ -2521,6 +2522,21 @@ footer b {
   --ink-team: color-mix(in srgb, var(--team-accent, #9ab568) 45%, #ffffff);
   background: color-mix(in srgb, var(--team-primary, #10283a) 20%, #101419);
   color: var(--ink);
+}
+.hub[data-team="march-madness"][data-mode="dark"] {
+  --team-primary: #5a3742;
+  --team-accent: #d9b866;
+  --surface: #302a2d;
+  --raised: #3a3336;
+  --team-soft: #342b2f;
+  --line: #594d52;
+  --muted: #c8b9bf;
+  background: #211c1f;
+}
+.hub[data-team="march-madness"][data-mode="dark"] .march-game .bracket-team-logo {
+  padding: 2px;
+  background: #f2eee5;
+  border-radius: 4px;
 }
 .hub[data-mode="dark"] .mast {
   background: color-mix(in srgb, var(--team-primary, #10283a) 65%, #080d14);
