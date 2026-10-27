@@ -69,7 +69,7 @@ export type AuthorFeed = {
   name: string;
   label: string;
   url: string;
-  // Missing on snapshots saved before authors carried a team.
+  // Missing on device caches saved before authors carried a team.
   team?: TeamId;
   items: {
     title: string;
