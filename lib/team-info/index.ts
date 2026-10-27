@@ -1,5 +1,5 @@
 // Fetches and combines public standings, rosters, postseason, and team-season data.
-import { decorateTable, tableSeasonType } from "./standings";
+import { decorateTable } from "./standings";
 export { decorateTable, tableSeasonType } from "./standings";
 import { teams } from "../teams/teams";
 import { fetchPostseason, type Postseason } from "../games/postseason";
@@ -856,7 +856,7 @@ export function parseCbsNhlPowerRanking(
   checked: string,
 ): PowerRanking | undefined {
   const table = html.match(/Rk[\s\S]{0,250000}/i)?.[0] || html;
-  let rows = [...table.matchAll(/<tr\b[^>]*>([\s\S]*?)<\/tr>/gi)].flatMap(
+  const rows = [...table.matchAll(/<tr\b[^>]*>([\s\S]*?)<\/tr>/gi)].flatMap(
     (match) => {
       const cells = [
         ...match[1].matchAll(/<t[dh]\b[^>]*>([\s\S]*?)<\/t[dh]>/gi),

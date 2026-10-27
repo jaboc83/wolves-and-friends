@@ -1,35 +1,18 @@
 "use client";
-import {
-  Fragment,
-  useEffect,
-  useMemo,
-  useState,
-  type KeyboardEvent,
-} from "react";
+import { Fragment, useState } from "react";
 import { decorateTable } from "../lib/team-info/standings";
 import { teams } from "../lib/teams/teams";
 import { sportTerms } from "../lib/teams/sport-terms";
 import type { TeamInfo } from "../lib/team-info";
 import type { PlayerStats } from "../lib/team-info/player-stats";
-import {
-  createRosterStatsTable,
-  rosterStatValue,
-} from "../lib/team-info/roster-stats-table";
 import { espnTeamLogoUrl } from "../lib/games/march-madness";
 import BracketConnectors from "./bracket-connectors";
+import RosterPanel from "./roster-panel";
 import Image from "next/image";
 import { isTeamId, TEAM_IDS, type TeamId } from "../lib/teams/teams";
 import type { DashboardPageId } from "../lib/dashboard/page-id";
 import { useLocalTimeZone } from "../hooks/use-local-time-zone";
 import { formatInTimeZone, timeZoneLabel } from "../lib/browser/local-time";
-type RosterPlayer = NonNullable<
-  TeamInfo["depth"]
->["groups"][number]["players"][number] & {
-  position: string;
-};
-type RosterSort = { column: string; direction: "asc" | "desc" };
-const defaultRosterSortDirection = (column: string): "asc" | "desc" =>
-  column === "Player" || column === "Position" ? "asc" : "desc";
 export default function TeamInsights({
   active,
   data,
@@ -76,67 +59,6 @@ export default function TeamInsights({
       row.id === t?.espn ||
       Boolean(t?.espn && row.url.includes(`/${t.espn}`)),
   );
-  const rosterLeague = t?.league;
-  const rosterPriorityKeys = useMemo(
-    () =>
-      info?.depth?.groups.flatMap((group) =>
-        group.players
-          .map((player: { url: string }) => {
-            const playerId = player.url.match(/\/_\/id\/(\d+)/)?.[1];
-            return playerId && rosterLeague ? `${rosterLeague}:${playerId}` : "";
-          })
-          .filter(Boolean),
-      ) || [],
-    [info?.depth, rosterLeague],
-  );
-  // Preload as soon as the team's roster is known, not when the panel opens.
-  useEffect(() => {
-    if (rosterPriorityKeys.length) onRosterOpen(rosterPriorityKeys);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [rosterPriorityKeys]);
-  const [rosterSortState, setRosterSortState] = useState<{
-    id: string;
-    value: RosterSort;
-  } | null>(null);
-  const rosterSortOverride =
-    rosterSortState?.id === id ? rosterSortState.value : null;
-  const rosterGroups = useMemo(() => {
-    if (!info?.depth) return [];
-    const buckets = new Map<
-      string,
-      { position: string; players: RosterPlayer[] }
-    >();
-    const abbreviation = (position: string) => {
-      const value = position.toLowerCase();
-      if (/goalkeeper|goaltender|\\bgk\\b/.test(value)) return "GK";
-      if (/defen[cs]e|back|\\bdef\\b|\\bdb\\b/.test(value)) return "D";
-      if (/forward|wing|\\bf\\b/.test(value)) return "F";
-      if (/center|centre|\\bc\\b/.test(value)) return "C";
-      if (/guard|\\bg\\b/.test(value)) return "G";
-      return position.slice(0, 4).toUpperCase();
-    };
-    for (const group of info.depth.groups) {
-      const columns = createRosterStatsTable(
-        group.players,
-        t?.league || "",
-        playerStats,
-      ).columns;
-      const key = columns.join("\\u0001");
-      const existing = buckets.get(key) || { position: "", players: [] };
-      existing.position = existing.position
-        ? existing.position + " / " + group.position
-        : group.position;
-      existing.players.push(
-        ...group.players.map((player) => ({
-          ...player,
-          position: abbreviation(group.position),
-        })),
-      );
-      buckets.set(key, existing);
-    }
-    return [...buckets.values()];
-  }, [info, playerStats, t?.league]);
-
   const league = t?.league?.split("/")[1];
   const tableUrl = league
     ? "https://www.espn.com/" + league + "/standings"
@@ -503,321 +425,17 @@ export default function TeamInsights({
         </details>
       )}
       {id !== "disc" && (
-        <details
-          id="team-roster"
-          className="data-panel"
-          onToggle={(event) => {
-            if (event.currentTarget.open) onRosterOpen(rosterPriorityKeys);
-          }}
-        >
-          <summary>{headings.roster}</summary>
-          {info?.depth ? (
-            <>
-              {Boolean(t?.league) && playerStatsStatus === "idle" && (
-                <p className="panel-note">
-                  Open the roster to load current season stats.
-                </p>
-              )}
-              {Boolean(t?.league) && playerStatsStatus === "loading" && (
-                <p className="panel-note" aria-live="polite">
-                  Loading ESPN season stats…
-                </p>
-              )}
-              {Boolean(t?.league) && playerStatsStatus === "partial" && (
-                <p className="panel-note" aria-live="polite">
-                  Some season stats could not refresh. Reopen the roster in a
-                  few minutes to retry.
-                </p>
-              )}
-              {Boolean(t?.league) && playerStatsStatus === "empty" && (
-                <p className="panel-note" aria-live="polite">
-                  Season stats could not be loaded for these players right now.
-                </p>
-              )}
-              {Boolean(t?.league) && playerStatsStatus === "unavailable" && (
-                <p className="panel-note" aria-live="polite">
-                  ESPN season stats are temporarily unavailable.
-                </p>
-              )}
-              {rosterGroups.map((group, i) => {
-                const statsTable = createRosterStatsTable(
-                  group.players,
-                  t?.league || "",
-                  playerStats,
-                );
-                const seasonTitles = Array.from(
-                  new Set(
-                    statsTable.rows
-                      .map(({ summary }) => summary?.title)
-                      .filter((title): title is string => Boolean(title)),
-                  ),
-                );
-                const defaultColumn = statsTable.columns[0] ?? "Player";
-                const rosterSort: RosterSort = rosterSortOverride ?? {
-                  column: defaultColumn,
-                  direction: defaultRosterSortDirection(defaultColumn),
-                };
-                const toggleRosterSort = (column: string) =>
-                  setRosterSortState((current) => {
-                    const currentSort =
-                      current?.id === id ? current.value : rosterSort;
-                    const direction =
-                      currentSort.column === column
-                        ? currentSort.direction === "asc"
-                          ? "desc"
-                          : "asc"
-                        : defaultRosterSortDirection(column);
-                    return { id, value: { column, direction } };
-                  });
-                const rosterSortIndicator = (column: string) =>
-                  rosterSort.column === column
-                    ? rosterSort.direction === "asc"
-                      ? "↑"
-                      : "↓"
-                    : "";
-                const rosterSortAria = (column: string) =>
-                  rosterSort.column === column
-                    ? rosterSort.direction === "asc"
-                      ? "ascending"
-                      : "descending"
-                    : "none";
-                const handleRosterSortKeyDown = (
-                  event: KeyboardEvent<HTMLTableCellElement>,
-                  column: string,
-                ) => {
-                  if (event.key === "Enter" || event.key === " ") {
-                    event.preventDefault();
-                    toggleRosterSort(column);
-                  }
-                };
-                return (
-                  <section className="depth-row" key={group.position + i}>
-                    <h3 className="visually-hidden">{group.position}</h3>
-                    {statsTable.columns.length > 0 ? (
-                      <div
-                        className="roster-stats-table-scroll"
-                        role="region"
-                        aria-label={`${group.position} player season stats`}
-                        tabIndex={0}
-                      >
-                        <table className="roster-stats-table">
-                          <caption>
-                            {group.position} season stats
-                            {seasonTitles.length > 0 &&
-                              ` · ${seasonTitles.join(" / ")}`}
-                          </caption>
-                          <thead>
-                            <tr>
-                              <th
-                                scope="col"
-                                className={[
-                                  "roster-player-header",
-                                  rosterSort.column === "Player"
-                                    ? "sorted-column"
-                                    : "",
-                                ]
-                                  .filter(Boolean)
-                                  .join(" ")}
-                                onClick={() => toggleRosterSort("Player")}
-                                onKeyDown={(event) =>
-                                  handleRosterSortKeyDown(event, "Player")
-                                }
-                                aria-sort={rosterSortAria("Player")}
-                                tabIndex={0}
-                              >
-                                Player {rosterSortIndicator("Player")}
-                              </th>
-                              <th
-                                scope="col"
-                                className={
-                                  rosterSort.column === "Position"
-                                    ? "sorted-column"
-                                    : undefined
-                                }
-                                onClick={() => toggleRosterSort("Position")}
-                                onKeyDown={(event) =>
-                                  handleRosterSortKeyDown(event, "Position")
-                                }
-                                aria-sort={rosterSortAria("Position")}
-                                tabIndex={0}
-                              >
-                                Pos. {rosterSortIndicator("Position")}
-                              </th>
-                              {statsTable.columns.map((column) => (
-                                <th
-                                  scope="col"
-                                  key={column}
-                                  className={
-                                    rosterSort.column === column
-                                      ? "sorted-column"
-                                      : undefined
-                                  }
-                                  onClick={() => toggleRosterSort(column)}
-                                  onKeyDown={(event) =>
-                                    handleRosterSortKeyDown(event, column)
-                                  }
-                                  aria-sort={rosterSortAria(column)}
-                                  tabIndex={0}
-                                >
-                                  {column} {rosterSortIndicator(column)}
-                                </th>
-                              ))}
-                            </tr>
-                          </thead>
-                          <tbody>
-                            {[...statsTable.rows]
-                              .sort((a, b) => {
-                                const av =
-                                  rosterSort.column === "Player"
-                                    ? a.player.name
-                                    : rosterSort.column === "Position"
-                                      ? a.player.position
-                                      : rosterStatValue(
-                                          a.summary,
-                                          rosterSort.column,
-                                        );
-                                const bv =
-                                  rosterSort.column === "Player"
-                                    ? b.player.name
-                                    : rosterSort.column === "Position"
-                                      ? b.player.position
-                                      : rosterStatValue(
-                                          b.summary,
-                                          rosterSort.column,
-                                        );
-                                const an = Number(av.replace(/[%,$,]/g, ""));
-                                const bn = Number(bv.replace(/[%,$,]/g, ""));
-                                const result =
-                                  Number.isFinite(an) && Number.isFinite(bn)
-                                    ? an - bn
-                                    : av.localeCompare(bv);
-                                return rosterSort.direction === "asc"
-                                  ? result
-                                  : -result;
-                              })
-                              .map(({ player: p, summary }) => (
-                                <tr key={p.url + p.name}>
-                                  <th
-                                    scope="row"
-                                    className={
-                                      rosterSort.column === "Player"
-                                        ? "sorted-column"
-                                        : undefined
-                                    }
-                                  >
-                                    <a
-                                      href={p.url}
-                                      target="_blank"
-                                      rel="noreferrer"
-                                    >
-                                      {p.name} ↗
-                                    </a>
-                                    <span className="roster-player-age">
-                                      {p.age !== undefined
-                                        ? `Age ${p.age}`
-                                        : ""}
-                                    </span>
-                                    {(p.campTeam ||
-                                      p.signedForSeason ||
-                                      p.draftPick) && (
-                                      <span className="roster-table-player-meta">
-                                        {[
-                                          p.campTeam,
-                                          p.signedForSeason &&
-                                            "Signed for 2026–27",
-                                          p.draftPick && "2026 draft pick",
-                                        ]
-                                          .filter(Boolean)
-                                          .join(" · ")}
-                                      </span>
-                                    )}
-                                  </th>
-                                  <td
-                                    className={
-                                      rosterSort.column === "Position"
-                                        ? "sorted-column"
-                                        : undefined
-                                    }
-                                  >
-                                    {p.position || "—"}
-                                  </td>
-                                  {statsTable.columns.map((column) => {
-                                    const stat = summary?.values.find(
-                                      (value) => value.label === column,
-                                    );
-                                    return (
-                                      <td
-                                        key={column}
-                                        title={stat?.description}
-                                        className={
-                                          rosterSort.column === column
-                                            ? "sorted-column"
-                                            : undefined
-                                        }
-                                      >
-                                        {rosterStatValue(summary, column)}
-                                      </td>
-                                    );
-                                  })}
-                                </tr>
-                              ))}
-                          </tbody>
-                        </table>
-                      </div>
-                    ) : (
-                      <ol className="roster-player-list">
-                        {[...group.players]
-                          .sort((a, b) => a.name.localeCompare(b.name))
-                          .map((p) => (
-                            <li key={p.url + p.name}>
-                              <a href={p.url} target="_blank" rel="noreferrer">
-                                {p.name} ↗
-                              </a>
-                              {p.age !== undefined && (
-                                <span className="roster-player-age">
-                                  {" "}
-                                  · Age {p.age}
-                                </span>
-                              )}
-                              {(p.campTeam ||
-                                p.signedForSeason ||
-                                p.draftPick) && (
-                                <span className="roster-table-player-meta">
-                                  {[
-                                    p.campTeam,
-                                    p.signedForSeason && "Signed for 2026–27",
-                                    p.draftPick && "2026 draft pick",
-                                  ]
-                                    .filter(Boolean)
-                                    .join(" · ")}
-                                </span>
-                              )}
-                            </li>
-                          ))}
-                      </ol>
-                    )}
-                  </section>
-                );
-              })}
-              <p className="panel-note">
-                <a href={info.depth.url} target="_blank" rel="noreferrer">
-                  {info.depth.source} ↗
-                </a>{" "}
-                {id === "frost"
-                  ? "· Preliminary names and positions from the official training-camp announcement; final roster may change."
-                  : ""}
-              </p>
-            </>
-          ) : (
-            <p className="panel-note">
-              A {terms.roster.toLowerCase()} is not available from the current
-              feed.{" "}
-              <a href={rosterUrl} target="_blank" rel="noreferrer">
-                Open team {terms.roster.toLowerCase()} ↗
-              </a>
-            </p>
-          )}
-        </details>
+        <RosterPanel
+          teamId={id}
+          league={t?.league}
+          depth={info?.depth}
+          heading={headings.roster}
+          noun={terms.roster}
+          fallbackUrl={rosterUrl}
+          playerStats={playerStats}
+          playerStatsStatus={playerStatsStatus}
+          onRosterOpen={onRosterOpen}
+        />
       )}
     </section>
   );
