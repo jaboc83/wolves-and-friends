@@ -10,6 +10,7 @@ import StoryCard from "../components/stories/story-card";
 import { selectStories, selectGames } from "../lib/dashboard/selectors";
 import GameCard from "../components/games/game-card";
 import BackToTop from "../components/dashboard/back-to-top";
+import TeamNavigation from "../components/dashboard/team-navigation";
 import MatchCalendar from "../components/games/match-calendar";
 import SectionLinks from "../components/dashboard/section-links";
 import ScorePreferenceDialog from "../components/dashboard/score-preference-dialog";
@@ -266,87 +267,13 @@ export default function Home() {
           </div>
         </header>
         <div className="shell">
-          <button
-            className="team-menu-toggle"
-            onClick={() => setTeamMenuOpen(!teamMenuOpen)}
-            aria-expanded={teamMenuOpen}
-            aria-controls="team-filters"
-          >
-            <span aria-hidden="true">{teamMenuOpen ? "×" : "☰"}</span>
-            <strong>
-              {active === "march-madness"
-                ? "March Madness"
-                : team?.short || "All teams"}
-            </strong>
-            <span className="team-menu-caption">
-              {teamMenuOpen ? "Close teams" : "Choose team"}
-            </span>
-          </button>
-          <nav
-            id="team-filters"
-            className={"team-nav " + (teamMenuOpen ? "menu-open" : "")}
-            aria-label="Team filters"
-          >
-            <button
-              aria-pressed={active === "all"}
-              className={active === "all" ? "selected" : ""}
-              onClick={() => choose("all")}
-            >
-              <Image
-                unoptimized
-                className="team-tab-logo"
-                src="/logos/wolves-friends-neutral.png"
-                alt=""
-                width={40}
-                height={40}
-              />
-              <span>All teams</span>
-            </button>
-            {teams.map((t) => (
-              <button
-                key={t.id}
-                data-tab-team={t.id}
-                aria-pressed={active === t.id}
-                className={active === t.id ? "selected" : ""}
-                onClick={() => choose(t.id)}
-              >
-                <span className="dot" style={{ background: t.color }} />
-                <Image
-                  unoptimized
-                  className="team-tab-logo"
-                  src={teamProfile(t.id)?.tabLogo || teamLogoPath(t.id)}
-                  alt=""
-                  width={40}
-                  height={40}
-                />
-                <span>{t.short}</span>
-                {teamsPlayingToday.has(t.id) && (
-                  <span
-                    className="team-today"
-                    title={`${sportTerms(t.id).event} today`}
-                  >
-                    Today
-                  </span>
-                )}
-              </button>
-            ))}
-            <button
-              data-tab-team="march-madness"
-              aria-pressed={active === "march-madness"}
-              className={active === "march-madness" ? "selected" : ""}
-              onClick={() => choose("march-madness")}
-            >
-              <Image
-                unoptimized
-                className="team-tab-logo"
-                src="/logos/march-madness.svg"
-                alt=""
-                width={40}
-                height={40}
-              />
-              <span>March Madness</span>
-            </button>
-          </nav>
+          <TeamNavigation
+            active={active}
+            open={teamMenuOpen}
+            teamsPlayingToday={teamsPlayingToday}
+            onChoose={choose}
+            onToggle={() => setTeamMenuOpen(!teamMenuOpen)}
+          />
           <div className="intro">
             <div>
               <p className="eyebrow">
