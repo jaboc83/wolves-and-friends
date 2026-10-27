@@ -1,70 +1,14 @@
 // Reads configured official team channels and converts their public videos into stories.
 import type { Story } from "./feed-types";
 import type { TeamId } from "../teams/teams";
-// Official channels, verified from YouTube and club-site social links (Oct 2026).
-export const officialYoutube: {
-  team: TeamId;
-  name: string;
-  channel?: string;
-  page?: string;
-  officialSite?: string;
-  pattern?: RegExp;
-}[] = [
-  {
-    team: "wolves",
-    name: "Minnesota Timberwolves",
-    channel: "UCXWDN5NKVFgnPt25CMh98Cg",
-  },
-  { team: "wild", name: "Minnesota Wild", channel: "UCQRr7SxnnndFYuuRUtOIEnA" },
-  {
-    team: "vikings",
-    name: "Minnesota Vikings",
-    channel: "UCpn2WAITh-6SP4PHBzj3seg",
-  },
-  {
-    team: "loons",
-    name: "Minnesota United FC",
-    channel: "UCNTg0WSrMGrgAD1bY3Fuiug",
-  },
-  {
-    team: "palace",
-    name: "Crystal Palace FC",
-    channel: "UCWB9N0012fG6bGyj486Qxmg",
-  },
-  {
-    team: "lynx",
-    name: "Minnesota Lynx",
-    page: "https://www.youtube.com/minnesotalynx",
-  },
-  {
-    team: "zalgiris",
-    name: "Žalgiris Kaunas",
-    page: "https://www.youtube.com/@BCZalgirisKaunas",
-  },
-  {
-    team: "usmnt",
-    name: "U.S. Soccer",
-    page: "https://www.youtube.com/@ussoccer",
-    pattern: /\bUSMNT\b|\bmen.?s national team|\bMNT\b/i,
-  },
-  {
-    team: "disc",
-    name: "Disc Golf Pro Tour",
-    page: "https://www.youtube.com/@DiscGolfProTour",
-  },
-  // Discover only social links published by these clubs, never search/fan channels.
-  {
-    team: "twins",
-    name: "Minnesota Twins",
-    officialSite: "https://www.mlb.com/twins",
-  },
-  {
-    team: "frost",
-    name: "Minnesota Frost / PWHL",
-    officialSite: "https://www.thepwhl.com/en/teams/minnesota-frost",
-    pattern: /Minnesota|\bFrost\b/i,
-  },
-];
+import type { TeamProviders } from "../teams/team-types";
+import { teamProviders } from "../teams/providers";
+// Official channels are configured in lib/teams/<id>/providers.ts.
+export const officialYoutube: ({ team: TeamId } & NonNullable<
+  TeamProviders["youtube"]
+>)[] = teamProviders.flatMap((p) =>
+  p.youtube ? [{ team: p.team, ...p.youtube }] : [],
+);
 const channels = new Map<string, string>();
 async function getText(url: string) {
   const r = await fetch(url, {

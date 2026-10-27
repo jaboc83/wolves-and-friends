@@ -2,9 +2,11 @@
 import { isTeamId, TEAM_IDS, teams } from "../teams/teams";
 import type { TeamId } from "../teams/teams";
 import {
-  palaceCompetitions,
+  extraCompetitionName,
+  playsMultipleCompetitions,
   teamPlaysCompetition,
 } from "../teams/competitions";
+import { palaceProviders } from "../teams/palace/providers";
 import type { Story, Game } from "./feed-types";
 type GameStatus = {
   completed?: boolean;
@@ -186,7 +188,7 @@ export function parseFeed(xml: string, name: string, only?: TeamId[]): Story[] {
     );
 }
 export function parsePalaceRadar(html: string, checked: string): Story[] {
-  const base = "https://www.palaceradar.co.uk";
+  const base = new URL(palaceProviders.urls.palaceRadar).origin;
   const year = new Date(checked).getUTCFullYear();
   const blocks = html.match(/<article\b[\s\S]*?<\/article>/gi) || [];
   return blocks
@@ -242,15 +244,13 @@ export function parseGames(data: unknown, team: TeamId, sport: string): Game[] {
         date: e.date,
         status: status.type?.shortDetail || status.type?.detail || "Scheduled",
         state: status.type?.completed ? "post" : status.type?.state || "pre",
-        league:
-          team === "palace"
-            ? e.league?.name ||
-              json.leagues?.[0]?.name ||
-              (/friendl/i.test(e.seasonType?.name || "")
-                ? e.seasonType!.name!
-                : sport)
-            : e.seasonType?.name ||
-              (e.season?.type === 1 ? "Preseason" : sport),
+        league: playsMultipleCompetitions(team)
+          ? e.league?.name ||
+            json.leagues?.[0]?.name ||
+            (/friendl/i.test(e.seasonType?.name || "")
+              ? e.seasonType!.name!
+              : sport)
+          : e.seasonType?.name || (e.season?.type === 1 ? "Preseason" : sport),
         venue: [
           c.venue?.fullName,
           c.venue?.address?.city,
@@ -313,12 +313,9 @@ export function mergeLiveScoreboard(
           p.team?.abbreviation?.toLowerCase() === t.espn,
       ),
     );
-    for (const fresh of parseGames(
-      { events },
-      t.id,
-      palaceCompetitions[league] || t.sport,
-    )) {
-      if (palaceCompetitions[league]) fresh.league = palaceCompetitions[league];
+    const competition = extraCompetitionName(t.id, league);
+    for (const fresh of parseGames({ events }, t.id, competition || t.sport)) {
+      if (competition) fresh.league = competition;
       const index = games.findIndex(
         (g) =>
           g.id === fresh.id ||

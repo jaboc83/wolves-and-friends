@@ -369,24 +369,6 @@ export function useDashboardFeeds(active: DashboardPageId) {
       setSocialData(readStored("wf-social-cache", isStories, []));
       setData(readStored<HubData | null>("wf-cache", isHubData, null));
     });
-    // Split fallbacks out of the main client chunk. Never replace a live/cache response.
-    void import("../data/snapshots/initial.json")
-      .then(({ default: seed }) => {
-        if (!alive) return;
-        setData((previous) => previous || activeHub(seed as HubData));
-        setSocialData((previous) =>
-          socialQueue([...previous, ...socialQueue(seed.stories as Story[])]),
-        );
-      })
-      .catch(() => {});
-    void import("../data/snapshots/team-info-initial.json")
-      .then(({ default: seed }) => {
-        if (alive)
-          setTeamInfo((previous) =>
-            previous.length ? previous : (seed as TeamInfo[]),
-          );
-      })
-      .catch(() => {});
     const stopPolling = pollPublicFeeds(
       () => pollingCallbacks.current.refresh(),
       () => {

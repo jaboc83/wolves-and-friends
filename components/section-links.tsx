@@ -1,5 +1,6 @@
 "use client";
 import { sportTerms } from "../lib/teams/sport-terms";
+import { teamProfile } from "../lib/teams/teams";
 import type { DashboardPageId } from "../lib/dashboard/page-id";
 
 export default function SectionLinks({ active }: { active: DashboardPageId }) {
@@ -9,7 +10,7 @@ export default function SectionLinks({ active }: { active: DashboardPageId }) {
       ? [{ id: "event-calendar", label: "Calendar" }]
       : [
           { id: "event-calendar", label: "Calendar" },
-          ...(active === "disc"
+          ...(teamProfile(active)?.individual
             ? []
             : [{ id: "team-roster", label: terms.roster }]),
           { id: "team-standings", label: terms.standings },

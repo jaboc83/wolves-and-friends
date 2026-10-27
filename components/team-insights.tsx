@@ -1,7 +1,7 @@
 "use client";
 import { Fragment, useState } from "react";
 import { decorateTable } from "../lib/team-info/standings";
-import { teams } from "../lib/teams/teams";
+import { teamProfile, teams } from "../lib/teams/teams";
 import { sportTerms } from "../lib/teams/sport-terms";
 import type { TeamInfo } from "../lib/team-info";
 import type { PlayerStats } from "../lib/team-info/player-stats";
@@ -51,7 +51,7 @@ export default function TeamInsights({
     powerRankingsState?.id === id && powerRankingsState.open;
   const terms = sportTerms(id);
   const headings = sportTerms(active);
-  const t = teams.find((t) => t.id === id);
+  const t = teamProfile(id);
   const info = data.find((i) => i.id === id);
   const myPowerRanking = info?.powerRanking?.rows.find(
     (row) =>
@@ -62,18 +62,11 @@ export default function TeamInsights({
   const league = t?.league?.split("/")[1];
   const tableUrl = league
     ? "https://www.espn.com/" + league + "/standings"
-    : id === "zalgiris"
-      ? "https://www.euroleaguebasketball.net/euroleague/standings/"
-      : id === "frost"
-        ? "https://www.thepwhl.com/en/stats/standings"
-        : "https://www.dgpt.com/full-standings/";
+    : t?.standingsPage || "";
   const rosterUrl = league
     ? "https://www.espn.com/" + league + "/team/roster/_/name/" + t?.espn
-    : id === "zalgiris"
-      ? "https://zalgiris.lt/komandos"
-      : id === "frost"
-        ? "https://www.thepwhl.com/en/teams/minnesota-frost/news/2026/october/07/minnesota-frost-announce-2026-27-training-camp-roster"
-        : "https://www.dgpt.com/";
+    : t?.rosterPage || "";
+  const competitionPanels = t?.competitionPanels;
   return (
     <section className="team-insights">
       {active === "all" && (
@@ -171,74 +164,30 @@ export default function TeamInsights({
             </p>
           </section>
         )}
-        {id === "wolves" && (
-          <section
-            className="postseason-panel"
-            aria-label="Emirates NBA Cup standings and bracket"
-          >
-            <h3>Emirates NBA Cup · 2026</h3>
-            <p className="panel-note">
-              Cup games are marked with an NBA Cup label throughout the
-              schedule and calendar.
-            </p>
-            <p className="panel-note">
-              <a
-                href="https://www.nba.com/nba-cup/2026/standings"
-                target="_blank"
-                rel="noreferrer"
-              >
-                Open official NBA Cup standings and knockout picture ↗
-              </a>
-            </p>
-          </section>
-        )}
-        {id === "palace" && !info?.postseason && (
-          <section
-            className="postseason-panel"
-            aria-label="Crystal Palace cup and European links"
-          >
-            <h3>Europa League · 2026/27</h3>
-            <p className="panel-note">
-              Follow Palace&apos;s league-phase table now and the official
-              bracket once knockout rounds and matchups are published.
-            </p>
-            <p className="panel-note">
-              <a
-                href="https://www.uefa.com/uefaeuropaleague/standings/"
-                target="_blank"
-                rel="noreferrer"
-              >
-                Open Europa League league phase table ↗
-              </a>
-              <br />
-              <a
-                href="https://www.uefa.com/uefaeuropaleague/fixtures-results/bracket/"
-                target="_blank"
-                rel="noreferrer"
-              >
-                Open Europa League bracket view ↗
-              </a>
-            </p>
-            <h3>EFL Cup bracket · 2026/27</h3>
-            <p className="panel-note">
-              <a
-                href="https://www.livesport.com/soccer/england/efl-cup/bracket/dGljLaBU/draw/"
-                target="_blank"
-                rel="noreferrer"
-              >
-                Open EFL Cup bracket ↗
-              </a>
-              <br />
-              <a
-                href="https://www.efl.com/competitions/carabao-cup/"
-                target="_blank"
-                rel="noreferrer"
-              >
-                Official Carabao Cup site ↗
-              </a>
-            </p>
-          </section>
-        )}
+        {competitionPanels &&
+          !(competitionPanels.hideDuringPostseason && info?.postseason) && (
+            <section
+              className="postseason-panel"
+              aria-label={competitionPanels.label}
+            >
+              {competitionPanels.sections.map((section) => (
+                <Fragment key={section.title}>
+                  <h3>{section.title}</h3>
+                  {section.note && <p className="panel-note">{section.note}</p>}
+                  <p className="panel-note">
+                    {section.links.map(([label, url], index) => (
+                      <Fragment key={url}>
+                        {index > 0 && <br />}
+                        <a href={url} target="_blank" rel="noreferrer">
+                          {label} ↗
+                        </a>
+                      </Fragment>
+                    ))}
+                  </p>
+                </Fragment>
+              ))}
+            </section>
+          )}
         {info?.tables.length ? (
           info.tables.map((raw) => {
             const table = decorateTable(raw, id);
@@ -259,14 +208,16 @@ export default function TeamInsights({
                   }));
                 }}
               >
-                <summary><h3>{table.name}</h3></summary>
+                <summary>
+                  <h3>{table.name}</h3>
+                </summary>
                 {table.note && <p className="panel-note">{table.note}</p>}
                 <div className="table-scroll">
                   <table>
                     <thead>
                       <tr>
                         <th>{table.columns[0]}</th>
-                        <th>{id === "disc" ? "Player" : "Team"}</th>
+                        <th>{t?.individual ? "Player" : "Team"}</th>
                         {table.columns.slice(1).map((c) => (
                           <th key={c}>{c}</th>
                         ))}
@@ -331,9 +282,8 @@ export default function TeamInsights({
           })
         ) : (
           <p className="panel-note">
-            {id === "usmnt"
-              ? "Friendly matches do not have a league table."
-              : `No ${terms.standings.toLowerCase()} returned by the available feed.`}{" "}
+            {t?.noStandingsNote ||
+              `No ${terms.standings.toLowerCase()} returned by the available feed.`}{" "}
             <a href={tableUrl} target="_blank" rel="noreferrer">
               Open official {terms.standings.toLowerCase()} ↗
             </a>
@@ -424,7 +374,7 @@ export default function TeamInsights({
           </p>
         </details>
       )}
-      {id !== "disc" && (
+      {!t?.individual && (
         <RosterPanel
           teamId={id}
           league={t?.league}

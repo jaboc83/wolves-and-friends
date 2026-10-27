@@ -13055,6 +13055,7 @@
   "authors": [
     {
       "name": "Ben Goessling",
+      "team": "vikings",
       "label": "Google News index · bylines unverified",
       "url": "https://www.startribune.com/author/ben-goessling/6134708",
       "items": [
@@ -13088,6 +13089,7 @@
     },
     {
       "name": "Britt Robson",
+      "team": "wolves",
       "label": "Google News index · bylines unverified",
       "url": "https://www.minnpost.com/author/britt-robson/",
       "items": [
@@ -13102,6 +13104,7 @@
     },
     {
       "name": "Jon Krawczynski",
+      "team": "wolves",
       "label": "Google News index · bylines unverified",
       "url": "https://www.nytimes.com/athletic/author/jon-krawczynski/",
       "items": [
@@ -13132,6 +13135,7 @@
     },
     {
       "name": "Alec Lewis",
+      "team": "vikings",
       "url": "https://www.nytimes.com/athletic/author/alec-lewis/",
       "label": "Google News index · bylines unverified",
       "checked": "2026-10-14T14:25:47.874Z",
@@ -13161,6 +13165,7 @@
     },
     {
       "name": "Will Ragatz",
+      "team": "vikings",
       "url": "https://www.si.com/nfl/vikings/onsi/author/will-ragatz",
       "label": "Google News index · bylines unverified",
       "checked": "2026-10-14T14:25:47.876Z",
@@ -13169,6 +13174,7 @@
     },
     {
       "name": "Jess Myers",
+      "team": "wild",
       "label": "Google News index · bylines unverified",
       "url": "https://www.twincities.com/author/jess-myers/",
       "items": [

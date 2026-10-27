@@ -1,6 +1,7 @@
 // Parses public Bluesky posts into filtered, team-tagged social stories.
 import type { Story } from "../feeds/feed-types";
 import { TEAM_IDS, type TeamId } from "../teams/teams";
+import { wolvesProviders } from "../teams/wolves/providers";
 import { blueskyImageUrl } from "./bluesky-images";
 import { socialQueue, SOCIAL_QUEUE_LIMIT } from "./social-queue";
 type BlueskyImage = {
@@ -29,10 +30,8 @@ type BlueskyResponse = {
   posts?: BlueskyPost[];
   cursor?: string;
 };
-export const wolvesList =
-  "at://did:plc:7giugsiydb7mj2j3a5u6nuyn/app.bsky.graph.list/3lal4p6r7w62f";
-const wolvesPattern =
-  /timberwolves|\bwolves\b|timbies|anthony edwards|\bant\b|naz reid|jaden mcdaniels|rudy gobert|lamelo ball|jonathan kuminga|chris finch|ayo dosunmu|canis hoopus/i;
+export const wolvesList = wolvesProviders.bluesky.list;
+const wolvesPattern = wolvesProviders.bluesky.pattern;
 export function parseBlueskyFeed(
   json: BlueskyResponse,
   team: TeamId = TEAM_IDS.WOLVES,

@@ -13,15 +13,9 @@ export function authorStories(authors: AuthorFeed[]): Story[] {
           ? author.name + " · byline verified"
           : author.name + " search · author not confirmed",
         teams:
-          author.name === "Jess Myers"
-            ? ["wild"]
-            : ["Ben Goessling", "Alec Lewis", "Will Ragatz"].includes(
-                  author.name,
-                )
-              ? ["vikings"]
-              : /\blynx\b/i.test(item.title)
-                ? ["lynx"]
-                : ["wolves"],
+          (author.team || "wolves") === "wolves" && /\blynx\b/i.test(item.title)
+            ? ["lynx"]
+            : [author.team || "wolves"],
         kind: "story",
       })),
   );

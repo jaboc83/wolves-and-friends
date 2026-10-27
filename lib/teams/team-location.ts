@@ -1,16 +1,5 @@
 // Maps known team names to static home locations; never reads visitor location.
-import type { TeamId } from "./teams";
-const own: Record<string, string> = {
-  wolves: "Minnesota",
-  wild: "Minnesota",
-  vikings: "Minnesota",
-  twins: "Minnesota",
-  loons: "Minnesota",
-  palace: "London",
-  lynx: "Minnesota",
-  frost: "Minnesota",
-  usmnt: "United States",
-};
+import { teams, type TeamId } from "./teams";
 const groups: [string, string, string][] = [
   ["basketball", "Hawks", "Atlanta"],
   ["basketball", "Celtics", "Boston"],
@@ -123,7 +112,8 @@ export function teamLocation(
   isOwn = false,
 ): string {
   if (teamId === "disc") return "";
-  if (isOwn && teamId !== "zalgiris") return own[teamId] || "";
+  if (isOwn && teamId !== "zalgiris")
+    return teams.find((t) => t.id === teamId)?.homeLocation || "";
   const normalized = key(isOwn && teamId === "zalgiris" ? "zalgiris" : name);
   const category = ["wolves", "lynx"].includes(teamId)
     ? "basketball"

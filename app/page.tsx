@@ -24,7 +24,7 @@ import TeamInsights from "../components/team-insights";
 import { teamThemes } from "../lib/teams/team-themes";
 import { unreadSocial } from "../lib/social/social-queue";
 import { communities } from "../lib/social/communities";
-import { teams } from "../lib/teams/teams";
+import { teamProfile, teams } from "../lib/teams/teams";
 import { isTeamId, TEAM_IDS } from "../lib/teams/teams";
 import {
   DASHBOARD_PAGE_IDS,
@@ -147,6 +147,7 @@ export default function Home() {
       } as CSSProperties)
     : undefined;
   const team = teams.find((t) => t.id === active);
+  const activeScoreboardUrl = teamProfile(active)?.scoreboardUrl;
   const terms = sportTerms(active);
   const { compactNews, displayed, olderCount, newest } = selectStories({
     newsData,
@@ -313,7 +314,7 @@ export default function Home() {
                 <Image
                   unoptimized
                   className="team-tab-logo"
-                  src={t.id === "disc" ? "/logos/dgpt.png" : teamLogoPath(t.id)}
+                  src={teamProfile(t.id)?.tabLogo || teamLogoPath(t.id)}
                   alt=""
                   width={40}
                   height={40}
@@ -686,8 +687,7 @@ export default function Home() {
                       )}
                       {!loading && compactNews && (
                         <div className="news-more">
-                          <p>
-                          </p>
+                          <p></p>
                           {(olderCount > 0 || showOlder) && (
                             <button onClick={() => setShowOlder(!showOlder)}>
                               {showOlder
@@ -743,29 +743,20 @@ export default function Home() {
                         : `Show older (${availableResults.length - 3})`}
                     </button>
                   )}
-                  {(active === "disc" || active === "frost") && (
+                  {activeScoreboardUrl && (
                     <div className="score-note">
                       <b>More scoreboards</b>
                       <p>
                         {team?.short} scoring pages provide additional coverage
                         beyond the imported schedules.
                       </p>
-                      {teams
-                        .filter((t) => active === t.id)
-                        .map((t) => (
-                          <a
-                            key={t.id}
-                            href={
-                              t.sources.find(([name]) =>
-                                /score|Live|schedule|Results/i.test(name),
-                              )?.[1] || t.sources[0][1]
-                            }
-                            target="_blank"
-                            rel="noreferrer"
-                          >
-                            {t.short} scoreboard ↗
-                          </a>
-                        ))}
+                      <a
+                        href={activeScoreboardUrl}
+                        target="_blank"
+                        rel="noreferrer"
+                      >
+                        {team?.short} scoreboard ↗
+                      </a>
                     </div>
                   )}
                 </aside>

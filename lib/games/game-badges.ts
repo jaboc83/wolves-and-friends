@@ -1,27 +1,16 @@
 // Selects competition and season badges displayed on game cards.
 import type { Game } from "../feeds";
+import { teamProfile } from "../teams/teams";
 export type GameBadge = { label: string; tone: string };
 export function gameBadges(g: Game): GameBadge[] {
   const context = [g.league, g.competitionNote, g.eventOnly ? g.name : ""]
     .filter(Boolean)
     .join(" ");
   const badges: GameBadge[] = [];
-  if (g.team === "disc") {
-    if (/jomezpro/i.test(context))
-      badges.push({ label: "JomezPro", tone: "jomezpro" });
-    else if (/pdga major|united states disc golf championship/i.test(context))
-      badges.push({ label: "PDGA Major", tone: "pdga-major" });
-    else if (/\bdgpt\b/i.test(context))
-      badges.push({ label: "DGPT", tone: "dgpt" });
-  }
-  if (g.team === "palace") {
-    if (/uefa europa league|europa league/i.test(context))
-      badges.push({ label: "Europa League", tone: "europa-league" });
-    else if (/\bfriendly\b|\bfriendlies\b/i.test(context))
-      badges.push({ label: "Friendly", tone: "friendly" });
-    else if (/premier league|\bEPL\b|eng\.1/i.test(context))
-      badges.push({ label: "Premier", tone: "premier" });
-  }
+  const teamBadge = teamProfile(g.team)?.badges?.find(({ pattern }) =>
+    new RegExp(pattern, "i").test(context),
+  );
+  if (teamBadge) badges.push({ label: teamBadge.label, tone: teamBadge.tone });
   if (/pre[- ]?season/i.test(context))
     badges.push({ label: "Preseason", tone: "preseason" });
   if (/play[- ]?offs?|post[- ]?season|stanley cup|world series/i.test(context))
