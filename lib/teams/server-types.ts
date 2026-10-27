@@ -8,7 +8,7 @@ export type FeedTaskContext = {
   checked: string;
   // Server-side provider fetch; never forwards visitor data.
   get: (url: string) => Promise<Response>;
-  // Last good section data, or the bundled snapshot.
+  // Last good section data from this Worker instance, or an empty hub.
   baseline: HubData;
 };
 
@@ -54,7 +54,7 @@ export type TeamServerHooks = {
   extendEspnSchedule?: (ctx: EspnScheduleContext) => Promise<void>;
   // Games always merged into schedules (e.g. seeded tour events).
   seedGames?: (cached: Game[]) => Game[];
-  // Snapshot data restored when the named provider health is unavailable.
+  // Last-good cached data restored when the named provider health is unavailable.
   fallbacks?: Readonly<
     Record<
       string,

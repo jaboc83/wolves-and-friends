@@ -10,9 +10,8 @@ This guide describes the implementation as of October 15, 2026. Start with the b
 flowchart TD
     Sources["Public sports and news sources"] --> Server["Server: fetch, parse, combine and cache"]
     Server --> API["Four same-origin API endpoints"]
-    Seeds["Bundled fallback snapshots"] --> Server
-    Seeds --> Page["React dashboard in the browser"]
-    API --> Page
+    Seeds["Bundled tournament snapshot"] --> Server
+    API --> Page["React dashboard in the browser"]
     Local["Device-only localStorage"] <--> Page
     Page --> Links["Publisher pages opened by the reader"]
 ```
@@ -23,25 +22,37 @@ Headlines link to publishers rather than reproducing full articles. Deliberately
 
 ## 2. The main parts of the repository
 
-| Part               | Responsibility                                                                                | Start here                                                                               |
-| ------------------ | --------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------- |
-| Page controller    | Holds browser state, refreshes feeds, merges data, filters teams, and assembles sections      | [app/page.tsx](app/page.tsx)                                                             |
-| Shared page shell  | Imports styles and defines metadata and the mobile viewport                                   | [app/layout.tsx](app/layout.tsx)                                                         |
-| Presentation       | Responsive layout, colors, badges, spacing, and team themes                                   | [app/globals.css](app/globals.css), [lib/teams/team-themes.ts](lib/teams/team-themes.ts) |
-| Team configuration | Team IDs, priority order, ESPN identifiers, matching patterns, source links, and team helpers | [lib/teams/](lib/teams/)                                                                 |
-| Dashboard logic    | Team/read/search selection, cached-data validation, and retired-team filtering                | [lib/dashboard/](lib/dashboard/)                                                         |
-| Browser utilities  | Device storage, same-origin feed requests, score preferences, news windows, and scrolling     | [lib/browser/](lib/browser/)                                                             |
-| Feed endpoints     | Return public data to the page                                                                | [app/api](app/api)                                                                       |
-| Feed adapters      | Convert each provider's JSON, RSS, HTML, or calendar into shared objects                      | [lib/feeds/](lib/feeds/) and its provider modules                                        |
-| Reusable sections  | Game cards, calendar, standings/rosters, and logo groups                                      | [components](components)                                                                 |
-| Images             | Local header and team logos                                                                   | [public/logos](public/logos)                                                             |
-| Hosting            | Build and serve the application through Sites                                                 | [vite.config.ts](vite.config.ts), [build/sites-worker.ts](build/sites-worker.ts)         |
+| Part               | Responsibility                                                                            | Start here                                                                               |
+| ------------------ | ----------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------- |
+| Page controller    | Holds browser state, refreshes feeds, merges data, filters teams, and assembles sections  | [app/page.tsx](app/page.tsx)                                                             |
+| Shared page shell  | Imports styles and defines metadata and the mobile viewport                               | [app/layout.tsx](app/layout.tsx)                                                         |
+| Presentation       | Responsive layout, colors, badges, spacing, and team themes                               | [app/globals.css](app/globals.css), [lib/teams/team-themes.ts](lib/teams/team-themes.ts) |
+| Team configuration | One folder per team: identity, links, IDs, feed URLs, and team-specific behavior          | [lib/teams/](lib/teams/) (see [Team folders](#team-folders))                             |
+| Dashboard logic    | Team/read/search selection, cached-data validation, and retired-team filtering            | [lib/dashboard/](lib/dashboard/)                                                         |
+| Browser utilities  | Device storage, same-origin feed requests, score preferences, news windows, and scrolling | [lib/browser/](lib/browser/)                                                             |
+| Feed endpoints     | Return public data to the page                                                            | [app/api](app/api)                                                                       |
+| Feed adapters      | Convert each provider's JSON, RSS, HTML, or calendar into shared objects                  | [lib/feeds/](lib/feeds/) and its provider modules                                        |
+| Reusable sections  | Game cards, calendar, standings/rosters, and logo groups                                  | [components](components)                                                                 |
+| Images             | Local header and team logos                                                               | [public/logos](public/logos)                                                             |
+| Hosting            | Build and serve the application through Sites                                             | [vite.config.ts](vite.config.ts), [build/sites-worker.ts](build/sites-worker.ts)         |
 
 The app uses **React and TypeScript**, with **Vinext/Vite** providing the Next-style page and API route structure. The production request handler runs as a **Cloudflare Worker** through Sites. Most of the dashboard logic is currently concentrated in `app/page.tsx`; separate components handle its larger reusable pieces.
 
+### Team folders
+
+Each team has a folder, `lib/teams/<id>/`, so its external URLs, IDs, and special cases live in one place:
+
+| File           | Runs in            | Contains                                                                                                                                   |
+| -------------- | ------------------ | ------------------------------------------------------------------------------------------------------------------------------------------ |
+| `profile.ts`   | Browser and server | Name, colors, theme, logos, ESPN slug/ID, matching pattern, links readers open, sport vocabulary, standings rules, badges, and panel links |
+| `providers.ts` | Server only        | Feed and author URLs, YouTube channel, social tags, ESPN team ID, extra competitions, fixed seasons, power-ranking source, scrape URLs     |
+| `server.ts`    | Server only        | Optional team-specific behavior: extra provider tasks, ESPN schedule extensions, fallbacks, and non-ESPN standings/roster loaders          |
+
+[lib/teams/teams.ts](lib/teams/teams.ts) lists the profiles in tab order; [lib/teams/providers.ts](lib/teams/providers.ts) and [lib/teams/server.ts](lib/teams/server.ts) collect the server-only files. Never import `providers.ts` or `server.ts` from browser code: fetch URLs must stay on the server. `providers.ts` files hold plain data only, because `scripts/check-news-feeds.mjs` loads them outside the app build. League-wide data, such as opponent names and logo IDs, stays in the feed and team-info modules.
+
 ## 3. What happens when someone opens the page
 
-1. The page renders using bundled snapshots, so it has something to display before external feeds finish.
+1. The page renders its layout immediately; feed sections fill in as data arrives.
 2. On the device, it restores cached public content and local preferences. A first visit selects Wolves; later visits restore the last valid team.
 3. It requests the four API endpoints below. These requests do not contain the selected team, read IDs, saved stories, or browser identifiers.
 4. React updates each section as responses arrive. A separate score feed can update game status without waiting for the larger news refresh.
@@ -105,13 +116,13 @@ Odds lookups are currently limited to eligible games within the next seven days 
 
 ## 6. Where information is stored
 
-| Storage              | Contents                                                                                                                                                                                  | Lifetime / purpose                                           |
-| -------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------ |
-| React state          | Current filters, expanded cards, visibility settings, and loaded responses                                                                                                                | Current page session                                         |
-| Browser localStorage | `wf-team`, `wf-read`, `wf-saved`, and `wf-archive`                                                                                                                                        | Device-only preferences and saved article snapshots          |
-| Browser localStorage | `wf-cache` and `wf-social-cache`                                                                                                                                                          | Device-only caches of public feed content and inline avatars |
-| Server module memory | Public feed responses, verification results, and avatar caches                                                                                                                            | Temporary, shared public-data work within a Worker instance  |
-| Bundled JSON         | [march-madness-initial.json](data/snapshots/march-madness-initial.json) | Public-data fallback for the tournament bracket              |
+| Storage              | Contents                                                                   | Lifetime / purpose                                           |
+| -------------------- | -------------------------------------------------------------------------- | ------------------------------------------------------------ |
+| React state          | Current filters, expanded cards, visibility settings, and loaded responses | Current page session                                         |
+| Browser localStorage | `wf-team`, `wf-read`, `wf-saved`, and `wf-archive`                         | Device-only preferences and saved article snapshots          |
+| Browser localStorage | `wf-cache` and `wf-social-cache`                                           | Device-only caches of public feed content and inline avatars |
+| Server module memory | Public feed responses, verification results, and avatar caches             | Temporary, shared public-data work within a Worker instance  |
+| Bundled JSON         | [march-madness-initial.json](data/snapshots/march-madness-initial.json)    | Public-data fallback for the tournament bracket              |
 
 Clearing browser storage removes local read/saved history and choices. Those preferences do not sync between devices. Dashboard feeds and team info start empty until live responses arrive, unless device-local feed caches are available. The tournament snapshot is a fallback, not a continuously updated file. Source-check timestamps and unavailable-feed notices help distinguish cached information from a successful refresh.
 
@@ -147,18 +158,20 @@ See [README.md](README.md) for local setup commands. A clean clone defaults to t
 
 ## 9. Where to make common changes
 
-| Desired change                                  | Likely files                                                                                 |
-| ----------------------------------------------- | -------------------------------------------------------------------------------------------- |
-| Team order, source links, or team matching      | `lib/teams/teams.ts`                                                                         |
-| Colors, mobile spacing, or layout               | `app/globals.css`, `lib/teams/team-themes.ts`, sometimes `app/page.tsx`                      |
-| Headline age/read/saved behavior                | `app/page.tsx`, `lib/browser/news-window.ts`                                                 |
-| New news or schedule provider                   | A parser/adapter in `lib/feeds/`, then its collection call in `lib/feeds/index.ts`           |
-| Game and event rules                            | `lib/games/` for event dates, calendar exports, badges, links, and postseason logic          |
-| Game-card details or score hiding               | `components/game-card.tsx`                                                                   |
-| Competition badges                              | `lib/games/game-badges.ts`, `components/game-badges.tsx`                                     |
-| Missing odds                                    | `lib/feeds/odds.ts`; check competition, provider availability, and fixture matching          |
-| Calendar behavior                               | `components/match-calendar.tsx`; check schedule coverage upstream too                        |
-| Missing social posts or avatars                 | `app/api/social/route.ts`, `lib/social/bluesky.ts`, browser cache handling in `app/page.tsx` |
-| Standings, qualification lines, or player links | `lib/team-info/`, `components/team-insights.tsx`                                             |
+| Desired change                                  | Likely files                                                                                    |
+| ----------------------------------------------- | ----------------------------------------------------------------------------------------------- |
+| Team order                                      | `lib/teams/teams.ts`                                                                            |
+| A team's links, IDs, colors, or matching        | `lib/teams/<id>/profile.ts` (browser-visible) or `lib/teams/<id>/providers.ts` (server-only)    |
+| A team's special feed or standings behavior     | `lib/teams/<id>/server.ts`                                                                      |
+| Colors, mobile spacing, or layout               | `app/globals.css`, `lib/teams/<id>/profile.ts` (`theme`), sometimes `app/page.tsx`              |
+| Headline age/read/saved behavior                | `app/page.tsx`, `lib/browser/news-window.ts`                                                    |
+| New news or schedule provider                   | A parser in `lib/feeds/`; a team's feed URL in its `providers.ts`, or a task in its `server.ts` |
+| Game and event rules                            | `lib/games/` for event dates, calendar exports, badges, links, and postseason logic             |
+| Game-card details or score hiding               | `components/game-card.tsx`                                                                      |
+| Competition badges                              | `lib/games/game-badges.ts`, `components/game-badges.tsx`                                        |
+| Missing odds                                    | `lib/feeds/odds.ts`; check competition, provider availability, and fixture matching             |
+| Calendar behavior                               | `components/match-calendar.tsx`; check schedule coverage upstream too                           |
+| Missing social posts or avatars                 | `app/api/social/route.ts`, `lib/social/bluesky.ts`, browser cache handling in `app/page.tsx`    |
+| Standings, qualification lines, or player links | `lib/team-info/`, `components/team-insights.tsx`                                                |
 
 External feeds and HTML layouts can change or become unavailable. Inspect the provider response and source-health information before treating missing content as a layout problem. Preserve accurate unavailable states instead of inventing scores, schedules, authors, rosters, or odds.
