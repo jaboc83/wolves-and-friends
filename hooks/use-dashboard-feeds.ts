@@ -81,9 +81,8 @@ export function useDashboardFeeds(active: DashboardPageId) {
   );
   const [playerStatsStatus, setPlayerStatsStatus] =
     useState<StatsStatus>("idle");
-  function refreshRosterStats(priorityKeys: string[] = []) {
+  function loadRosterStats(priorityKeys: string[]) {
     const request = rosterLoader.current({
-      initial: playerStats,
       fetchManifest: async (version, signal) => {
         const response = await requests.current.fetch(
           "/api/roster-stats?manifest=1" +
@@ -127,6 +126,34 @@ export function useDashboardFeeds(active: DashboardPageId) {
     );
     return request;
   }
+  const rosterKeys = useRef<string[]>([]);
+  const rosterRetries = useRef(0);
+  const rosterLoad = useRef(loadRosterStats);
+  useEffect(() => {
+    rosterLoad.current = loadRosterStats;
+  });
+  function refreshRosterStats(priorityKeys: string[] = []) {
+    if (priorityKeys.length) rosterKeys.current = priorityKeys;
+    rosterRetries.current = 0;
+    return loadRosterStats(priorityKeys);
+  }
+  useEffect(() => {
+    if (playerStatsStatus === "ready") rosterRetries.current = 0;
+    if (
+      (playerStatsStatus !== "partial" && playerStatsStatus !== "unavailable") ||
+      !rosterKeys.current.length ||
+      rosterRetries.current >= 3
+    )
+      return;
+    const timer = setTimeout(
+      () => {
+        rosterRetries.current += 1;
+        void rosterLoad.current(rosterKeys.current);
+      },
+      15000 * (rosterRetries.current + 1),
+    );
+    return () => clearTimeout(timer);
+  }, [playerStatsStatus]);
 
   const once = requests.current.once;
   function refreshInfo() {
@@ -336,7 +363,9 @@ export function useDashboardFeeds(active: DashboardPageId) {
     activePage.current = storedDashboardPage();
     queueMicrotask(() => {
       if (!alive) return;
-      setPlayerStats(readPlayerStatsCache(browserStorage));
+      const cachedStats = readPlayerStatsCache(browserStorage);
+      rosterLoader.current.seed(cachedStats);
+      setPlayerStats(cachedStats);
       setSocialData(readStored("wf-social-cache", isStories, []));
       setData(readStored<HubData | null>("wf-cache", isHubData, null));
     });
