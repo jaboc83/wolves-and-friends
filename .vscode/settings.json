@@ -13,6 +13,10 @@
             "approve": true,
             "matchCommandLine": true
         },
+        "/^git show /": {
+            "approve": true,
+            "matchCommandLine": true
+        },
         "/^node node_modules/eslint/bin/eslint\\.js/": {
             "approve": true,
             "matchCommandLine": true
