@@ -29,6 +29,7 @@ import type { TeamId } from "../teams/teams";
 import { scoreboardLeagues, teamPlaysCompetition } from "../teams/competitions";
 import { enrichOdds } from "./odds";
 import type { Story, Game, Health, AuthorFeed, HubData } from "./feed-types";
+import { normalizeESPNInjuries, type ESPNInjuryGroup } from "./injuries";
 export type { Story, Game, Health, AuthorFeed, HubData } from "./feed-types";
 const emptyHub: HubData = {
   checked: "",
@@ -43,22 +44,6 @@ type ESPNCompetitor = {
 type ESPNEvent = {
   id: string;
   competitions?: { competitors?: ESPNCompetitor[] }[];
-};
-type ESPNInjury = {
-  athlete?: {
-    displayName?: string;
-    fullName?: string;
-    team?: { displayName?: string; name?: string };
-  };
-  status?: string;
-  type?: string;
-  details?: { detail?: string; type?: string };
-  longComment?: string;
-  team?: { displayName?: string; name?: string };
-};
-type ESPNInjuryGroup = ESPNInjury & {
-  injuries?: ESPNInjury[];
-  displayName?: string;
 };
 type ESPNResponse = {
   articles?: {
@@ -161,32 +146,7 @@ async function fetchESPNInjuries(
   if (!response) throw lastError || new FeedError("request-failed");
   const json = (await response.json()) as ESPNResponse;
   if (!json.injuries?.length) throw new FeedError("empty-injuries");
-  return (json.injuries || [])
-    .flatMap((group) =>
-      group.injuries
-        ? group.injuries.map((injury) => ({
-            ...injury,
-            team: group.team || { displayName: group.displayName },
-          }))
-        : [group],
-    )
-    .map((item) => ({
-      player:
-        item.athlete?.displayName || item.athlete?.fullName || "Unknown player",
-      status: item.status || item.type || "Unavailable",
-      detail:
-        item.details?.detail ||
-        item.details?.type ||
-        item.longComment ||
-        undefined,
-      team:
-        item.team?.displayName ||
-        item.team?.name ||
-        item.athlete?.team?.displayName ||
-        item.athlete?.team?.name ||
-        teamName,
-    }))
-    .filter((item) => item.player);
+  return normalizeESPNInjuries(json.injuries, teamName);
 }
 export async function collect(
   section: "news" | "schedules" | "all" = "all",
@@ -411,34 +371,7 @@ export async function collect(
             if (!response) throw lastError || new FeedError("request-failed");
             const json = (await response.json()) as ESPNResponse;
             if (!json.injuries?.length) throw new FeedError("empty-injuries");
-            const injuries = (json.injuries || [])
-              .flatMap((group) =>
-                group.injuries
-                  ? group.injuries.map((injury) => ({
-                      ...injury,
-                      team: group.team || { displayName: group.displayName },
-                    }))
-                  : [group],
-              )
-              .map((item) => ({
-                player:
-                  item.athlete?.displayName ||
-                  item.athlete?.fullName ||
-                  "Unknown player",
-                status: item.status || item.type || "Unavailable",
-                detail:
-                  item.details?.detail ||
-                  item.details?.type ||
-                  item.longComment ||
-                  undefined,
-                team:
-                  item.team?.displayName ||
-                  item.team?.name ||
-                  item.athlete?.team?.displayName ||
-                  item.athlete?.team?.name ||
-                  teamName,
-              }))
-              .filter((item) => item.player);
+            const injuries = normalizeESPNInjuries(json.injuries, teamName);
             output.injuries = injuries;
             return injuries.length;
           },

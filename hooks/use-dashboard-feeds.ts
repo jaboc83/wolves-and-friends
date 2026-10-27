@@ -23,7 +23,7 @@ import type { TeamInfo } from "../lib/team-info";
 import { activeHub, activeStories } from "../lib/dashboard/content-policy";
 import { socialQueue } from "../lib/social/social-queue";
 import { isLocalSocialImage } from "../lib/social/bluesky-images";
-import { loadedNewsData } from "../lib/browser/news-page-data";
+import { loadedNewsData, newsForTeam } from "../lib/browser/news-page-data";
 import { loadPageBeforeBackground } from "../lib/browser/page-first-feeds";
 import type { MarchData } from "../lib/games/march-madness";
 import { isTeamId, TEAM_IDS, teams, type TeamId } from "../lib/teams/teams";
@@ -241,29 +241,45 @@ export function useDashboardFeeds(active: DashboardPageId) {
   }
   const activePage = useRef<DashboardPageId>(TEAM_IDS.WOLVES);
   const newsChecked = useRef(new Map<TeamId, number>());
+  const newsSource = useRef<{ checked: number; data: HubData } | null>(null);
+  const newsRequest = useRef<Promise<HubData> | null>(null);
+  async function fetchGenericNews(force: boolean) {
+    const cached = newsSource.current;
+    if (cached && !force && Date.now() - cached.checked < 300000)
+      return cached.data;
+    if (newsRequest.current) return newsRequest.current;
+    const request = (async () => {
+      const response = await requests.current.fetch("/api/news", {
+        credentials: "omit",
+        referrerPolicy: "no-referrer",
+        cache: "no-store",
+      });
+      if (!response.ok) throw Error();
+      const data = activeHub((await response.json()) as HubData);
+      void recordFeedDiagnostics(data.health);
+      if (
+        data.health.length &&
+        data.health.every((health) => health.status === "unavailable")
+      )
+        throw Error();
+      newsSource.current = { checked: Date.now(), data };
+      return data;
+    })();
+    newsRequest.current = request;
+    try {
+      return await request;
+    } finally {
+      if (newsRequest.current === request) newsRequest.current = null;
+    }
+  }
   function fetchNewsPage(id: TeamId, force = false) {
     if (!force && Date.now() - (newsChecked.current.get(id) || 0) < 300000)
       return Promise.resolve();
     return once("news:" + id, async () => {
       setNewsStatus((s) => ({ ...s, [id]: "loading" }));
       try {
-        const r = await requests.current.fetch(
-          "/api/news?team=" + encodeURIComponent(id),
-          {
-            credentials: "omit",
-            referrerPolicy: "no-referrer",
-            cache: "no-store",
-          },
-        );
-        if (!r.ok) throw Error();
-        const d = activeHub((await r.json()) as HubData);
-        void recordFeedDiagnostics(d.health);
-        if (
-          d.health.length &&
-          d.health.every((h) => h.status === "unavailable")
-        )
-          throw Error();
-        setNewsPages((pages) => ({ ...pages, [id]: d }));
+        const data = await fetchGenericNews(force);
+        setNewsPages((pages) => ({ ...pages, [id]: newsForTeam(data, id) }));
         newsChecked.current.set(id, Date.now());
         setNewsStatus((s) => ({ ...s, [id]: "ready" }));
       } catch (error) {
@@ -347,6 +363,8 @@ export function useDashboardFeeds(active: DashboardPageId) {
       try {
         const response = await requests.current.fetch("/api/march-madness", {
           cache: "no-store",
+          credentials: "omit",
+          referrerPolicy: "no-referrer",
         });
         if (!response.ok) throw Error();
         setMarchData((await response.json()) as MarchData);

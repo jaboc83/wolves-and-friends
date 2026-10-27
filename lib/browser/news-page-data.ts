@@ -18,6 +18,17 @@ export function loadedNewsData(
     games: [],
   };
 }
+export function newsForTeam(data: HubData, team: TeamId): HubData {
+  return {
+    checked: data.checked,
+    stories: data.stories.filter((story) => story.teams.includes(team)),
+    authors: (data.authors || []).filter(
+      (author) => (author.team || "wolves") === team,
+    ),
+    health: data.health.filter((source) => source.teams.includes(team)),
+    games: [],
+  };
+}
 export function newsDisplayMode(
   loading: boolean,
   hasStories: boolean,
