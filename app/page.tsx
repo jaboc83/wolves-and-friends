@@ -6,10 +6,11 @@ import { useDashboardFeeds } from "../hooks/use-dashboard-feeds";
 import { browserStorage, readStored, stringList } from "../lib/browser/storage";
 import { storedDashboardPage } from "../lib/dashboard/storage";
 import { newsDisplayMode } from "../lib/browser/news-page-data";
-import StoryCard from "../components/stories/story-card";
 import { selectStories, selectGames } from "../lib/dashboard/selectors";
 import GameCard from "../components/games/game-card";
 import BackToTop from "../components/dashboard/back-to-top";
+import NewsSection from "../components/dashboard/news-section";
+import ScoreRail from "../components/dashboard/score-rail";
 import TeamNavigation from "../components/dashboard/team-navigation";
 import MatchCalendar from "../components/games/match-calendar";
 import SectionLinks from "../components/dashboard/section-links";
@@ -19,20 +20,17 @@ import {
   saveScorePreference,
 } from "../lib/browser/score-preference";
 const MarchMadness = lazy(() => import("../components/games/march-madness"));
-import { recentStories } from "../lib/browser/news-window";
 import { sportTerms } from "../lib/teams/sport-terms";
 import TeamInsights from "../components/teams/team-insights";
 import { teamThemes } from "../lib/teams/team-themes";
 import { unreadSocial } from "../lib/social/social-queue";
-import { communities } from "../lib/social/communities";
 import { teamProfile, teams } from "../lib/teams/teams";
 import { isTeamId, TEAM_IDS } from "../lib/teams/teams";
 import {
   DASHBOARD_PAGE_IDS,
   type DashboardPageId,
 } from "../lib/dashboard/page-id";
-import { teamLogoPath } from "../lib/teams/team-logo";
-import type { Story, Game } from "../lib/feeds";
+import type { Game } from "../lib/feeds";
 import { releaseCommitUrl, releaseMarker } from "../lib/release-info";
 import { downloadFeedDiagnostics } from "../lib/feeds/feed-diagnostics";
 import { useLocalTimeZone } from "../hooks/use-local-time-zone";
@@ -216,14 +214,21 @@ export default function Home() {
       />
     );
   }
-  const story = (item: Story) => (
-    <StoryCard
-      key={item.id}
-      story={item}
-      choose={choose}
-      markRead={markRead}
-      readIds={readIds}
-    />
+  const teamDetails = (
+    <div className="team-details">
+      {active !== "all" && (
+        <TeamInsights
+          active={active}
+          data={teamInfo}
+          revealResults={resultsReady && !hideScores}
+          autoOpenStandings={autoOpenStandings}
+          playerStats={playerStats}
+          playerStatsStatus={playerStatsStatus}
+          onRosterOpen={refreshRosterStats}
+        />
+      )}
+      <MatchCalendar games={visibleGames} team={active} />
+    </div>
   );
 
   return (
@@ -355,340 +360,63 @@ export default function Home() {
                     </div>
                   )}
                 </div>
-                <section className="news">
-                  <div className="headlines-content">
-                    <div className="ultrawide-left-column">
-                      <section
-                        id="latest-messages"
-                        className="message-feed"
-                        aria-label="Latest Social Media"
-                      >
-                        <div className="social-heading">
-                          <h2>Latest Social Media</h2>
-                          <button
-                            type="button"
-                            className="social-refresh"
-                            onClick={() => void refreshSocial(true)}
-                            disabled={socialRefreshing}
-                            aria-label="Refresh latest social media"
-                            title={
-                              socialRefreshing
-                                ? "Refreshing social posts…"
-                                : "Refresh social posts"
-                            }
-                            aria-busy={socialRefreshing}
-                          >
-                            <span
-                              aria-hidden="true"
-                              className={
-                                socialRefreshing ? "refresh-spinning" : ""
-                              }
-                            >
-                              ↻
-                            </span>
-                          </button>
-                        </div>
-                        <p className="feed-description">
-                          {active === "all"
-                            ? "Latest posts for your teams · Bluesky"
-                            : team?.name + " posts"}
-                        </p>
-                        {socialRefreshError && (
-                          <p className="feed-description" role="status">
-                            Social posts could not refresh. Try again shortly.
-                          </p>
-                        )}
-                        {socialPosts.length ? (
-                          socialPosts.map(story)
-                        ) : (
-                          <p className="feed-description">
-                            No unread matching posts in the current feed.
-                          </p>
-                        )}
-                        {socialUnavailable.some(
-                          (id) => active === "all" || active === id,
-                        ) && (
-                          <p className="feed-description">
-                            Some social feeds are unavailable; cached posts may
-                            remain.
-                          </p>
-                        )}
-                      </section>
-                      <div className="team-details">
-                        {active !== "all" && (
-                          <TeamInsights
-                            active={active}
-                            data={teamInfo}
-                            revealResults={resultsReady && !hideScores}
-                            autoOpenStandings={autoOpenStandings}
-                            playerStats={playerStats}
-                            playerStatsStatus={playerStatsStatus}
-                            onRosterOpen={refreshRosterStats}
-                          />
-                        )}
-                        <MatchCalendar games={visibleGames} team={active} />
-                      </div>
-                      <div className="news-resources">
-                        <section className="community-panel">
-                          <h2>Fan communities</h2>
-                          {communities
-                            .filter(
-                              (c) => active === "all" || c.team === active,
-                            )
-                            .map((c) => (
-                              <a
-                                key={c.url}
-                                href={c.url}
-                                target="_blank"
-                                rel="noreferrer"
-                              >
-                                <Image
-                                  unoptimized
-                                  src={teamLogoPath(c.team)}
-                                  alt=""
-                                  width={24}
-                                  height={24}
-                                />
-                                <span>{c.name} ↗</span>
-                              </a>
-                            ))}
-                        </section>
-                        <div className="source-panel">
-                          <button
-                            className="source-toggle"
-                            onClick={() => setSources(!sources)}
-                            aria-expanded={sources}
-                          >
-                            Source desk <span>{sources ? "−" : "+"}</span>
-                          </button>
-                          <p>
-                            Direct links to your trusted voices, including
-                            sources whose feeds aren’t available.
-                          </p>
-                          {sources && (
-                            <div className="source-grid">
-                              {(team ? [team] : teams).map((t) => (
-                                <div key={t.id}>
-                                  <h4>{t.short}</h4>
-                                  {t.sources.map(([name, url]) => (
-                                    <a
-                                      key={url}
-                                      href={url}
-                                      target="_blank"
-                                      rel="noreferrer"
-                                    >
-                                      {name} ↗
-                                    </a>
-                                  ))}
-                                </div>
-                              ))}
-                            </div>
-                          )}
-                          {failed.length > 0 && (
-                            <details className="health">
-                              <summary>
-                                {failed.length} feed
-                                {failed.length === 1 ? "" : "s"} unavailable ·
-                                cached items may remain
-                              </summary>
-                              {failed.map((h) => (
-                                <p key={h.name}>
-                                  {h.name} · checked{" "}
-                                  {localDateTime(h.checked, {
-                                    hour: "numeric",
-                                    minute: "2-digit",
-                                  })}{" "}
-                                  {zoneLabel}
-                                </p>
-                              ))}
-                            </details>
-                          )}
-                        </div>
-                      </div>
-                    </div>
-                    <div className="headline-column">
-                      <div className="section-heading">
-                        <h2 className="latest-heading">
-                          Latest stories <small>{displayed.length}</small>
-                        </h2>
-                        <label className="show-read">
-                          <input
-                            type="checkbox"
-                            checked={showRead}
-                            onChange={(e) => setShowRead(e.target.checked)}
-                          />{" "}
-                          Show read
-                        </label>
-                        <label className="search">
-                          <span aria-hidden="true">⌕</span>
-                          <input
-                            value={search}
-                            onChange={(e) => setSearch(e.target.value)}
-                            placeholder="Find a headline"
-                            aria-label="Search headlines"
-                          />
-                        </label>
-                      </div>
-                      {youtubeHeadlines.length > 0 && (
-                        <section
-                          className="youtube-headlines"
-                          aria-label="Latest YouTube videos"
-                        >
-                          <h3>Latest videos</h3>
-                          {youtubeHeadlines.map(story)}
-                        </section>
-                      )}
-                      {youtubeUnavailable.some(
-                        (id) => active === "all" || active === id,
-                      ) && (
-                        <p className="feed-description">
-                          Some official YouTube feeds are temporarily
-                          unavailable.
-                        </p>
-                      )}
-                      {loading && displayed.length > 0 && (
-                        <p className="headline-loading" role="status">
-                          <span
-                            className="headline-spinner"
-                            aria-hidden="true"
-                          />
-                          Fetching more headlines…
-                        </p>
-                      )}
-                      {newsMode === "loading" ? (
-                        <div
-                          className="empty headline-loading"
-                          role="status"
-                          aria-live="polite"
-                        >
-                          <span
-                            className="headline-spinner"
-                            aria-hidden="true"
-                          />
-                          Fetching headlines…
-                        </div>
-                      ) : newsMode === "error" ? (
-                        <div className="empty" role="status">
-                          Headlines are temporarily unavailable. We’ll try again
-                          automatically.
-                        </div>
-                      ) : displayed.length ? (
-                        displayed.map(story)
-                      ) : (
-                        <div className="empty">
-                          <h3>
-                            {search
-                              ? "No matching headlines."
-                              : newest &&
-                                  recentStories([newest], active, { timeZone })
-                                    .length === 0
-                                ? "No news since " +
-                                  localDateTime(newest.date, {
-                                    month: "short",
-                                    day: "numeric",
-                                    year: "numeric",
-                                  })
-                                : active === "all"
-                                  ? "No unread headlines from today."
-                                  : "No unread headlines from the last week."}
-                          </h3>
-                          <p>
-                            {olderCount > 0
-                              ? "Use View older to catch up on earlier articles."
-                              : "Check the Source desk for more coverage."}
-                          </p>
-                        </div>
-                      )}
-                      {newsData.checked && (
-                        <p className="feed-description">
-                          Last update:{" "}
-                          {localDateTime(newsData.checked, {
-                            dateStyle: "medium",
-                            timeStyle: "short",
-                          })}{" "}
-                          {zoneLabel}
-                        </p>
-                      )}
-                      {!loading && newsFailed && displayed.length > 0 && (
-                        <p className="feed-description">
-                          Some headline feeds are unavailable.
-                        </p>
-                      )}
-                      {!loading && compactNews && (
-                        <div className="news-more">
-                          <p></p>
-                          {(olderCount > 0 || showOlder) && (
-                            <button onClick={() => setShowOlder(!showOlder)}>
-                              {showOlder
-                                ? "Hide older"
-                                : "View older (" + olderCount + ")"}
-                            </button>
-                          )}
-                        </div>
-                      )}
-                    </div>
-                  </div>
-                </section>
-                <aside className="scores">
-                  <div className="rail-heading upcoming-heading">
-                    <h2>Coming up</h2>
-                  </div>
-                  {futureGames.length ? (
-                    futureGames.map((g) => game(g, true))
-                  ) : (
-                    <div className="empty compact">
-                      No upcoming {terms.event} returned by the available feeds.
-                    </div>
-                  )}
-                  <div className="rail-heading results">
-                    <h2>Recent results</h2>
-                  </div>
-                  <button
-                    type="button"
-                    className="results-toggle"
-                    onClick={toggleResults}
-                    disabled={!resultsReady}
-                  >
-                    {hideScores ? "Show scores" : "Hide scores"}
-                  </button>
-                  {results.length ? (
-                    results.map((g) => game(g, true))
-                  ) : (
-                    <div className="empty compact">
-                      {loading
-                        ? "Checking results…"
-                        : `No completed ${terms.event} returned by the available feeds.`}
-                    </div>
-                  )}
-                  {active !== "all" && availableResults.length > 3 && (
-                    <button
-                      type="button"
-                      className="results-toggle"
-                      aria-expanded={showOlderResults}
-                      onClick={() => setShowOlderResults(!showOlderResults)}
-                    >
-                      {showOlderResults
-                        ? "Hide older"
-                        : `Show older (${availableResults.length - 3})`}
-                    </button>
-                  )}
-                  {activeScoreboardUrl && (
-                    <div className="score-note">
-                      <b>More scoreboards</b>
-                      <p>
-                        {team?.short} scoring pages provide additional coverage
-                        beyond the imported schedules.
-                      </p>
-                      <a
-                        href={activeScoreboardUrl}
-                        target="_blank"
-                        rel="noreferrer"
-                      >
-                        {team?.short} scoreboard ↗
-                      </a>
-                    </div>
-                  )}
-                </aside>
+                <NewsSection
+                  state={{
+                    active,
+                    timeZone,
+                    teamName: team?.name,
+                    socialPosts,
+                    socialUnavailable,
+                    socialRefreshing,
+                    socialRefreshError,
+                    youtubeHeadlines,
+                    youtubeUnavailable,
+                    displayed,
+                    newest,
+                    olderCount,
+                    compactNews,
+                    newsMode,
+                    newsFailed,
+                    loading,
+                    checked: newsData.checked,
+                    failed,
+                    readIds,
+                    search,
+                    showRead,
+                    showOlder,
+                    sources,
+                  }}
+                  actions={{
+                    choose,
+                    markRead,
+                    setSearch,
+                    setShowRead,
+                    toggleOlder: () => setShowOlder(!showOlder),
+                    refreshSocial,
+                    toggleSources: () => setSources(!sources),
+                  }}
+                  teamDetails={teamDetails}
+                  zoneLabel={zoneLabel}
+                  localDateTime={localDateTime}
+                />
+                <ScoreRail
+                  futureGames={futureGames}
+                  results={results}
+                  availableResults={availableResults}
+                  event={terms.event}
+                  loading={loading}
+                  resultsReady={resultsReady}
+                  hideScores={hideScores}
+                  showOlderResults={showOlderResults}
+                  activeIsAll={active === "all"}
+                  activeScoreboardUrl={activeScoreboardUrl}
+                  teamShort={team?.short}
+                  onToggleResults={toggleResults}
+                  onToggleOlderResults={() =>
+                    setShowOlderResults(!showOlderResults)
+                  }
+                  renderGame={game}
+                />
               </div>
             </>
           )}
