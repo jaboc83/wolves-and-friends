@@ -1,20 +1,20 @@
 "use client";
 import AddToCalendar from "./add-to-calendar";
-import { injuryReportUrl, tournamentScoresUrl } from "../lib/games/game-links";
-import { eventDateLabel } from "../lib/games/event-time";
+import { injuryReportUrl, tournamentScoresUrl } from "../../lib/games/game-links";
+import { eventDateLabel } from "../../lib/games/event-time";
 import GameBadges from "./game-badges";
-import { gameBadges } from "../lib/games/game-badges";
+import { gameBadges } from "../../lib/games/game-badges";
 import { useRef, useState } from "react";
-import type { Game } from "../lib/feeds";
+import type { Game } from "../../lib/feeds";
 import Image from "next/image";
-import { teamProfile } from "../lib/teams/teams";
-import { teamLocation } from "../lib/teams/team-location";
-import { gameTeamUrl } from "../lib/teams/game-team-url";
-import { sportTerms } from "../lib/teams/sport-terms";
-import { teamLogoPath } from "../lib/teams/team-logo";
-import type { TeamId } from "../lib/teams/teams";
-import { useLocalTimeZone } from "../hooks/use-local-time-zone";
-import { formatInTimeZone, timeZoneLabel } from "../lib/browser/local-time";
+import { teamProfile } from "../../lib/teams/teams";
+import { teamLocation } from "../../lib/teams/team-location";
+import { gameTeamUrl } from "../../lib/teams/game-team-url";
+import { sportTerms } from "../../lib/teams/sport-terms";
+import { teamLogoPath } from "../../lib/teams/team-logo";
+import type { TeamId } from "../../lib/teams/teams";
+import { useLocalTimeZone } from "../../hooks/use-local-time-zone";
+import { formatInTimeZone, timeZoneLabel } from "../../lib/browser/local-time";
 const patterns: Record<string, RegExp> = {
   wolves: /timberwolves|wolves/i,
   wild: /wild/i,

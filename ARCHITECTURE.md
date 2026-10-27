@@ -110,9 +110,9 @@ Odds lookups are currently limited to eligible games within the next seven days 
 - **Communities/source links:** direct reference links to relevant communities and publishers.
 - **Coming up/recent results:** compact cards with expandable details. All Teams shows the next future event per team; selected-team views show more.
 
-[GameCard](components/game-card.tsx) owns its expanded state. Results start hidden. Opening a completed-game card reveals its result; unchecking Hide Results exposes W/L/D and scores on minimized cards too. Game-type badges come from [game-badges.ts](lib/games/game-badges.ts) and [GameBadges](components/game-badges.tsx).
+[GameCard](components/games/game-card.tsx) owns its expanded state. Results start hidden. Opening a completed-game card reveals its result; unchecking Hide Results exposes W/L/D and scores on minimized cards too. Game-type badges come from [game-badges.ts](lib/games/game-badges.ts) and [GameBadges](components/games/game-badges.tsx).
 
-[MatchCalendar](components/match-calendar.tsx) owns the displayed month and selected day. Past dates are muted but remain clickable. Calendar entries themselves do not expose scores. Display dates and the definition of today use **America/Chicago**; source-time conversion can use the provider's timezone. Date-only events avoid inventing a start time.
+[MatchCalendar](components/games/match-calendar.tsx) owns the displayed month and selected day. Past dates are muted but remain clickable. Calendar entries themselves do not expose scores. Display dates and the definition of today use **America/Chicago**; source-time conversion can use the provider's timezone. Date-only events avoid inventing a start time.
 
 ## 6. Where information is stored
 
@@ -167,11 +167,11 @@ See [README.md](README.md) for local setup commands. A clean clone defaults to t
 | Headline age/read/saved behavior                | `app/page.tsx`, `lib/browser/news-window.ts`                                                    |
 | New news or schedule provider                   | A parser in `lib/feeds/`; a team's feed URL in its `providers.ts`, or a task in its `server.ts` |
 | Game and event rules                            | `lib/games/` for event dates, calendar exports, badges, links, and postseason logic             |
-| Game-card details or score hiding               | `components/game-card.tsx`                                                                      |
-| Competition badges                              | `lib/games/game-badges.ts`, `components/game-badges.tsx`                                        |
+| Game-card details or score hiding               | `components/games/game-card.tsx`                                                                |
+| Competition badges                              | `lib/games/game-badges.ts`, `components/games/game-badges.tsx`                                  |
 | Missing odds                                    | `lib/feeds/odds.ts`; check competition, provider availability, and fixture matching             |
-| Calendar behavior                               | `components/match-calendar.tsx`; check schedule coverage upstream too                           |
+| Calendar behavior                               | `components/games/match-calendar.tsx`; check schedule coverage upstream too                     |
 | Missing social posts or avatars                 | `app/api/social/route.ts`, `lib/social/bluesky.ts`, browser cache handling in `app/page.tsx`    |
-| Standings, qualification lines, or player links | `lib/team-info/`, `components/team-insights.tsx`                                                |
+| Standings, qualification lines, or player links | `lib/team-info/`, `components/teams/team-insights.tsx`                                          |
 
 External feeds and HTML layouts can change or become unavailable. Inspect the provider response and source-health information before treating missing content as a layout problem. Preserve accurate unavailable states instead of inventing scores, schedules, authors, rosters, or odds.

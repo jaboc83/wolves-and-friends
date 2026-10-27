@@ -1,18 +1,18 @@
 "use client";
 import { Fragment, useState } from "react";
-import { decorateTable } from "../lib/team-info/standings";
-import { teamProfile, teams } from "../lib/teams/teams";
-import { sportTerms } from "../lib/teams/sport-terms";
-import type { TeamInfo } from "../lib/team-info";
-import type { PlayerStats } from "../lib/team-info/player-stats";
-import { espnTeamLogoUrl } from "../lib/games/march-madness";
-import BracketConnectors from "./bracket-connectors";
+import { decorateTable } from "../../lib/team-info/standings";
+import { teamProfile, teams } from "../../lib/teams/teams";
+import { sportTerms } from "../../lib/teams/sport-terms";
+import type { TeamInfo } from "../../lib/team-info";
+import type { PlayerStats } from "../../lib/team-info/player-stats";
+import { espnTeamLogoUrl } from "../../lib/games/march-madness";
+import BracketConnectors from "../games/bracket-connectors";
 import RosterPanel from "./roster-panel";
 import Image from "next/image";
-import { isTeamId, TEAM_IDS, type TeamId } from "../lib/teams/teams";
-import type { DashboardPageId } from "../lib/dashboard/page-id";
-import { useLocalTimeZone } from "../hooks/use-local-time-zone";
-import { formatInTimeZone, timeZoneLabel } from "../lib/browser/local-time";
+import { isTeamId, TEAM_IDS, type TeamId } from "../../lib/teams/teams";
+import type { DashboardPageId } from "../../lib/dashboard/page-id";
+import { useLocalTimeZone } from "../../hooks/use-local-time-zone";
+import { formatInTimeZone, timeZoneLabel } from "../../lib/browser/local-time";
 export default function TeamInsights({
   active,
   data,

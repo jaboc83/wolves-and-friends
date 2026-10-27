@@ -4,7 +4,7 @@
 
 `lib/browser/storage.ts` guards access, JSON parsing and writes; preferences never leave the device. `lib/dashboard/storage.ts` validates cached data and selected teams before applying them. Invalid read-history JSON falls back to an empty list; disabled/full storage never prevents live controls from working.
 
-`lib/dashboard/selectors.ts` derives team/read/search filters, merged games and result windows without owning request state. `components/story-card.tsx` renders a story and receives device actions. `lib/team-info/standings.ts` isolates pure table decoration from server provider code.
+`lib/dashboard/selectors.ts` derives team/read/search filters, merged games and result windows without owning request state. `components/stories/story-card.tsx` renders a story and receives device actions. `lib/team-info/standings.ts` isolates pure table decoration from server provider code.
 
 Calendar-day boundaries and displayed timestamps in the dashboard use the browser's configured timezone. It is read locally for rendering only, is not persisted, and is never included in feed requests; server-side feed windows retain their fixed source timezone.
 

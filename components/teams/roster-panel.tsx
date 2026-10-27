@@ -6,15 +6,15 @@ import {
   useState,
   type KeyboardEvent,
 } from "react";
-import type { TeamInfo } from "../lib/team-info";
-import { teamProfile } from "../lib/teams/teams";
-import type { PlayerStats } from "../lib/team-info/player-stats";
-import type { StatsStatus } from "../lib/team-info/roster-stats-loader";
+import type { TeamInfo } from "../../lib/team-info";
+import { teamProfile } from "../../lib/teams/teams";
+import type { PlayerStats } from "../../lib/team-info/player-stats";
+import type { StatsStatus } from "../../lib/team-info/roster-stats-loader";
 import {
   createRosterStatsTable,
   rosterStatValue,
   type RosterStatRow,
-} from "../lib/team-info/roster-stats-table";
+} from "../../lib/team-info/roster-stats-table";
 
 type Depth = NonNullable<TeamInfo["depth"]>;
 type RosterPlayer = Depth["groups"][number]["players"][number] & {
