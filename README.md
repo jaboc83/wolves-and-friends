@@ -2,7 +2,7 @@
 
 A public sports hub for Wolves, Wild, Vikings, Twins, Loons, Crystal Palace, Disc Golf, Lynx, Žalgiris, Frost, and USMNT.
 
-Live website: https://wolves-and-friends-hub.tastyfir6.chatgpt.site
+Live website: https://wolvesandfriends.moening.org/
 
 This private repository is the shared source code. The live website is hosted through Sites. Automatic deployment triggers are disabled; deployment requires an explicit request to ChatGPT. Merging a pull request or pushing to GitHub does not deploy. See [Manual deployment](DEPLOYMENT.md).
 

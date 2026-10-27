@@ -1,0 +1,165 @@
+.power-rankings {
+  margin: 18px 0;
+  border: 1px solid var(--line, #d3d9d4);
+  border-top: 3px solid var(--team-accent, #8aa747);
+  background: var(--surface, #fffefb);
+  overflow: hidden;
+}
+.power-rankings-summary {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 8px 16px;
+  padding: 14px;
+  cursor: pointer;
+  list-style: none;
+}
+.power-rankings-summary::-webkit-details-marker {
+  display: none;
+}
+.power-rankings-summary:focus-visible {
+  outline: 3px solid #367eab;
+  outline-offset: -3px;
+}
+.power-rankings[open] .power-rankings-summary {
+  border-bottom: 1px solid var(--line, #d3d9d4);
+}
+.power-rankings-heading {
+  display: flex;
+  align-items: center;
+  min-width: 0;
+}
+.power-rankings-title {
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+  min-width: 0;
+  flex-wrap: wrap;
+}
+.power-rankings-heading > .power-rankings-preview {
+  margin-left: 14px;
+}
+.power-rankings-heading {
+  min-width: 0;
+}
+.power-rankings-heading strong {
+  font-size: 1.25rem;
+}
+.power-rankings-heading small {
+  color: var(--muted, #64707a);
+  font-size: 0.72rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+.power-rankings-preview {
+  color: var(--ink, #193346);
+  font-size: 0.85rem;
+  font-weight: 700;
+  white-space: nowrap;
+}
+.diagnostics-export {
+  margin-top: 4px;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  color: var(--muted, #64707a);
+  font-size: 0.78rem;
+  font-weight: 600;
+  text-decoration: underline;
+  text-underline-offset: 2px;
+  cursor: pointer;
+}
+.diagnostics-export:hover,
+.diagnostics-export:focus-visible {
+  color: var(--team-accent, #8aa747);
+}
+.power-rankings-chevron {
+  flex: 0 0 auto;
+  color: var(--muted, #64707a);
+  font-size: 1.25rem;
+  line-height: 1;
+  transition: transform 160ms ease;
+}
+.power-rankings[open] .power-rankings-chevron {
+  transform: rotate(180deg);
+}
+.power-rankings > .panel-note,
+.power-rankings > .table-scroll {
+  margin-left: 14px;
+  margin-right: 14px;
+}
+.power-rankings > .panel-note:last-child {
+  margin-bottom: 14px;
+}
+.power-rankings table {
+  width: 100%;
+}
+.power-rankings th[scope="row"] a {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+}
+.power-ranking-logo {
+  width: 22px;
+  height: 22px;
+  object-fit: contain;
+}
+
+.data-panel.power-rankings {
+  margin: 14px 0;
+  border: 1px solid var(--line, #d8dfd8);
+  border-radius: 7px;
+  padding: 16px;
+  overflow: hidden;
+}
+.data-panel.power-rankings > .panel-note,
+.data-panel.power-rankings > .table-scroll {
+  margin-left: 0;
+  margin-right: 0;
+}
+
+.table-sort-button {
+  appearance: none;
+  border: 0;
+  padding: 0;
+  background: transparent;
+  color: inherit;
+  font: inherit;
+  text-transform: inherit;
+  cursor: pointer;
+}
+.table-sort-button:hover,
+.table-sort-button:focus-visible {
+  color: var(--accent, #0b7d4f);
+  text-decoration: underline;
+}
+
+.release-marker {
+  display: block;
+  margin-top: 8px;
+  color: var(--muted, #64707a);
+  font-size: 0.72rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+
+.app-error {
+  display: grid;
+  min-height: 50vh;
+  place-content: center;
+  gap: 12px;
+  padding: 24px;
+  text-align: center;
+}
+.app-error button {
+  justify-self: center;
+  border: 1px solid var(--line, #cbd5cf);
+  border-radius: 999px;
+  background: var(--surface, #fffefb);
+  padding: 8px 16px;
+  color: var(--ink, #192a3c);
+  cursor: pointer;
+}

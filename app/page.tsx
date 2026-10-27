@@ -95,6 +95,7 @@ export default function Home() {
       alive = false;
     };
   }, []);
+  // Changes pages, resets page-only controls, and saves the selection locally.
   function choose(id: DashboardPageId) {
     selectPage(id);
     setActive(id);
@@ -104,6 +105,7 @@ export default function Home() {
     setShowOlderResults(false);
     browserStorage.setItem("wf-team", id);
   }
+  // Toggles score visibility and persists the preference in this browser.
   function toggleResults() {
     const next = !hideScores;
     setHideResults(next);
@@ -111,6 +113,7 @@ export default function Home() {
       browserStorage.setItem("wf-hide-results", String(next));
     } catch {}
   }
+  // Applies the dialog choice and opens standings on wide screens when scores show.
   function chooseScores(hidden: boolean, ask: boolean) {
     try {
       saveScorePreference(browserStorage, hidden, ask);
@@ -121,6 +124,7 @@ export default function Home() {
     );
     setScorePrompt(false);
   }
+  // Switches the color mode and stores the preference locally.
   function toggleColorMode() {
     const next = !darkMode;
     setDarkMode(next);
@@ -128,6 +132,7 @@ export default function Home() {
       browserStorage.setItem("wf-color-mode", next ? "dark" : "light");
     } catch {}
   }
+  // Toggles one story's read state and saves the updated ID list locally.
   function markRead(id: string) {
     const next = readIds.includes(id)
       ? readIds.filter((x) => x !== id)
@@ -195,6 +200,7 @@ export default function Home() {
       (active === DASHBOARD_PAGE_IDS.ALL ||
         (isTeamId(active) && h.teams.includes(active))),
   );
+  // Binds each game to its card and the dashboard's score-reveal state.
   function game(g: Game, compact = false, today = false) {
     return (
       <GameCard
