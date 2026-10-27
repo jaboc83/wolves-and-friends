@@ -1,6 +1,6 @@
 import type { MouseEvent } from "react";
-import type { Game } from "../lib/feeds";
-import { googleCalendarUrl } from "../lib/games/calendar-event";
+import type { Game } from "../../lib/feeds";
+import { googleCalendarUrl } from "../../lib/games/calendar-event";
 
 export default function AddToCalendar({
   game,

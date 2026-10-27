@@ -2,19 +2,19 @@
 import GameBadges from "./game-badges";
 import AddToCalendar from "./add-to-calendar";
 import { useState } from "react";
-import type { Game } from "../lib/feeds";
-import { teams } from "../lib/teams/teams";
-import { sportTerms } from "../lib/teams/sport-terms";
-import { teamLogoPath } from "../lib/teams/team-logo";
-import type { DashboardPageId } from "../lib/dashboard/page-id";
+import type { Game } from "../../lib/feeds";
+import { teams } from "../../lib/teams/teams";
+import { sportTerms } from "../../lib/teams/sport-terms";
+import { teamLogoPath } from "../../lib/teams/team-logo";
+import type { DashboardPageId } from "../../lib/dashboard/page-id";
 import Image from "next/image";
-import { useLocalTimeZone } from "../hooks/use-local-time-zone";
-import { gameDay } from "../lib/games/event-time";
+import { useLocalTimeZone } from "../../hooks/use-local-time-zone";
+import { gameDay } from "../../lib/games/event-time";
 import {
   dayInTimeZone,
   formatInTimeZone,
   timeZoneLabel,
-} from "../lib/browser/local-time";
+} from "../../lib/browser/local-time";
 export default function MatchCalendar({
   games,
   team = "all",

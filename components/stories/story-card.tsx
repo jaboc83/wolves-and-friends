@@ -1,16 +1,16 @@
 "use client";
-import type { Story } from "../lib/feeds";
-import { teams, teamPriority } from "../lib/teams/teams";
+import type { Story } from "../../lib/feeds";
+import { teams, teamPriority } from "../../lib/teams/teams";
 import SocialImage from "./social-image";
-import TeamLogos from "./team-logos";
-import { isLocalSocialImage } from "../lib/social/bluesky-images";
-import type { DashboardPageId } from "../lib/dashboard/page-id";
-import { useLocalTimeZone } from "../hooks/use-local-time-zone";
+import TeamLogos from "../teams/team-logos";
+import { isLocalSocialImage } from "../../lib/social/bluesky-images";
+import type { DashboardPageId } from "../../lib/dashboard/page-id";
+import { useLocalTimeZone } from "../../hooks/use-local-time-zone";
 import {
   dayInTimeZone,
   formatInTimeZone,
   timeZoneLabel,
-} from "../lib/browser/local-time";
+} from "../../lib/browser/local-time";
 const age = (s: string) => {
   const h = Math.max(0, Math.floor((Date.now() - Date.parse(s)) / 3600000));
   return h < 1

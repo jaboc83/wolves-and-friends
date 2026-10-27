@@ -1,12 +1,12 @@
 "use client";
 import { useEffect, useState } from "react";
-import initial from "../data/snapshots/march-madness-initial.json";
-import type { MarchData } from "../lib/games/march-madness";
-import { espnTeamLogoUrl } from "../lib/games/march-madness";
+import initial from "../../data/snapshots/march-madness-initial.json";
+import type { MarchData } from "../../lib/games/march-madness";
+import { espnTeamLogoUrl } from "../../lib/games/march-madness";
 import BracketConnectors from "./bracket-connectors";
 import Image from "next/image";
-import { useLocalTimeZone } from "../hooks/use-local-time-zone";
-import { formatInTimeZone, timeZoneLabel } from "../lib/browser/local-time";
+import { useLocalTimeZone } from "../../hooks/use-local-time-zone";
+import { formatInTimeZone, timeZoneLabel } from "../../lib/browser/local-time";
 export default function MarchMadness({
   revealResults,
   onToggleResults,

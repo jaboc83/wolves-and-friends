@@ -6,21 +6,21 @@ import { useDashboardFeeds } from "../hooks/use-dashboard-feeds";
 import { browserStorage, readStored, stringList } from "../lib/browser/storage";
 import { storedDashboardPage } from "../lib/dashboard/storage";
 import { newsDisplayMode } from "../lib/browser/news-page-data";
-import StoryCard from "../components/story-card";
+import StoryCard from "../components/stories/story-card";
 import { selectStories, selectGames } from "../lib/dashboard/selectors";
-import GameCard from "../components/game-card";
-import BackToTop from "../components/back-to-top";
-import MatchCalendar from "../components/match-calendar";
-import SectionLinks from "../components/section-links";
-import ScorePreferenceDialog from "../components/score-preference-dialog";
+import GameCard from "../components/games/game-card";
+import BackToTop from "../components/dashboard/back-to-top";
+import MatchCalendar from "../components/games/match-calendar";
+import SectionLinks from "../components/dashboard/section-links";
+import ScorePreferenceDialog from "../components/dashboard/score-preference-dialog";
 import {
   loadScorePreference,
   saveScorePreference,
 } from "../lib/browser/score-preference";
-const MarchMadness = lazy(() => import("../components/march-madness"));
+const MarchMadness = lazy(() => import("../components/games/march-madness"));
 import { recentStories } from "../lib/browser/news-window";
 import { sportTerms } from "../lib/teams/sport-terms";
-import TeamInsights from "../components/team-insights";
+import TeamInsights from "../components/teams/team-insights";
 import { teamThemes } from "../lib/teams/team-themes";
 import { unreadSocial } from "../lib/social/social-queue";
 import { communities } from "../lib/social/communities";

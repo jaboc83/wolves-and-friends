@@ -14,9 +14,9 @@ Read the [Architecture overview](ARCHITECTURE.md) for a plain-English guide to t
 
 - `app/page.tsx`: page layout, team filters, read/saved stories, and refresh behavior.
 - `app/globals.css`: styling, team themes, and mobile layout.
-- `components/game-card.tsx`: compact games and hidden/revealed results.
-- `components/match-calendar.tsx`: past and upcoming calendar events.
-- `components/team-insights.tsx`: standings and rosters.
+- `components/games/game-card.tsx`: compact games and hidden/revealed results.
+- `components/games/match-calendar.tsx`: past and upcoming calendar events.
+- `components/teams/team-insights.tsx`: standings and rosters.
 - `lib/feeds/index.ts`: news and schedule collection.
 - `lib/feeds/odds.ts`: competition-aware odds lookups and fixture matching.
 - `lib/social/bluesky.ts`: social feeds and server-fetched inline avatars.

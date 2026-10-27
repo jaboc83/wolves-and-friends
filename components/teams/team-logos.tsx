@@ -1,7 +1,7 @@
 import Image from "next/image";
-import { teamProfile, teams } from "../lib/teams/teams";
-import { teamLogoPath } from "../lib/teams/team-logo";
-import type { TeamId } from "../lib/teams/teams";
+import { teamProfile, teams } from "../../lib/teams/teams";
+import { teamLogoPath } from "../../lib/teams/team-logo";
+import type { TeamId } from "../../lib/teams/teams";
 export default function TeamLogos({ teamIds }: { teamIds: TeamId[] }) {
   return (
     <div className="team-logos">

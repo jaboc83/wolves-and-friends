@@ -1,7 +1,7 @@
 "use client";
-import { sportTerms } from "../lib/teams/sport-terms";
-import { teamProfile } from "../lib/teams/teams";
-import type { DashboardPageId } from "../lib/dashboard/page-id";
+import { sportTerms } from "../../lib/teams/sport-terms";
+import { teamProfile } from "../../lib/teams/teams";
+import type { DashboardPageId } from "../../lib/dashboard/page-id";
 
 export default function SectionLinks({ active }: { active: DashboardPageId }) {
   const terms = sportTerms(active);
