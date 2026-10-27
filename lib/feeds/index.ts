@@ -481,6 +481,7 @@ export async function collect(
           task("ESPN scores · " + t.short, [t.id], async (output, signal) => {
             const { games, health } = output;
             const get = (url: string) => providerGet(url, signal);
+            const currentYear = new Date().getFullYear();
             const json = await (
               await get(
                 "https://site.api.espn.com/apis/site/v2/sports/" +
@@ -489,11 +490,52 @@ export async function collect(
                   t.espn +
                   "/schedule" +
                   (t.id === "twins"
-                    ? "?season=" + new Date().getFullYear() + "&seasontype=2"
+                    ? "?season=" + currentYear + "&seasontype=2"
                     : ""),
               )
             ).json();
             const parsed = parseGames(json, t.id, t.sport);
+            if (t.id === "twins") {
+              const nextYear = currentYear + 1;
+              try {
+                const next = parseGames(
+                  await (
+                    await get(
+                      "https://site.api.espn.com/apis/site/v2/sports/" +
+                        t.league +
+                        "/teams/" +
+                        t.espn +
+                        "/schedule?season=" +
+                        nextYear +
+                        "&seasontype=2",
+                    )
+                  ).json(),
+                  t.id,
+                  t.sport,
+                ).filter(
+                  (game) => new Date(game.date).getUTCFullYear() === nextYear,
+                );
+                if (next.length) parsed.push(...next);
+                else
+                  parsed.push(
+                    ...(cached || (initial as HubData)).games.filter(
+                      (game) =>
+                        game.team === "twins" &&
+                        new Date(game.date).getUTCFullYear() === nextYear,
+                    ),
+                  );
+              } catch {
+                // A not-yet-published or temporarily unavailable future feed must
+                // not erase a previously verified next-season schedule.
+                parsed.push(
+                  ...(cached || (initial as HubData)).games.filter(
+                    (game) =>
+                      game.team === "twins" &&
+                      new Date(game.date).getUTCFullYear() === nextYear,
+                  ),
+                );
+              }
+            }
             if (t.id === "wolves") {
               const season =
                 json && typeof json === "object" && "season" in json
