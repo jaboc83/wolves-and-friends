@@ -176,6 +176,11 @@ function selectedValues(
     }
     return [
       make(
+        "PTS",
+        "Points",
+        statByName(stats, ["points"]) || statByLabel(stats, ["PTS"]),
+      ),
+      make(
         "G",
         "Goals",
         statByName(stats, ["goals"]) || statByLabel(stats, ["G"]),
@@ -184,11 +189,6 @@ function selectedValues(
         "A",
         "Assists",
         statByName(stats, ["assists"]) || statByLabel(stats, ["A"]),
-      ),
-      make(
-        "PTS",
-        "Points",
-        statByName(stats, ["points"]) || statByLabel(stats, ["PTS"]),
       ),
       make(
         "+/-",

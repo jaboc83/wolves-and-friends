@@ -1,5 +1,5 @@
 "use client";
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import initial from "../../data/snapshots/march-madness-initial.json";
 import type { MarchData } from "../../lib/games/march-madness";
 import { espnTeamLogoUrl } from "../../lib/games/march-madness";
@@ -8,43 +8,19 @@ import Image from "next/image";
 import { useLocalTimeZone } from "../../hooks/use-local-time-zone";
 import { formatInTimeZone, timeZoneLabel } from "../../lib/browser/local-time";
 export default function MarchMadness({
+  data: loadedData,
+  unavailable,
   revealResults,
   onToggleResults,
 }: {
+  data: MarchData | null;
+  unavailable: boolean;
   revealResults: boolean;
   onToggleResults: () => void;
 }) {
   const timeZone = useLocalTimeZone();
-  const [data, setData] = useState<MarchData>(initial as MarchData);
+  const data = loadedData || (initial as MarchData);
   const [region, setRegion] = useState("All regions");
-  useEffect(() => {
-    let alive = true,
-      pending = false;
-    async function refresh() {
-      if (pending) return;
-      pending = true;
-      try {
-        const r = await fetch("/api/march-madness", {
-          credentials: "omit",
-          referrerPolicy: "no-referrer",
-          cache: "no-store",
-        });
-        if (!r.ok) throw Error();
-        const next = (await r.json()) as MarchData;
-        if (alive) setData(next);
-      } catch {
-        if (alive) setData((previous) => ({ ...previous, unavailable: true }));
-      } finally {
-        pending = false;
-      }
-    }
-    void refresh();
-    const timer = setInterval(refresh, 60000);
-    return () => {
-      alive = false;
-      clearInterval(timer);
-    };
-  }, []);
   const regions = ["East", "West", "South", "Midwest", "Final Four"].filter(
     (r) => data.games.some((g) => g.region === r),
   );
@@ -96,7 +72,7 @@ export default function MarchMadness({
           ESPN bracket ↗
         </a>
       </div>
-      {data.unavailable && (
+      {(unavailable || data.unavailable) && (
         <p className="alert" role="status">
           The tournament feed could not refresh. Showing the last verified
           bracket.

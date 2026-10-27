@@ -70,12 +70,13 @@ export default function Home() {
     oddsGames,
     playerStats,
     playerStatsStatus,
+    marchData,
+    marchUnavailable,
     socialRefreshing,
     socialRefreshError,
     refreshSocial,
     refreshRosterStats,
-    fetchNewsPage,
-    activePage: activePageRef,
+    selectPage,
   } = useDashboardFeeds(active);
   useEffect(() => {
     let alive = true;
@@ -96,10 +97,9 @@ export default function Home() {
     };
   }, []);
   function choose(id: DashboardPageId) {
-    activePageRef.current = id;
+    selectPage(id);
     setActive(id);
     setAutoOpenStandings(false);
-    if (isTeamId(id)) void fetchNewsPage(id);
     setTeamMenuOpen(false);
     setShowOlder(false);
     setShowOlderResults(false);
@@ -379,6 +379,8 @@ export default function Home() {
               }
             >
               <MarchMadness
+                data={marchData}
+                unavailable={marchUnavailable}
                 revealResults={resultsReady && !hideScores}
                 onToggleResults={toggleResults}
               />
