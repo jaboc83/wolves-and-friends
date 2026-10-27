@@ -1,6 +1,7 @@
 "use client";
 import AddToCalendar from "./add-to-calendar";
-import { injuryReportUrl, tournamentScoresUrl } from "../../lib/games/game-links";
+import GameCardExtras from "./game-card-extras";
+import { tournamentScoresUrl } from "../../lib/games/game-links";
 import { eventDateLabel } from "../../lib/games/event-time";
 import GameBadges from "./game-badges";
 import { gameBadges } from "../../lib/games/game-badges";
@@ -243,123 +244,15 @@ export default function GameCard({
           {!compact && g.state === "pre" && <AddToCalendar game={g} />}
         </span>
       </div>
-      {today && injuryReportUrl(g.team) && (
-        <details className="injury-report" aria-label="Injury report">
-          <summary>
-            <strong>Injury report</strong>
-            <svg
-              className="injury-report-chevron"
-              aria-hidden="true"
-              width="16"
-              height="16"
-              viewBox="0 0 16 16"
-              fill="none"
-              stroke="currentColor"
-              strokeWidth="1.5"
-              strokeLinecap="round"
-              strokeLinejoin="round"
-            >
-              <path d="m4 6 4 4 4-4" />
-            </svg>
-          </summary>
-          {g.injuries?.length ? (
-            Array.from(
-              new Set(
-                g.injuries.map((injury) => injury.team || "Team injury report"),
-              ),
-            ).map((team) => (
-              <div className="injury-team" key={team}>
-                <h4>{team}</h4>
-                <ul>
-                  {g
-                    .injuries!.filter(
-                      (injury) =>
-                        (injury.team || "Team injury report") === team,
-                    )
-                    .map((injury) => (
-                      <li key={`${team}-${injury.player}`}>
-                        <span>{injury.player}</span>
-                        <span>{injury.status}</span>
-                        {injury.detail && <small>{injury.detail}</small>}
-                      </li>
-                    ))}
-                </ul>
-              </div>
-            ))
-          ) : (
-            <a href={injuryReportUrl(g.team)} target="_blank" rel="noreferrer">
-              Injury report ↗
-            </a>
-          )}
-        </details>
-      )}
-      {g.state === "post" && !g.eventOnly && (
-        <a
-          className="game-highlights"
-          href={
-            "https://www.youtube.com/results?search_query=" +
-            encodeURIComponent(
-              g.name +
-                " " +
-                t.name +
-                " " +
-                localDateTime(g.date, {
-                  year: "numeric",
-                  month: "long",
-                  day: "numeric",
-                }) +
-                ` full ${terms.event} highlights`,
-            )
-          }
-          target="_blank"
-          rel="noreferrer"
-        >
-          ▷ Find full {terms.event} highlights on YouTube ↗
-        </a>
-      )}
-      {g.state !== "post" && !g.eventOnly && (
-        <div className="game-odds">
-          {g.odds ? (
-            <>
-              <b>{g.odds.favorite}</b>
-              <details className="odds-details">
-                <summary>Odds details</summary>
-                <p>{g.odds.lines.join(" · ")}</p>
-                <a href={g.odds.url} target="_blank" rel="noreferrer">
-                  {g.odds.source} ↗
-                </a>
-                <small>
-                  Checked{" "}
-                  {localDateTime(g.odds.checked, {
-                    month: "short",
-                    day: "numeric",
-                    hour: "numeric",
-                    minute: "2-digit",
-                  })}{" "}
-                  {timeZoneLabel(timeZone, g.odds.checked)} · odds can change
-                </small>
-                {renderedAt - Date.parse(g.odds.checked) > 15 * 60000 && (
-                  <small>Cached odds; check source for current prices.</small>
-                )}
-              </details>
-            </>
-          ) : (
-            <span>Current odds unavailable</span>
-          )}
-        </div>
-      )}
-      {g.state !== "post" && (
-        <p className="venue">
-          {g.venue}
-          {g.broadcast && (
-            <>
-              <br />
-              {g.broadcast}
-            </>
-          )}
-        </p>
-      )}
-      {g.sourceName && <p className="source-game">{g.sourceName}</p>}
+      <GameCardExtras
+        game={g}
+        today={today}
+        teamName={t.name}
+        event={terms.event}
+        timeZone={timeZone}
+        renderedAt={renderedAt}
+        localDateTime={localDateTime}
+      />
     </article>
   );
   if (!compact) return full;
