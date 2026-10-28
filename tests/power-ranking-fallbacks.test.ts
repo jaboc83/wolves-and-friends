@@ -5,6 +5,7 @@ import {
   parseAnalystPremierLeaguePowerRanking,
   parseCbsMlbPowerRanking,
   parseCbsNhlPowerRanking,
+  parseSimmonsMlsPowerRanking,
   powerRankingFallback,
 } from "../lib/team-info/power-ranking-fallbacks.ts";
 import type { ProviderResponse } from "../lib/team-info/provider-types.ts";
@@ -65,6 +66,71 @@ test("CBS MLB parser normalizes the Twins name", () => {
   );
 });
 
+test("CBS parser finds the rankings table after a large page preamble", () => {
+  const names = [
+    "Hurricanes",
+    "Oilers",
+    "Avalanche",
+    "Golden Knights",
+    "Lightning",
+    "Mammoth",
+    "Wild",
+    "Rangers",
+    "Panthers",
+    "Senators",
+  ];
+  const html = `<script>// network work\n${"x".repeat(300000)}</script>
+<table class="table-power-rankings"><thead><tr><th class="cell-left"><div>Rk</div></th><th class="cell-left"><div>Teams</div></th></tr></thead><tbody>${names
+    .map(
+      (name, index) =>
+        `<tr class="team-rankings-stats"><td class="cell-left"><span class="rank"> ${index + 1} </span></td><td class="cell-left team"><a href="https://www.cbssports.com/nhl/teams/X/x/"><img alt="team logo"><span class="team-name"> ${name} </span></a></td><td class="cell-left dek"> Notes </td></tr>`,
+    )
+    .join("")}</tbody></table>`;
+  const ranking = parseCbsNhlPowerRanking(html, checked);
+
+  assert.equal(ranking?.rows.length, 10);
+  assert.equal(ranking?.rows[6].name, "Minnesota Wild");
+  assert.deepEqual(ranking?.rows[6].cells, ["7th"]);
+});
+
+test("Simmons MLS parser reads unclosed table cells and the update date", () => {
+  const names = [
+    "Nashville SC",
+    "Vancouver Whitecaps",
+    "Inter Miami CF",
+    "FC Dallas",
+    "St. Louis City SC",
+    "New England Revolution",
+    "Chicago Fire",
+    "Los Angeles FC",
+    "San Jose Earthquakes",
+    "Minnesota United",
+  ];
+  const html = `<PRE><H3>
+Last update:  Monday, October 26, 2026 - thru games of October 25
+</H3></PRE>
+<TABLE BORDER="0">
+<TR><TD>	<TD>Team	<TD>W	<TD>L	<TD>T	<TD>Rating	<TD>LR
+${names
+  .map(
+    (name, index) =>
+      `<TR><TD>${index + 1}\t<TD>${name}\t<TD>8\t<TD>12\t<TD>11\t<TD>${(6 - index / 10).toFixed(2)}<TD>${index + 2}\n`,
+  )
+  .join("")}</TABLE>
+<TABLE BORDER="0"><TR><TD>99<TD>Ignored<TD>0<TD>0<TD>0<TD>1.00</TABLE>`;
+  const ranking = parseSimmonsMlsPowerRanking(html, checked);
+
+  assert.equal(ranking?.rows.length, 10);
+  assert.deepEqual(ranking?.rows[9], {
+    id: "minnesota-united",
+    name: "Minnesota United",
+    url: "https://simmonsratings.com/prosoccer.htm",
+    logo: "/api/team-logo?league=soccer%2Fusa.1&id=17362",
+    cells: ["10th", "5.10"],
+  });
+  assert.equal(ranking?.publishedAt, "2026-10-26T12:00:00.000Z");
+});
+
 test("Opta parser requires and retains the global Power Ranking", () => {
   const response: ProviderResponse = {
     lastUpdated: "2026-10-26T00:00:00.000Z",
@@ -96,8 +162,8 @@ test("cached fallback snapshots retain their published values", () => {
     ranking?.rows.find((row) => row.id === "16")?.name,
     "Minnesota Timberwolves",
   );
-  assert.deepEqual(
-    ranking?.rows.find((row) => row.id === "16")?.cells,
-    ["7th", "4.281"],
-  );
+  assert.deepEqual(ranking?.rows.find((row) => row.id === "16")?.cells, [
+    "7th",
+    "4.281",
+  ]);
 });

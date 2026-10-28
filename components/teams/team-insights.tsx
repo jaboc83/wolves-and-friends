@@ -293,6 +293,7 @@ export default function TeamInsights({
       </details>
       {info?.powerRanking && (
         <details
+          id="team-power-rankings"
           className="data-panel power-rankings"
           open={powerRankingsOpen}
           onToggle={(event) =>

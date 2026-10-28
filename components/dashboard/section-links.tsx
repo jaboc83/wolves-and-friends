@@ -4,7 +4,13 @@ import { sportTerms } from "../../lib/teams/sport-terms";
 import { teamProfile } from "../../lib/teams/teams";
 import type { DashboardPageId } from "../../lib/dashboard/page-id";
 
-export default function SectionLinks({ active }: { active: DashboardPageId }) {
+export default function SectionLinks({
+  active,
+  hasPowerRankings = false,
+}: {
+  active: DashboardPageId;
+  hasPowerRankings?: boolean;
+}) {
   const terms = sportTerms(active);
   const links =
     active === "all"
@@ -15,6 +21,9 @@ export default function SectionLinks({ active }: { active: DashboardPageId }) {
             ? []
             : [{ id: "team-roster", label: terms.roster }]),
           { id: "team-standings", label: terms.standings },
+          ...(hasPowerRankings
+            ? [{ id: "team-power-rankings", label: "Power rankings" }]
+            : []),
         ];
   return (
     <nav className="section-links" aria-label="Jump to team information">

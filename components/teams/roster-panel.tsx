@@ -209,6 +209,13 @@ export default function RosterPanel({
               <th
                 scope="col"
                 key={column}
+                title={
+                  column === "Position"
+                    ? "Position"
+                    : statsTable.rows
+                        .flatMap(({ summary }) => summary?.values ?? [])
+                        .find((stat) => stat.label === column)?.description
+                }
                 className={
                   [className, sort.column === column && "sorted-column"]
                     .filter(Boolean)
