@@ -1,3 +1,4 @@
+// Runtime checks for news feed loading and provider task concurrency behavior.
 import assert from "node:assert/strict";
 import { readFile } from "node:fs/promises";
 import ts from "typescript";

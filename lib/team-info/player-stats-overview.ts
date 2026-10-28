@@ -1,3 +1,4 @@
+// Reads ESPN statistics-overview payloads into season stat rows for a player's team and league.
 type OverviewStat = {
   name?: string;
   abbreviation?: string;

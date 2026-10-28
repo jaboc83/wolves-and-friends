@@ -1,3 +1,4 @@
+// Team picker menu for switching dashboard pages, marking teams that play today.
 "use client";
 import Image from "next/image";
 import { sportTerms } from "../../lib/teams/sport-terms";

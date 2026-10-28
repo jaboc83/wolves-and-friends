@@ -1,3 +1,4 @@
+/* Connector preview plugin for development */
 import { randomUUID } from "node:crypto";
 import { access, readFile, rename, rm, writeFile } from "node:fs/promises";
 import path from "node:path";

@@ -1,3 +1,4 @@
+// Helpers that find, format, and choose the stats to show per league and position.
 import type { PlayerStats, Stat } from "./player-stats-types";
 
 const numberValue = (value: unknown) => {

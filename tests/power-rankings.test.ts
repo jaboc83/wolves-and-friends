@@ -1,3 +1,4 @@
+// Tests ESPN power ranking parsing.
 import assert from "node:assert/strict";
 import test from "node:test";
 import { parsePowerRanking } from "../lib/team-info/power-rankings.ts";

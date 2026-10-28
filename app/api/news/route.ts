@@ -1,3 +1,4 @@
+// API route for fetching news data. Returns the latest news for a specific team or an error if unavailable.
 import { hubData } from "../../../lib/feeds";
 import { isTeamId } from "../../../lib/teams/teams";
 export async function GET(request: Request) {

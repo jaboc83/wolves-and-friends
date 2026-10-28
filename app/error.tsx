@@ -1,3 +1,4 @@
+// Error boundary component for the app. Records diagnostics and provides a reset button.
 "use client";
 
 import { useEffect } from "react";

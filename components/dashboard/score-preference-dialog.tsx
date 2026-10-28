@@ -1,3 +1,4 @@
+// Modal that asks first-time visitors whether to hide or show scores (choice kept in browser storage).
 "use client";
 import { useEffect, useRef, useState } from "react";
 export default function ScorePreferenceDialog({

@@ -1,3 +1,5 @@
+/* Wide layout styles */
+
 /* Use ultrawide space for tools, headlines, and the existing score rail. */
 @media (min-width: 1600px) {
   .shell,

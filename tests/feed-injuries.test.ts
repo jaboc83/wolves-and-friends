@@ -1,3 +1,4 @@
+// Tests ESPN injury normalization for grouped and standalone injuries.
 import assert from "node:assert/strict";
 import test from "node:test";
 import { normalizeESPNInjuries } from "../lib/feeds/injuries.ts";

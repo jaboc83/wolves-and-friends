@@ -1,3 +1,4 @@
+// Root layout for the app. Sets up the HTML structure and global styles.
 import type { Metadata } from "next";
 import "./globals.css";
 

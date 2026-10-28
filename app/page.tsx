@@ -1,3 +1,4 @@
+// Home page for the app. Displays the dashboard with news, scores, and team insights.
 "use client";
 import { lazy, Suspense, useEffect, useState, type CSSProperties } from "react";
 import Link from "next/link";

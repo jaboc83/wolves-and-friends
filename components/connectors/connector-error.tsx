@@ -1,3 +1,4 @@
+// Inline alert for connector failures, with a reconnect action when recovery is possible.
 import { LinkIcon } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { connectorErrorRecovery } from "@/lib/connectors/errors.mjs";

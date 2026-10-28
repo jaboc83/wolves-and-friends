@@ -1,3 +1,4 @@
+// Expandable card for a single game or event: teams, score, time, badges, and extras.
 "use client";
 import AddToCalendar from "./add-to-calendar";
 import GameCardExtras from "./game-card-extras";

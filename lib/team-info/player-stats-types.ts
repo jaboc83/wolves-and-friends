@@ -1,3 +1,4 @@
+// Types for raw ESPN player stat payloads and the parsed PlayerStats shape.
 export type PlayerStats = {
   title: string;
   values: { label: string; value: string; description: string }[];

@@ -1,3 +1,4 @@
+// Row of local team logos for the teams a story is tagged with.
 import Image from "next/image";
 import { teamProfile, teams } from "../../lib/teams/teams";
 import { teamLogoPath } from "../../lib/teams/team-logo";

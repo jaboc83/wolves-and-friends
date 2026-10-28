@@ -1,3 +1,4 @@
+// Normalizes ESPN injury reports into the shared game injury shape for one team.
 import type { Game } from "./feed-types";
 
 type ESPNInjury = {

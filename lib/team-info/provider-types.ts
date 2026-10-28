@@ -1,3 +1,4 @@
+// Types describing the ESPN team, season, standings, and power index payloads.
 export type ESPNLink = { rel?: string[]; href?: string };
 
 export type ESPNTeam = {

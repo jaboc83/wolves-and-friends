@@ -1,3 +1,5 @@
+/* Theme and navigation styles */
+
 /* A manual, browser-local choice. All team accents and result caps stay recognizable. */
 .hub[data-mode="dark"] {
   color-scheme: dark;

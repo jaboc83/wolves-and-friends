@@ -1,3 +1,4 @@
+// Parses ESPN power index responses into ranked team rows with league team names.
 import type {
   ESPNPowerIndexItem,
   ESPNStat,

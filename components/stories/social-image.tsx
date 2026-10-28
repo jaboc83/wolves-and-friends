@@ -1,3 +1,4 @@
+// Lazily loads proxied social images as data URLs, showing a fallback on failure.
 "use client";
 import { useEffect, useRef, useState, type ReactNode } from "react";
 import Image from "next/image";

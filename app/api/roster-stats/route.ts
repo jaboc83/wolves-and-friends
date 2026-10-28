@@ -1,3 +1,4 @@
+// API route for fetching roster stats. Returns the latest player stats for each team or an error if unavailable.
 import { teams } from "../../../lib/teams/teams";
 import {
   parsePlayerStats,

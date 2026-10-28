@@ -1,3 +1,5 @@
+/* Dashboard layout refinements */
+
 /* Keep today's games in the right rail on desktop and first in mobile flow. */
 .columns {
   grid-template-rows: auto 1fr;

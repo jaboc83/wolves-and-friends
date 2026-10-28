@@ -1,3 +1,4 @@
+// Request-scoped storage for the connector binding so server code can read it safely.
 import { AsyncLocalStorage } from "node:async_hooks";
 import type { ConnectorBinding } from "./connector-contract.mjs";
 

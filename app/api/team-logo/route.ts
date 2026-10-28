@@ -1,3 +1,4 @@
+// API route for fetching team logos. Returns the requested team logo image or an error if unavailable.
 const allowedLeagues = new Set([
   "basketball/nba",
   "basketball/wnba",
@@ -59,7 +60,7 @@ export async function GET(request: Request) {
   try {
     // This is a public image proxy. Upstream calls use a fixed team ID and
     // never receive visitor headers, cookies, preferences, or identifiers.
-    let teamResponse = await fetch(
+    const teamResponse = await fetch(
       "https://site.api.espn.com/apis/site/v2/sports/" +
         league +
         "/teams/" +

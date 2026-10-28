@@ -1,3 +1,4 @@
+// Tests roster response validation and entry extraction for each league shape.
 import assert from "node:assert/strict";
 import test from "node:test";
 import {

@@ -1,3 +1,4 @@
+// Dashboard news column: story list, social posts, YouTube headlines, and loading/error/empty states.
 "use client";
 import type { ReactNode } from "react";
 import Image from "next/image";

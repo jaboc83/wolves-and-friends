@@ -1,3 +1,4 @@
+// Card for one news or social story with team logos, age, and read tracking.
 "use client";
 import type { Story } from "../../lib/feeds";
 import { teams, teamPriority } from "../../lib/teams/teams";

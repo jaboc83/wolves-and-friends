@@ -1,3 +1,4 @@
+// Client hook that loads and polls same-origin feeds (news, scores, social, rosters) and keeps preferences in localStorage.
 "use client";
 import { useEffect, useRef, useState } from "react";
 import {

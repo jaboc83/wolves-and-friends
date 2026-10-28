@@ -1,3 +1,4 @@
+// API route for fetching social media posts. Returns the latest posts from various social platforms or an error if unavailable.
 import { socialTags } from "../../../lib/social/social-tags";
 import { taggedBluesky, wolvesBluesky } from "../../../lib/social/bluesky";
 import { socialQueue } from "../../../lib/social/social-queue";

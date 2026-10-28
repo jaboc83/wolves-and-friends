@@ -1,3 +1,4 @@
+// March Madness page: regional bracket with results, champion, and score-reveal toggle.
 "use client";
 import { useState } from "react";
 import initial from "../../data/snapshots/march-madness-initial.json";

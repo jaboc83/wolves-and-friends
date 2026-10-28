@@ -1,3 +1,4 @@
+// Tests player stat parsing and selection.
 import assert from "node:assert/strict";
 import test from "node:test";
 import { parsePlayerStats } from "../lib/team-info/player-stats.ts";

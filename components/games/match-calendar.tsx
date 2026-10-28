@@ -1,3 +1,4 @@
+// Day-by-day calendar of a team's games in the visitor's local time zone.
 "use client";
 import GameBadges from "./game-badges";
 import AddToCalendar from "./add-to-calendar";
