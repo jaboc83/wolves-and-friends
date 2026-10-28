@@ -3,19 +3,20 @@
 import { lazy, Suspense, useEffect, useState, type CSSProperties } from "react";
 import Link from "next/link";
 import Image from "next/image";
+import { Switch } from "../components/ui/switch";
 import { useDashboardFeeds } from "../hooks/use-dashboard-feeds";
 import { browserStorage, readStored, stringList } from "../lib/browser/storage";
 import { storedDashboardPage } from "../lib/dashboard/storage";
 import { newsDisplayMode } from "../lib/browser/news-page-data";
 import { selectStories, selectGames } from "../lib/dashboard/selectors";
 import GameCard from "../components/games/game-card";
+import LeagueHeadlines from "../components/games/league-headlines";
 import BackToTop from "../components/dashboard/back-to-top";
 import NewsSection from "../components/dashboard/news-section";
 import ScoreRail from "../components/dashboard/score-rail";
 import TeamNavigation from "../components/dashboard/team-navigation";
 import MatchCalendar from "../components/games/match-calendar";
 import SectionLinks from "../components/dashboard/section-links";
-import ScorePreferenceDialog from "../components/dashboard/score-preference-dialog";
 import {
   loadScorePreference,
   saveScorePreference,
@@ -50,8 +51,7 @@ export default function Home() {
     [showOlder, setShowOlder] = useState(false),
     [showOlderResults, setShowOlderResults] = useState(false),
     [revealed, setRevealed] = useState<string[]>([]),
-    [hideScores, setHideResults] = useState(true),
-    [scorePrompt, setScorePrompt] = useState(false),
+    [hideScores, setHideResults] = useState(false),
     [resultsReady, setResultsReady] = useState(false),
     [autoOpenStandings, setAutoOpenStandings] = useState(false),
     [darkMode, setDarkMode] = useState(false);
@@ -87,8 +87,7 @@ export default function Home() {
       setDarkMode(browserStorage.getItem("wf-color-mode") === "dark");
       const preference = loadScorePreference(browserStorage);
       setHideResults(preference.hidden);
-      setScorePrompt(preference.ask);
-      if (!preference.ask && !preference.hidden)
+      if (!preference.hidden)
         setAutoOpenStandings(window.matchMedia("(min-width: 1600px)").matches);
       setResultsReady(true);
     });
@@ -110,20 +109,11 @@ export default function Home() {
   function toggleResults() {
     const next = !hideScores;
     setHideResults(next);
-    try {
-      browserStorage.setItem("wf-hide-results", String(next));
-    } catch {}
-  }
-  // Applies the dialog choice and opens standings on wide screens when scores show.
-  function chooseScores(hidden: boolean, ask: boolean) {
-    try {
-      saveScorePreference(browserStorage, hidden, ask);
-    } catch {}
-    setHideResults(hidden);
+    setRevealed([]);
+    saveScorePreference(browserStorage, next);
     setAutoOpenStandings(
-      !hidden && window.matchMedia("(min-width: 1600px)").matches,
+      !next && window.matchMedia("(min-width: 1600px)").matches,
     );
-    setScorePrompt(false);
   }
   // Switches the color mode and stores the preference locally.
   function toggleColorMode() {
@@ -205,7 +195,7 @@ export default function Home() {
   function game(g: Game, compact = false, today = false) {
     return (
       <GameCard
-        key={g.id}
+        key={`${g.id}-${hideScores}`}
         game={g}
         today={today}
         compact={compact || g.state === "post"}
@@ -240,10 +230,8 @@ export default function Home() {
 
   return (
     <>
-      <ScorePreferenceDialog open={scorePrompt} onChoose={chooseScores} />
       <div
-        className={"hub" + (!resultsReady || scorePrompt ? " score-gated" : "")}
-        inert={!resultsReady || scorePrompt}
+        className="hub"
         data-team={active}
         data-mode={darkMode ? "dark" : "light"}
         style={themeStyle}
@@ -264,18 +252,27 @@ export default function Home() {
                 <i>YOUR TEAMS. ONE PLACE.</i>
               </div>
             </Link>
-            <button
-              className="color-mode-toggle"
-              onClick={toggleColorMode}
-              aria-label="Dark mode"
-              aria-pressed={darkMode}
-              title={darkMode ? "Switch to light mode" : "Switch to dark mode"}
-            >
-              <span aria-hidden="true">{darkMode ? "☀" : "☾"}</span>
-              <span className="color-mode-label">
-                {darkMode ? "Light mode" : "Dark mode"}
-              </span>
-            </button>
+            <div className="mast-controls">
+              <label className="mast-switch-control" htmlFor="show-scores">
+                <span>Show scores</span>
+                <Switch
+                  id="show-scores"
+                  className="mast-switch"
+                  checked={!hideScores}
+                  onCheckedChange={toggleResults}
+                  disabled={!resultsReady}
+                />
+              </label>
+              <label className="mast-switch-control" htmlFor="dark-mode">
+                <span>Dark mode</span>
+                <Switch
+                  id="dark-mode"
+                  className="mast-switch"
+                  checked={darkMode}
+                  onCheckedChange={toggleColorMode}
+                />
+              </label>
+            </div>
           </div>
         </header>
         <div className="shell">
@@ -289,9 +286,17 @@ export default function Home() {
           <div className="intro">
             <div>
               <p className="eyebrow">
-                {active === "march-madness"
-                  ? "NCAA · Men's Division I basketball"
-                  : team && team.sport.toUpperCase()}
+                {active === "march-madness" ? (
+                  "NCAA · Men's Division I basketball"
+                ) : team?.league ? (
+                  <LeagueHeadlines
+                    league={team.sport.toUpperCase()}
+                    leaguePath={team.league}
+                    className="eyebrow-league-trigger"
+                  />
+                ) : (
+                  team && team.sport.toUpperCase()
+                )}
               </p>
               <h1>
                 {active === "march-madness"
@@ -419,13 +424,10 @@ export default function Home() {
                   availableResults={availableResults}
                   event={terms.event}
                   loading={loading}
-                  resultsReady={resultsReady}
-                  hideScores={hideScores}
                   showOlderResults={showOlderResults}
                   activeIsAll={active === "all"}
                   activeScoreboardUrl={activeScoreboardUrl}
                   teamShort={team?.short}
-                  onToggleResults={toggleResults}
                   onToggleOlderResults={() =>
                     setShowOlderResults(!showOlderResults)
                   }
@@ -459,7 +461,7 @@ export default function Home() {
           </footer>
         </div>
       </div>
-      {resultsReady && !scorePrompt && <BackToTop />}
+      {resultsReady && <BackToTop />}
     </>
   );
 }

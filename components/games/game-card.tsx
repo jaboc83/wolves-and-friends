@@ -2,6 +2,7 @@
 "use client";
 import AddToCalendar from "./add-to-calendar";
 import GameCardExtras from "./game-card-extras";
+import LeagueHeadlines from "./league-headlines";
 import { tournamentScoresUrl } from "../../lib/games/game-links";
 import { eventDateLabel } from "../../lib/games/event-time";
 import GameBadges from "./game-badges";
@@ -87,7 +88,9 @@ export default function GameCard({
   const [renderedAt] = useState(() => Date.now());
   const detailsRef = useRef<HTMLDetailsElement>(null);
   const expandReveals = compact && g.state === "post";
-  const scoreVisible = expandReveals ? expanded || revealPast : revealed;
+  const scoreVisible = expandReveals
+    ? expanded || revealPast
+    : revealPast !== revealed;
   const t = teamProfile(g.team);
   if (!t) return null;
   const hidden = g.state !== "pre" && !scoreVisible;
@@ -132,7 +135,13 @@ export default function GameCard({
               </strong>
               <Location team={g.team} name={t.name} league={g.league} own />
             </div>
-            {!hasBadges && <span className="muted">{g.league}</span>}
+            {!hasBadges &&
+              g.league &&
+              (t.league ? (
+                <LeagueHeadlines league={g.league} leaguePath={t.league} />
+              ) : (
+                <span className="muted">{g.league}</span>
+              ))}
           </div>
         </div>
         <div className="game-meta">

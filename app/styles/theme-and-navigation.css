@@ -23,7 +23,9 @@
   --muted: #c8b9bf;
   background: #211c1f;
 }
-.hub[data-team="march-madness"][data-mode="dark"] .march-game .bracket-team-logo {
+.hub[data-team="march-madness"][data-mode="dark"]
+  .march-game
+  .bracket-team-logo {
   padding: 2px;
   background: #f2eee5;
   border-radius: 4px;
@@ -58,24 +60,43 @@
 .hub[data-mode="dark"] :is(a, button, input, summary):focus-visible {
   outline-color: #8cd2f4;
 }
-.color-mode-toggle {
+.mast-controls {
+  display: flex;
+  align-items: center;
+  gap: 20px;
+  flex-shrink: 0;
+}
+.mast-switch-control {
   display: inline-flex;
   align-items: center;
   gap: 8px;
-  flex-shrink: 0;
-  border: 1px solid #ffffff66;
-  border-radius: 20px;
-  background: #00000020;
   color: #ffffff;
-  padding: 9px 14px;
   font-size: 12px;
   min-height: 40px;
+  white-space: nowrap;
+  cursor: pointer;
 }
-.color-mode-toggle:hover {
-  background: #ffffff20;
+.mast-switch[data-slot="switch"] {
+  width: 36px;
+  height: 22px;
+  padding: 2px;
+  background: #ffffff33;
+  border: 1px solid #ffffff99;
 }
-.color-mode-toggle > span:first-child {
-  font-size: 18px;
+.mast-switch[data-state="checked"] {
+  background: #b7d88a;
+  border-color: #b7d88a;
+}
+.mast-switch [data-slot="switch-thumb"] {
+  width: 16px;
+  height: 16px;
+  background: #ffffff;
+  transform: none;
+  translate: 0;
+}
+.mast-switch [data-state="checked"] {
+  translate: 14px;
+  background: #183527;
 }
 .mast-inner {
   gap: 20px;
@@ -94,15 +115,15 @@
   .brand > div {
     min-width: 0;
   }
-  .color-mode-toggle {
-    width: 40px;
-    height: 40px;
-    padding: 0;
-    justify-content: center;
-    margin-left: auto;
+  .mast-controls {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 0;
   }
-  .color-mode-toggle .color-mode-label {
-    display: none;
+  .mast-switch-control {
+    justify-content: space-between;
+    min-height: 32px;
+    font-size: 11px;
   }
 }
 /* Let the mobile reading order place team reference panels after results. */
@@ -270,4 +291,3 @@
     animation: none;
   }
 }
-

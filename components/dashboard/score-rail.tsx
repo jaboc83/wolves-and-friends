@@ -9,13 +9,10 @@ type ScoreRailProps = {
   availableResults: Game[];
   event: string;
   loading: boolean;
-  resultsReady: boolean;
-  hideScores: boolean;
   showOlderResults: boolean;
   activeIsAll: boolean;
   activeScoreboardUrl?: string;
   teamShort?: string;
-  onToggleResults: () => void;
   onToggleOlderResults: () => void;
   renderGame: (game: Game, compact?: boolean) => ReactNode;
 };
@@ -26,13 +23,10 @@ export default function ScoreRail({
   availableResults,
   event,
   loading,
-  resultsReady,
-  hideScores,
   showOlderResults,
   activeIsAll,
   activeScoreboardUrl,
   teamShort,
-  onToggleResults,
   onToggleOlderResults,
   renderGame,
 }: ScoreRailProps) {
@@ -51,14 +45,6 @@ export default function ScoreRail({
       <div className="rail-heading results">
         <h2>Recent results</h2>
       </div>
-      <button
-        type="button"
-        className="results-toggle"
-        onClick={onToggleResults}
-        disabled={!resultsReady}
-      >
-        {hideScores ? "Show scores" : "Hide scores"}
-      </button>
       {results.length ? (
         results.map((game) => renderGame(game, true))
       ) : (

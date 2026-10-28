@@ -30,7 +30,19 @@ import { scoreboardLeagues, teamPlaysCompetition } from "../teams/competitions";
 import { enrichOdds } from "./odds";
 import type { Story, Game, Health, AuthorFeed, HubData } from "./feed-types";
 import { normalizeESPNInjuries, type ESPNInjuryGroup } from "./injuries";
+import { normalizeLeagueHeadlines } from "./league-news-data";
 export type { Story, Game, Health, AuthorFeed, HubData } from "./feed-types";
+
+export async function leagueHeadlines(league: string): Promise<Story[]> {
+  if (!teams.some((team) => team.league === league))
+    throw new FeedError("invalid-league");
+  const response = await providerGet(
+    "https://site.api.espn.com/apis/site/v2/sports/" + league + "/news?limit=20",
+  );
+  const json = (await response.json()) as ESPNResponse;
+  return normalizeLeagueHeadlines(json.articles || []);
+}
+
 const emptyHub: HubData = {
   checked: "",
   stories: [],
