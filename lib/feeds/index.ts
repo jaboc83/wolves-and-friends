@@ -29,7 +29,11 @@ import type { TeamId } from "../teams/teams";
 import { scoreboardLeagues, teamPlaysCompetition } from "../teams/competitions";
 import { enrichOdds } from "./odds";
 import type { Story, Game, Health, AuthorFeed, HubData } from "./feed-types";
-import { normalizeESPNInjuries, type ESPNInjuryGroup } from "./injuries";
+import {
+  normalizeESPNInjuries,
+  parseMLSAvailabilityReport,
+  type ESPNInjuryGroup,
+} from "./injuries";
 import { normalizeLeagueHeadlines } from "./league-news-data";
 export type { Story, Game, Health, AuthorFeed, HubData } from "./feed-types";
 
@@ -68,13 +72,21 @@ type ESPNResponse = {
   events?: ESPNEvent[];
   injuries?: ESPNInjuryGroup[];
   season?: { year?: number | string };
+  team?: { displayName?: string; name?: string };
 };
 const sectionCache: Partial<Record<string, HubData>> = {};
 const sectionInflight: Partial<Record<string, Promise<HubData>>> = {};
 const injurySources = teamProviders.flatMap((p) => {
   const league = teams.find((t) => t.id === p.team)?.league;
   return p.espnTeamId && league
-    ? [{ team: p.team, sport: league, espnId: p.espnTeamId }]
+    ? [
+        {
+          team: p.team,
+          sport: league,
+          espnId: p.espnTeamId,
+          availabilityUrl: p.urls?.injuryAvailabilityReport,
+        },
+      ]
     : [];
 });
 function safeFeedError(error: unknown) {
@@ -134,6 +146,7 @@ async function fetchESPNInjuries(
   espnId: string,
   teamName: string,
   signal: AbortSignal,
+  availabilityUrl?: string,
 ): Promise<NonNullable<Game["injuries"]>> {
   const injuryUrls = [
     "https://site.api.espn.com/apis/site/v2/sports/" +
@@ -155,9 +168,24 @@ async function fetchESPNInjuries(
       lastError = error;
     }
   }
-  if (!response) throw lastError || new FeedError("request-failed");
+  if (!response) {
+    if (availabilityUrl) {
+      const report = await providerGet(availabilityUrl, signal);
+      return parseMLSAvailabilityReport(await report.text(), teamName);
+    }
+    throw lastError || new FeedError("request-failed");
+  }
   const json = (await response.json()) as ESPNResponse;
-  if (!json.injuries?.length) throw new FeedError("empty-injuries");
+  if (!json.injuries?.length) {
+    if (availabilityUrl) {
+      const report = await providerGet(availabilityUrl, signal);
+      return parseMLSAvailabilityReport(
+        await report.text(),
+        json.team?.displayName || json.team?.name || teamName,
+      );
+    }
+    throw new FeedError("empty-injuries");
+  }
   return normalizeESPNInjuries(json.injuries, teamName);
 }
 export async function collect(
@@ -360,30 +388,13 @@ export async function collect(
           "ESPN injury report · " + teamName,
           [source.team],
           async (output, signal) => {
-            const injuryUrls = [
-              "https://site.api.espn.com/apis/site/v2/sports/" +
-                source.sport +
-                "/injuries?region=us&lang=en&team=" +
-                source.espnId,
-              "https://site.web.api.espn.com/apis/site/v2/sports/" +
-                source.sport +
-                "/injuries?region=us&lang=en&team=" +
-                source.espnId,
-            ];
-            let response: Response | null = null;
-            let lastError: unknown;
-            for (const url of injuryUrls) {
-              try {
-                response = await providerGet(url, signal);
-                break;
-              } catch (error) {
-                lastError = error;
-              }
-            }
-            if (!response) throw lastError || new FeedError("request-failed");
-            const json = (await response.json()) as ESPNResponse;
-            if (!json.injuries?.length) throw new FeedError("empty-injuries");
-            const injuries = normalizeESPNInjuries(json.injuries, teamName);
+            const injuries = await fetchESPNInjuries(
+              source.sport,
+              source.espnId,
+              teamName,
+              signal,
+              source.availabilityUrl,
+            );
             output.injuries = injuries;
             return injuries.length;
           },
@@ -541,7 +552,12 @@ export async function collect(
   if (section !== "news") {
     const opponentTeams = new Map<
       string,
-      { league: string; espnId: string; name: string }
+      {
+        league: string;
+        espnId: string;
+        name: string;
+        availabilityUrl?: string;
+      }
     >();
     for (const game of games) {
       if (!eventIsToday(game)) continue;
@@ -560,6 +576,7 @@ export async function collect(
             league,
             espnId: competitor.teamId,
             name: competitor.name,
+            availabilityUrl: source.availabilityUrl,
           });
       }
     }
@@ -573,6 +590,7 @@ export async function collect(
             source.espnId,
             source.name,
             signal,
+            source.availabilityUrl,
           ),
         }),
       })),
