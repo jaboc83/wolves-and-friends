@@ -1,6 +1,7 @@
 // Client hook that loads and polls same-origin feeds (news, scores, social, rosters) and keeps preferences in localStorage.
 "use client";
 import { useEffect, useRef, useState } from "react";
+import { mergeScoreUpdates } from "../lib/games/merge-score";
 import {
   createPublicRequests,
   pollPublicFeeds,
@@ -240,7 +241,7 @@ export function useDashboardFeeds(active: DashboardPageId) {
           checked: string;
           unavailable: string[];
         };
-        setLiveGames(d.games);
+        setLiveGames((previous) => mergeScoreUpdates(previous, d.games));
         setScoreCheck(d.checked);
         setScoreError(d.unavailable.length > 0);
       } catch (error) {
@@ -388,7 +389,7 @@ export function useDashboardFeeds(active: DashboardPageId) {
         setData((previous) => {
           const merged = {
             ...(previous || d),
-            games: d.games,
+            games: mergeScoreUpdates(previous?.games || [], d.games),
             health: [
               ...(previous?.health || []).filter(
                 (h) =>
@@ -560,3 +561,4 @@ export function useDashboardFeeds(active: DashboardPageId) {
     selectPage,
   };
 }
+

@@ -54,3 +54,45 @@ test("leaves scheduled scores blank and ignores distant fixtures", () => {
     [],
   );
 });
+
+for (const status of ["result", "RESULT", "completed"]) {
+  test(`preserves the result score for provider status ${status}`, () => {
+    const [game] = parseEuroLeagueGames(feed(status), checked);
+    assert.equal(game.state, "post");
+    assert.equal(game.status, "Final");
+    assert.deepEqual(game.competitors.map(({ score }) => score), ["64", "85"]);
+    assert.equal(game.competitors[1].winner, true);
+  });
+}
+
+for (const status of ["inProgress", "in_progress", "in progress", "halftime"]) {
+  test(`preserves the live score for provider status ${status}`, () => {
+    const [game] = parseEuroLeagueGames(feed(status), checked);
+    assert.equal(game.state, "in");
+    assert.deepEqual(game.competitors.map(({ score }) => score), ["64", "85"]);
+  });
+}
+
+test("a postponed fixture does not expose provider placeholder scores", () => {
+  const [game] = parseEuroLeagueGames(feed("postponed"), checked);
+  assert.equal(game.state, "pre");
+  assert.deepEqual(game.competitors.map(({ score }) => score), ["", ""]);
+});
+
+test("score polling shares work but refreshes the provider after thirty seconds", async (t) => {
+  const { fetchEuroLeagueGames } = await import("../lib/feeds/euroleague-scoreboard.ts");
+  let now = Date.now();
+  let calls = 0;
+  t.mock.method(Date, "now", () => now);
+  t.mock.method(globalThis, "fetch", async () => {
+    calls += 1;
+    return Response.json(feed("live", new Date().toISOString()));
+  });
+  await Promise.all([fetchEuroLeagueGames(), fetchEuroLeagueGames()]);
+  assert.equal(calls, 1);
+  await fetchEuroLeagueGames();
+  assert.equal(calls, 1);
+  now += 30001;
+  await fetchEuroLeagueGames();
+  assert.equal(calls, 2);
+});
