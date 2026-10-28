@@ -3,6 +3,7 @@ import assert from "node:assert/strict";
 import test from "node:test";
 import {
   normalizeESPNInjuries,
+  normalizePremierLeagueInjuries,
   parseMLSAvailabilityReport,
 } from "../lib/feeds/injuries.ts";
 
@@ -115,6 +116,36 @@ test("MLS availability report matches ESPN short club names", () => {
         status: "OUT",
         detail: "ankle",
         team: "Kansas City",
+      },
+    ],
+  );
+});
+
+test("Premier League injury playlists preserve player order and details", () => {
+  assert.deepEqual(
+    normalizePremierLeagueInjuries(
+      {
+        items: [
+          { id: 11, type: "PROMO" },
+          { id: 12, type: "PROMO" },
+        ],
+        coverItem: { id: 11, title: "Ismaila Sarr", description: "Groin" },
+      },
+      [{ id: 12, title: "Chadi Riad", description: "-" }],
+      "Crystal Palace",
+    ),
+    [
+      {
+        player: "Ismaila Sarr",
+        status: "Injured",
+        detail: "Groin",
+        team: "Crystal Palace",
+      },
+      {
+        player: "Chadi Riad",
+        status: "Injured",
+        detail: undefined,
+        team: "Crystal Palace",
       },
     ],
   );

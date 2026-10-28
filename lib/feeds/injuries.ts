@@ -19,6 +19,17 @@ export type ESPNInjuryGroup = ESPNInjury & {
   displayName?: string;
 };
 
+export type PremierLeagueInjuryPromo = {
+  id: number;
+  title?: string;
+  description?: string;
+};
+
+export type PremierLeagueInjuryPlaylist = {
+  items?: { id: number; type?: string }[];
+  coverItem?: PremierLeagueInjuryPromo;
+};
+
 export function normalizeESPNInjuries(
   groups: ESPNInjuryGroup[],
   teamName: string,
@@ -106,4 +117,31 @@ export function parseMLSAvailabilityReport(
     });
   }
   return injuries;
+}
+
+export function normalizePremierLeagueInjuries(
+  playlist: PremierLeagueInjuryPlaylist,
+  promos: PremierLeagueInjuryPromo[],
+  teamName: string,
+): NonNullable<Game["injuries"]> {
+  const promosById = new Map<number, PremierLeagueInjuryPromo>();
+  if (playlist.coverItem) promosById.set(playlist.coverItem.id, playlist.coverItem);
+  for (const promo of promos) promosById.set(promo.id, promo);
+
+  return (playlist.items || []).flatMap((item) => {
+    const promo = promosById.get(item.id);
+    if (!promo?.title) return [];
+    const description = promo.description?.trim();
+    return [
+      {
+        player: promo.title,
+        status: "Injured",
+        detail:
+          description && !["-", "–", "—"].includes(description)
+            ? description
+            : undefined,
+        team: teamName,
+      },
+    ];
+  });
 }

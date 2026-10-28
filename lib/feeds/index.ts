@@ -31,8 +31,11 @@ import { enrichOdds } from "./odds";
 import type { Story, Game, Health, AuthorFeed, HubData } from "./feed-types";
 import {
   normalizeESPNInjuries,
+  normalizePremierLeagueInjuries,
   parseMLSAvailabilityReport,
   type ESPNInjuryGroup,
+  type PremierLeagueInjuryPlaylist,
+  type PremierLeagueInjuryPromo,
 } from "./injuries";
 import { normalizeLeagueHeadlines } from "./league-news-data";
 export type { Story, Game, Health, AuthorFeed, HubData } from "./feed-types";
@@ -170,24 +173,161 @@ async function fetchESPNInjuries(
   }
   if (!response) {
     if (availabilityUrl) {
-      const report = await providerGet(availabilityUrl, signal);
-      return parseMLSAvailabilityReport(await report.text(), teamName);
+      return fetchOfficialAvailability(
+        sport,
+        availabilityUrl,
+        teamName,
+        signal,
+      );
     }
     throw lastError || new FeedError("request-failed");
   }
   const json = (await response.json()) as ESPNResponse;
   if (!json.injuries?.length) {
     if (availabilityUrl) {
-      const report = await providerGet(availabilityUrl, signal);
-      return parseMLSAvailabilityReport(
-        await report.text(),
+      return fetchOfficialAvailability(
+        sport,
+        availabilityUrl,
         json.team?.displayName || json.team?.name || teamName,
+        signal,
       );
     }
     throw new FeedError("empty-injuries");
   }
   return normalizeESPNInjuries(json.injuries, teamName);
 }
+
+type PremierLeaguePlaylistIndex = {
+  items?: { id: number; type?: string }[];
+};
+type PremierLeagueClubPlaylist = PremierLeagueInjuryPlaylist & {
+  title?: string;
+};
+
+let cachedPremierLeaguePlaylistIds: {
+  url: string;
+  checkedAt: number;
+  ids: Map<string, number>;
+} | null = null;
+
+function normalizedPremierLeagueClub(value: string) {
+  return value
+    .replace(/^Injury News\s*-\s*/i, "")
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, " ")
+    .trim();
+}
+
+function matchesPremierLeagueClub(candidate: string, target: string) {
+  return (
+    candidate === target ||
+    candidate.startsWith(target + " ") ||
+    candidate.endsWith(" " + target) ||
+    target.startsWith(candidate + " ")
+  );
+}
+
+async function premierLeaguePlaylistIds(url: string, signal: AbortSignal) {
+  if (
+    cachedPremierLeaguePlaylistIds?.url === url &&
+    Date.now() - cachedPremierLeaguePlaylistIds.checkedAt < 6 * 60 * 60 * 1000
+  ) {
+    return cachedPremierLeaguePlaylistIds.ids;
+  }
+  const response = await providerGet(url, signal);
+  const index = (await response.json()) as PremierLeaguePlaylistIndex;
+  const playlists = await runProviderTasks(
+    (index.items || [])
+      .filter((item) => item.type?.toLowerCase() === "playlist")
+      .map((item) => ({
+        name: "Premier League injury club playlist",
+        run: async (taskSignal) => {
+          const childResponse = await providerGet(
+            new URL(
+              `/content/premierleague/playlist/en/${item.id}`,
+              url,
+            ).href,
+            AbortSignal.any([signal, taskSignal]),
+          );
+          const child =
+            (await childResponse.json()) as PremierLeagueClubPlaylist;
+          return { id: item.id, title: child.title || "" };
+        },
+      })),
+    { concurrency: 5, timeoutMs: 12000 },
+  );
+  const ids = new Map<string, number>();
+  for (const playlist of playlists)
+    if (playlist.value?.title)
+      ids.set(playlist.value.title, playlist.value.id);
+  if (!ids.size) throw new FeedError("empty-injuries");
+  cachedPremierLeaguePlaylistIds = { url, checkedAt: Date.now(), ids };
+  return ids;
+}
+
+async function fetchPremierLeagueInjuries(
+  hubUrl: string,
+  teamName: string,
+  signal: AbortSignal,
+): Promise<NonNullable<Game["injuries"]>> {
+  const playlists = await premierLeaguePlaylistIds(hubUrl, signal);
+  const target = normalizedPremierLeagueClub(teamName);
+  const playlistId = [...playlists].find(([name]) =>
+    matchesPremierLeagueClub(normalizedPremierLeagueClub(name), target),
+  )?.[1];
+  if (!playlistId) throw new FeedError("empty-injuries");
+
+  const playlistResponse = await providerGet(
+    new URL(`/content/premierleague/playlist/en/${playlistId}`, hubUrl).href,
+    signal,
+  );
+  const playlist = (await playlistResponse.json()) as PremierLeagueClubPlaylist;
+  const promos = await runProviderTasks(
+    (playlist.items || [])
+      .filter(
+        (item) =>
+          item.type?.toLowerCase() === "promo" &&
+          item.id !== playlist.coverItem?.id,
+      )
+      .map((item) => ({
+        name: "Premier League injury player",
+        run: async (taskSignal) => {
+          const promoResponse = await providerGet(
+            new URL(
+              `/content/premierleague/PROMO/en/${item.id}`,
+              hubUrl,
+            ).href,
+            AbortSignal.any([signal, taskSignal]),
+          );
+          return (await promoResponse.json()) as PremierLeagueInjuryPromo;
+        },
+      })),
+    { concurrency: 5, timeoutMs: 12000 },
+  );
+  const injuries = normalizePremierLeagueInjuries(
+    playlist,
+    promos.flatMap((promo) => (promo.value ? [promo.value] : [])),
+    teamName,
+  );
+  if (playlist.items?.length && !injuries.length)
+    throw new FeedError("empty-injuries");
+  return injuries;
+}
+
+async function fetchOfficialAvailability(
+  sport: string,
+  url: string,
+  teamName: string,
+  signal: AbortSignal,
+): Promise<NonNullable<Game["injuries"]>> {
+  if (sport === "soccer/eng.1")
+    return fetchPremierLeagueInjuries(url, teamName, signal);
+  const response = await providerGet(url, signal);
+  return parseMLSAvailabilityReport(await response.text(), teamName);
+}
+
 export async function collect(
   section: "news" | "schedules" | "all" = "all",
   team?: TeamId,
