@@ -2,7 +2,7 @@
 
 `app/page.tsx` coordinates layout and user actions. `hooks/use-dashboard-feeds.ts` owns independent public-feed state and refreshes. `lib/browser/public-requests.ts` deduplicates request keys, cancels work when the hook unmounts, and starts/cleans up the five-minute and one-minute polling timers. It enforces omitted credentials and no referrer for every browser feed fetch.
 
-`lib/browser/storage.ts` guards access, JSON parsing and writes; the current app keeps preferences on the device. First-party requests may include non-identifying sports filters when useful, but must not persist or log them remotely or forward them to third parties. `lib/dashboard/storage.ts` validates cached data and selected teams before applying them. Invalid read-history JSON falls back to an empty list; disabled/full storage never prevents live controls from working.
+`lib/browser/storage.ts` guards access, JSON parsing and writes; preferences are stored locally. Team news requests include the selected public team ID as a filter, while read/saved state stays local. First-party requests may include other non-identifying sports filters when useful, but must not persist or log them remotely or forward them to third parties. `lib/dashboard/storage.ts` validates cached data and selected teams before applying them. Invalid read-history JSON falls back to an empty list; disabled/full storage never prevents live controls from working.
 
 `lib/dashboard/selectors.ts` derives team/read/search filters, merged games and result windows without owning request state. `components/stories/story-card.tsx` renders a story and receives device actions. `lib/team-info/standings.ts` isolates pure table decoration from server provider code.
 

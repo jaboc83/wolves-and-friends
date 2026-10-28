@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import test from "node:test";
-import { newsForTeam } from "../lib/browser/news-page-data.ts";
+import { newsForTeam, newsPageUrl } from "../lib/browser/news-page-data.ts";
 import type { HubData } from "../lib/feeds/feed-types";
 
 const data: HubData = {
@@ -63,6 +63,10 @@ const data: HubData = {
     },
   ],
 };
+
+test("team news requests identify only the selected public team", () => {
+  assert.equal(newsPageUrl("wolves"), "/api/news?team=wolves");
+});
 
 test("generic news data is partitioned locally by team", () => {
   const wolves = newsForTeam(data, "wolves");

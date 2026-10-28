@@ -1,6 +1,9 @@
 // Combines already-loaded team news and determines which empty/loading/error view to show.
 import type { HubData } from "../feeds/feed-types";
 import type { TeamId } from "../teams/teams";
+export function newsPageUrl(team: TeamId) {
+  return "/api/news?team=" + encodeURIComponent(team);
+}
 // Availability and request status are independent: revalidation never removes data.
 export function loadedNewsData(
   ids: readonly TeamId[],

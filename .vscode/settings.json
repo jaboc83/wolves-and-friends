@@ -9,6 +9,8 @@
         "pnpm run format*": true,
         "eslint *": true,
         "prettier *": true,
+        "git diff *": true,
+        "git show *": true,
         "/^git diff /": {
             "approve": true,
             "matchCommandLine": true
