@@ -1,3 +1,5 @@
+# GitHub Actions workflow for validating the project
+# Includes type checking, building, and running tests
 name: Validate
 
 on:
