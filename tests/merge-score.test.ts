@@ -74,3 +74,12 @@ test("a result payload remains final after a scheduled-only response", () => {
   assert.equal(refreshed.state, "post");
   assert.equal(refreshed.competitors[1].score, "85");
 });
+
+test("different opponents or nearby separate fixtures never inherit a score", () => {
+  const previous = game("post");
+  const otherOpponent = game("pre", "other-opponent");
+  otherOpponent.competitors[0].name = "FC Barcelona";
+  assert.equal(mergeScoreUpdate(previous, otherOpponent), otherOpponent);
+  const later = { ...game("pre", "separate-event"), date: "2026-10-28T20:30:00Z" };
+  assert.equal(mergeScoreUpdate(previous, later), later);
+});

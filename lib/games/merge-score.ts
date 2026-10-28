@@ -1,13 +1,22 @@
 import type { Game } from "../feeds/feed-types";
 
+function teamName(name: string) {
+  return name.normalize("NFKD").replace(/[\u0300-\u036f]/g, "").toLowerCase().replace(/[^a-z0-9]/g, "");
+}
+
 function sameFixture(previous: Game, incoming: Game) {
-  return (
-    previous.team === incoming.team &&
-    (previous.id === incoming.id ||
-      (previous.league === incoming.league &&
-        Math.abs(Date.parse(previous.date) - Date.parse(incoming.date)) <
-          3 * 3600000))
-  );
+  if (previous.team !== incoming.team) return false;
+  if (previous.id === incoming.id) return true;
+  const gap = Math.abs(Date.parse(previous.date) - Date.parse(incoming.date));
+  if (previous.league !== incoming.league || !Number.isFinite(gap) || gap > 15 * 60000)
+    return false;
+  return previous.competitors.length === 2 && incoming.competitors.length === 2 &&
+    previous.competitors.every((player) => incoming.competitors.some((other) => {
+      if (player.homeAway !== other.homeAway) return false;
+      const a = teamName(player.name), b = teamName(other.name);
+      return Boolean(a && b) && (a === b || a.includes(b) || b.includes(a) ||
+        (previous.team === "zalgiris" && a.includes("zalgiris") && b.includes("zalgiris")));
+    }));
 }
 
 function hasScores(game: Game) {
