@@ -21,7 +21,7 @@ deployment without republishing the app.
 - Existing Sites project: `appgprj_6ace398f29008191baca1d533c3fda98`
 - Public URL: https://wolves-and-friends-hub.tastyfir6.chatgpt.site
 - Preserve the existing public audience and Site identity.
-- Follow `AGENTS.md`. No analytics, identity/browser collection, remote preference storage, third-party browser embeds, or visitor-header forwarding. Device-only localStorage remains permitted.
+- Follow `AGENTS.md`. No analytics, identity/browser collection, remote preference storage/logging, third-party browser embeds, or visitor-header forwarding. First-party requests may include non-identifying sports filters when useful, but must not persist or forward them to third parties. Device-only localStorage remains permitted.
 - A failed validation must leave the current live version untouched. Report the exact failure; do not silently rewrite the submitted code to make it pass.
 
 ## Instructions for a requested deployment

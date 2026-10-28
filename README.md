@@ -72,10 +72,10 @@ The Worker attachment follows the
 ## Project scripts
 
 - `tests/` contains the Node regression tests run by `pnpm test`.
-- `scripts/install/` contains package-manager installation entry points and helpers.
 - `scripts/runtime/` contains the app runner, local environment setup, and VS Code Node launcher.
 - `scripts/build/` contains build-output checks used by CI.
 - `scripts/connector-preview/` contains the local-only connector preview host.
+- `scripts/check-news-feeds.mjs` and `scripts/check-player-stats.mjs` check provider and player-stat data.
 
 Run tests from the repository root; they use repository-relative fixture and
 source paths. CI runs the same `pnpm test` command.
@@ -130,4 +130,4 @@ Imported from Sites source commit `50e3e8436546613f408d60418e28eaf6817eccbb` on 
 
 ## Privacy requirements
 
-Read `AGENTS.md` before making changes. The app must not collect personal data, analytics, browser identifiers, cookies, user agents, IP addresses, or remotely stored preferences. Read/saved states and team choices stay in browser localStorage. Browser feed requests remain generic, same-origin, without credentials or referrers. Third-party feeds and avatars are fetched server-side. Assets are local or inline; no third-party embeds or background browser requests.
+Read `AGENTS.md` before making changes. The app must not collect personal data, analytics, browser identifiers, cookies, user agents, or IP addresses. Preferences are stored in browser localStorage. Team tabs send the selected public team ID as a filter to `/api/news?team=<team>`; All Teams uses the unfiltered `/api/news` endpoint. Read/saved state stays local. Other non-identifying sports filters may be sent to first-party endpoints when useful, but must not be persisted remotely or logged, and must never include PII or person/device identifiers. Browser feed requests are same-origin, omit credentials, and use no referrer. Third-party feeds and avatars are fetched server-side without forwarding visitor headers or preference/filter values. Assets are local or inline; no third-party embeds or background browser requests.
