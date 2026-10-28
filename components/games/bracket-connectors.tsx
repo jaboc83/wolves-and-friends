@@ -1,3 +1,4 @@
+// SVG overlay that measures bracket matchups and draws the lines connecting each round.
 "use client";
 import { useEffect, useRef, useState } from "react";
 

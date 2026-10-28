@@ -1,3 +1,4 @@
+// API route for fetching social media images. Returns the requested image or an error if unavailable.
 import { blueskyImagePath } from "../../../lib/social/bluesky-images";
 
 const maxBytes = 1_500_000;

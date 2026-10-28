@@ -1,3 +1,4 @@
+// In-page jump links that open and scroll to the calendar, roster, and standings panels.
 "use client";
 import { sportTerms } from "../../lib/teams/sport-terms";
 import { teamProfile } from "../../lib/teams/teams";

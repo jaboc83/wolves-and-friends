@@ -1,3 +1,4 @@
+// Tests that the viewed page's feed loads before background feeds.
 import assert from "node:assert/strict";
 import test from "node:test";
 import { loadPageBeforeBackground } from "../lib/browser/page-first-feeds.ts";

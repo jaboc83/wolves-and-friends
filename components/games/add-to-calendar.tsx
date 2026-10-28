@@ -1,3 +1,4 @@
+// Link that adds a game to Google Calendar without toggling the surrounding card.
 import type { MouseEvent } from "react";
 import type { Game } from "../../lib/feeds";
 import { googleCalendarUrl } from "../../lib/games/calendar-event";

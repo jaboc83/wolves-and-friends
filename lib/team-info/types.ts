@@ -1,3 +1,4 @@
+// Shared shapes for standings tables and power rankings.
 export type Table = {
   stale?: boolean;
   seasonType?: number;

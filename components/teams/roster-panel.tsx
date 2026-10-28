@@ -1,3 +1,4 @@
+// Sortable roster table with per-player stats, loaded when the panel is opened.
 "use client";
 import {
   useEffect,

@@ -1,3 +1,4 @@
+// Sites Vite plugin for development
 // Vendored from @openai/sites-vite-plugin 0.2.0 (openai/sites#9).
 // See sites-vite-plugin.LICENSE for the upstream MIT license.
 import { cp, mkdir, rm } from "node:fs/promises";

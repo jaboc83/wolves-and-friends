@@ -1,3 +1,4 @@
+// Sites worker for development
 import handler from "vinext/server/fetch-handler";
 import { runWithConnectorBinding } from "../lib/connectors/context";
 import type { ConnectorBinding } from "../lib/connectors/contract.mjs";

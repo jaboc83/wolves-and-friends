@@ -1,3 +1,4 @@
+// Time zone helpers for formatting dates and finding calendar days in the visitor's zone.
 const dateValue = (value: string | Date) =>
   value instanceof Date ? value : new Date(value);
 

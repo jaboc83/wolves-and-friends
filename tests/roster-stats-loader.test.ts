@@ -1,3 +1,4 @@
+// Tests roster stats batch loading, queuing, and per-team status.
 import assert from "node:assert/strict";
 import test from "node:test";
 import {

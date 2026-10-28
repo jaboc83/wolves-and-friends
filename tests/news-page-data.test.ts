@@ -1,3 +1,4 @@
+// Tests per-team news selection and news page URL building.
 import assert from "node:assert/strict";
 import test from "node:test";
 import { newsForTeam, newsPageUrl } from "../lib/browser/news-page-data.ts";

@@ -1,3 +1,4 @@
+// API route for fetching scores data. Returns the latest game scores or an error if unavailable.
 import { fetchScoreboard } from "../../../lib/feeds/scoreboard";
 import { scoreboardLeagues } from "../../../lib/teams/competitions";
 import { mergeLiveScoreboard, type Game } from "../../../lib/feeds";

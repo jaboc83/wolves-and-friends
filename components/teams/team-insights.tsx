@@ -1,3 +1,4 @@
+// Team detail panels: standings, power rankings, postseason, and roster.
 "use client";
 import { Fragment, useState } from "react";
 import { decorateTable } from "../../lib/team-info/standings";

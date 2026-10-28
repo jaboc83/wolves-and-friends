@@ -1,3 +1,4 @@
+// Parses ESPN player statistics into the labeled stat list shown in the roster table.
 import { overviewSeasonStats } from "./player-stats-overview.ts";
 import type {
   PlayerStats,

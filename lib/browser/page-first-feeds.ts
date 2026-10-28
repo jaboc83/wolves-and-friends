@@ -1,3 +1,4 @@
+// Loads the currently viewed page's feed first, then runs background tasks one at a time.
 export async function loadPageBeforeBackground<Page>({
   currentPage,
   loadPage,

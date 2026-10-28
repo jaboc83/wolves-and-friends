@@ -1,3 +1,4 @@
+// Right-hand rail listing today's/upcoming games and recent results, with score-hiding controls.
 "use client";
 import type { ReactNode } from "react";
 import type { Game } from "../../lib/feeds";

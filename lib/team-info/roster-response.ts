@@ -1,3 +1,4 @@
+// Validates ESPN roster responses and flattens them into per-player entries.
 type RosterPerson = {
   id?: string | number;
   items?: RosterPerson[];

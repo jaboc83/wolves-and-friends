@@ -1,3 +1,4 @@
+// API route for fetching team information. Returns the latest team info or an error if unavailable.
 import { fetchTeamInfo, type TeamInfo } from "../../../lib/team-info";
 import { mergeTeamInfo } from "../../../lib/team-info/team-info-cache";
 let cached: TeamInfo[] = [],

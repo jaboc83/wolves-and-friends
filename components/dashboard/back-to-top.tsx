@@ -1,3 +1,4 @@
+// Floating back-to-top button that appears after the page is scrolled down.
 "use client";
 import { useEffect, useState } from "react";
 import { createPortal } from "react-dom";

@@ -1,3 +1,4 @@
+// Expandable extras for a game card: injury report, odds, and local-time details.
 import { injuryReportUrl } from "../../lib/games/game-links";
 import type { Game } from "../../lib/feeds";
 import { timeZoneLabel } from "../../lib/browser/local-time";

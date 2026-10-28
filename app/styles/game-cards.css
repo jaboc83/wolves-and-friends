@@ -1,3 +1,4 @@
+/* Game card styles */
 .game {
   border: 1px solid var(--line, #dde1d8);
   background: var(--surface, #fffefb);

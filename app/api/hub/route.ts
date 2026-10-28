@@ -1,3 +1,4 @@
+// API route for fetching hub data. Returns the latest feed data or an error if unavailable.
 import { hubData } from "../../../lib/feeds";
 export async function GET() {
   try {

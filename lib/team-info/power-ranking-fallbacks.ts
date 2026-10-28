@@ -1,3 +1,4 @@
+// Bundled and CBS-scraped power ranking data used when the ESPN provider is unavailable.
 import { powerRankingTeamNames } from "./power-rankings.ts";
 import type { ProviderResponse } from "./provider-types";
 import type { PowerRanking } from "./types";

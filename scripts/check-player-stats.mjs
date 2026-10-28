@@ -1,3 +1,4 @@
+// Runtime checks for player stat parsing across seasons, teams, and missing data.
 import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
 import ts from "typescript";
