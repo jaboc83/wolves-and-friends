@@ -11,7 +11,7 @@ export const loonsProviders = {
   ],
   youtube: { name: "Minnesota United FC", channel: "UCNTg0WSrMGrgAD1bY3Fuiug" },
   socialTags: ["#MNUFC"],
-  powerRankingSource: "snapshot",
+  powerRankingSource: "simmons-mls",
   urls: {
     // `{year}` is replaced with the current season year.
     officialCalendar:

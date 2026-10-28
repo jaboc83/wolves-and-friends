@@ -35,5 +35,14 @@ if (-not $nodeExecutable) {
 
 # Child tooling also needs Node available through PATH.
 $env:PATH = "$(Split-Path -Parent $nodeExecutable);$env:PATH"
+
+# Dev only: trust the OS cert store so corporate TLS-inspecting proxies don't break feed fetches.
+if ($args -contains 'dev' -and $env:NODE_OPTIONS -notmatch '--use-system-ca') {
+    $supported = & $nodeExecutable -p "process.allowedNodeEnvironmentFlags.has('--use-system-ca')"
+    if ($supported -eq 'true') {
+        $env:NODE_OPTIONS = ("$env:NODE_OPTIONS --use-system-ca").Trim()
+    }
+}
+
 & $nodeExecutable @args
 exit $LASTEXITCODE

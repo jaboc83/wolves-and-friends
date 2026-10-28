@@ -12,12 +12,15 @@ import {
   parseAnalystPremierLeaguePowerRanking,
   parseCbsMlbPowerRanking,
   parseCbsNhlPowerRanking,
+  parseSimmonsMlsPowerRanking,
   powerRankingFallback,
+  simmonsMlsPowerRankingsUrl,
 } from "./power-ranking-fallbacks";
 export {
   parseAnalystPremierLeaguePowerRanking,
   parseCbsMlbPowerRanking,
   parseCbsNhlPowerRanking,
+  parseSimmonsMlsPowerRanking,
 } from "./power-ranking-fallbacks";
 import type { Table, PowerRanking } from "./types";
 export type { Table, PowerRanking } from "./types";
@@ -413,6 +416,11 @@ export async function fetchTeamInfo() {
               } else if (rankingSource === "cbs-nhl") {
                 info.powerRanking = parseCbsNhlPowerRanking(
                   await getText("https://www.cbssports.com/nhl/powerrankings/"),
+                  checked,
+                );
+              } else if (rankingSource === "simmons-mls") {
+                info.powerRanking = parseSimmonsMlsPowerRanking(
+                  await getText(simmonsMlsPowerRankingsUrl),
                   checked,
                 );
               } else {

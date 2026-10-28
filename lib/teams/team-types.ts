@@ -114,8 +114,8 @@ export type TeamProviders = {
   extraCompetitions?: Readonly<Record<string, string>>;
   // Fixed season window when no provider publishes one.
   season?: TeamSeason;
-  // Power-ranking source when ESPN has no league index; "snapshot" = fixed fallback rows in lib/team-info only.
-  powerRankingSource?: "cbs-mlb" | "cbs-nhl" | "opta-epl" | "snapshot";
+  // Power-ranking source when ESPN has no league index.
+  powerRankingSource?: "cbs-mlb" | "cbs-nhl" | "opta-epl" | "simmons-mls";
   // Team-specific pages and endpoints used by scrapers and parsers.
   urls?: Readonly<Record<string, string>>;
 };

@@ -182,18 +182,18 @@ const soccerLogoIds: Record<string, string> = {
   "Philadelphia Union": "10739",
   "Vancouver Whitecaps FC": "9727",
   "Inter Miami CF": "20232",
-  "Chicago Fire FC": "193",
+  "Chicago Fire FC": "182",
   "FC Dallas": "185",
-  "Charlotte FC": "22406",
+  "Charlotte FC": "21300",
   "San Jose Earthquakes": "191",
   "Seattle Sounders FC": "9726",
   "New England Revolution": "189",
-  "Orlando City": "120",
+  "Orlando City": "12011",
   "Houston Dynamo FC": "6077",
   "Los Angeles Football Club": "18966",
   "Colorado Rapids": "184",
-  "Red Bull New York": "399",
-  "FC Cincinnati": "18202",
+  "Red Bull New York": "190",
+  "FC Cincinnati": "18267",
   "Columbus Crew": "183",
   "New York City Football Club": "17606",
   "LA Galaxy": "187",
@@ -205,8 +205,17 @@ const soccerLogoIds: Record<string, string> = {
   "Austin FC": "20906",
   "Atlanta United": "18418",
   "Sporting Kansas City": "186",
-  "CF Montréal": "9729",
-  "CF MontrÃ©al": "9729",
+  "CF Montréal": "9720",
+  "CF MontrÃ©al": "9720",
+  "CF Montreal": "9720",
+  "Vancouver Whitecaps": "9727",
+  "St. Louis City SC": "21812",
+  "Chicago Fire": "182",
+  "Los Angeles FC": "18966",
+  "Houston Dynamo": "6077",
+  "Seattle Sounders": "9726",
+  "New York City FC": "17606",
+  "Orlando City SC": "12011",
   "Crystal Palace": "384",
   Arsenal: "359",
   "Manchester City": "382",
@@ -520,11 +529,14 @@ const plainHtml = (value: string) =>
     .replace(/\s+/g, " ")
     .trim();
 
+const cbsRankingTable = (html: string) =>
+  html.match(/<table\b[^>]*power-rankings[\s\S]*?<\/table>/i)?.[0] || html;
+
 export function parseCbsMlbPowerRanking(
   html: string,
   checked: string,
 ): PowerRanking | undefined {
-  const table = html.match(/Rk[\s\S]{0,250000}/i)?.[0] || html;
+  const table = cbsRankingTable(html);
   let rows = [...table.matchAll(/<tr\b[^>]*>([\s\S]*?)<\/tr>/gi)].flatMap(
     (match) => {
       const cells = [
@@ -588,7 +600,7 @@ export function parseCbsNhlPowerRanking(
   html: string,
   checked: string,
 ): PowerRanking | undefined {
-  const table = html.match(/Rk[\s\S]{0,250000}/i)?.[0] || html;
+  const table = cbsRankingTable(html);
   const rows = [...table.matchAll(/<tr\b[^>]*>([\s\S]*?)<\/tr>/gi)].flatMap(
     (match) => {
       const cells = [
@@ -620,6 +632,64 @@ export function parseCbsNhlPowerRanking(
     checked,
     publishedAt: checked,
     note: "Latest CBS Sports NHL Power Rankings.",
+  };
+}
+
+export const simmonsMlsPowerRankingsUrl =
+  "https://simmonsratings.com/prosoccer.htm";
+
+export function parseSimmonsMlsPowerRanking(
+  html: string,
+  checked: string,
+): PowerRanking | undefined {
+  // Rows use unclosed <TR>/<TD> tags: rank, team, W, L, T, rating, last rank.
+  const table = html.match(/<table\b[\s\S]*?<\/table>/i)?.[0] || "";
+  const rows = table
+    .split(/<tr\b[^>]*>/i)
+    .slice(1)
+    .flatMap((row) => {
+      const cells = row
+        .split(/<td\b[^>]*>/i)
+        .slice(1)
+        .map(plainHtml);
+      const rank = Number(cells[0]);
+      const name = cells[1];
+      const rating = Number(cells[5]);
+      if (
+        !Number.isInteger(rank) ||
+        rank < 1 ||
+        !name ||
+        !Number.isFinite(rating)
+      )
+        return [];
+      return [
+        {
+          id: teamLogoSlug(name),
+          name,
+          url: simmonsMlsPowerRankingsUrl,
+          logo: soccerLogoUrl(name, "soccer/usa.1"),
+          cells: [ordinal(rank), rating.toFixed(2)],
+        },
+      ];
+    });
+  if (rows.length < 10 || !rows.some((row) => row.name === "Minnesota United"))
+    return;
+  const updated = html.match(
+    /Last update:\s*[A-Za-z]+,\s*([A-Za-z]+ \d{1,2}, \d{4})/,
+  )?.[1];
+  const updatedAt = updated ? new Date(`${updated} 12:00 UTC`) : undefined;
+  return {
+    name: "MLS Power Ratings",
+    metric: "Rating",
+    rows,
+    source: "Simmons Ratings",
+    url: simmonsMlsPowerRankingsUrl,
+    checked,
+    publishedAt:
+      updatedAt && !Number.isNaN(updatedAt.getTime())
+        ? updatedAt.toISOString()
+        : checked,
+    note: "MLS clubs ranked by Brian Simmons' power rating.",
   };
 }
 

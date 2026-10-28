@@ -306,7 +306,14 @@ export default function Home() {
                   : "Latest headlines. Live scores. Social posts. All in one place."}
               </p>
             </div>
-            {active !== "march-madness" && <SectionLinks active={active} />}
+            {active !== "march-madness" && (
+              <SectionLinks
+                active={active}
+                hasPowerRankings={Boolean(
+                  teamInfo.find((i) => i.id === active)?.powerRanking,
+                )}
+              />
+            )}
           </div>
           {active === "march-madness" ? (
             <Suspense
