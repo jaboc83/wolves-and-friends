@@ -2,7 +2,7 @@
 
 Wolves & Friends is a sports dashboard that brings public news, schedules, scores, odds, social posts, standings, and rosters into one page. It consists of a browser interface and a small server-side feed aggregator. There is no application database or user-account system.
 
-This guide describes the implementation as of October 27, 2026. Start with the big picture, then use the file links to explore a feature.
+This guide describes the implementation as of October 28, 2026. Start with the big picture, then use the file links to explore a feature.
 
 ## 1. The big picture
 
@@ -16,7 +16,7 @@ flowchart TD
     Page --> Links["Publisher pages opened by the reader"]
 ```
 
-The browser asks **our own server** for public feeds. Team-specific news requests include the selected public team ID in the same-origin `/api/news` query; read and saved state are not sent. The server contacts ESPN, publishers, club websites, and Bluesky, then returns a common data format without forwarding visitor headers.
+The browser asks **our own server** for public feeds. The current generic `/api/news` endpoint returns news for all tracked teams; the browser partitions that response into team pages locally, so the current news request does not send selected-team, read, or saved state. First-party requests may include non-identifying sports preferences or filter criteria when useful for efficiency. The server contacts ESPN, publishers, club websites, and Bluesky, then returns a common data format without forwarding visitor headers or those preferences.
 
 Headlines link to publishers rather than reproducing full articles. Deliberately opening a link takes the reader to that external site.
 
@@ -55,19 +55,19 @@ Each team has a folder, `lib/teams/<id>/`, so its external URLs, IDs, and specia
 
 1. The page renders its layout immediately; feed sections fill in as data arrives.
 2. On the device, it restores cached public content and local preferences. A first visit selects Wolves; later visits restore the last valid team.
-3. It requests same-origin API routes for separate feed sections. The news request includes the selected team ID; read/saved state and browser identifiers are not included.
+3. It requests same-origin API routes for separate feed sections. The current news request is generic; selected-team, read/saved state, and browser identifiers are not included. Other first-party requests may include non-identifying sports filters when useful.
 4. React updates each section as responses arrive. A separate score feed can update game status without waiting for the larger news refresh.
 5. While the page stays open, timers request updates. The Refresh button also requests fresh endpoint responses, subject to each server cache.
 
-| Endpoint                | Data                                    | Browser request timing                                | Server memory cache                                  |
-| ----------------------- | --------------------------------------- | ----------------------------------------------------- | ---------------------------------------------------- |
-| `/api/news?team=<team>` | News and author feeds for one team      | On load, team selection, Refresh, and every 5 minutes | 5 minutes per section/team                           |
-| `/api/schedules`        | Schedules and source health             | On load, Refresh, and every 5 minutes                 | 5 minutes                                            |
-| `/api/odds`             | Odds enrichment for eligible games      | After schedules load and on Refresh                   | 5 minutes                                            |
-| `/api/scores`           | Today's ESPN scoreboard data            | On load, Refresh, and every minute                    | 30 seconds                                           |
-| `/api/social`           | Public Bluesky posts and inline avatars | On load, Refresh, and every minute                    | 1 minute; Refresh can request a forced update        |
-| `/api/team-info`        | Standings, rosters, and season metadata | On load and with the main refresh                     | 15 minutes                                           |
-| `/api/roster-stats`     | Player statistics in fixed batches      | When roster statistics are requested                  | 15 minutes for available stats; 2 minutes for misses |
+| Endpoint            | Data                                                                    | Browser request timing                                | Server memory cache                                  |
+| ------------------- | ----------------------------------------------------------------------- | ----------------------------------------------------- | ---------------------------------------------------- |
+| `/api/news`         | News and author feeds for all teams; browser partitions results locally | On load, team selection, Refresh, and every 5 minutes | 5 minutes per Worker for the generic news response   |
+| `/api/schedules`    | Schedules and source health                                             | On load, Refresh, and every 5 minutes                 | 5 minutes                                            |
+| `/api/odds`         | Odds enrichment for eligible games                                      | After schedules load and on Refresh                   | 5 minutes                                            |
+| `/api/scores`       | Today's ESPN scoreboard data                                            | On load, Refresh, and every minute                    | 30 seconds                                           |
+| `/api/social`       | Public Bluesky posts and inline avatars                                 | On load, Refresh, and every minute                    | 1 minute; Refresh can request a forced update        |
+| `/api/team-info`    | Standings, rosters, and season metadata                                 | On load and with the main refresh                     | 15 minutes                                           |
+| `/api/roster-stats` | Player statistics in fixed batches                                      | When roster statistics are requested                  | 15 minutes for available stats; 2 minutes for misses |
 
 The API also has support routes for validated team/social images and tournament data. `/api/hub` remains an aggregate feed route; the dashboard currently requests news, schedules, and odds separately.
 
@@ -139,8 +139,8 @@ The repository contains starter authentication, connector, and UI scaffolding. I
 [AGENTS.md](AGENTS.md) contains requirements for every future change:
 
 - No analytics, advertising trackers, accounts, fingerprinting, or application logging of user/browser identifiers.
-- Read and saved preferences remain on the device. Browser feed requests are same-origin, omit credentials and referrers, and the news request includes the selected public team ID.
-- Public third-party feeds and avatar images are fetched server-side without forwarding visitor headers or read/saved state.
+- The current app keeps read/saved preferences and team choices on the device. First-party requests may include non-identifying sports preferences or filters when useful; do not persist or log them remotely, or include personal information or person/device identifiers. Requests are same-origin, omit credentials and referrers, and the current generic news request does not include the selected team.
+- Public third-party feeds and avatar images are fetched server-side without forwarding visitor headers or sports preferences/filter values. The current generic news response is partitioned into team pages in the browser.
 - Logos are local and avatars are inline image data. There are no third-party social embeds or background browser connections to those providers.
 - External links suppress referrers. A deliberate visit to another website is then subject to that website's behavior.
 
