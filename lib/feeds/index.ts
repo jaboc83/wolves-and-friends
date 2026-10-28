@@ -29,7 +29,14 @@ import type { TeamId } from "../teams/teams";
 import { scoreboardLeagues, teamPlaysCompetition } from "../teams/competitions";
 import { enrichOdds } from "./odds";
 import type { Story, Game, Health, AuthorFeed, HubData } from "./feed-types";
-import { normalizeESPNInjuries, type ESPNInjuryGroup } from "./injuries";
+import {
+  normalizeESPNInjuries,
+  normalizePremierLeagueInjuries,
+  parseMLSAvailabilityReport,
+  type ESPNInjuryGroup,
+  type PremierLeagueInjuryPlaylist,
+  type PremierLeagueInjuryPromo,
+} from "./injuries";
 import { normalizeLeagueHeadlines } from "./league-news-data";
 export type { Story, Game, Health, AuthorFeed, HubData } from "./feed-types";
 
@@ -68,13 +75,21 @@ type ESPNResponse = {
   events?: ESPNEvent[];
   injuries?: ESPNInjuryGroup[];
   season?: { year?: number | string };
+  team?: { displayName?: string; name?: string };
 };
 const sectionCache: Partial<Record<string, HubData>> = {};
 const sectionInflight: Partial<Record<string, Promise<HubData>>> = {};
 const injurySources = teamProviders.flatMap((p) => {
   const league = teams.find((t) => t.id === p.team)?.league;
   return p.espnTeamId && league
-    ? [{ team: p.team, sport: league, espnId: p.espnTeamId }]
+    ? [
+        {
+          team: p.team,
+          sport: league,
+          espnId: p.espnTeamId,
+          availabilityUrl: p.urls?.injuryAvailabilityReport,
+        },
+      ]
     : [];
 });
 function safeFeedError(error: unknown) {
@@ -134,6 +149,7 @@ async function fetchESPNInjuries(
   espnId: string,
   teamName: string,
   signal: AbortSignal,
+  availabilityUrl?: string,
 ): Promise<NonNullable<Game["injuries"]>> {
   const injuryUrls = [
     "https://site.api.espn.com/apis/site/v2/sports/" +
@@ -155,11 +171,163 @@ async function fetchESPNInjuries(
       lastError = error;
     }
   }
-  if (!response) throw lastError || new FeedError("request-failed");
+  if (!response) {
+    if (availabilityUrl) {
+      return fetchOfficialAvailability(
+        sport,
+        availabilityUrl,
+        teamName,
+        signal,
+      );
+    }
+    throw lastError || new FeedError("request-failed");
+  }
   const json = (await response.json()) as ESPNResponse;
-  if (!json.injuries?.length) throw new FeedError("empty-injuries");
+  if (!json.injuries?.length) {
+    if (availabilityUrl) {
+      return fetchOfficialAvailability(
+        sport,
+        availabilityUrl,
+        json.team?.displayName || json.team?.name || teamName,
+        signal,
+      );
+    }
+    throw new FeedError("empty-injuries");
+  }
   return normalizeESPNInjuries(json.injuries, teamName);
 }
+
+type PremierLeaguePlaylistIndex = {
+  items?: { id: number; type?: string }[];
+};
+type PremierLeagueClubPlaylist = PremierLeagueInjuryPlaylist & {
+  title?: string;
+};
+
+let cachedPremierLeaguePlaylistIds: {
+  url: string;
+  checkedAt: number;
+  ids: Map<string, number>;
+} | null = null;
+
+function normalizedPremierLeagueClub(value: string) {
+  return value
+    .replace(/^Injury News\s*-\s*/i, "")
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, " ")
+    .trim();
+}
+
+function matchesPremierLeagueClub(candidate: string, target: string) {
+  return (
+    candidate === target ||
+    candidate.startsWith(target + " ") ||
+    candidate.endsWith(" " + target) ||
+    target.startsWith(candidate + " ")
+  );
+}
+
+async function premierLeaguePlaylistIds(url: string, signal: AbortSignal) {
+  if (
+    cachedPremierLeaguePlaylistIds?.url === url &&
+    Date.now() - cachedPremierLeaguePlaylistIds.checkedAt < 6 * 60 * 60 * 1000
+  ) {
+    return cachedPremierLeaguePlaylistIds.ids;
+  }
+  const response = await providerGet(url, signal);
+  const index = (await response.json()) as PremierLeaguePlaylistIndex;
+  const playlists = await runProviderTasks(
+    (index.items || [])
+      .filter((item) => item.type?.toLowerCase() === "playlist")
+      .map((item) => ({
+        name: "Premier League injury club playlist",
+        run: async (taskSignal) => {
+          const childResponse = await providerGet(
+            new URL(
+              `/content/premierleague/playlist/en/${item.id}`,
+              url,
+            ).href,
+            AbortSignal.any([signal, taskSignal]),
+          );
+          const child =
+            (await childResponse.json()) as PremierLeagueClubPlaylist;
+          return { id: item.id, title: child.title || "" };
+        },
+      })),
+    { concurrency: 5, timeoutMs: 12000 },
+  );
+  const ids = new Map<string, number>();
+  for (const playlist of playlists)
+    if (playlist.value?.title)
+      ids.set(playlist.value.title, playlist.value.id);
+  if (!ids.size) throw new FeedError("empty-injuries");
+  cachedPremierLeaguePlaylistIds = { url, checkedAt: Date.now(), ids };
+  return ids;
+}
+
+async function fetchPremierLeagueInjuries(
+  hubUrl: string,
+  teamName: string,
+  signal: AbortSignal,
+): Promise<NonNullable<Game["injuries"]>> {
+  const playlists = await premierLeaguePlaylistIds(hubUrl, signal);
+  const target = normalizedPremierLeagueClub(teamName);
+  const playlistId = [...playlists].find(([name]) =>
+    matchesPremierLeagueClub(normalizedPremierLeagueClub(name), target),
+  )?.[1];
+  if (!playlistId) throw new FeedError("empty-injuries");
+
+  const playlistResponse = await providerGet(
+    new URL(`/content/premierleague/playlist/en/${playlistId}`, hubUrl).href,
+    signal,
+  );
+  const playlist = (await playlistResponse.json()) as PremierLeagueClubPlaylist;
+  const promos = await runProviderTasks(
+    (playlist.items || [])
+      .filter(
+        (item) =>
+          item.type?.toLowerCase() === "promo" &&
+          item.id !== playlist.coverItem?.id,
+      )
+      .map((item) => ({
+        name: "Premier League injury player",
+        run: async (taskSignal) => {
+          const promoResponse = await providerGet(
+            new URL(
+              `/content/premierleague/PROMO/en/${item.id}`,
+              hubUrl,
+            ).href,
+            AbortSignal.any([signal, taskSignal]),
+          );
+          return (await promoResponse.json()) as PremierLeagueInjuryPromo;
+        },
+      })),
+    { concurrency: 5, timeoutMs: 12000 },
+  );
+  const injuries = normalizePremierLeagueInjuries(
+    playlist,
+    promos.flatMap((promo) => (promo.value ? [promo.value] : [])),
+    teamName,
+  );
+  if (playlist.items?.length && !injuries.length)
+    throw new FeedError("empty-injuries");
+  return injuries;
+}
+
+async function fetchOfficialAvailability(
+  sport: string,
+  url: string,
+  teamName: string,
+  signal: AbortSignal,
+): Promise<NonNullable<Game["injuries"]>> {
+  if (sport === "soccer/eng.1")
+    return fetchPremierLeagueInjuries(url, teamName, signal);
+  const response = await providerGet(url, signal);
+  return parseMLSAvailabilityReport(await response.text(), teamName);
+}
+
 export async function collect(
   section: "news" | "schedules" | "all" = "all",
   team?: TeamId,
@@ -360,30 +528,13 @@ export async function collect(
           "ESPN injury report · " + teamName,
           [source.team],
           async (output, signal) => {
-            const injuryUrls = [
-              "https://site.api.espn.com/apis/site/v2/sports/" +
-                source.sport +
-                "/injuries?region=us&lang=en&team=" +
-                source.espnId,
-              "https://site.web.api.espn.com/apis/site/v2/sports/" +
-                source.sport +
-                "/injuries?region=us&lang=en&team=" +
-                source.espnId,
-            ];
-            let response: Response | null = null;
-            let lastError: unknown;
-            for (const url of injuryUrls) {
-              try {
-                response = await providerGet(url, signal);
-                break;
-              } catch (error) {
-                lastError = error;
-              }
-            }
-            if (!response) throw lastError || new FeedError("request-failed");
-            const json = (await response.json()) as ESPNResponse;
-            if (!json.injuries?.length) throw new FeedError("empty-injuries");
-            const injuries = normalizeESPNInjuries(json.injuries, teamName);
+            const injuries = await fetchESPNInjuries(
+              source.sport,
+              source.espnId,
+              teamName,
+              signal,
+              source.availabilityUrl,
+            );
             output.injuries = injuries;
             return injuries.length;
           },
@@ -541,7 +692,12 @@ export async function collect(
   if (section !== "news") {
     const opponentTeams = new Map<
       string,
-      { league: string; espnId: string; name: string }
+      {
+        league: string;
+        espnId: string;
+        name: string;
+        availabilityUrl?: string;
+      }
     >();
     for (const game of games) {
       if (!eventIsToday(game)) continue;
@@ -560,6 +716,7 @@ export async function collect(
             league,
             espnId: competitor.teamId,
             name: competitor.name,
+            availabilityUrl: source.availabilityUrl,
           });
       }
     }
@@ -573,6 +730,7 @@ export async function collect(
             source.espnId,
             source.name,
             signal,
+            source.availabilityUrl,
           ),
         }),
       })),
