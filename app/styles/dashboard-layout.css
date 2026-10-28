@@ -120,6 +120,9 @@
   padding-bottom: 14px;
   border-bottom: 2px solid #193346;
 }
+.rail-heading.results {
+  margin-bottom: 12px;
+}
 .rail-heading h2 {
   font-size: 14px;
   margin: 0;

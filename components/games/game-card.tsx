@@ -2,7 +2,6 @@
 "use client";
 import AddToCalendar from "./add-to-calendar";
 import GameCardExtras from "./game-card-extras";
-import LeagueHeadlines from "./league-headlines";
 import { tournamentScoresUrl } from "../../lib/games/game-links";
 import { eventDateLabel } from "../../lib/games/event-time";
 import GameBadges from "./game-badges";
@@ -10,8 +9,12 @@ import { gameBadges } from "../../lib/games/game-badges";
 import { useRef, useState } from "react";
 import type { Game } from "../../lib/feeds";
 import Image from "next/image";
+import { ChevronDown, House, Plane } from "lucide-react";
 import { teamProfile } from "../../lib/teams/teams";
-import { teamLocation } from "../../lib/teams/team-location";
+import {
+  compactTeamLocation,
+  teamLocation,
+} from "../../lib/teams/team-location";
 import { gameTeamUrl } from "../../lib/teams/game-team-url";
 import { sportTerms } from "../../lib/teams/sport-terms";
 import { teamLogoPath } from "../../lib/teams/team-logo";
@@ -52,17 +55,28 @@ function Location({
   name,
   league,
   own = false,
+  compact = false,
 }: {
   team: TeamId;
   name: string;
   league: string;
   own?: boolean;
+  compact?: boolean;
 }) {
   const location = teamLocation(team, name, league, own);
-  return location ? (
-    <span style={{ fontSize: "0.8em", fontWeight: 400, opacity: 0.75 }}>
+  const displayedLocation = compact ? compactTeamLocation(location) : location;
+  return displayedLocation ? (
+    <span
+      className={compact ? "compact-team-location" : undefined}
+      style={{
+        fontSize: "0.8em",
+        fontWeight: 400,
+        opacity: 0.75,
+        alignSelf: own ? "baseline" : undefined,
+      }}
+    >
       {" "}
-      · {location}
+      · {displayedLocation}
     </span>
   ) : null;
 }
@@ -96,25 +110,31 @@ export default function GameCard({
   const hidden = g.state !== "pre" && !scoreVisible;
   const logo = teamLogoPath(t.id);
   const { club, opponent } = matchup(g);
+  const homeAway = !g.eventOnly ? club?.homeAway : undefined;
   const opponentCompetitor = g.competitors.find((p) => p !== club);
   const result = outcome(g);
+  const completedStatus = g.status.replace(/^Final\/?/i, "") || null;
   const terms = sportTerms(g.team);
+  const showLiveIndicator = today && g.state === "in";
+  const resultCap =
+    g.state === "post" && scoreVisible && result ? (
+      <span
+        className={"result-cap cap-" + result}
+        aria-label={
+          result === "W"
+            ? "Win"
+            : result === "L"
+              ? "Loss"
+              : terms.tieLabel
+        }
+      >
+        <span>{result}</span>
+      </span>
+    ) : null;
   const hasBadges = gameBadges(g).length > 0;
   const zoneLabel = timeZoneLabel(timeZone, g.date);
   const full = (
     <article className="game">
-      {compact && (
-        <button
-          type="button"
-          className="game-collapse"
-          onClick={() => {
-            detailsRef.current?.removeAttribute("open");
-            setExpanded(false);
-          }}
-        >
-          Hide details ↑
-        </button>
-      )}
       <div className="game-top">
         <div className="game-identity">
           <Image unoptimized src={logo} alt="" width={36} height={36} />
@@ -133,33 +153,51 @@ export default function GameCard({
                   </a>
                 )}
               </strong>
-              <Location team={g.team} name={t.name} league={g.league} own />
             </div>
-            {!hasBadges &&
-              g.league &&
-              (t.league ? (
-                <LeagueHeadlines league={g.league} leaguePath={t.league} />
-              ) : (
-                <span className="muted">{g.league}</span>
-              ))}
           </div>
         </div>
         <div className="game-meta">
           <span className={g.state === "in" ? "live" : ""}>
             {g.state === "post"
-              ? "FINAL"
+              ? (
+                  <time dateTime={g.date}>{eventDateLabel(g, timeZone)}</time>
+                )
               : g.state === "in"
                 ? g.eventOnly
                   ? "IN PROGRESS"
                   : "LIVE"
-                : localDateTime(g.date, {
+                : <AddToCalendar game={g}>
+                    {localDateTime(g.date, {
                     weekday: "short",
                     month: "short",
                     day: "numeric",
-                  })}
+                    })}
+                  </AddToCalendar>}
+            {g.state === "pre" && !g.dateOnly && (
+              <span className="event-time">
+                {localDateTime(g.date, {
+                  hour: "numeric",
+                  minute: "2-digit",
+                })}{" "}
+                {zoneLabel}
+              </span>
+            )}
           </span>
-          <GameBadges game={g} />
         </div>
+        {compact && (
+          <button
+            type="button"
+            className="game-collapse expand-chevron"
+            aria-label="Hide details"
+            title="Hide details"
+            onClick={() => {
+              detailsRef.current?.removeAttribute("open");
+              setExpanded(false);
+            }}
+          >
+            <ChevronDown size={16} strokeWidth={2.5} aria-hidden="true" />
+          </button>
+        )}
       </div>
       {g.eventOnly ? (
         <div className="event-details">
@@ -216,21 +254,32 @@ export default function GameCard({
         </button>
       )}
       <div className="game-footer">
-        {g.eventOnly && g.state === "post"
-          ? null
-          : g.dateOnly
-            ? g.state === "pre"
-              ? "All-day event · tee times not listed"
-              : g.status
-            : g.state === "pre"
-              ? localDateTime(g.date, { hour: "numeric", minute: "2-digit" }) +
-                " " +
-                zoneLabel
-              : hidden
-                ? g.state === "post"
-                  ? "Final · result hidden"
-                  : "Live · score hidden"
-                : g.status}
+        {g.state === "pre" && !g.dateOnly ? null :
+        g.eventOnly && g.state === "post" ? null : g.dateOnly ? (
+          g.state === "pre" ? (
+            "All-day event · tee times not listed"
+          ) : (
+            completedStatus
+          )
+        ) : g.state === "pre" ? (
+          <time className="event-time" dateTime={g.date}>
+            {localDateTime(g.date, {
+              hour: "numeric",
+              minute: "2-digit",
+            })}{" "}
+            {zoneLabel}
+          </time>
+        ) : hidden ? (
+          g.state === "post" ? (
+            "Result hidden"
+          ) : (
+            "Live · score hidden"
+          )
+        ) : g.state === "post" ? (
+          completedStatus
+        ) : (
+          g.status
+        )}
         <span className="game-footer-actions">
           {g.url && (
             <a
@@ -251,7 +300,6 @@ export default function GameCard({
                   : `${terms.stats} ↗`}
             </a>
           )}
-          {!compact && g.state === "pre" && <AddToCalendar game={g} />}
         </span>
       </div>
       <GameCardExtras
@@ -263,6 +311,11 @@ export default function GameCard({
         renderedAt={renderedAt}
         localDateTime={localDateTime}
       />
+      {hasBadges && (
+        <div className="game-card-ribbon">
+          <GameBadges game={g} />
+        </div>
+      )}
     </article>
   );
   if (!compact) return full;
@@ -280,21 +333,35 @@ export default function GameCard({
         }}
       >
         <summary>
-          {g.state === "post" && scoreVisible && result && (
-            <span
-              className={"result-cap cap-" + result}
-              aria-label={
-                result === "W"
-                  ? "Win"
-                  : result === "L"
-                    ? "Loss"
-                    : terms.tieLabel
-              }
-            >
-              <span>{result}</span>
-            </span>
-          )}
-          <Image unoptimized src={logo} alt="" width={30} height={30} />
+          {resultCap}
+          <span className="compact-team-logo">
+            <Image unoptimized src={logo} alt="" width={30} height={30} />
+            {homeAway && (
+              <span
+                className={"venue-marker venue-marker-" + homeAway}
+                role="img"
+                aria-label={homeAway === "home" ? "Home game" : "Away game"}
+                title={homeAway === "home" ? "Home game" : "Away game"}
+              >
+                {homeAway === "home" ? (
+                  <span className="venue-house-icon" aria-hidden="true">
+                    <House size={12} fill="currentColor" strokeWidth={0} />
+                    <House size={12} className="venue-house-outline" />
+                    <svg
+                      className="venue-house-door"
+                      width="12"
+                      height="12"
+                      viewBox="0 0 24 24"
+                    >
+                      <path d="M9 21v-8a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v8z" />
+                    </svg>
+                  </span>
+                ) : (
+                  <Plane size={12} fill="currentColor" aria-hidden="true" />
+                )}
+              </span>
+            )}
+          </span>
           <span className="compact-match">
             <span className="compact-name">
               <strong>
@@ -311,14 +378,20 @@ export default function GameCard({
                   </a>
                 )}
               </strong>
-              <Location team={g.team} name={t.name} league={g.league} own />
-              <GameBadges game={g} />
+              {!g.eventOnly && club && (
+                <Location
+                  team={g.team}
+                  name={club.name}
+                  league={g.league}
+                  own
+                  compact
+                />
+              )}
             </span>
             {g.eventOnly ? (
               <span>{g.name}</span>
             ) : (
               <span>
-                vs.{" "}
                 <a
                   href={gameTeamUrl(
                     g.team,
@@ -332,7 +405,12 @@ export default function GameCard({
                 >
                   {opponent}
                 </a>
-                <Location team={g.team} name={opponent} league={g.league} />
+                <Location
+                  team={g.team}
+                  name={opponent}
+                  league={g.league}
+                  compact
+                />
               </span>
             )}
           </span>
@@ -347,28 +425,26 @@ export default function GameCard({
             </span>
           )}
           <span className="compact-upcoming-actions">
+            {showLiveIndicator && (
+              <span className="compact-live-indicator" role="status">
+                LIVE
+              </span>
+            )}
             <span className="compact-date">
-              {eventDateLabel(g, timeZone)}
-              {!g.dateOnly &&
-                (g.state === "post" ? (
-                  <>
-                    {" "}
-                    ·{" "}
-                    {localDateTime(g.date, {
-                      hour: "numeric",
-                      minute: "2-digit",
-                    })}{" "}
-                    {zoneLabel}
-                  </>
-                ) : (
-                  <small>
-                    {localDateTime(g.date, {
-                      hour: "numeric",
-                      minute: "2-digit",
-                    })}{" "}
-                    {zoneLabel}
-                  </small>
-                ))}
+              {g.state === "pre" ? (
+                <AddToCalendar game={g}>
+                  {eventDateLabel(g, timeZone)}
+                </AddToCalendar>
+              ) : eventDateLabel(g, timeZone)}
+              {!g.dateOnly && g.state !== "post" && (
+                <small className="event-time">
+                  {localDateTime(g.date, {
+                    hour: "numeric",
+                    minute: "2-digit",
+                  })}{" "}
+                  {zoneLabel}
+                </small>
+              )}
               {g.state === "post" &&
                 g.eventOnly &&
                 scoreVisible &&
@@ -402,12 +478,17 @@ export default function GameCard({
                   </small>
                 )}
             </span>
-            {g.state === "pre" && <AddToCalendar game={g} compact />}
           </span>
           <span className="expand-chevron" aria-hidden="true">
-            ⌄
+            <ChevronDown size={16} strokeWidth={2.5} />
           </span>
+          {hasBadges && (
+            <span className="game-card-ribbon compact-card-ribbon">
+              <GameBadges game={g} />
+            </span>
+          )}
         </summary>
+        {expanded && resultCap}
         {full}
       </details>
     </div>

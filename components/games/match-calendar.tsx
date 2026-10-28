@@ -153,7 +153,7 @@ export default function MatchCalendar({
                   />
                   <span>
                     <b>{t?.short}</b> <GameBadges game={g} /> · {g.name}
-                    <small>
+                    <small className={g.dateOnly ? undefined : "event-time"}>
                       {g.dateOnly
                         ? "Time not listed"
                         : formatInTimeZone(g.date, timeZone, {
@@ -165,7 +165,14 @@ export default function MatchCalendar({
                     </small>
                   </span>
                 </a>
-                {g.state === "pre" && <AddToCalendar game={g} compact />}
+                {g.state === "pre" && (
+                  <AddToCalendar game={g}>
+                    {formatInTimeZone(g.date, timeZone, {
+                      month: "short",
+                      day: "numeric",
+                    })}
+                  </AddToCalendar>
+                )}
               </div>
             );
           })

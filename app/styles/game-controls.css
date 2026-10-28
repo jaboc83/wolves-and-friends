@@ -104,6 +104,107 @@
   border: 1px solid;
   white-space: nowrap;
 }
+.game-card-ribbon {
+  --fold: 6px;
+  --notch: 12px;
+  position: absolute;
+  inset: auto calc(0px - var(--fold)) 0 auto;
+  z-index: 1;
+  display: flex;
+  justify-content: flex-end;
+  max-width: calc(100% - 16px);
+  padding: 0 12px var(--fold) calc(12px + var(--notch));
+  clip-path: polygon(
+    0 0,
+    100% 0,
+    100% calc(100% - var(--fold)),
+    calc(100% - var(--fold)) 100%,
+    calc(100% - var(--fold)) calc(100% - var(--fold)),
+    0 calc(100% - var(--fold)),
+    var(--notch) calc(50% - var(--fold) / 2)
+  );
+  background: var(--team-primary, var(--ink, #193346));
+  box-shadow: 0 calc(0px - var(--fold)) 0 inset #0005;
+  color: #fff;
+}
+  background: #355b4a;
+  justify-content: flex-end;
+  max-width: 100%;
+  margin: 0;
+.game-card-ribbon:has(.badge-preseason) {
+  background: #2e684f;
+}
+.game-card-ribbon:has(.badge-playoffs) {
+  background: #793b61;
+}
+.game-card-ribbon:has(.badge-cup) {
+  background: #87520a;
+}
+.game-card-ribbon:has(.badge-nba-cup) {
+  background: #913c32;
+}
+.game-card-ribbon:has(.badge-euroleague) {
+  background: #755226;
+}
+.game-card-ribbon:has(.badge-lkl) {
+  background: #286343;
+}
+.game-card-ribbon:has(.badge-europa-league) {
+  background: #984b20;
+}
+.game-card-ribbon:has(.badge-friendly) {
+  background: #21645d;
+}
+.game-card-ribbon:has(.badge-premier) {
+  background: #6a3d50;
+}
+.game-card-ribbon:has(.badge-jomezpro) {
+  background: #9c3e2c;
+}
+.game-card-ribbon:has(.badge-pdga-major) {
+  background: #70502d;
+}
+.game-card-ribbon:has(.badge-dgpt) {
+  background: #385d3f;
+}
+.game-card-ribbon .game-badge {
+  padding: 3px 0;
+  border: 0;
+  background: transparent;
+  color: inherit;
+}
+.compact-live-indicator {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 3px 6px;
+  border: 1px solid #e7aaa5;
+  border-radius: 3px;
+  background: #fff0ee;
+  color: #982d28;
+  font-size: 9px;
+  font-weight: 800;
+  line-height: 1;
+  white-space: nowrap;
+}
+.compact-live-indicator::before {
+  width: 6px;
+  height: 6px;
+  flex: 0 0 6px;
+  border-radius: 50%;
+  background: #b63d36;
+  content: "";
+}
+.game:has(> .game-card-ribbon) {
+  position: relative;
+  overflow: hidden;
+  padding-bottom: 34px;
+}
+.compact-game > summary:has(> .compact-card-ribbon) {
+  position: relative;
+  overflow: hidden;
+  padding-bottom: 30px;
+}
 .badge-preseason {
   background: #fff3d7;
   color: #754400;
