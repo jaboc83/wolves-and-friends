@@ -1,6 +1,6 @@
 import type { Game } from "./feed-types";
 
-const cacheDuration = 5 * 60 * 1000;
+const cacheDuration = 30 * 1000;
 const dateWindow = 36 * 60 * 60 * 1000;
 const feedBase =
   "https://feeds.incrowdsports.com/provider/euroleague-feeds/v2/competitions/E/seasons/";
@@ -31,9 +31,11 @@ function seasonCode(checked: string) {
 }
 
 function gameState(status: string): Game["state"] {
-  const normalized = status.toLowerCase();
-  if (normalized === "live") return "in";
-  if (/(finished|played|final|complete|ended)/.test(normalized)) return "post";
+  const normalized = status.toLowerCase().replace(/[\s_-]/g, "");
+  if (["live", "inprogress", "inplay", "playing", "halftime", "break"].includes(normalized))
+    return "in";
+  if (["finished", "played", "final", "complete", "completed", "ended", "result"].includes(normalized))
+    return "post";
   return "pre";
 }
 

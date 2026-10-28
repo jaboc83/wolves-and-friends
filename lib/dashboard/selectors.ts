@@ -1,5 +1,6 @@
 // Derives visible stories and games from feed data plus the dashboard's local filters.
 import type { Game, HubData } from "../feeds/feed-types";
+import { mergeScoreUpdate } from "../games/merge-score";
 import { discEvents } from "../games/event-seed";
 import { eventLifecycle, eventIsToday } from "../games/event-time";
 import { isTeamId, teams, teamPriority } from "../teams/teams";
@@ -109,11 +110,11 @@ export function selectGames({
             Math.abs(Date.parse(x.date) - Date.parse(g.date)) < 3 * 3600000),
       );
       return fresh
-        ? {
+        ? mergeScoreUpdate(g, {
             ...g,
             ...fresh,
             competitionNote: fresh.competitionNote || g.competitionNote,
-          }
+          })
         : g;
     });
   for (const g of liveGames)
@@ -171,3 +172,4 @@ export function selectGames({
     futureGames,
   };
 }
+
