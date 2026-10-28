@@ -5,7 +5,7 @@
       "name": "Wolves: browser (Brave)",
       "type": "chrome",
       "request": "launch",
-      "runtimeExecutable": "C:/Program Files/BraveSoftware/Brave-Browser/Application/brave.exe",
+      "runtimeExecutable": "${env:LOCALAPPDATA}/BraveSoftware/Brave-Browser/Application/brave.exe",
       "port": 9231,
       "runtimeArgs": [
         "--remote-debugging-address=127.0.0.1",

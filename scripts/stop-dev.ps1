@@ -28,6 +28,7 @@ function Get-ProcessTree([int]$ProcessId) {
 $taskRoots = @(
     $processes | Where-Object {
         $_.Name -in @('powershell.exe', 'pwsh.exe') -and
+        $_.CommandLine -and
         $_.CommandLine.Contains($projectRoot) -and
         $_.CommandLine -match $taskPattern
     }
