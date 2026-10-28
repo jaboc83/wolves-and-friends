@@ -139,6 +139,18 @@ body:has(.hub[data-mode="dark"]) .league-headlines-footer a {
 .game-footer a {
   color: var(--muted, #3e6c75);
 }
+.event-time,
+.compact-date .event-time,
+.calendar-agenda .event-time {
+  color: var(--ink, #192a3c);
+  font-size: 10px;
+  font-weight: bold;
+  font-variant-numeric: tabular-nums;
+  line-height: 1.5;
+}
+.game-meta .event-time {
+  display: block;
+}
 .game-footer-actions {
   display: inline-flex;
   align-items: center;
@@ -567,4 +579,3 @@ footer b {
 .game-odds .odds-stale {
   color: var(--muted, #8c7139);
 }
-

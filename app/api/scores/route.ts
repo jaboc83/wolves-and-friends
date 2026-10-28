@@ -1,5 +1,6 @@
 // API route for fetching scores data. Returns the latest game scores or an error if unavailable.
 import { fetchScoreboard } from "../../../lib/feeds/scoreboard";
+import { fetchEuroLeagueGames } from "../../../lib/feeds/euroleague-scoreboard";
 import { scoreboardLeagues } from "../../../lib/teams/competitions";
 import { mergeLiveScoreboard, type Game } from "../../../lib/feeds";
 type ScoreData = { checked: string; games: Game[]; unavailable: string[] };
@@ -17,15 +18,20 @@ async function collect() {
   })
     .format(new Date())
     .replace(/-/g, "");
-  await Promise.all(
-    scoreboardLeagues.map(async (league) => {
+  await Promise.all([
+    ...scoreboardLeagues.map(async (league) => {
       try {
         mergeLiveScoreboard(games, await fetchScoreboard(league, date), league);
       } catch {
         unavailable.push(league);
       }
     }),
-  );
+    (async () => {
+      const result = await fetchEuroLeagueGames();
+      games.push(...result.games);
+      if (!result.available) unavailable.push("EuroLeague");
+    })(),
+  ]);
   cached = { checked, games, unavailable };
   return cached;
 }

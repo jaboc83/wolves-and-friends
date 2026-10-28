@@ -370,7 +370,9 @@ export default function Home() {
                     </span>
                   </div>
                   {todayGames.length ? (
-                    todayGames.map((g) => game(g, false, true))
+                    todayGames.map((g) =>
+                      game(g, active === DASHBOARD_PAGE_IDS.ALL, true),
+                    )
                   ) : (
                     <div className="empty compact">
                       {loading

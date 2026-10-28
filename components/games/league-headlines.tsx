@@ -62,10 +62,12 @@ const leagueBrands: Record<
 export default function LeagueHeadlines({
   league,
   leaguePath,
+  contextLabel,
   className = "muted",
 }: {
   league: string;
   leaguePath: string;
+  contextLabel?: string;
   className?: string;
 }) {
   const brand = leagueBrands[leaguePath];
@@ -101,12 +103,15 @@ export default function LeagueHeadlines({
 
   return (
     <Dialog open={open} onOpenChange={setOpen}>
+      {contextLabel && contextLabel !== (brand?.name || league) && (
+        <span className="muted">{contextLabel} · </span>
+      )}
       <DialogTrigger asChild>
         <button
           type="button"
           className={`league-news-trigger ${className}`}
         >
-          {league}
+          {brand?.name || league}
         </button>
       </DialogTrigger>
       <DialogContent className="league-headlines-dialog max-h-[calc(100dvh-2rem)] overflow-y-auto">

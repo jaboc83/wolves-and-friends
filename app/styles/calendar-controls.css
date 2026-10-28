@@ -6,36 +6,18 @@
   margin-bottom: 0;
 }
 .add-calendar {
-  position: relative;
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  gap: 4px;
-  flex-shrink: 0;
-  border: 1px solid var(--line, #d3d9d4);
-  border-radius: 6px;
-  background: var(--raised, #f5f4ef);
-  color: var(--ink, #192a3c);
-  font-size: 0.75rem;
-  font-weight: 600;
-  padding: 6px 8px;
+  color: inherit;
+  font: inherit;
   text-decoration: none;
   white-space: nowrap;
 }
 .add-calendar:hover {
-  background: var(--surface, #fff);
-  border-color: var(--team-accent, #8aa747);
+  text-decoration: underline;
+  text-underline-offset: 3px;
 }
 .add-calendar:focus-visible {
   outline: 3px solid #367eab;
   outline-offset: 3px;
-}
-.add-calendar-compact {
-  padding: 5px 6px;
-}
-.add-calendar svg {
-  display: block;
-  flex: 0 0 18px;
 }
 .compact-upcoming-actions {
   display: flex;
