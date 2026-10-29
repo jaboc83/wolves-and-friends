@@ -200,6 +200,10 @@
   width: 30px;
   height: 30px;
 }
+.past-game.result-shown .expand-chevron {
+  align-self: start;
+  margin-top: 8px;
+}
 @media (max-width: 380px) {
   .compact-team-logo {
     width: 38px;
