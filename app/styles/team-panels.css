@@ -148,6 +148,9 @@
 .compact-game[open] > .game {
   border-top: 0;
 }
+.compact-game[open].result-shown > .game .game-identity {
+  margin-left: 48px;
+}
 .game-collapse {
   display: block;
   margin: 0 0 10px auto;
