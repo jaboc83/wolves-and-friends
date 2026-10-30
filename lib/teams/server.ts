@@ -7,6 +7,7 @@ import { palaceServer } from "./palace/server";
 import { discServer } from "./disc/server";
 import { zalgirisServer } from "./zalgiris/server";
 import { frostServer } from "./frost/server";
+import { usmntServer } from "./usmnt/server";
 
 export const teamServerHooks: readonly TeamServerHooks[] = [
   wolvesServer,
@@ -16,6 +17,7 @@ export const teamServerHooks: readonly TeamServerHooks[] = [
   discServer,
   zalgirisServer,
   frostServer,
+  usmntServer,
 ];
 
 export const serverHooksFor = (team: string) =>
