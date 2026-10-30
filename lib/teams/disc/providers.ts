@@ -16,12 +16,12 @@ export const discProviders = {
   },
   socialTags: ["#DGPT", "#PDGA"],
   season: {
-    name: "2026 DGPT",
+    name: "2026–27 DGPT schedules",
     start: "2026-02-27",
-    end: "2026-10-18",
+    end: "2027-11-07",
     source: "DGPT official schedule",
     url: "https://www.dgpt.com/schedule/",
-    note: "Tour opener through the Powerball Cup.",
+    note: "Current calendar plus the published 2027 schedule.",
   },
   urls: {
     officialSchedule: "https://www.dgpt.com/schedule/",
