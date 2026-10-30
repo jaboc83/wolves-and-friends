@@ -3,14 +3,7 @@ import type { TeamServerHooks } from "../server-types";
 import { parseDGPT, parseDgptSchedule } from "../../feeds/dgpt";
 import { discEvents } from "../../games/event-seed";
 import { discProviders } from "./providers";
-
-export const dgptScheduleUrl = (year: number) => {
-  const url = new URL(discProviders.urls.officialSchedule);
-  url.searchParams.set("eventCriteria", "full_schedule");
-  url.searchParams.set("eventType", "all");
-  url.searchParams.set("eventYear", String(year));
-  return url.href;
-};
+import { dgptScheduleUrl } from "../../feeds/dgpt-schedule-url";
 
 export const discServer: TeamServerHooks = {
   team: "disc",
@@ -22,7 +15,7 @@ export const discServer: TeamServerHooks = {
         const currentYear = new Date().getFullYear();
         const pages = await Promise.all(
           [currentYear, currentYear + 1].map(async (year) =>
-            (await get(dgptScheduleUrl(year))).text(),
+            (await get(dgptScheduleUrl(discProviders.urls.officialSchedule, year))).text(),
           ),
         );
         const games = [
