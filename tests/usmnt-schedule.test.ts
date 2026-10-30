@@ -32,7 +32,12 @@ test("verified USMNT fall fixtures retain official dates and competition labels"
     games.every(
       (game) =>
         game.url === "https://www.ussoccer.com/schedule-tickets/usmnt" &&
-        game.sourceChecked === "2026-10-30T14:00:00Z",
+        game.sourceChecked === "2026-10-30T14:00:00Z" &&
+        game.sourceName === "Official U.S. Soccer schedule",
     ),
+  );
+  assert.deepEqual(
+    games.slice(0, 2).map((game) => game.competitionNote),
+    ["Quarterfinal · First leg", "Quarterfinal · Second leg"],
   );
 });
