@@ -3,6 +3,7 @@ import type { TeamServerHooks } from "../server-types";
 import { parseDGPT, parseDgptSchedule } from "../../feeds/dgpt";
 import { discEvents } from "../../games/event-seed";
 import { discProviders } from "./providers";
+import { dgptScheduleUrl } from "../../feeds/dgpt-schedule-url";
 
 export const discServer: TeamServerHooks = {
   team: "disc",
@@ -11,9 +12,19 @@ export const discServer: TeamServerHooks = {
       name: "DGPT official schedule",
       section: "schedules",
       run: async ({ get }) => {
-        const games = parseDgptSchedule(
-          await (await get(discProviders.urls.officialSchedule)).text(),
+        const currentYear = new Date().getFullYear();
+        const pages = await Promise.all(
+          [currentYear, currentYear + 1].map(async (year) =>
+            (await get(dgptScheduleUrl(discProviders.urls.officialSchedule, year))).text(),
+          ),
         );
+        const games = [
+          ...new Map(
+            pages
+              .flatMap((html) => parseDgptSchedule(html))
+              .map((game) => [game.id, game]),
+          ).values(),
+        ];
         if (!games.length) throw Error("No DGPT events parsed");
         return { games, count: games.length };
       },
