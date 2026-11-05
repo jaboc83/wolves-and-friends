@@ -1,7 +1,8 @@
 import type { Game } from "./feed-types";
 
 const cacheDuration = 30 * 1000;
-const dateWindow = 36 * 60 * 60 * 1000;
+const pastDateWindow = 7 * 24 * 60 * 60 * 1000;
+const futureDateWindow = 36 * 60 * 60 * 1000;
 const feedBase =
   "https://feeds.incrowdsports.com/provider/euroleague-feeds/v2/competitions/E/seasons/";
 
@@ -63,8 +64,8 @@ export function parseEuroLeagueGames(payload: unknown, checked: string): Game[] 
       !away ||
       ![home.code, home.tla, away.code, away.tla].includes("ZAL") ||
       !Number.isFinite(timestamp) ||
-      timestamp < now - dateWindow ||
-      timestamp > now + dateWindow
+      timestamp < now - pastDateWindow ||
+      timestamp > now + futureDateWindow
     )
       return [];
 
@@ -159,3 +160,4 @@ export function fetchEuroLeagueGames(): Promise<FeedResult> {
   });
   return pending;
 }
+
