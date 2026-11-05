@@ -285,7 +285,7 @@ export async function fetchTeamInfo() {
       },
       cache: "no-store",
     });
-    if (!r.ok) throw Error();
+    if (!r.ok) throw Error("HTTP " + r.status);
     return (await r.json()) as ProviderResponse;
   };
   const getText = async (url: string) => {
@@ -436,14 +436,20 @@ export async function fetchTeamInfo() {
                   t.league!,
                   t.id,
                   checked,
+                  "no ranked teams returned",
                 );
               }
               if (!info.powerRanking) info.unavailable.push("power rankings");
-            } catch {
+            } catch (error) {
               info.powerRanking = powerRankingFallback(
                 t.league!,
                 t.id,
                 checked,
+                error instanceof Error
+                  ? /^HTTP \d+$/.test(error.message)
+                    ? error.message
+                    : error.name
+                  : undefined,
               );
               if (!info.powerRanking) info.unavailable.push("power rankings");
             }

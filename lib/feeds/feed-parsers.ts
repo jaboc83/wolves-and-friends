@@ -112,7 +112,7 @@ export function parseNbaTeamNews(
     // Current NBA pages embed article records as title/permalink/date JSON.
     /"title"\s*:\s*"([^"]+)"[\s\S]{0,1800}?"permalink"\s*:\s*"(https?:\\?\/\\?\/www\.nba\.com\\?\/timberwolves\\?\/news\\?\/[^"\\]+)"[\s\S]{0,500}?"date"\s*:\s*"([^"]+)"/gi,
     /"url"\s*:\s*"(\/timberwolves\/news\/[^"]+)"[\s\S]{0,1200}?"(?:title|headline)"\s*:\s*"([^"]+)"/gi,
-    /href=["'](\/timberwolves\/news\/[^"'#?]+)["'][^>]*>[\s\S]{0,300}?(?:<h[1-6][^>]*>)?([^<]{12,180})</gi,
+    /href=["'](\/timberwolves\/news\/[^"'#?]+)["'][^>]*>[\s\S]{0,300}?(?:<h[1-6][^>]*>)?([^<>]{12,180})</gi,
   ];
   for (const pattern of patterns) {
     for (const match of html.matchAll(pattern)) {
@@ -121,7 +121,7 @@ export function parseNbaTeamNews(
         ? decode(match[2])
         : "https://www.nba.com" + decode(match[1]);
       const title = text(decode(currentFormat ? match[1] : match[2]));
-      if (!title || seen.has(url)) continue;
+      if (!title || /^presented by$/i.test(title) || seen.has(url)) continue;
       seen.add(url);
       const context = html.slice(
         Math.max(0, (match.index || 0) - 800),

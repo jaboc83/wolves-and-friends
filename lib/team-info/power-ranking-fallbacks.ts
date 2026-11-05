@@ -3,36 +3,36 @@ import { powerRankingTeamNames } from "./power-rankings.ts";
 import type { ProviderResponse } from "./provider-types";
 import type { PowerRanking } from "./types";
 const nbaBpiFallbackRows = [
-  ["25", "1st", "8.726"],
-  ["24", "2nd", "7.762"],
-  ["2", "3rd", "5.296"],
-  ["18", "4th", "4.624"],
-  ["20", "5th", "4.478"],
-  ["10", "6th", "4.285"],
-  ["16", "7th", "4.281"],
-  ["8", "8th", "3.372"],
-  ["22", "9th", "3.289"],
-  ["13", "10th", "3.246"],
-  ["5", "11th", "2.973"],
-  ["1", "12th", "2.921"],
-  ["7", "13th", "1.807"],
-  ["19", "14th", "0.681"],
-  ["11", "15th", "0.292"],
-  ["14", "16th", "-0.072"],
-  ["6", "17th", "-1.548"],
-  ["21", "18th", "-1.978"],
-  ["9", "19th", "-2.109"],
-  ["30", "20th", "-2.206"],
-  ["28", "21st", "-2.281"],
-  ["29", "22nd", "-2.429"],
-  ["27", "23rd", "-2.841"],
-  ["26", "24th", "-3.489"],
-  ["3", "25th", "-4.740"],
-  ["12", "26th", "-4.931"],
-  ["15", "27th", "-5.790"],
-  ["4", "28th", "-6.583"],
-  ["17", "29th", "-6.687"],
-  ["23", "30th", "-10.351"],
+  ["24", "1st", "7.889"],
+  ["8", "2nd", "6.974"],
+  ["25", "3rd", "6.303"],
+  ["10", "4th", "5.856"],
+  ["18", "5th", "5.111"],
+  ["2", "6th", "5.045"],
+  ["16", "7th", "4.726"],
+  ["20", "8th", "4.708"],
+  ["13", "9th", "3.655"],
+  ["22", "10th", "3.292"],
+  ["5", "11th", "3.160"],
+  ["7", "12th", "2.869"],
+  ["1", "13th", "1.955"],
+  ["14", "14th", "0.233"],
+  ["9", "15th", "-0.265"],
+  ["6", "16th", "-0.720"],
+  ["19", "17th", "-0.810"],
+  ["29", "18th", "-1.141"],
+  ["28", "19th", "-2.179"],
+  ["21", "20th", "-2.702"],
+  ["30", "21st", "-2.857"],
+  ["27", "22nd", "-3.131"],
+  ["3", "23rd", "-3.518"],
+  ["11", "24th", "-3.521"],
+  ["26", "25th", "-4.488"],
+  ["12", "26th", "-5.198"],
+  ["17", "27th", "-6.145"],
+  ["15", "28th", "-7.327"],
+  ["4", "29th", "-7.511"],
+  ["23", "30th", "-10.265"],
 ].map(([id, rank, bpi]) => ({
   id,
   name: powerRankingTeamNames["basketball/nba"][id],
@@ -322,6 +322,7 @@ export const powerRankingFallback = (
   league: string,
   teamId: string,
   checked: string,
+  reason?: string,
 ): PowerRanking | undefined => {
   const snapshots: Record<string, PowerRanking> = {
     "basketball/nba:wolves": {
@@ -331,7 +332,7 @@ export const powerRankingFallback = (
       source: "ESPN BPI cached snapshot",
       url: "https://www.espn.com/nba/bpi",
       checked,
-      publishedAt: "2026-10-28T07:41:00Z",
+      publishedAt: "2026-11-05T08:46:00Z",
       note: "Cached full ESPN BPI snapshot; live ranking feed unavailable.",
     },
     "football/nfl:vikings": {
@@ -385,7 +386,10 @@ export const powerRankingFallback = (
       note: "Cached CBS Sports snapshot; live ranking feed unavailable.",
     },
   };
-  return snapshots[`${league}:${teamId}`];
+  const snapshot = snapshots[`${league}:${teamId}`];
+  if (snapshot?.note && reason)
+    snapshot.note = snapshot.note.replace(/\.$/, ` (${reason}).`);
+  return snapshot;
 };
 
 const analystPremierLeaguePowerRankingsUrl =

@@ -157,13 +157,13 @@ test("cached fallback snapshots retain their published values", () => {
   const ranking = powerRankingFallback("basketball/nba", "wolves", checked);
 
   assert.equal(ranking?.name, "ESPN Power Rankings");
-  assert.equal(ranking?.publishedAt, "2026-10-28T07:41:00Z");
+  assert.equal(ranking?.publishedAt, "2026-11-05T08:46:00Z");
   assert.equal(
     ranking?.rows.find((row) => row.id === "16")?.name,
     "Minnesota Timberwolves",
   );
   assert.deepEqual(ranking?.rows.find((row) => row.id === "16")?.cells, [
     "7th",
-    "4.281",
+    "4.726",
   ]);
 });
