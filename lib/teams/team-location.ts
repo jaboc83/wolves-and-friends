@@ -96,6 +96,7 @@ const clubs: [string, string, string][] = [
   ["nottingham forest", "Nottingham", "England"],
   ["leeds|leeds united", "Leeds", "England"],
   ["bournemouth|afc bournemouth", "Bournemouth", "England"],
+  ["hoffenheim|tsg hoffenheim|tsg 1899 hoffenheim", "Sinsheim", "Germany"],
   ["lyon|olympique lyonnais", "Lyon", "France"],
   ["beşiktaş|besiktas|beşiktaş jk|besiktas jk", "Istanbul", "Turkey"],
 ];
@@ -169,6 +170,7 @@ const compactLocations: Record<string, string> = {
   sacramento: "SAC",
   "san antonio": "SA",
   "san jose": "SJS",
+  sinsheim: "SIN",
   seattle: "SEA",
   "st. louis": "STL",
   "tampa bay": "TB",
