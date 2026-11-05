@@ -160,4 +160,3 @@ export function fetchEuroLeagueGames(): Promise<FeedResult> {
   });
   return pending;
 }
-
