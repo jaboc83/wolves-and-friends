@@ -1,0 +1,72 @@
+/* Wide layout styles */
+
+/* Use ultrawide space for tools, headlines, and the existing score rail. */
+@media (min-width: 1600px) {
+  .shell,
+  .mast-inner {
+    max-width: 2200px;
+  }
+  .columns {
+    grid-template-columns:
+      minmax(340px, min(24vw, 500px)) minmax(600px, 1fr)
+      minmax(330px, 390px);
+    column-gap: 28px;
+  }
+  .columns > .today-group {
+    grid-column: 3;
+    grid-row: 1;
+  }
+  .columns > .news {
+    grid-column: 1 / span 2;
+    grid-row: 1 / span 2;
+    min-width: 0;
+  }
+  .columns > .scores {
+    grid-column: 3;
+    grid-row: 2;
+  }
+  .news {
+    display: grid;
+    grid-template-columns: minmax(380px, min(26vw, 560px)) minmax(0, 1fr);
+    column-gap: 28px;
+    align-items: start;
+  }
+  .headlines-content {
+    display: contents;
+  }
+  .ultrawide-left-column {
+    grid-column: 1;
+    grid-row: 1;
+    min-width: 0;
+  }
+  .headline-column {
+    grid-column: 2;
+    grid-row: 1;
+    min-width: 0;
+  }
+}
+@media (min-width: 801px) and (max-width: 1599px) {
+  .news {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr);
+    align-items: start;
+  }
+  .headlines-content,
+  .ultrawide-left-column,
+  .headline-column {
+    display: contents;
+  }
+  #latest-messages {
+    order: 0;
+  }
+  .headline-column > * {
+    order: 1;
+  }
+  .team-details {
+    order: 2;
+  }
+  .news-resources {
+    order: 3;
+  }
+}
+

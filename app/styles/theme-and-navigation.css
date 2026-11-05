@@ -1,0 +1,293 @@
+/* Theme and navigation styles */
+
+/* A manual, browser-local choice. All team accents and result caps stay recognizable. */
+.hub[data-mode="dark"] {
+  color-scheme: dark;
+  --ink: #edf2f7;
+  --muted: #b3c0cc;
+  --line: #43505c;
+  --surface: color-mix(in srgb, var(--team-primary, #10283a) 22%, #1b2028);
+  --raised: color-mix(in srgb, var(--team-primary, #10283a) 32%, #252c35);
+  --team-soft: #25313a;
+  --ink-team: color-mix(in srgb, var(--team-accent, #9ab568) 45%, #ffffff);
+  background: color-mix(in srgb, var(--team-primary, #10283a) 20%, #101419);
+  color: var(--ink);
+}
+.hub[data-team="march-madness"][data-mode="dark"] {
+  --team-primary: #5a3742;
+  --team-accent: #d9b866;
+  --surface: #302a2d;
+  --raised: #3a3336;
+  --team-soft: #342b2f;
+  --line: #594d52;
+  --muted: #c8b9bf;
+  background: #211c1f;
+}
+.hub[data-team="march-madness"][data-mode="dark"]
+  .march-game
+  .bracket-team-logo {
+  padding: 2px;
+  background: #f2eee5;
+  border-radius: 4px;
+}
+.hub[data-mode="dark"] .mast {
+  background: color-mix(in srgb, var(--team-primary, #10283a) 65%, #080d14);
+}
+.hub[data-mode="dark"]
+  :is(.tabs button.on, .latest-heading, .today-heading h2) {
+  color: var(--ink);
+}
+.hub[data-mode="dark"] :is(.today-group, .today-group.has-games) {
+  --today-ink: var(--ink-team);
+  background: var(--team-soft);
+  border-color: var(--line);
+  border-top-color: var(--ink-team);
+}
+.hub[data-mode="dark"] .today-group.has-games .game {
+  background: var(--surface);
+  border-color: var(--line);
+}
+.hub[data-mode="dark"]
+  :is(.story-today h3 a, .reveal-past, .qualification-line td) {
+  color: var(--ink);
+}
+.hub[data-mode="dark"] .qualification-line td {
+  background: var(--raised);
+}
+.hub[data-mode="dark"] :is(.insights-team select, .search input) {
+  color: var(--ink);
+}
+.hub[data-mode="dark"] :is(a, button, input, summary):focus-visible {
+  outline-color: #8cd2f4;
+}
+.mast-controls {
+  display: flex;
+  align-items: center;
+  gap: 20px;
+  flex-shrink: 0;
+}
+.mast-switch-control {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  color: #ffffff;
+  font-size: 12px;
+  min-height: 40px;
+  white-space: nowrap;
+  cursor: pointer;
+}
+.mast-switch[data-slot="switch"] {
+  width: 36px;
+  height: 22px;
+  padding: 2px;
+  background: #ffffff33;
+  border: 1px solid #ffffff99;
+}
+.mast-switch[data-state="checked"] {
+  background: #b7d88a;
+  border-color: #b7d88a;
+}
+.mast-switch [data-slot="switch-thumb"] {
+  width: 16px;
+  height: 16px;
+  background: #ffffff;
+  transform: none;
+  translate: 0;
+}
+.mast-switch [data-state="checked"] {
+  translate: 14px;
+  background: #183527;
+}
+.mast-inner {
+  gap: 20px;
+  flex-wrap: wrap;
+}
+@media (max-width: 680px) {
+  .mast-inner {
+    flex-wrap: nowrap;
+    align-items: flex-start;
+    gap: 12px;
+  }
+  .brand {
+    min-width: 0;
+    font-size: clamp(18px, 5vw, 24px);
+  }
+  .brand > div {
+    min-width: 0;
+  }
+  .mast-controls {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 0;
+  }
+  .mast-switch-control {
+    justify-content: space-between;
+    min-height: 32px;
+    font-size: 11px;
+  }
+}
+/* Let the mobile reading order place team reference panels after results. */
+@media (max-width: 800px) {
+  .columns > .news {
+    display: contents;
+  }
+  .headlines-content {
+    display: contents;
+  }
+  .ultrawide-left-column,
+  .headline-column {
+    display: contents;
+  }
+  #latest-messages,
+  .headline-column > * {
+    order: 0;
+  }
+  .team-details {
+    order: 2;
+  }
+  .news-resources {
+    order: 3;
+  }
+  .headlines-content,
+  .ultrawide-left-column,
+  .headline-column,
+  .team-details,
+  .news-resources {
+    width: 100%;
+    min-width: 0;
+  }
+}
+
+/* Keep Wolves dark surfaces on the Icon header's royal-blue hue. */
+.hub[data-team="wolves"][data-mode="dark"] {
+  background: #0c1b37;
+  --surface: #142b55;
+  --raised: #1a386f;
+  --line: #405b8f;
+  --muted: #bacbe6;
+}
+.hub[data-team="wolves"][data-mode="dark"] .mast {
+  background: var(--team-primary);
+}
+.hub[data-team="wolves"][data-mode="dark"] .shell {
+  --team-soft: #1a386f;
+}
+
+/* Desktop logo tabs. The active tab has no divider beneath it. */
+.team-tab-logo {
+  display: none;
+}
+@media (min-width: 681px) {
+  .hub[data-team] .team-nav {
+    display: grid;
+    grid-template-columns: repeat(13, minmax(0, 1fr));
+    gap: 0;
+    padding: 24px 0 0;
+    border: 0;
+    overflow: visible;
+  }
+  .hub[data-team] .team-nav button {
+    flex-direction: column;
+    gap: 9px;
+    height: 102px;
+    min-width: 0;
+    padding: 15px 2px 13px;
+    border: 0;
+    border-top: 3px solid transparent;
+    border-right: 1px solid var(--line, #d3d9d4);
+    border-bottom: 1px solid var(--line, #d3d9d4);
+    border-radius: 0;
+    background: var(--surface, #fffefb);
+    color: var(--muted, #536170);
+    font-size: 11px;
+  }
+  .hub[data-team] .team-nav button:first-child {
+    border-left: 1px solid var(--line, #d3d9d4);
+  }
+  .hub[data-team] .team-nav button .dot {
+    display: none;
+  }
+  .hub[data-team] .team-nav .team-tab-logo {
+    display: block;
+    width: 40px;
+    height: 40px;
+    object-fit: contain;
+    filter: grayscale(1);
+    opacity: 0.58;
+  }
+  .hub[data-team] .team-nav button:hover {
+    background: var(--raised, #eef1f6);
+  }
+  .hub[data-team] .team-nav button.selected {
+    background: transparent;
+    border-top-color: var(--team-primary, #10283a);
+    border-bottom-color: transparent;
+    color: var(--ink, #192a3c);
+    font-weight: 700;
+  }
+  .hub[data-mode="dark"] .team-nav button.selected {
+    border-top-color: var(--ink-team, #8cd2f4);
+  }
+  .hub[data-team] .team-nav button:is(:hover, .selected) .team-tab-logo {
+    filter: none;
+    opacity: 1;
+  }
+  .hub[data-team] .team-nav button[data-tab-team="twins"] .team-tab-logo {
+    opacity: 0.9;
+    filter: grayscale(1) drop-shadow(1px 0 0 #e9f1ff)
+      drop-shadow(-1px 0 0 #e9f1ff) drop-shadow(0 1px 0 #e9f1ff)
+      drop-shadow(0 -1px 0 #e9f1ff);
+  }
+  .hub[data-team]
+    .team-nav
+    button[data-tab-team="twins"]:is(:hover, .selected)
+    .team-tab-logo {
+    opacity: 1;
+    filter: drop-shadow(1px 0 0 #e9f1ff) drop-shadow(-1px 0 0 #e9f1ff)
+      drop-shadow(0 1px 0 #e9f1ff) drop-shadow(0 -1px 0 #e9f1ff);
+  }
+  .hub[data-team] .team-nav button .team-today {
+    top: -12px;
+    right: 2px;
+  }
+  .hub[data-team] .team-nav button:focus-visible {
+    z-index: 1;
+    outline-offset: -4px;
+  }
+}
+@media (min-width: 681px) and (max-width: 900px) {
+  .hub[data-team] .team-nav .team-tab-logo {
+    width: 32px;
+    height: 32px;
+  }
+  .hub[data-team] .team-nav button {
+    height: 94px;
+    font-size: 10px;
+  }
+}
+
+.headline-loading {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  min-height: 160px;
+}
+.headline-spinner {
+  width: 24px;
+  height: 24px;
+  border: 3px solid var(--line, #d3d9d4);
+  border-top-color: var(--ink-team, #21468b);
+  border-radius: 50%;
+  animation: headline-spin 0.8s linear infinite;
+}
+@keyframes headline-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .headline-spinner {
+    animation: none;
+  }
+}

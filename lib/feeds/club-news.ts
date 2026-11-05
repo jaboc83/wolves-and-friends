@@ -1,6 +1,7 @@
 // Parses official Žalgiris/Frost news pages into the shared story shape.
 import type { Story } from "./feed-types";
-import initial from "../../data/snapshots/initial.json";
+import { zalgirisProviders } from "../teams/zalgiris/providers";
+import { frostProviders } from "../teams/frost/providers";
 type JsonObject = Record<string, unknown>;
 function object(value: unknown): JsonObject {
   return value && typeof value === "object" ? (value as JsonObject) : {};
@@ -56,7 +57,7 @@ export function parseZalgirisNews(html: string, checked: string): Story[] {
             : unit === "sav"
               ? 7 * 86400000
               : 86400000);
-    const url = "https://zalgiris.lt/naujienos/" + slug;
+    const url = zalgirisProviders.urls.officialNews + slug;
     return [
       {
         id: url,
@@ -83,13 +84,14 @@ export function parseFrostNews(html: string): Story[] {
     const path = typeof x.url === "string" ? x.url.replace(/\\\//g, "/") : "";
     const title = typeof x.title === "string" ? x.title : "";
     const date = typeof x.date === "string" ? x.date : "";
+    const newsPath = new URL(frostProviders.urls.officialNews).pathname + "/";
     if (
       x.type === "article" &&
-      path.startsWith("/en/teams/minnesota-frost/news/") &&
+      path.startsWith(newsPath) &&
       title &&
       Number.isFinite(Date.parse(date))
     ) {
-      const url = "https://www.thepwhl.com" + path;
+      const url = new URL(path, frostProviders.urls.officialNews).href;
       found.set(url, {
         id: url,
         url,
@@ -103,11 +105,7 @@ export function parseFrostNews(html: string): Story[] {
   });
   return [...found.values()];
 }
-const translations = new Map<string, string>(
-  (initial.stories as Story[])
-    .filter((s) => s.originalTitle && s.title !== s.originalTitle)
-    .map((s) => [s.originalTitle!, s.title]),
-);
+const translations = new Map<string, string>();
 export async function translateHeadlines(stories: Story[]) {
   await Promise.all(
     stories.map(async (s) => {

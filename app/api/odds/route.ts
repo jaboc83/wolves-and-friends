@@ -1,3 +1,4 @@
+// API route for fetching odds data. Returns the latest odds or an error if unavailable.
 import { oddsData } from "../../../lib/feeds";
 export async function GET() {
   try {

@@ -1,54 +1,22 @@
+// API route for fetching roster stats. Returns the latest player stats for each team or an error if unavailable.
 import { teams } from "../../../lib/teams/teams";
 import {
   parsePlayerStats,
   type PlayerStats,
 } from "../../../lib/team-info/player-stats";
+import {
+  isRosterResponse,
+  rosterEntries,
+  type RosterEntry as Entry,
+  type RosterResponse,
+} from "../../../lib/team-info/roster-response";
 const batchSize = 3,
   ttl = 15 * 60000,
-  statsDeadlineMs = 60000,
-  statsRequestTimeoutMs = 60000;
-type RosterPerson = {
-  id?: string | number;
-  items?: RosterPerson[];
-  position?: {
-    displayName?: string;
-    abbreviation?: string;
-  };
-};
-type RosterResponse = {
-  athletes?: RosterPerson[];
-  team?: { id?: string | number };
-  season?: { year?: number | string };
-};
-function isRecord(value: unknown): value is Record<string, unknown> {
-  return typeof value === "object" && value !== null;
-}
-function isRosterPerson(value: unknown): value is RosterPerson {
-  if (!isRecord(value)) return false;
-  const person = value;
-  const position = person.position;
-  return (
-    (person.id === undefined ||
-      typeof person.id === "string" ||
-      typeof person.id === "number") &&
-    (person.items === undefined ||
-      (Array.isArray(person.items) && person.items.every(isRosterPerson))) &&
-    (position === undefined ||
-      (isRecord(position) &&
-        ["displayName", "abbreviation"].every((key) => {
-          const field = position[key];
-          return field === undefined || typeof field === "string";
-        })))
-  );
-}
-type Entry = {
-  key: string;
-  league: string;
-  id: string;
-  teamId: string;
-  year: number;
-  position: string;
-};
+  statsDeadlineMs = 15000,
+  statsRequestTimeoutMs = 10000;
+// Responses are identical for every visitor, so shared caching is safe.
+const manifestCache = "public, max-age=30, s-maxage=60";
+const batchCache = "public, max-age=60, s-maxage=300";
 
 function seasonIsInProgress(league: string, now = new Date()) {
   const month = now.getUTCMonth() + 1;
@@ -64,6 +32,7 @@ function seasonIsInProgress(league: string, now = new Date()) {
 let manifest: Entry[] = [],
   expires = 0;
 let manifestVersion = "";
+let manifestComplete = false;
 let manifestRequest: Promise<void> | null = null;
 const cache = new Map<string, { expires: number; stats?: PlayerStats }>();
 const inflight = new Map<string, Promise<PlayerStats | undefined>>();
@@ -80,29 +49,11 @@ const get = async <T>(url: string, timeout = 8000): Promise<T> => {
   if (!r.ok) throw Error("Stats unavailable");
   return (await r.json()) as T;
 };
-function isRosterResponse(value: unknown): value is RosterResponse {
-  if (!isRecord(value)) return false;
-  const response = value;
-  return (
-    (response.athletes === undefined ||
-      (Array.isArray(response.athletes) &&
-        response.athletes.every(isRosterPerson))) &&
-    (response.team === undefined ||
-      (isRecord(response.team) &&
-        (response.team.id === undefined ||
-          typeof response.team.id === "string" ||
-          typeof response.team.id === "number"))) &&
-    (response.season === undefined ||
-      (isRecord(response.season) &&
-        (response.season.year === undefined ||
-          typeof response.season.year === "number" ||
-          typeof response.season.year === "string")))
-  );
-}
 async function loadManifest() {
   if (Date.now() < expires) return;
   if (!manifestRequest)
     manifestRequest = (async () => {
+      const failedTeams: string[] = [];
       const entries = await Promise.all(
         teams
           .filter((t) => t.league)
@@ -117,26 +68,9 @@ async function loadManifest() {
               );
               if (!isRosterResponse(response))
                 throw Error("Invalid roster response");
-              const data = response;
-              const players = (data.athletes || []).flatMap(
-                (person) => person.items || [person],
-              );
-              return players
-                .filter((person) => /^\d+$/.test(String(person.id)))
-                .map((person) => ({
-                  key: t.league + ":" + person.id,
-                  league: t.league,
-                  id: String(person.id),
-                  teamId: String(data.team?.id || t.espn),
-                  year:
-                    Number(data.season?.year) || new Date().getUTCFullYear(),
-                  position: String(
-                    person.position?.displayName ||
-                      person.position?.abbreviation ||
-                      "",
-                  ),
-                }));
+              return rosterEntries(response, t.league, t.espn);
             } catch {
+              failedTeams.push(t.id);
               return [];
             }
           }),
@@ -153,7 +87,11 @@ async function loadManifest() {
         ),
         (byte) => byte.toString(16).padStart(2, "0"),
       ).join("");
-      expires = Date.now() + ttl;
+      // A partial manifest must not hide teams for the full TTL.
+      if (failedTeams.length)
+        console.warn("Roster manifest missing teams:", failedTeams.join(","));
+      expires = Date.now() + (failedTeams.length ? 60000 : ttl);
+      manifestComplete = failedTeams.length === 0;
     })().finally(() => {
       manifestRequest = null;
     });
@@ -293,7 +231,11 @@ export async function GET(request: Request) {
           manifestKeys: manifest.map((entry) => entry.key),
           batchSize,
         },
-        { headers: { "Cache-Control": "no-store" } },
+        {
+          headers: {
+            "Cache-Control": manifestComplete ? manifestCache : "no-store",
+          },
+        },
       );
     }
     const players = await Promise.all(
@@ -310,7 +252,15 @@ export async function GET(request: Request) {
           ? { manifestKeys: manifest.map((entry) => entry.key) }
           : {}),
       },
-      { headers: { "Cache-Control": "no-store" } },
+      {
+        headers: {
+          // Missing stats are often transient; do not pin them at the edge.
+          "Cache-Control":
+            manifestComplete && players.every((player) => player.stats)
+              ? batchCache
+              : "no-store",
+        },
+      },
     );
   } catch {
     return Response.json(

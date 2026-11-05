@@ -1,3 +1,4 @@
+// Vite config for vinext: wires Sites hosting bindings, the connector preview, and dev server settings.
 import vinext from "vinext";
 import { defineConfig } from "vite";
 import hostingConfig from "./.openai/hosting.json";

@@ -1,18 +1,6 @@
 // Resolves known team/opponent names to relevant Wikipedia pages or scoped searches.
 import { teams, type TeamId } from "./teams";
 
-const pages: Record<string, string> = {
-  wolves: "Minnesota Timberwolves",
-  wild: "Minnesota Wild",
-  vikings: "Minnesota Vikings",
-  twins: "Minnesota Twins",
-  loons: "Minnesota United FC",
-  palace: "Crystal Palace F.C.",
-  lynx: "Minnesota Lynx",
-  zalgiris: "BC Žalgiris",
-  frost: "Minnesota Frost",
-  usmnt: "United States men's national soccer team",
-};
 const aliases: Record<string, string> = {
   "anadolu efes": "Anadolu Efes S.K.",
   "anadolu efes istanbul": "Anadolu Efes S.K.",
@@ -43,7 +31,7 @@ const palaceOpponents: Record<string, string> = {
   "coventry|coventry city": "Coventry City F.C.",
   "hull|hull city": "Hull City A.F.C.",
 };
-function palaceOpponentPage(name: string): string | undefined {
+export function palaceOpponentPage(name: string): string | undefined {
   const normalized = key(name);
   return Object.entries(palaceOpponents).find(([aliases]) =>
     aliases.split("|").some((alias) => {
@@ -167,12 +155,13 @@ export function teamWikipediaUrl(
   ownTeam = false,
 ) {
   const team = teams.find((t) => t.id === teamId);
+  const ownPage = team?.wikipediaPage || undefined;
   const page = ownTeam
-    ? pages[teamId]
+    ? ownPage
     : franchisePage(teamId, name || "") ||
       (teamId === "palace" ? palaceOpponentPage(name || "") : undefined) ||
       aliases[key(name || "")] ||
-      (name === team?.name || name === team?.short ? pages[teamId] : undefined);
+      (name === team?.name || name === team?.short ? ownPage : undefined);
   if (page)
     return (
       "https://en.wikipedia.org/wiki/" +
@@ -181,16 +170,14 @@ export function teamWikipediaUrl(
   if (!name) return undefined;
   // Short provider names can be ambiguous (e.g. Colorado). Search in sport
   // context rather than sending readers to an unrelated city or animal page.
-  const sport =
-    team?.sport === "NHL" || team?.id === "frost"
-      ? "ice hockey"
-      : ["NBA", "WNBA"].includes(team?.sport || "") || teamId === "zalgiris"
-        ? "basketball"
-        : team?.sport === "NFL"
-          ? "American football"
-          : team?.sport === "MLB"
-            ? "baseball"
-            : "soccer";
+  const sport = {
+    basketball: "basketball",
+    hockey: "ice hockey",
+    football: "American football",
+    baseball: "baseball",
+    soccer: "soccer",
+    disc: "disc golf",
+  }[team?.sportKind || "soccer"];
   return (
     "https://en.wikipedia.org/w/index.php?search=" +
     encodeURIComponent(name + " " + sport + " team")

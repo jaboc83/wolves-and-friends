@@ -43,7 +43,7 @@
         },
         "background": {
           "activeOnStart": true,
-          "beginsPattern": ".*",
+          "beginsPattern": "^\\s*vinext dev",
           "endsPattern": "Local:.*http://127\\.0\\.0\\.1:5173"
         }
       },

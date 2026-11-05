@@ -1,7 +1,7 @@
+// API route for fetching team information. Returns the latest team info or an error if unavailable.
 import { fetchTeamInfo, type TeamInfo } from "../../../lib/team-info";
 import { mergeTeamInfo } from "../../../lib/team-info/team-info-cache";
-import seed from "../../../data/snapshots/team-info-initial.json";
-let cached: TeamInfo[] = seed as TeamInfo[],
+let cached: TeamInfo[] = [],
   checked = 0;
 let inflight: Promise<TeamInfo[]> | null = null;
 export async function GET() {

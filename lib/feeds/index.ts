@@ -4,9 +4,7 @@ import {
   safe,
   match,
   FeedError,
-  parseNbaTeamNews,
   parseFeed,
-  parsePalaceRadar,
   parseGames,
   mergeLiveScoreboard,
 } from "./feed-parsers";
@@ -19,53 +17,52 @@ export {
 } from "./feed-parsers";
 import { runProviderTasks, type ProviderTask } from "./provider-tasks";
 import { fetchScoreboard } from "./scoreboard";
-import { discEvents } from "../games/event-seed";
-import { parseDgptSchedule } from "./dgpt";
-import { eventLifecycle } from "../games/event-time";
+import { eventIsToday, eventLifecycle } from "../games/event-time";
 import { verifyAuthorFeed } from "./bylines";
-import { parseFrostNews } from "./club-news";
 import { authorStories } from "./author-stories";
-import {
-  parsePalace,
-  parseLoonsCalendar,
-  mergeOfficial,
-  mergeFallbackGames,
-} from "./official-schedules";
+import { mergeOfficial, mergeFallbackGames } from "./official-schedules";
 import { teams } from "../teams/teams";
+import { teamProviders } from "../teams/providers";
+import { serverHooksFor, teamServerHooks } from "../teams/server";
+import type { TeamFeedTask } from "../teams/server-types";
 import type { TeamId } from "../teams/teams";
-import {
-  palaceCompetitions,
-  scoreboardLeagues,
-  teamPlaysCompetition,
-} from "../teams/competitions";
-import { parseZalgiris } from "./zalgiris";
-import { parsePwhlSchedule } from "./special-team-data";
+import { scoreboardLeagues, teamPlaysCompetition } from "../teams/competitions";
 import { enrichOdds } from "./odds";
-import initial from "../../data/snapshots/initial.json";
 import type { Story, Game, Health, AuthorFeed, HubData } from "./feed-types";
+import {
+  normalizeESPNInjuries,
+  normalizePremierLeagueInjuries,
+  parseMLSAvailabilityReport,
+  type ESPNInjuryGroup,
+  type PremierLeagueInjuryPlaylist,
+  type PremierLeagueInjuryPromo,
+} from "./injuries";
+import { normalizeLeagueHeadlines } from "./league-news-data";
 export type { Story, Game, Health, AuthorFeed, HubData } from "./feed-types";
+
+export async function leagueHeadlines(league: string): Promise<Story[]> {
+  if (!teams.some((team) => team.league === league))
+    throw new FeedError("invalid-league");
+  const response = await providerGet(
+    "https://site.api.espn.com/apis/site/v2/sports/" + league + "/news?limit=20",
+  );
+  const json = (await response.json()) as ESPNResponse;
+  return normalizeLeagueHeadlines(json.articles || []);
+}
+
+const emptyHub: HubData = {
+  checked: "",
+  stories: [],
+  games: [],
+  health: [],
+  authors: [],
+};
 type ESPNCompetitor = {
   team?: { id?: string; abbreviation?: string };
 };
 type ESPNEvent = {
   id: string;
   competitions?: { competitors?: ESPNCompetitor[] }[];
-};
-type ESPNInjury = {
-  athlete?: {
-    displayName?: string;
-    fullName?: string;
-    team?: { displayName?: string; name?: string };
-  };
-  status?: string;
-  type?: string;
-  details?: { detail?: string; type?: string };
-  longComment?: string;
-  team?: { displayName?: string; name?: string };
-};
-type ESPNInjuryGroup = ESPNInjury & {
-  injuries?: ESPNInjury[];
-  displayName?: string;
 };
 type ESPNResponse = {
   articles?: {
@@ -78,9 +75,23 @@ type ESPNResponse = {
   events?: ESPNEvent[];
   injuries?: ESPNInjuryGroup[];
   season?: { year?: number | string };
+  team?: { displayName?: string; name?: string };
 };
 const sectionCache: Partial<Record<string, HubData>> = {};
 const sectionInflight: Partial<Record<string, Promise<HubData>>> = {};
+const injurySources = teamProviders.flatMap((p) => {
+  const league = teams.find((t) => t.id === p.team)?.league;
+  return p.espnTeamId && league
+    ? [
+        {
+          team: p.team,
+          sport: league,
+          espnId: p.espnTeamId,
+          availabilityUrl: p.urls?.injuryAvailabilityReport,
+        },
+      ]
+    : [];
+});
 function safeFeedError(error: unknown) {
   if (error instanceof FeedError) return error.code;
   if (error instanceof DOMException && error.name === "TimeoutError")
@@ -133,6 +144,190 @@ async function providerGet(url: string, signal?: AbortSignal) {
       : new FeedError(safeFeedError(error));
   }
 }
+async function fetchESPNInjuries(
+  sport: string,
+  espnId: string,
+  teamName: string,
+  signal: AbortSignal,
+  availabilityUrl?: string,
+): Promise<NonNullable<Game["injuries"]>> {
+  const injuryUrls = [
+    "https://site.api.espn.com/apis/site/v2/sports/" +
+      sport +
+      "/injuries?region=us&lang=en&team=" +
+      espnId,
+    "https://site.web.api.espn.com/apis/site/v2/sports/" +
+      sport +
+      "/injuries?region=us&lang=en&team=" +
+      espnId,
+  ];
+  let response: Response | null = null;
+  let lastError: unknown;
+  for (const url of injuryUrls) {
+    try {
+      response = await providerGet(url, signal);
+      break;
+    } catch (error) {
+      lastError = error;
+    }
+  }
+  if (!response) {
+    if (availabilityUrl) {
+      return fetchOfficialAvailability(
+        sport,
+        availabilityUrl,
+        teamName,
+        signal,
+      );
+    }
+    throw lastError || new FeedError("request-failed");
+  }
+  const json = (await response.json()) as ESPNResponse;
+  if (!json.injuries?.length) {
+    if (availabilityUrl) {
+      return fetchOfficialAvailability(
+        sport,
+        availabilityUrl,
+        json.team?.displayName || json.team?.name || teamName,
+        signal,
+      );
+    }
+    throw new FeedError("empty-injuries");
+  }
+  return normalizeESPNInjuries(json.injuries, teamName);
+}
+
+type PremierLeaguePlaylistIndex = {
+  items?: { id: number; type?: string }[];
+};
+type PremierLeagueClubPlaylist = PremierLeagueInjuryPlaylist & {
+  title?: string;
+};
+
+let cachedPremierLeaguePlaylistIds: {
+  url: string;
+  checkedAt: number;
+  ids: Map<string, number>;
+} | null = null;
+
+function normalizedPremierLeagueClub(value: string) {
+  return value
+    .replace(/^Injury News\s*-\s*/i, "")
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, " ")
+    .trim();
+}
+
+function matchesPremierLeagueClub(candidate: string, target: string) {
+  return (
+    candidate === target ||
+    candidate.startsWith(target + " ") ||
+    candidate.endsWith(" " + target) ||
+    target.startsWith(candidate + " ")
+  );
+}
+
+async function premierLeaguePlaylistIds(url: string, signal: AbortSignal) {
+  if (
+    cachedPremierLeaguePlaylistIds?.url === url &&
+    Date.now() - cachedPremierLeaguePlaylistIds.checkedAt < 6 * 60 * 60 * 1000
+  ) {
+    return cachedPremierLeaguePlaylistIds.ids;
+  }
+  const response = await providerGet(url, signal);
+  const index = (await response.json()) as PremierLeaguePlaylistIndex;
+  const playlists = await runProviderTasks(
+    (index.items || [])
+      .filter((item) => item.type?.toLowerCase() === "playlist")
+      .map((item) => ({
+        name: "Premier League injury club playlist",
+        run: async (taskSignal) => {
+          const childResponse = await providerGet(
+            new URL(
+              `/content/premierleague/playlist/en/${item.id}`,
+              url,
+            ).href,
+            AbortSignal.any([signal, taskSignal]),
+          );
+          const child =
+            (await childResponse.json()) as PremierLeagueClubPlaylist;
+          return { id: item.id, title: child.title || "" };
+        },
+      })),
+    { concurrency: 5, timeoutMs: 12000 },
+  );
+  const ids = new Map<string, number>();
+  for (const playlist of playlists)
+    if (playlist.value?.title)
+      ids.set(playlist.value.title, playlist.value.id);
+  if (!ids.size) throw new FeedError("empty-injuries");
+  cachedPremierLeaguePlaylistIds = { url, checkedAt: Date.now(), ids };
+  return ids;
+}
+
+async function fetchPremierLeagueInjuries(
+  hubUrl: string,
+  teamName: string,
+  signal: AbortSignal,
+): Promise<NonNullable<Game["injuries"]>> {
+  const playlists = await premierLeaguePlaylistIds(hubUrl, signal);
+  const target = normalizedPremierLeagueClub(teamName);
+  const playlistId = [...playlists].find(([name]) =>
+    matchesPremierLeagueClub(normalizedPremierLeagueClub(name), target),
+  )?.[1];
+  if (!playlistId) throw new FeedError("empty-injuries");
+
+  const playlistResponse = await providerGet(
+    new URL(`/content/premierleague/playlist/en/${playlistId}`, hubUrl).href,
+    signal,
+  );
+  const playlist = (await playlistResponse.json()) as PremierLeagueClubPlaylist;
+  const promos = await runProviderTasks(
+    (playlist.items || [])
+      .filter(
+        (item) =>
+          item.type?.toLowerCase() === "promo" &&
+          item.id !== playlist.coverItem?.id,
+      )
+      .map((item) => ({
+        name: "Premier League injury player",
+        run: async (taskSignal) => {
+          const promoResponse = await providerGet(
+            new URL(
+              `/content/premierleague/PROMO/en/${item.id}`,
+              hubUrl,
+            ).href,
+            AbortSignal.any([signal, taskSignal]),
+          );
+          return (await promoResponse.json()) as PremierLeagueInjuryPromo;
+        },
+      })),
+    { concurrency: 5, timeoutMs: 12000 },
+  );
+  const injuries = normalizePremierLeagueInjuries(
+    playlist,
+    promos.flatMap((promo) => (promo.value ? [promo.value] : [])),
+    teamName,
+  );
+  if (playlist.items?.length && !injuries.length)
+    throw new FeedError("empty-injuries");
+  return injuries;
+}
+
+async function fetchOfficialAvailability(
+  sport: string,
+  url: string,
+  teamName: string,
+  signal: AbortSignal,
+): Promise<NonNullable<Game["injuries"]>> {
+  if (sport === "soccer/eng.1")
+    return fetchPremierLeagueInjuries(url, teamName, signal);
+  const response = await providerGet(url, signal);
+  return parseMLSAvailabilityReport(await response.text(), teamName);
+}
+
 export async function collect(
   section: "news" | "schedules" | "all" = "all",
   team?: TeamId,
@@ -158,6 +353,10 @@ export async function collect(
   };
   const tasks: ProviderTask<Output>[] = [];
   const taskTeams: TeamId[][] = [];
+  const opponentInjuriesByTeam: Record<
+    string,
+    NonNullable<Game["injuries"]>
+  > = {};
   async function task(
     name: string,
     ids: TeamId[],
@@ -180,144 +379,63 @@ export async function collect(
       },
     });
   }
-  if (section !== "schedules") {
-    await task(
-      "Official Timberwolves news",
-      ["wolves"],
-      async (output, signal) => {
-        const { stories } = output;
-        const get = (url: string) => providerGet(url, signal);
-        const parsed = parseNbaTeamNews(
-          await (await get("https://www.nba.com/timberwolves/news")).text(),
-        );
-        if (!parsed.length) throw new Error("No NBA team stories");
-        stories.push(...parsed);
-        return parsed.length;
-      },
-    );
-    await Promise.all(
-      newsSources.map(([name, url, ids]) =>
-        task(
-          name,
-          ids ||
-            (name === "Canis Hoopus"
-              ? ["wolves", "lynx"]
-              : name === "The Ice Garden"
-                ? ["frost"]
-                : ["zalgiris"]),
-          async (output, signal) => {
-            const { stories } = output;
-            const get = (url: string) => providerGet(url, signal);
-            const parsed = parseFeed(await (await get(url)).text(), name, ids);
-            stories.push(
-              ...(name.startsWith("EuroLeague")
-                ? parsed.filter((s) => /zalgiris|žalgiris/i.test(s.title))
-                : parsed),
-            );
-            return parsed.length;
-          },
-        ),
+  const teamTasks = (section: TeamFeedTask["section"]) =>
+    Promise.all(
+      teamServerHooks.flatMap((hooks) =>
+        (hooks.feedTasks || [])
+          .filter((t) => t.section === section)
+          .map((t) =>
+            task(t.name, [hooks.team], async (output, signal) => {
+              const result = await t.run({
+                checked,
+                get: (url) => providerGet(url, signal),
+                baseline: cached || emptyHub,
+              });
+              output.stories.push(...(result.stories || []));
+              output.games.push(...(result.games || []));
+              return result.count;
+            }),
+          ),
       ),
     );
-    await Promise.all([
-      task("Palace Radar", ["palace"], async (output, signal) => {
-        const { stories } = output;
-        const get = (url: string) => providerGet(url, signal);
-        const parsed = parsePalaceRadar(
-          await (await get("https://www.palaceradar.co.uk/")).text(),
-          checked,
-        );
-        if (!parsed.length) throw Error("No Palace Radar stories");
-        stories.push(...parsed);
-        return parsed.length;
-      }),
-      task("Official Minnesota Frost", ["frost"], async (output, signal) => {
-        const { stories } = output;
-        const get = (url: string) => providerGet(url, signal);
-        const parsed = parseFrostNews(
-          await (
-            await get("https://www.thepwhl.com/en/teams/minnesota-frost/news")
-          ).text(),
-        );
-        if (!parsed.length) throw Error("No club news");
-        stories.push(...parsed);
-        return parsed.length;
-      }),
-    ]);
+  if (section !== "schedules") {
+    await Promise.all(
+      newsSources.map(({ name, url, teams: ids, tagByContent }) =>
+        task(name, ids, async (output, signal) => {
+          const { stories } = output;
+          const get = (url: string) => providerGet(url, signal);
+          const parsed = parseFeed(
+            await (await get(url)).text(),
+            name,
+            tagByContent ? undefined : ids,
+          );
+          stories.push(
+            ...(name.startsWith("EuroLeague")
+              ? parsed.filter((s) => /zalgiris|žalgiris/i.test(s.title))
+              : parsed),
+          );
+          return parsed.length;
+        }),
+      ),
+    );
+    await teamTasks("news");
     await Promise.all(
       authorSources
-        .filter(
-          (source) =>
-            !team ||
-            (source.name === "Jess Myers" || source.name === "Michael Russo"
-              ? team === "wild"
-              : ["Alec Lewis", "Will Ragatz", "Ben Goessling"].includes(
-                    source.name,
-                  )
-                ? team === "vikings"
-                : team === "wolves"),
-        )
-        .map((source) =>
+        .filter((source) => !team || source.team === team)
+        .map(({ titleFilters, ...source }) =>
           task(
             "Author news · " + source.name,
-            [
-              source.name === "Jess Myers" || source.name === "Michael Russo"
-                ? "wild"
-                : ["Alec Lewis", "Will Ragatz", "Ben Goessling"].includes(
-                      source.name,
-                    )
-                  ? "vikings"
-                  : "wolves",
-            ],
+            [source.team],
             async (output, signal) => {
               const { authors } = output;
               const get = (url: string) => providerGet(url, signal);
               try {
                 const xml = await (await get(source.feed)).text();
-                let parsed = parseFeed(xml, source.name, ["wolves"]);
-                if (source.name === "Jon Krawczynski")
-                  parsed = parsed.filter(
-                    (s) =>
-                      / - The New York Times$/.test(s.title) ||
-                      /timberwolves|wolves/i.test(s.title),
-                  );
-                if (source.name === "Britt Robson")
-                  parsed = parsed.filter((s) =>
-                    /timberwolves|wolves|edwards|finch/i.test(s.title),
-                  );
-                if (
-                  source.name === "Jess Myers" ||
-                  source.name === "Michael Russo"
-                )
-                  parsed = parsed.filter((s) => /wild/i.test(s.title));
-                else if (source.name === "Alec Lewis")
-                  parsed = parsed.filter(
-                    (s) =>
-                      /vikings/i.test(s.title) &&
-                      / - The New York Times$/.test(s.title),
-                  );
-                else if (source.name === "Will Ragatz")
-                  parsed = parsed.filter(
-                    (s) =>
-                      /vikings/i.test(s.title) &&
-                      / - Sports Illustrated$/.test(s.title),
-                  );
-                else if (source.name === "Ben Goessling")
-                  parsed = parsed.filter(
-                    (s) =>
-                      /vikings/i.test(s.title) &&
-                      / - (?:The Minnesota )?Star Tribune$/.test(s.title),
-                  );
-                else if (source.name === "Jon Krawczynski")
-                  parsed = parsed.filter(
-                    (s) =>
-                      / - The New York Times$/.test(s.title) &&
-                      /timberwolves|wolves/i.test(s.title),
-                  );
-                else
-                  parsed = parsed.filter((s) =>
-                    /timberwolves|wolves|lynx|finch|edwards/i.test(s.title),
-                  );
+                const parsed = parseFeed(xml, source.name, [
+                  source.team,
+                ]).filter((s) =>
+                  titleFilters.every((filter) => filter.test(s.title)),
+                );
                 const author: AuthorFeed = {
                   ...source,
                   items: parsed.slice(0, 4).map(({ title, url, date }) => ({
@@ -336,7 +454,7 @@ export async function collect(
               } catch (error) {
                 output.failed = true;
                 output.error = safeFeedError(error);
-                const old = (cached?.authors || initial.authors || []).find(
+                const old = (cached?.authors || []).find(
                   (a) => a.name === source.name,
                 );
                 authors.push({
@@ -401,13 +519,6 @@ export async function collect(
     );
   }
   if (section !== "news") {
-    const injurySources = [
-      { team: "wolves" as TeamId, sport: "basketball/nba", espnId: "16" },
-      { team: "wild" as TeamId, sport: "hockey/nhl", espnId: "30" },
-      { team: "vikings" as TeamId, sport: "football/nfl", espnId: "16" },
-      { team: "twins" as TeamId, sport: "baseball/mlb", espnId: "15" },
-      { team: "lynx" as TeamId, sport: "basketball/wnba", espnId: "16" },
-    ];
     await Promise.all(
       injurySources.map(async (source) => {
         const teamName =
@@ -417,57 +528,13 @@ export async function collect(
           "ESPN injury report · " + teamName,
           [source.team],
           async (output, signal) => {
-            const injuryUrls = [
-              "https://site.api.espn.com/apis/site/v2/sports/" +
-                source.sport +
-                "/injuries?region=us&lang=en&team=" +
-                source.espnId,
-              "https://site.web.api.espn.com/apis/site/v2/sports/" +
-                source.sport +
-                "/injuries?region=us&lang=en&team=" +
-                source.espnId,
-            ];
-            let response: Response | null = null;
-            let lastError: unknown;
-            for (const url of injuryUrls) {
-              try {
-                response = await providerGet(url, signal);
-                break;
-              } catch (error) {
-                lastError = error;
-              }
-            }
-            if (!response) throw lastError || new FeedError("request-failed");
-            const json = (await response.json()) as ESPNResponse;
-            if (!json.injuries?.length) throw new FeedError("empty-injuries");
-            const injuries = (json.injuries || [])
-              .flatMap((group) =>
-                group.injuries
-                  ? group.injuries.map((injury) => ({
-                      ...injury,
-                      team: group.team || { displayName: group.displayName },
-                    }))
-                  : [group],
-              )
-              .map((item) => ({
-                player:
-                  item.athlete?.displayName ||
-                  item.athlete?.fullName ||
-                  "Unknown player",
-                status: item.status || item.type || "Unavailable",
-                detail:
-                  item.details?.detail ||
-                  item.details?.type ||
-                  item.longComment ||
-                  undefined,
-                team:
-                  item.team?.displayName ||
-                  item.team?.name ||
-                  item.athlete?.team?.displayName ||
-                  item.athlete?.team?.name ||
-                  teamName,
-              }))
-              .filter((item) => item.player);
+            const injuries = await fetchESPNInjuries(
+              source.sport,
+              source.espnId,
+              teamName,
+              signal,
+              source.availabilityUrl,
+            );
             output.injuries = injuries;
             return injuries.length;
           },
@@ -481,181 +548,42 @@ export async function collect(
           task("ESPN scores · " + t.short, [t.id], async (output, signal) => {
             const { games, health } = output;
             const get = (url: string) => providerGet(url, signal);
+            const hooks = serverHooksFor(t.id);
+            const scheduleUrl =
+              "https://site.api.espn.com/apis/site/v2/sports/" +
+              t.league +
+              "/teams/" +
+              t.espn +
+              "/schedule";
             const json = await (
               await get(
-                "https://site.api.espn.com/apis/site/v2/sports/" +
-                  t.league +
-                  "/teams/" +
-                  t.espn +
-                  "/schedule" +
-                  (t.id === "twins"
-                    ? "?season=" + new Date().getFullYear() + "&seasontype=2"
-                    : ""),
+                scheduleUrl +
+                  (hooks?.espnScheduleQuery?.(new Date().getFullYear()) || ""),
               )
             ).json();
             const parsed = parseGames(json, t.id, t.sport);
-            if (t.id === "wolves") {
-              const season =
-                json && typeof json === "object" && "season" in json
-                  ? json.season
-                  : undefined;
-              const responseYear =
-                season && typeof season === "object" && "year" in season
-                  ? season.year
-                  : undefined;
-              const year =
-                ((typeof responseYear === "number" ||
-                  typeof responseYear === "string") &&
-                  responseYear) ||
-                new Date().getFullYear() + (new Date().getMonth() >= 8 ? 1 : 0);
-              const phases = await Promise.allSettled(
-                [1, 2, 3].map(async (phase) =>
-                  parseGames(
-                    await (
-                      await get(
-                        "https://site.api.espn.com/apis/site/v2/sports/" +
-                          t.league +
-                          "/teams/" +
-                          t.espn +
-                          "/schedule?season=" +
-                          year +
-                          "&seasontype=" +
-                          phase,
-                      )
-                    ).json(),
-                    t.id,
-                    t.sport,
-                  ),
+            await hooks?.extendEspnSchedule?.({
+              checked,
+              get,
+              baseline: cached || emptyHub,
+              team: t,
+              json,
+              games: parsed,
+              health,
+              schedule: async (query) =>
+                parseGames(
+                  await (await get(scheduleUrl + query)).json(),
+                  t.id,
+                  t.sport,
                 ),
-              );
-              for (const phase of phases)
-                if (phase.status === "fulfilled") parsed.push(...phase.value);
-              if (phases.some((p) => p.status === "rejected")) {
-                health.push({
-                  name: "ESPN full-season schedule · Wolves",
-                  teams: ["wolves"],
-                  checked,
-                  status: "unavailable",
-                  count: 0,
-                });
-                parsed.push(
-                  ...(cached || (initial as HubData)).games.filter(
-                    (g) =>
-                      g.team === "wolves" &&
-                      Date.parse(g.date) > Date.now() - 86400000 &&
-                      !parsed.some((p) => p.id === g.id),
-                  ),
-                );
-              }
-            }
+            });
             const unique = [...new Map(parsed.map((g) => [g.id, g])).values()];
             games.push(...unique);
             return unique.length;
           }),
         ),
     );
-    await task(
-      "Official Žalgiris schedule",
-      ["zalgiris"],
-      async (output, signal) => {
-        const { games } = output;
-        const get = (url: string) => providerGet(url, signal);
-        const r = await get("https://zalgiris.lt/rungtynes/");
-        const parsed = parseZalgiris(await r.text(), checked);
-        games.push(...parsed);
-        return parsed.length;
-      },
-    );
-    await task(
-      "Official PWHL schedule · Frost",
-      ["frost"],
-      async (output, signal) => {
-        const { games } = output;
-        const get = (url: string) => providerGet(url, signal);
-        const primaryUrl =
-          "https://www.thepwhl.com/en/stats/schedule/2/11/all-months/homeaway?league=1";
-        let parsed = parsePwhlSchedule(
-          await (await get(primaryUrl)).text(),
-          checked,
-          primaryUrl,
-        );
-        if (!parsed.length) {
-          const fallbackUrl =
-            "https://www.thepwhl.com/en/teams/minnesota-frost/schedule";
-          parsed = parsePwhlSchedule(
-            await (await get(fallbackUrl)).text(),
-            checked,
-            fallbackUrl,
-          );
-        }
-        if (!parsed.length) throw Error("No PWHL schedule events parsed");
-        games.push(...parsed);
-        return parsed.length;
-      },
-    );
-    await Promise.all([
-      ...Object.entries(palaceCompetitions).map(([league, name]) =>
-        task(
-          "ESPN Palace schedule · " + name,
-          ["palace"],
-          async (output, signal) => {
-            const { games } = output;
-            const get = (url: string) => providerGet(url, signal);
-            const json = await (
-              await get(
-                "https://site.api.espn.com/apis/site/v2/sports/" +
-                  league +
-                  "/teams/384/schedule",
-              )
-            ).json();
-            mergeLiveScoreboard(games, json, league);
-            return json &&
-              typeof json === "object" &&
-              "events" in json &&
-              Array.isArray(json.events)
-              ? json.events.length
-              : 0;
-          },
-        ),
-      ),
-      task("Official Palace schedule", ["palace"], async (output, signal) => {
-        const { games } = output;
-        const get = (url: string) => providerGet(url, signal);
-        const parsed = parsePalace(
-          await (await get("https://www.cpfc.co.uk/matches/")).text(),
-          checked,
-        );
-        if (!parsed.length) throw Error("No fixtures");
-        mergeOfficial(games, parsed);
-        return parsed.length;
-      }),
-      task("Official MNUFC calendar", ["loons"], async (output, signal) => {
-        const { games } = output;
-        const get = (url: string) => providerGet(url, signal);
-        const parsed = parseLoonsCalendar(
-          await (
-            await get(
-              "https://images.mlssoccer.com/raw/upload/assets/min/calendar/mnufc" +
-                new Date().getFullYear() +
-                ".ics",
-            )
-          ).text(),
-          checked,
-        );
-        mergeOfficial(games, parsed);
-        return parsed.length;
-      }),
-    ]);
-    await task("DGPT official schedule", ["disc"], async (output, signal) => {
-      const { games } = output;
-      const get = (url: string) => providerGet(url, signal);
-      const parsed = parseDgptSchedule(
-        await (await get("https://www.dgpt.com/schedule/")).text(),
-      );
-      if (!parsed.length) throw Error("No DGPT events parsed");
-      games.push(...parsed);
-      return parsed.length;
-    });
+    await teamTasks("schedules");
   }
   if (section !== "news") {
     const scoreDates = [
@@ -697,6 +625,13 @@ export async function collect(
     tasks,
     section === "news" ? { concurrency: tasks.length } : {},
   );
+  const hookTasks = teamServerHooks.flatMap((hooks) => hooks.feedTasks || []);
+  const officialTasks = new Set(
+    hookTasks.filter((t) => t.official).map((t) => t.name),
+  );
+  const labelledSources = new Set(
+    hookTasks.filter((t) => t.preserveLabels).map((t) => t.name),
+  );
   for (const [index, outcome] of outcomes.entries()) {
     const output = outcome.value;
     health.push({
@@ -717,8 +652,7 @@ export async function collect(
       const injuryTeam = taskTeams[index]?.[0];
       if (injuryTeam) injuriesByTeam[injuryTeam] = output.injuries;
     }
-    if (/^Official (Palace schedule|MNUFC calendar)/.test(outcome.name))
-      mergeOfficial(games, output.games);
+    if (officialTasks.has(outcome.name)) mergeOfficial(games, output.games);
     else
       for (const fresh of output.games) {
         const index = games.findIndex(
@@ -731,14 +665,12 @@ export async function collect(
         if (index < 0) games.push(fresh);
         else {
           const existing = games[index];
-          const preserveOfficialPalace =
-            existing.team === "palace" &&
-            existing.sourceName === "Official Palace schedule";
+          const preserveLabels = labelledSources.has(existing.sourceName || "");
           games[index] = {
             ...existing,
             ...fresh,
             competitionNote: fresh.competitionNote || existing.competitionNote,
-            ...(preserveOfficialPalace
+            ...(preserveLabels
               ? {
                   league: existing.league,
                   sourceName: existing.sourceName,
@@ -750,26 +682,75 @@ export async function collect(
       }
   }
   if (section !== "news") {
-    const fallback = [
-      ...(cached?.games || []).filter((g) => g.team === "disc"),
-      ...discEvents,
-    ];
-    for (const g of fallback)
+    const seeded = teamServerHooks.flatMap(
+      (hooks) => hooks.seedGames?.(cached?.games || []) || [],
+    );
+    for (const g of seeded)
       if (!games.some((next) => next.id === g.id))
         games.push(eventLifecycle(g));
   }
-  const baseline = cached || (initial as HubData);
+  if (section !== "news") {
+    const opponentTeams = new Map<
+      string,
+      {
+        league: string;
+        espnId: string;
+        name: string;
+        availabilityUrl?: string;
+      }
+    >();
+    for (const game of games) {
+      if (!eventIsToday(game)) continue;
+      const source = injurySources.find(
+        (candidate) => candidate.team === game.team,
+      );
+      const league = teams.find(
+        (candidate) => candidate.id === game.team,
+      )?.league;
+      if (!source || !league) continue;
+      for (const competitor of game.competitors) {
+        if (!competitor.teamId || competitor.teamId === source.espnId) continue;
+        const key = `${league}:${competitor.teamId}`;
+        if (!opponentTeams.has(key))
+          opponentTeams.set(key, {
+            league,
+            espnId: competitor.teamId,
+            name: competitor.name,
+            availabilityUrl: source.availabilityUrl,
+          });
+      }
+    }
+    const opponentReports = await runProviderTasks(
+      [...opponentTeams].map(([key, source]) => ({
+        name: "ESPN opponent injury report · " + source.name,
+        run: async (signal) => ({
+          key,
+          injuries: await fetchESPNInjuries(
+            source.league,
+            source.espnId,
+            source.name,
+            signal,
+            source.availabilityUrl,
+          ),
+        }),
+      })),
+      { concurrency: 5, timeoutMs: 12000 },
+    );
+    for (const report of opponentReports)
+      if (report.value)
+        opponentInjuriesByTeam[report.value.key] = report.value.injuries;
+  }
+  const baseline = cached || emptyHub;
   for (const h of health.filter((h) => h.status === "unavailable")) {
+    const teamFallback = teamServerHooks.find(
+      (hooks) => hooks.fallbacks?.[h.name],
+    )?.fallbacks?.[h.name];
     if (section !== "news")
       stories.push(
         ...baseline.stories.filter(
           (s) =>
             s.source === h.name ||
-            (h.name === "Bluesky · Wolves starter pack" &&
-              s.kind === "social" &&
-              s.teams.includes("wolves")) ||
-            (h.name === "Official Žalgiris news" &&
-              s.source.startsWith("Official Žalgiris")) ||
+            Boolean(teamFallback?.stories?.(s)) ||
             (h.name.startsWith("ESPN news") &&
               s.source === "ESPN" &&
               s.teams.some((id) => h.teams.includes(id))),
@@ -779,14 +760,7 @@ export async function collect(
       games,
       baseline.games.filter(
         (g) =>
-          (h.name === "Official Žalgiris schedule" && g.team === "zalgiris") ||
-          (h.name === "Official PWHL schedule · Frost" && g.team === "frost") ||
-          (h.name === "Official Palace schedule" &&
-            g.team === "palace" &&
-            g.sourceName === h.name) ||
-          (h.name === "Official MNUFC calendar" &&
-            g.team === "loons" &&
-            g.sourceName === h.name) ||
+          Boolean(teamFallback?.games?.(g)) ||
           h.name ===
             "ESPN scores · " + teams.find((t) => t.id === g.team)?.short,
       ),
@@ -800,15 +774,23 @@ export async function collect(
     if (!unique.has(s.url)) unique.set(s.url, s);
   }
   for (const game of games) {
-    const teamInjuries = injuriesByTeam[game.team];
-    if (!teamInjuries) continue;
+    const teamInjuries = injuriesByTeam[game.team] || [];
+    const league = teams.find((team) => team.id === game.team)?.league;
+    const opponentInjuries = league
+      ? game.competitors.flatMap(
+          (competitor) =>
+            (competitor.teamId &&
+              opponentInjuriesByTeam[`${league}:${competitor.teamId}`]) ||
+            [],
+        )
+      : [];
     const teamNames = game.competitors.map((competitor) =>
       competitor.name
         .toLowerCase()
         .replace(/[^a-z0-9]+/g, " ")
         .trim(),
     );
-    game.injuries = teamInjuries.filter((injury) => {
+    game.injuries = [...teamInjuries, ...opponentInjuries].filter((injury) => {
       const injuryTeam = (injury.team || "")
         .toLowerCase()
         .replace(/[^a-z0-9]+/g, " ")

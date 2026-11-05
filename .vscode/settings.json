@@ -1,0 +1,35 @@
+{
+    "chat.tools.terminal.autoApprove": {
+        ".\\scripts\\runtime\\vscode-node.ps1": true,
+        "pnpm lint*": true,
+        "pnpm run lint*": true,
+        "pnpm build": true,
+        "pnpm run build": true,
+        "pnpm format*": true,
+        "pnpm run format*": true,
+        "eslint *": true,
+        "prettier *": true,
+        "git diff *": true,
+        "git show *": true,
+        "/^git diff /": {
+            "approve": true,
+            "matchCommandLine": true
+        },
+        "/^git show /": {
+            "approve": true,
+            "matchCommandLine": true
+        },
+        "/^node node_modules/eslint/bin/eslint\\.js/": {
+            "approve": true,
+            "matchCommandLine": true
+        },
+        "/^node node_modules/prettier/bin/prettier\\.cjs/": {
+            "approve": true,
+            "matchCommandLine": true
+        },
+        "/^node --experimental-strip-types --test/": {
+            "approve": true,
+            "matchCommandLine": true
+        }
+    }
+}

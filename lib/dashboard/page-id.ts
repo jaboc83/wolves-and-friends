@@ -1,3 +1,4 @@
+// Dashboard page identifiers (team IDs plus All and March Madness) with a type guard.
 import { isTeamId, type TeamId } from "../teams/teams";
 
 export const DASHBOARD_PAGE_IDS = {

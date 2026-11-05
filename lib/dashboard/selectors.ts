@@ -1,5 +1,6 @@
 // Derives visible stories and games from feed data plus the dashboard's local filters.
 import type { Game, HubData } from "../feeds/feed-types";
+import { mergeScoreUpdate } from "../games/merge-score";
 import { discEvents } from "../games/event-seed";
 import { eventLifecycle, eventIsToday } from "../games/event-time";
 import { isTeamId, teams, teamPriority } from "../teams/teams";
@@ -52,12 +53,13 @@ export function selectStories({
     );
   const compactNews = true;
   const recentStoriesForView = recentStories(filtered, active, { timeZone });
-  // Keep the all-teams page focused on a quick daily scan while preserving
-  // older same-day stories behind View older.
+  // Keep team pages focused on the five latest stories from today while
+  // preserving the rest behind View older. The all-teams page is
+  // capped at 8 so its combined coverage is more visible.
   const recent =
     active === DASHBOARD_PAGE_IDS.ALL
       ? recentStoriesForView.slice(0, 8)
-      : recentStoriesForView;
+      : recentStoriesForView.slice(0, 5);
   const displayed = compactNews && !showOlder ? recent : filtered;
   const olderCount = filtered.length - recent.length;
   const newest = (newsData.stories || [])
@@ -108,11 +110,11 @@ export function selectGames({
             Math.abs(Date.parse(x.date) - Date.parse(g.date)) < 3 * 3600000),
       );
       return fresh
-        ? {
+        ? mergeScoreUpdate(g, {
             ...g,
             ...fresh,
             competitionNote: fresh.competitionNote || g.competitionNote,
-          }
+          })
         : g;
     });
   for (const g of liveGames)
@@ -170,3 +172,4 @@ export function selectGames({
     futureGames,
   };
 }
+

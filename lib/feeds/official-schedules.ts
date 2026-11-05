@@ -1,5 +1,7 @@
 // Parses official club calendars and merges their fixtures with provider schedules.
 import type { Game } from "./feed-types";
+import { palaceProviders } from "../teams/palace/providers";
+import { loonsProviders } from "../teams/loons/providers";
 type ProviderObject = Record<string, unknown>;
 const providerObject = (value: unknown): ProviderObject =>
   value && typeof value === "object" ? (value as ProviderObject) : {};
@@ -56,7 +58,7 @@ export function parsePalace(html: string, checked: string): Game[] {
         (typeof competition.name === "string" && competition.name) || "Soccer",
       venue: (typeof venue.name === "string" && venue.name) || "",
       broadcast: "",
-      url: "https://www.cpfc.co.uk/matches/",
+      url: palaceProviders.urls.officialSchedule,
       sourceName: "Official Palace schedule",
       sourceChecked: checked,
       competitors: competitors.map(([homeAway, team, score]) => ({
@@ -111,7 +113,7 @@ export function parseLoonsCalendar(ics: string, checked: string): Game[] {
             .replace(/\\,/g, ",")
             .trim(),
           broadcast: "",
-          url: "https://www.mnufc.com/schedule/matches",
+          url: loonsProviders.urls.schedulePage,
           sourceName: "Official MNUFC calendar",
           sourceChecked: checked,
           competitors: sides.map((name, i) => ({

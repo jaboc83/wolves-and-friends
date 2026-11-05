@@ -1,27 +1,29 @@
 import { teams, type TeamId } from "./teams";
+import { teamProviders } from "./providers";
 
 // Shared league registry for team schedules and live score refreshes.
-// Club teams can play outside their domestic league. Share this registry
-// between schedule collection and the frequent live scoreboard refresh.
-export const palaceCompetitions: Record<string, string> = {
-  "soccer/uefa.europa": "UEFA Europa League",
-  "soccer/uefa.europa.conf": "UEFA Conference League",
-  "soccer/uefa.champions": "UEFA Champions League",
-  "soccer/eng.fa": "FA Cup",
-  "soccer/eng.league_cup": "Carabao Cup",
-  "soccer/eng.charity": "Community Shield",
-};
+// Club teams can play outside their domestic league (see `extraCompetitions`
+// in lib/teams/<id>/providers.ts).
+const extraCompetitions = (team: TeamId) =>
+  teamProviders.find((p) => p.team === team)?.extraCompetitions || {};
+
+// Teams in several competitions label games by competition, not season phase.
+export const playsMultipleCompetitions = (team: TeamId) =>
+  Object.keys(extraCompetitions(team)).length > 0;
+
+export const extraCompetitionName = (team: TeamId, league: string) =>
+  extraCompetitions(team)[league] as string | undefined;
 
 export function teamPlaysCompetition(team: TeamId, league: string) {
   return (
     teams.find((t) => t.id === team)?.league === league ||
-    (team === "palace" && league in palaceCompetitions)
+    league in extraCompetitions(team)
   );
 }
 
 export const scoreboardLeagues = [
   ...new Set([
     ...teams.map((t) => t.league).filter(Boolean),
-    ...Object.keys(palaceCompetitions),
+    ...teamProviders.flatMap((p) => Object.keys(p.extraCompetitions || {})),
   ]),
 ];

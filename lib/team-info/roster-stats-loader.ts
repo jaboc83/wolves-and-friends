@@ -21,8 +21,7 @@ export function createRosterStatsLoader() {
   const loaded = new Set<number>();
   let known: Record<string, PlayerStats> = {};
 
-  return function load(options: {
-    initial: Record<string, PlayerStats>;
+  function load(options: {
     fetchManifest: (version: string, signal: AbortSignal) => Promise<StatsBatch>;
     fetchBatch: (
       batch: number,
@@ -32,18 +31,18 @@ export function createRosterStatsLoader() {
     priorityKeys?: string[];
     onStats: (stats: Record<string, PlayerStats>) => void;
     onStatus: (status: StatsStatus) => void;
-  }) {
-    known = { ...options.initial, ...known };
-    if (inflight) return inflight;
+  }): Promise<void> {
+    // A request for another team's keys must not be dropped while one is running.
+    if (inflight) return inflight.then(() => load(options));
 
     const wanted = new Set(options.priorityKeys || []);
     if (!wanted.size) {
-      options.onStatus(Object.keys(known).length ? "ready" : "idle");
+      options.onStatus("idle");
       return Promise.resolve();
     }
 
     const signal = AbortSignal.timeout(60000);
-    options.onStatus(Object.keys(known).length ? "ready" : "loading");
+    options.onStatus([...wanted].some((key) => key in known) ? "ready" : "loading");
     inflight = (async () => {
       try {
         if (!version) {
@@ -72,48 +71,68 @@ export function createRosterStatsLoader() {
           (index) => index < total && !loaded.has(index),
         );
         let next = 0;
+        let failed = false;
         await Promise.all(
           Array.from({ length: 2 }, async () => {
             while (next < queue.length && !signal.aborted) {
               const index = queue[next++];
-              const data = await options.fetchBatch(index, version, signal);
-              if (
-                !Number.isSafeInteger(data.totalBatches) ||
-                data.totalBatches < 0 ||
-                typeof data.manifestVersion !== "string" ||
-                !Array.isArray(data.players)
-              )
-                throw Error("Invalid roster batch");
-              if (data.manifestVersion !== version) {
-                version = "";
-                total = 0;
-                manifestKeys = [];
-                loaded.clear();
-                throw Error("Manifest changed");
+              try {
+                const data = await options.fetchBatch(
+                  index,
+                  version,
+                  AbortSignal.any([signal, AbortSignal.timeout(20000)]),
+                );
+                if (
+                  !Number.isSafeInteger(data.totalBatches) ||
+                  data.totalBatches < 0 ||
+                  typeof data.manifestVersion !== "string" ||
+                  !Array.isArray(data.players)
+                )
+                  throw Error("Invalid roster batch");
+                if (data.manifestVersion !== version) {
+                  version = "";
+                  total = 0;
+                  manifestKeys = [];
+                  loaded.clear();
+                  throw Error("Manifest changed");
+                }
+                const available = data.players.filter((player) => player.stats);
+                known = {
+                  ...known,
+                  ...Object.fromEntries(
+                    available.map((p) => [p.key, p.stats!]),
+                  ),
+                };
+                if (available.length) options.onStats(known);
+                loaded.add(index);
+              } catch {
+                // One failed batch must not discard the others.
+                failed = true;
+                if (!version) return;
               }
-              const available = data.players.filter((player) => player.stats);
-              known = {
-                ...known,
-                ...Object.fromEntries(available.map((p) => [p.key, p.stats!])),
-              };
-              if (available.length) options.onStats(known);
-              loaded.add(index);
             }
           }),
         );
 
-        const hasStats = Object.keys(known).length > 0;
+        const hasStats = [...wanted].some((key) => key in known);
         options.onStatus(
-          queue.every((index) => loaded.has(index))
+          !failed && queue.every((index) => loaded.has(index))
             ? hasStats ? "ready" : "empty"
             : hasStats ? "partial" : "unavailable",
         );
       } catch {
-        options.onStatus(Object.keys(known).length ? "partial" : "unavailable");
+        options.onStatus(
+          [...wanted].some((key) => key in known) ? "partial" : "unavailable",
+        );
       }
     })().finally(() => {
       inflight = undefined;
     });
     return inflight;
-  };
+  }
+  return Object.assign(load, {
+    seed(stats: Record<string, PlayerStats>) {
+      known = { ...stats, ...known };
+    },
+  });
 }

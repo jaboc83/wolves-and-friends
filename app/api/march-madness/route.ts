@@ -1,3 +1,4 @@
+// API route for fetching March Madness data. Returns the latest tournament games or an error if unavailable.
 import {
   fetchMarchMadness,
   type MarchData,

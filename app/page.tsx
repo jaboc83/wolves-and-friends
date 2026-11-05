@@ -1,37 +1,38 @@
+// Home page for the app. Displays the dashboard with news, scores, and team insights.
 "use client";
 import { lazy, Suspense, useEffect, useState, type CSSProperties } from "react";
 import Link from "next/link";
 import Image from "next/image";
+import { Switch } from "../components/ui/switch";
 import { useDashboardFeeds } from "../hooks/use-dashboard-feeds";
 import { browserStorage, readStored, stringList } from "../lib/browser/storage";
 import { storedDashboardPage } from "../lib/dashboard/storage";
 import { newsDisplayMode } from "../lib/browser/news-page-data";
-import StoryCard from "../components/story-card";
 import { selectStories, selectGames } from "../lib/dashboard/selectors";
-import GameCard from "../components/game-card";
-import BackToTop from "../components/back-to-top";
-import MatchCalendar from "../components/match-calendar";
-import SectionLinks from "../components/section-links";
-import ScorePreferenceDialog from "../components/score-preference-dialog";
+import GameCard from "../components/games/game-card";
+import LeagueHeadlines from "../components/games/league-headlines";
+import BackToTop from "../components/dashboard/back-to-top";
+import NewsSection from "../components/dashboard/news-section";
+import ScoreRail from "../components/dashboard/score-rail";
+import TeamNavigation from "../components/dashboard/team-navigation";
+import MatchCalendar from "../components/games/match-calendar";
+import SectionLinks from "../components/dashboard/section-links";
 import {
   loadScorePreference,
   saveScorePreference,
 } from "../lib/browser/score-preference";
-const MarchMadness = lazy(() => import("../components/march-madness"));
-import { recentStories } from "../lib/browser/news-window";
+const MarchMadness = lazy(() => import("../components/games/march-madness"));
 import { sportTerms } from "../lib/teams/sport-terms";
-import TeamInsights from "../components/team-insights";
+import TeamInsights from "../components/teams/team-insights";
 import { teamThemes } from "../lib/teams/team-themes";
 import { unreadSocial } from "../lib/social/social-queue";
-import { communities } from "../lib/social/communities";
-import { teams } from "../lib/teams/teams";
+import { teamProfile, teams } from "../lib/teams/teams";
 import { isTeamId, TEAM_IDS } from "../lib/teams/teams";
 import {
   DASHBOARD_PAGE_IDS,
   type DashboardPageId,
 } from "../lib/dashboard/page-id";
-import { teamLogoPath } from "../lib/teams/team-logo";
-import type { Story, Game } from "../lib/feeds";
+import type { Game } from "../lib/feeds";
 import { releaseCommitUrl, releaseMarker } from "../lib/release-info";
 import { downloadFeedDiagnostics } from "../lib/feeds/feed-diagnostics";
 import { useLocalTimeZone } from "../hooks/use-local-time-zone";
@@ -50,8 +51,7 @@ export default function Home() {
     [showOlder, setShowOlder] = useState(false),
     [showOlderResults, setShowOlderResults] = useState(false),
     [revealed, setRevealed] = useState<string[]>([]),
-    [hideScores, setHideResults] = useState(true),
-    [scorePrompt, setScorePrompt] = useState(false),
+    [hideScores, setHideResults] = useState(false),
     [resultsReady, setResultsReady] = useState(false),
     [autoOpenStandings, setAutoOpenStandings] = useState(false),
     [darkMode, setDarkMode] = useState(false);
@@ -70,12 +70,13 @@ export default function Home() {
     oddsGames,
     playerStats,
     playerStatsStatus,
+    marchData,
+    marchUnavailable,
     socialRefreshing,
     socialRefreshError,
     refreshSocial,
     refreshRosterStats,
-    fetchNewsPage,
-    activePage: activePageRef,
+    selectPage,
   } = useDashboardFeeds(active);
   useEffect(() => {
     let alive = true;
@@ -86,8 +87,7 @@ export default function Home() {
       setDarkMode(browserStorage.getItem("wf-color-mode") === "dark");
       const preference = loadScorePreference(browserStorage);
       setHideResults(preference.hidden);
-      setScorePrompt(preference.ask);
-      if (!preference.ask && !preference.hidden)
+      if (!preference.hidden)
         setAutoOpenStandings(window.matchMedia("(min-width: 1600px)").matches);
       setResultsReady(true);
     });
@@ -95,33 +95,27 @@ export default function Home() {
       alive = false;
     };
   }, []);
+  // Changes pages, resets page-only controls, and saves the selection locally.
   function choose(id: DashboardPageId) {
-    activePageRef.current = id;
+    selectPage(id);
     setActive(id);
     setAutoOpenStandings(false);
-    if (isTeamId(id)) void fetchNewsPage(id);
     setTeamMenuOpen(false);
     setShowOlder(false);
     setShowOlderResults(false);
     browserStorage.setItem("wf-team", id);
   }
+  // Toggles score visibility and persists the preference in this browser.
   function toggleResults() {
     const next = !hideScores;
     setHideResults(next);
-    try {
-      browserStorage.setItem("wf-hide-results", String(next));
-    } catch {}
-  }
-  function chooseScores(hidden: boolean, ask: boolean) {
-    try {
-      saveScorePreference(browserStorage, hidden, ask);
-    } catch {}
-    setHideResults(hidden);
+    setRevealed([]);
+    saveScorePreference(browserStorage, next);
     setAutoOpenStandings(
-      !hidden && window.matchMedia("(min-width: 1600px)").matches,
+      !next && window.matchMedia("(min-width: 1600px)").matches,
     );
-    setScorePrompt(false);
   }
+  // Switches the color mode and stores the preference locally.
   function toggleColorMode() {
     const next = !darkMode;
     setDarkMode(next);
@@ -129,6 +123,7 @@ export default function Home() {
       browserStorage.setItem("wf-color-mode", next ? "dark" : "light");
     } catch {}
   }
+  // Toggles one story's read state and saves the updated ID list locally.
   function markRead(id: string) {
     const next = readIds.includes(id)
       ? readIds.filter((x) => x !== id)
@@ -147,6 +142,7 @@ export default function Home() {
       } as CSSProperties)
     : undefined;
   const team = teams.find((t) => t.id === active);
+  const activeScoreboardUrl = teamProfile(active)?.scoreboardUrl;
   const terms = sportTerms(active);
   const { compactNews, displayed, olderCount, newest } = selectStories({
     newsData,
@@ -195,10 +191,11 @@ export default function Home() {
       (active === DASHBOARD_PAGE_IDS.ALL ||
         (isTeamId(active) && h.teams.includes(active))),
   );
+  // Binds each game to its card and the dashboard's score-reveal state.
   function game(g: Game, compact = false, today = false) {
     return (
       <GameCard
-        key={g.id}
+        key={`${g.id}-${hideScores}`}
         game={g}
         today={today}
         compact={compact || g.state === "post"}
@@ -214,22 +211,27 @@ export default function Home() {
       />
     );
   }
-  const story = (item: Story) => (
-    <StoryCard
-      key={item.id}
-      story={item}
-      choose={choose}
-      markRead={markRead}
-      readIds={readIds}
-    />
+  const teamDetails = (
+    <div className="team-details">
+      {active !== "all" && (
+        <TeamInsights
+          active={active}
+          data={teamInfo}
+          revealResults={resultsReady && !hideScores}
+          autoOpenStandings={autoOpenStandings}
+          playerStats={playerStats}
+          playerStatsStatus={playerStatsStatus}
+          onRosterOpen={refreshRosterStats}
+        />
+      )}
+      <MatchCalendar games={visibleGames} team={active} />
+    </div>
   );
 
   return (
     <>
-      <ScorePreferenceDialog open={scorePrompt} onChoose={chooseScores} />
       <div
-        className={"hub" + (!resultsReady || scorePrompt ? " score-gated" : "")}
-        inert={!resultsReady || scorePrompt}
+        className="hub"
         data-team={active}
         data-mode={darkMode ? "dark" : "light"}
         style={themeStyle}
@@ -250,108 +252,51 @@ export default function Home() {
                 <i>YOUR TEAMS. ONE PLACE.</i>
               </div>
             </Link>
-            <button
-              className="color-mode-toggle"
-              onClick={toggleColorMode}
-              aria-label="Dark mode"
-              aria-pressed={darkMode}
-              title={darkMode ? "Switch to light mode" : "Switch to dark mode"}
-            >
-              <span aria-hidden="true">{darkMode ? "☀" : "☾"}</span>
-              <span className="color-mode-label">
-                {darkMode ? "Light mode" : "Dark mode"}
-              </span>
-            </button>
+            <div className="mast-controls">
+              <label className="mast-switch-control" htmlFor="show-scores">
+                <span>Show scores</span>
+                <Switch
+                  id="show-scores"
+                  className="mast-switch"
+                  checked={!hideScores}
+                  onCheckedChange={toggleResults}
+                  disabled={!resultsReady}
+                />
+              </label>
+              <label className="mast-switch-control" htmlFor="dark-mode">
+                <span>Dark mode</span>
+                <Switch
+                  id="dark-mode"
+                  className="mast-switch"
+                  checked={darkMode}
+                  onCheckedChange={toggleColorMode}
+                />
+              </label>
+            </div>
           </div>
         </header>
         <div className="shell">
-          <button
-            className="team-menu-toggle"
-            onClick={() => setTeamMenuOpen(!teamMenuOpen)}
-            aria-expanded={teamMenuOpen}
-            aria-controls="team-filters"
-          >
-            <span aria-hidden="true">{teamMenuOpen ? "×" : "☰"}</span>
-            <strong>
-              {active === "march-madness"
-                ? "March Madness"
-                : team?.short || "All teams"}
-            </strong>
-            <span className="team-menu-caption">
-              {teamMenuOpen ? "Close teams" : "Choose team"}
-            </span>
-          </button>
-          <nav
-            id="team-filters"
-            className={"team-nav " + (teamMenuOpen ? "menu-open" : "")}
-            aria-label="Team filters"
-          >
-            <button
-              aria-pressed={active === "all"}
-              className={active === "all" ? "selected" : ""}
-              onClick={() => choose("all")}
-            >
-              <Image
-                unoptimized
-                className="team-tab-logo"
-                src="/logos/wolves-friends-neutral.png"
-                alt=""
-                width={40}
-                height={40}
-              />
-              <span>All teams</span>
-            </button>
-            {teams.map((t) => (
-              <button
-                key={t.id}
-                data-tab-team={t.id}
-                aria-pressed={active === t.id}
-                className={active === t.id ? "selected" : ""}
-                onClick={() => choose(t.id)}
-              >
-                <span className="dot" style={{ background: t.color }} />
-                <Image
-                  unoptimized
-                  className="team-tab-logo"
-                  src={t.id === "disc" ? "/logos/dgpt.png" : teamLogoPath(t.id)}
-                  alt=""
-                  width={40}
-                  height={40}
-                />
-                <span>{t.short}</span>
-                {teamsPlayingToday.has(t.id) && (
-                  <span
-                    className="team-today"
-                    title={`${sportTerms(t.id).event} today`}
-                  >
-                    Today
-                  </span>
-                )}
-              </button>
-            ))}
-            <button
-              data-tab-team="march-madness"
-              aria-pressed={active === "march-madness"}
-              className={active === "march-madness" ? "selected" : ""}
-              onClick={() => choose("march-madness")}
-            >
-              <Image
-                unoptimized
-                className="team-tab-logo"
-                src="/logos/march-madness.svg"
-                alt=""
-                width={40}
-                height={40}
-              />
-              <span>March Madness</span>
-            </button>
-          </nav>
+          <TeamNavigation
+            active={active}
+            open={teamMenuOpen}
+            teamsPlayingToday={teamsPlayingToday}
+            onChoose={choose}
+            onToggle={() => setTeamMenuOpen(!teamMenuOpen)}
+          />
           <div className="intro">
             <div>
               <p className="eyebrow">
-                {active === "march-madness"
-                  ? "NCAA · Men's Division I basketball"
-                  : team && team.sport.toUpperCase()}
+                {active === "march-madness" ? (
+                  "NCAA · Men's Division I basketball"
+                ) : team?.league ? (
+                  <LeagueHeadlines
+                    league={team.sport.toUpperCase()}
+                    leaguePath={team.league}
+                    className="eyebrow-league-trigger"
+                  />
+                ) : (
+                  team && team.sport.toUpperCase()
+                )}
               </p>
               <h1>
                 {active === "march-madness"
@@ -366,7 +311,14 @@ export default function Home() {
                   : "Latest headlines. Live scores. Social posts. All in one place."}
               </p>
             </div>
-            {active !== "march-madness" && <SectionLinks active={active} />}
+            {active !== "march-madness" && (
+              <SectionLinks
+                active={active}
+                hasPowerRankings={Boolean(
+                  teamInfo.find((i) => i.id === active)?.powerRanking,
+                )}
+              />
+            )}
           </div>
           {active === "march-madness" ? (
             <Suspense
@@ -378,6 +330,8 @@ export default function Home() {
               }
             >
               <MarchMadness
+                data={marchData}
+                unavailable={marchUnavailable}
                 revealResults={resultsReady && !hideScores}
                 onToggleResults={toggleResults}
               />
@@ -416,7 +370,9 @@ export default function Home() {
                     </span>
                   </div>
                   {todayGames.length ? (
-                    todayGames.map((g) => game(g, false, true))
+                    todayGames.map((g) =>
+                      game(g, active === DASHBOARD_PAGE_IDS.ALL, true),
+                    )
                   ) : (
                     <div className="empty compact">
                       {loading
@@ -425,350 +381,60 @@ export default function Home() {
                     </div>
                   )}
                 </div>
-                <section className="news">
-                  <div className="headlines-content">
-                    <div className="ultrawide-left-column">
-                      <section
-                        id="latest-messages"
-                        className="message-feed"
-                        aria-label="Latest Social Media"
-                      >
-                        <div className="social-heading">
-                          <h2>Latest Social Media</h2>
-                          <button
-                            type="button"
-                            className="social-refresh"
-                            onClick={() => void refreshSocial(true)}
-                            disabled={socialRefreshing}
-                            aria-label="Refresh latest social media"
-                            title={
-                              socialRefreshing
-                                ? "Refreshing social posts…"
-                                : "Refresh social posts"
-                            }
-                            aria-busy={socialRefreshing}
-                          >
-                            <span
-                              aria-hidden="true"
-                              className={
-                                socialRefreshing ? "refresh-spinning" : ""
-                              }
-                            >
-                              ↻
-                            </span>
-                          </button>
-                        </div>
-                        <p className="feed-description">
-                          {active === "all"
-                            ? "Latest posts for your teams · Bluesky"
-                            : team?.name + " posts"}
-                        </p>
-                        {socialRefreshError && (
-                          <p className="feed-description" role="status">
-                            Social posts could not refresh. Try again shortly.
-                          </p>
-                        )}
-                        {socialPosts.length ? (
-                          socialPosts.map(story)
-                        ) : (
-                          <p className="feed-description">
-                            No unread matching posts in the current feed.
-                          </p>
-                        )}
-                        {socialUnavailable.some(
-                          (id) => active === "all" || active === id,
-                        ) && (
-                          <p className="feed-description">
-                            Some social feeds are unavailable; cached posts may
-                            remain.
-                          </p>
-                        )}
-                      </section>
-                      <div className="team-details">
-                        {active !== "all" && (
-                          <TeamInsights
-                            active={active}
-                            data={teamInfo}
-                            revealResults={resultsReady && !hideScores}
-                            autoOpenStandings={autoOpenStandings}
-                            playerStats={playerStats}
-                            playerStatsStatus={playerStatsStatus}
-                            onRosterOpen={refreshRosterStats}
-                          />
-                        )}
-                        <MatchCalendar games={visibleGames} team={active} />
-                      </div>
-                      <div className="news-resources">
-                        <section className="community-panel">
-                          <h2>Fan communities</h2>
-                          {communities
-                            .filter(
-                              (c) => active === "all" || c.team === active,
-                            )
-                            .map((c) => (
-                              <a
-                                key={c.url}
-                                href={c.url}
-                                target="_blank"
-                                rel="noreferrer"
-                              >
-                                <Image
-                                  unoptimized
-                                  src={teamLogoPath(c.team)}
-                                  alt=""
-                                  width={24}
-                                  height={24}
-                                />
-                                <span>{c.name} ↗</span>
-                              </a>
-                            ))}
-                        </section>
-                        <div className="source-panel">
-                          <button
-                            className="source-toggle"
-                            onClick={() => setSources(!sources)}
-                            aria-expanded={sources}
-                          >
-                            Source desk <span>{sources ? "−" : "+"}</span>
-                          </button>
-                          <p>
-                            Direct links to your trusted voices, including
-                            sources whose feeds aren’t available.
-                          </p>
-                          {sources && (
-                            <div className="source-grid">
-                              {(team ? [team] : teams).map((t) => (
-                                <div key={t.id}>
-                                  <h4>{t.short}</h4>
-                                  {t.sources.map(([name, url]) => (
-                                    <a
-                                      key={url}
-                                      href={url}
-                                      target="_blank"
-                                      rel="noreferrer"
-                                    >
-                                      {name} ↗
-                                    </a>
-                                  ))}
-                                </div>
-                              ))}
-                            </div>
-                          )}
-                          {failed.length > 0 && (
-                            <details className="health">
-                              <summary>
-                                {failed.length} feed
-                                {failed.length === 1 ? "" : "s"} unavailable ·
-                                cached items may remain
-                              </summary>
-                              {failed.map((h) => (
-                                <p key={h.name}>
-                                  {h.name} · checked{" "}
-                                  {localDateTime(h.checked, {
-                                    hour: "numeric",
-                                    minute: "2-digit",
-                                  })}{" "}
-                                  {zoneLabel}
-                                </p>
-                              ))}
-                            </details>
-                          )}
-                        </div>
-                      </div>
-                    </div>
-                    <div className="headline-column">
-                      <div className="section-heading">
-                        <h2 className="latest-heading">
-                          Latest stories <small>{displayed.length}</small>
-                        </h2>
-                        <label className="show-read">
-                          <input
-                            type="checkbox"
-                            checked={showRead}
-                            onChange={(e) => setShowRead(e.target.checked)}
-                          />{" "}
-                          Show read
-                        </label>
-                        <label className="search">
-                          <span aria-hidden="true">⌕</span>
-                          <input
-                            value={search}
-                            onChange={(e) => setSearch(e.target.value)}
-                            placeholder="Find a headline"
-                            aria-label="Search headlines"
-                          />
-                        </label>
-                      </div>
-                      {youtubeHeadlines.length > 0 && (
-                        <section
-                          className="youtube-headlines"
-                          aria-label="Latest YouTube videos"
-                        >
-                          <h3>Latest videos</h3>
-                          {youtubeHeadlines.map(story)}
-                        </section>
-                      )}
-                      {youtubeUnavailable.some(
-                        (id) => active === "all" || active === id,
-                      ) && (
-                        <p className="feed-description">
-                          Some official YouTube feeds are temporarily
-                          unavailable.
-                        </p>
-                      )}
-                      {loading && displayed.length > 0 && (
-                        <p className="headline-loading" role="status">
-                          <span
-                            className="headline-spinner"
-                            aria-hidden="true"
-                          />
-                          Fetching more headlines…
-                        </p>
-                      )}
-                      {newsMode === "loading" ? (
-                        <div
-                          className="empty headline-loading"
-                          role="status"
-                          aria-live="polite"
-                        >
-                          <span
-                            className="headline-spinner"
-                            aria-hidden="true"
-                          />
-                          Fetching headlines…
-                        </div>
-                      ) : newsMode === "error" ? (
-                        <div className="empty" role="status">
-                          Headlines are temporarily unavailable. We’ll try again
-                          automatically.
-                        </div>
-                      ) : displayed.length ? (
-                        displayed.map(story)
-                      ) : (
-                        <div className="empty">
-                          <h3>
-                            {search
-                              ? "No matching headlines."
-                              : newest &&
-                                  recentStories([newest], active, { timeZone })
-                                    .length === 0
-                                ? "No news since " +
-                                  localDateTime(newest.date, {
-                                    month: "short",
-                                    day: "numeric",
-                                    year: "numeric",
-                                  })
-                                : active === "all"
-                                  ? "No unread headlines from today."
-                                  : "No unread headlines from the last week."}
-                          </h3>
-                          <p>
-                            {olderCount > 0
-                              ? "Use View older to catch up on earlier articles."
-                              : "Check the Source desk for more coverage."}
-                          </p>
-                        </div>
-                      )}
-                      {newsData.checked && (
-                        <p className="feed-description">
-                          Last update:{" "}
-                          {localDateTime(newsData.checked, {
-                            dateStyle: "medium",
-                            timeStyle: "short",
-                          })}{" "}
-                          {zoneLabel}
-                        </p>
-                      )}
-                      {!loading && newsFailed && displayed.length > 0 && (
-                        <p className="feed-description">
-                          Some headline feeds are unavailable.
-                        </p>
-                      )}
-                      {!loading && compactNews && (
-                        <div className="news-more">
-                          <p>
-                          </p>
-                          {(olderCount > 0 || showOlder) && (
-                            <button onClick={() => setShowOlder(!showOlder)}>
-                              {showOlder
-                                ? "Hide older"
-                                : "View older (" + olderCount + ")"}
-                            </button>
-                          )}
-                        </div>
-                      )}
-                    </div>
-                  </div>
-                </section>
-                <aside className="scores">
-                  <div className="rail-heading upcoming-heading">
-                    <h2>Coming up</h2>
-                  </div>
-                  {futureGames.length ? (
-                    futureGames.map((g) => game(g, true))
-                  ) : (
-                    <div className="empty compact">
-                      No upcoming {terms.event} returned by the available feeds.
-                    </div>
-                  )}
-                  <div className="rail-heading results">
-                    <h2>Recent results</h2>
-                  </div>
-                  <button
-                    type="button"
-                    className="results-toggle"
-                    onClick={toggleResults}
-                    disabled={!resultsReady}
-                  >
-                    {hideScores ? "Show scores" : "Hide scores"}
-                  </button>
-                  {results.length ? (
-                    results.map((g) => game(g, true))
-                  ) : (
-                    <div className="empty compact">
-                      {loading
-                        ? "Checking results…"
-                        : `No completed ${terms.event} returned by the available feeds.`}
-                    </div>
-                  )}
-                  {active !== "all" && availableResults.length > 3 && (
-                    <button
-                      type="button"
-                      className="results-toggle"
-                      aria-expanded={showOlderResults}
-                      onClick={() => setShowOlderResults(!showOlderResults)}
-                    >
-                      {showOlderResults
-                        ? "Hide older"
-                        : `Show older (${availableResults.length - 3})`}
-                    </button>
-                  )}
-                  {(active === "disc" || active === "frost") && (
-                    <div className="score-note">
-                      <b>More scoreboards</b>
-                      <p>
-                        {team?.short} scoring pages provide additional coverage
-                        beyond the imported schedules.
-                      </p>
-                      {teams
-                        .filter((t) => active === t.id)
-                        .map((t) => (
-                          <a
-                            key={t.id}
-                            href={
-                              t.sources.find(([name]) =>
-                                /score|Live|schedule|Results/i.test(name),
-                              )?.[1] || t.sources[0][1]
-                            }
-                            target="_blank"
-                            rel="noreferrer"
-                          >
-                            {t.short} scoreboard ↗
-                          </a>
-                        ))}
-                    </div>
-                  )}
-                </aside>
+                <NewsSection
+                  state={{
+                    active,
+                    timeZone,
+                    teamName: team?.name,
+                    socialPosts,
+                    socialUnavailable,
+                    socialRefreshing,
+                    socialRefreshError,
+                    youtubeHeadlines,
+                    youtubeUnavailable,
+                    displayed,
+                    newest,
+                    olderCount,
+                    compactNews,
+                    newsMode,
+                    newsFailed,
+                    loading,
+                    checked: newsData.checked,
+                    failed,
+                    readIds,
+                    search,
+                    showRead,
+                    showOlder,
+                    sources,
+                  }}
+                  actions={{
+                    choose,
+                    markRead,
+                    setSearch,
+                    setShowRead,
+                    toggleOlder: () => setShowOlder(!showOlder),
+                    refreshSocial,
+                    toggleSources: () => setSources(!sources),
+                  }}
+                  teamDetails={teamDetails}
+                  zoneLabel={zoneLabel}
+                  localDateTime={localDateTime}
+                />
+                <ScoreRail
+                  futureGames={futureGames}
+                  results={results}
+                  availableResults={availableResults}
+                  event={terms.event}
+                  loading={loading}
+                  showOlderResults={showOlderResults}
+                  activeIsAll={active === "all"}
+                  activeScoreboardUrl={activeScoreboardUrl}
+                  teamShort={team?.short}
+                  onToggleOlderResults={() =>
+                    setShowOlderResults(!showOlderResults)
+                  }
+                  renderGame={game}
+                />
               </div>
             </>
           )}
@@ -797,7 +463,7 @@ export default function Home() {
           </footer>
         </div>
       </div>
-      {resultsReady && !scorePrompt && <BackToTop />}
+      {resultsReady && <BackToTop />}
     </>
   );
 }

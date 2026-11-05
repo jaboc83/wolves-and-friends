@@ -44,10 +44,11 @@ existing upstream health reporting; never proxy requests through visitors.
 
 This change uses MinnPost's scoped author RSS instead of Google News for Britt
 Robson, skips redundant byline requests for that publisher-provided author feed,
-starts all providers together for a single-team news refresh to prevent queue
-starvation, and preserves author-fetch error codes. The existing refresh deadline
-and exclusion of late results remain in place. No browser requests, identifiers,
-preferences, tracking, or privacy policies change.
+and preserves author-fetch error codes. News-only collections start all
+registered provider tasks concurrently; other collections retain the bounded
+default concurrency. The existing refresh deadline and exclusion of late results
+remain in place. No browser requests, identifiers, preferences, tracking, or
+privacy policies change.
 
 Validation: TypeScript `--noEmit`, production build, and
 `node scripts/check-news-feeds.mjs` passed. Live provider recovery must be checked

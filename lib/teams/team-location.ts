@@ -1,16 +1,5 @@
 // Maps known team names to static home locations; never reads visitor location.
-import type { TeamId } from "./teams";
-const own: Record<string, string> = {
-  wolves: "Minnesota",
-  wild: "Minnesota",
-  vikings: "Minnesota",
-  twins: "Minnesota",
-  loons: "Minnesota",
-  palace: "London",
-  lynx: "Minnesota",
-  frost: "Minnesota",
-  usmnt: "United States",
-};
+import { teams, type TeamId } from "./teams";
 const groups: [string, string, string][] = [
   ["basketball", "Hawks", "Atlanta"],
   ["basketball", "Celtics", "Boston"],
@@ -116,6 +105,89 @@ const key = (s: string) =>
     .replace(/[\u0300-\u036f]/g, "")
     .toLowerCase()
     .trim();
+const compactLocations: Record<string, string> = {
+  atlanta: "ATL",
+  athens: "ATH",
+  anaheim: "ANA",
+  barcelona: "BAR",
+  belgrade: "BEL",
+  birmingham: "BIR",
+  bologna: "BOL",
+  boston: "BOS",
+  bournemouth: "BOU",
+  "brighton and hove": "BRI",
+  brooklyn: "BKN",
+  buffalo: "BUF",
+  calgary: "CGY",
+  carolina: "CAR",
+  charlotte: "CHA",
+  chicago: "CHI",
+  cleveland: "CLE",
+  colorado: "COL",
+  columbus: "CBJ",
+  dallas: "DAL",
+  denver: "DEN",
+  detroit: "DET",
+  edmonton: "EDM",
+  florida: "FLA",
+  "golden state": "GS",
+  houston: "HOU",
+  indiana: "IND",
+  istanbul: "IST",
+  kaunas: "KAU",
+  klaipeda: "KLA",
+  leeds: "LEE",
+  liverpool: "LIV",
+  london: "LON",
+  "los angeles": "LA",
+  lyon: "LYO",
+  madrid: "MAD",
+  manchester: "MAN",
+  memphis: "MEM",
+  miami: "MIA",
+  milwaukee: "MIL",
+  minnesota: "MN",
+  monaco: "MON",
+  montreal: "MTL",
+  munich: "MUN",
+  nashville: "NSH",
+  "new jersey": "NJ",
+  "new orleans": "NO",
+  "new york": "NY",
+  "newcastle upon tyne": "NCL",
+  nottingham: "NOT",
+  "oklahoma city": "OKC",
+  orlando: "ORL",
+  ottawa: "OTT",
+  paris: "PAR",
+  panevezys: "PAN",
+  philadelphia: "PHI",
+  phoenix: "PHX",
+  piraeus: "PIR",
+  pittsburgh: "PIT",
+  portland: "POR",
+  sacramento: "SAC",
+  "san antonio": "SA",
+  "san jose": "SJS",
+  seattle: "SEA",
+  "st. louis": "STL",
+  "tampa bay": "TB",
+  toronto: "TOR",
+  utah: "UTA",
+  "united states": "USA",
+  "vitoria-gasteiz": "VIT",
+  vancouver: "VAN",
+  vegas: "VGK",
+  vilnius: "VNO",
+  villeurbanne: "VIL",
+  washington: "WAS",
+  winnipeg: "WPG",
+  wolverhampton: "WOL",
+};
+export function compactTeamLocation(location: string): string {
+  const city = key(location.split(",")[0] ?? "");
+  return compactLocations[city] ?? location;
+}
 export function teamLocation(
   teamId: TeamId,
   name: string,
@@ -123,7 +195,8 @@ export function teamLocation(
   isOwn = false,
 ): string {
   if (teamId === "disc") return "";
-  if (isOwn && teamId !== "zalgiris") return own[teamId] || "";
+  if (isOwn && teamId !== "zalgiris")
+    return teams.find((t) => t.id === teamId)?.homeLocation || "";
   const normalized = key(isOwn && teamId === "zalgiris" ? "zalgiris" : name);
   const category = ["wolves", "lynx"].includes(teamId)
     ? "basketball"

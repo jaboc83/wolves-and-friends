@@ -1,6 +1,7 @@
 // Parses and enriches eligible upcoming games with readable public betting markets.
 import { enrichEuroleagueOdds } from "./euroleague-odds";
 import { teams } from "../teams/teams";
+import { teamPlaysCompetition } from "../teams/competitions";
 import type { Game } from "./feed-types";
 type ProviderObject = Record<string, unknown>;
 const providerObject = (value: unknown): ProviderObject =>
@@ -124,7 +125,7 @@ export function oddsLeague(g: Game) {
     if (/conference league/i.test(g.league)) return "soccer/uefa.europa.conf";
     if (/europa league/i.test(g.league)) return "soccer/uefa.europa";
     if (/champions league/i.test(g.league)) return "soccer/uefa.champions";
-    if (g.team === "palace") {
+    if (teamPlaysCompetition(g.team, "soccer/eng.fa")) {
       if (/FA Cup/i.test(g.league)) return "soccer/eng.fa";
       if (/league cup|EFL Cup|Carabao/i.test(g.league))
         return "soccer/eng.league_cup";

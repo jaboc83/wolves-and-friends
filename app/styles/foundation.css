@@ -1,0 +1,157 @@
+/* Foundation styles for the app */
+
+/* Wolves Icon uniform: blue body with a white stripe and green trim. */
+.hub[data-team="wolves"] .mast {
+  box-shadow: inset 0 -3px 0 #ffffff;
+}
+.hub[data-team="wolves"][data-mode="light"] {
+  background: #f2f5fc;
+  --surface: #ffffff;
+  --raised: #e9effa;
+}
+:root {
+  font-family: Arial, Helvetica, sans-serif;
+  color: var(--ink, #192a3c);
+  background: var(--raised, #f5f4ef);
+  font-synthesis: none;
+}
+* {
+  box-sizing: border-box;
+}
+body {
+  margin: 0;
+}
+a {
+  color: inherit;
+  text-decoration: none;
+}
+button,
+input {
+  font: inherit;
+}
+button {
+  cursor: pointer;
+}
+button:disabled {
+  cursor: wait;
+}
+a:focus-visible,
+button:focus-visible,
+input:focus-visible,
+summary:focus-visible {
+  outline: 3px solid #367eab;
+  outline-offset: 4px;
+}
+.mast {
+  background: #10283a;
+  color: #fff;
+  border-bottom: 4px solid #9ab568;
+}
+.mast-inner {
+  max-width: 1280px;
+  margin: auto;
+  padding: 28px 40px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+.brand {
+  font-family: Georgia, serif;
+  font-size: 34px;
+  letter-spacing: -1.4px;
+  font-weight: bold;
+}
+.brand span {
+  font-weight: normal;
+  font-style: italic;
+  color: #d3dec1;
+}
+.brand i {
+  display: block;
+  font: 10px Arial;
+  letter-spacing: 3px;
+  color: #a7bbc6;
+  margin-top: 10px;
+}
+.mast-right {
+  text-align: right;
+  font-size: 12px;
+  color: #c3d2dd;
+}
+.mast-right button {
+  display: block;
+  margin: 12px 0 0 auto;
+  background: #ffffff12;
+  border: 1px solid #ffffff40;
+  color: white;
+  padding: 9px 16px;
+  border-radius: 6px;
+}
+.shell {
+  max-width: 1280px;
+  margin: auto;
+  padding: 0 40px;
+}
+.team-nav {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+  padding: 24px 0;
+  border-bottom: 1px solid var(--line, #d9dfd8);
+}
+.team-nav button {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  border: 1px solid var(--line, #d3d9d4);
+  background: var(--surface, #fffefb);
+  border-radius: 6px;
+  padding: 9px 12px;
+  font-size: 12px;
+  color: var(--muted, #536170);
+  white-space: nowrap;
+}
+.team-nav button.selected {
+  background: #10283a;
+  border-color: #10283a;
+  color: white;
+}
+.team-nav button[data-tab-team="march-madness"] {
+  white-space: normal;
+  min-width: 0;
+}
+.team-nav button[data-tab-team="march-madness"] > span:last-child {
+  min-width: 0;
+  overflow-wrap: anywhere;
+  line-height: 1.15;
+}
+.dot {
+  height: 7px;
+  width: 7px;
+  border-radius: 50%;
+  display: inline-block;
+}
+.intro {
+  display: flex;
+  justify-content: space-between;
+  gap: 20px;
+  align-items: end;
+  padding: 35px 0 30px;
+}
+.eyebrow {
+  font-size: 10px;
+  letter-spacing: 2px;
+  font-weight: bold;
+  color: var(--muted, #6d795d);
+  margin: 0 0 10px;
+}
+.section-links {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  gap: 8px 16px;
+  align-self: flex-start;
+  padding-top: 4px;
+  font-size: 13px;
+  font-weight: 600;
+}

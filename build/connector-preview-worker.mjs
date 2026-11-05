@@ -1,3 +1,4 @@
+/* Connector preview worker for development */
 import { WorkerEntrypoint } from "cloudflare:workers";
 import binding from "virtual:sites-connector-preview";
 

@@ -54,6 +54,7 @@ next-env.d.ts
 /.codex/
 /outputs/
 /work/
+.work-log
 
 # Generated publish artifacts and incremental compiler state
 /site.tar.gz

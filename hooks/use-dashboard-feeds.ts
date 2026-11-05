@@ -1,5 +1,7 @@
+// Client hook that loads and polls same-origin feeds (news, scores, social, rosters) and keeps preferences in localStorage.
 "use client";
 import { useEffect, useRef, useState } from "react";
+import { mergeScoreUpdates } from "../lib/games/merge-score";
 import {
   createPublicRequests,
   pollPublicFeeds,
@@ -23,7 +25,13 @@ import type { TeamInfo } from "../lib/team-info";
 import { activeHub, activeStories } from "../lib/dashboard/content-policy";
 import { socialQueue } from "../lib/social/social-queue";
 import { isLocalSocialImage } from "../lib/social/bluesky-images";
-import { loadedNewsData } from "../lib/browser/news-page-data";
+import {
+  loadedNewsData,
+  newsForTeam,
+  newsPageUrl,
+} from "../lib/browser/news-page-data";
+import { loadPageBeforeBackground } from "../lib/browser/page-first-feeds";
+import type { MarchData } from "../lib/games/march-madness";
 import { isTeamId, TEAM_IDS, teams, type TeamId } from "../lib/teams/teams";
 import {
   isHubData,
@@ -74,6 +82,8 @@ export function useDashboardFeeds(active: DashboardPageId) {
   const [liveGames, setLiveGames] = useState<Game[]>([]);
   const [scoreCheck, setScoreCheck] = useState("");
   const [scoreError, setScoreError] = useState(false);
+  const [marchData, setMarchData] = useState<MarchData | null>(null);
+  const [marchUnavailable, setMarchUnavailable] = useState(false);
   const requests = useRef(createPublicRequests());
   const rosterLoader = useRef(createRosterStatsLoader());
   const [playerStats, setPlayerStats] = useState<Record<string, PlayerStats>>(
@@ -81,9 +91,8 @@ export function useDashboardFeeds(active: DashboardPageId) {
   );
   const [playerStatsStatus, setPlayerStatsStatus] =
     useState<StatsStatus>("idle");
-  function refreshRosterStats(priorityKeys: string[] = []) {
+  function loadRosterStats(priorityKeys: string[]) {
     const request = rosterLoader.current({
-      initial: playerStats,
       fetchManifest: async (version, signal) => {
         const response = await requests.current.fetch(
           "/api/roster-stats?manifest=1" +
@@ -127,6 +136,35 @@ export function useDashboardFeeds(active: DashboardPageId) {
     );
     return request;
   }
+  const rosterKeys = useRef<string[]>([]);
+  const rosterRetries = useRef(0);
+  const rosterLoad = useRef(loadRosterStats);
+  useEffect(() => {
+    rosterLoad.current = loadRosterStats;
+  });
+  function refreshRosterStats(priorityKeys: string[] = []) {
+    if (priorityKeys.length) rosterKeys.current = priorityKeys;
+    rosterRetries.current = 0;
+    return loadRosterStats(priorityKeys);
+  }
+  useEffect(() => {
+    if (playerStatsStatus === "ready") rosterRetries.current = 0;
+    if (
+      (playerStatsStatus !== "partial" &&
+        playerStatsStatus !== "unavailable") ||
+      !rosterKeys.current.length ||
+      rosterRetries.current >= 3
+    )
+      return;
+    const timer = setTimeout(
+      () => {
+        rosterRetries.current += 1;
+        void rosterLoad.current(rosterKeys.current);
+      },
+      15000 * (rosterRetries.current + 1),
+    );
+    return () => clearTimeout(timer);
+  }, [playerStatsStatus]);
 
   const once = requests.current.once;
   function refreshInfo() {
@@ -177,7 +215,11 @@ export function useDashboardFeeds(active: DashboardPageId) {
         setSocialUnavailable(d.unavailable);
         setYoutubeUnavailable(d.youtubeUnavailable || []);
       } catch (error) {
-        void recordRequestDiagnostic("Social feed request", teams.map((t) => t.id), error);
+        void recordRequestDiagnostic(
+          "Social feed request",
+          teams.map((t) => t.id),
+          error,
+        );
         setSocialUnavailable(teams.map((t) => t.id));
         setSocialRefreshError(true);
       } finally {
@@ -199,7 +241,7 @@ export function useDashboardFeeds(active: DashboardPageId) {
           checked: string;
           unavailable: string[];
         };
-        setLiveGames(d.games);
+        setLiveGames((previous) => mergeScoreUpdates(previous, d.games));
         setScoreCheck(d.checked);
         setScoreError(d.unavailable.length > 0);
       } catch (error) {
@@ -210,46 +252,114 @@ export function useDashboardFeeds(active: DashboardPageId) {
   }
   const activePage = useRef<DashboardPageId>(TEAM_IDS.WOLVES);
   const newsChecked = useRef(new Map<TeamId, number>());
+  const newsSource = useRef<{ checked: number; data: HubData } | null>(null);
+  const newsRequest = useRef<Promise<HubData> | null>(null);
+  async function fetchGenericNews(force: boolean) {
+    const cached = newsSource.current;
+    if (cached && !force && Date.now() - cached.checked < 300000)
+      return cached.data;
+    if (newsRequest.current) return newsRequest.current;
+    const request = (async () => {
+      const response = await requests.current.fetch("/api/news", {
+        credentials: "omit",
+        referrerPolicy: "no-referrer",
+        cache: "no-store",
+      });
+      if (!response.ok) throw Error();
+      const data = activeHub((await response.json()) as HubData);
+      void recordFeedDiagnostics(data.health);
+      if (
+        data.health.length &&
+        data.health.every((health) => health.status === "unavailable")
+      )
+        throw Error();
+      newsSource.current = { checked: Date.now(), data };
+      return data;
+    })();
+    newsRequest.current = request;
+    try {
+      return await request;
+    } finally {
+      if (newsRequest.current === request) newsRequest.current = null;
+    }
+  }
+  function cacheNewsPages(data: HubData, ids: TeamId[]) {
+    const checked = Date.parse(data.checked) || Date.now();
+    setNewsPages((pages) => {
+      let next = pages;
+      for (const id of ids) {
+        const previousChecked = Date.parse(pages[id]?.checked || "");
+        if (Number.isFinite(previousChecked) && previousChecked > checked)
+          continue;
+        if (next === pages) next = { ...pages };
+        next[id] = newsForTeam(data, id);
+      }
+      return next;
+    });
+    setNewsChecked(ids, checked);
+    setNewsStatus((statuses) => {
+      const next = { ...statuses };
+      for (const id of ids) next[id] = "ready";
+      return next;
+    });
+  }
+  function setNewsChecked(ids: TeamId[], checked: number) {
+    for (const id of ids)
+      newsChecked.current.set(
+        id,
+        Math.max(newsChecked.current.get(id) || 0, checked),
+      );
+  }
   function fetchNewsPage(id: TeamId, force = false) {
     if (!force && Date.now() - (newsChecked.current.get(id) || 0) < 300000)
       return Promise.resolve();
     return once("news:" + id, async () => {
       setNewsStatus((s) => ({ ...s, [id]: "loading" }));
       try {
-        const r = await requests.current.fetch(
-          "/api/news?team=" + encodeURIComponent(id),
-          {
-            credentials: "omit",
-            referrerPolicy: "no-referrer",
-            cache: "no-store",
-          },
-        );
-        if (!r.ok) throw Error();
-        const d = activeHub((await r.json()) as HubData);
-        void recordFeedDiagnostics(d.health);
+        const response = await requests.current.fetch(newsPageUrl(id), {
+          credentials: "omit",
+          referrerPolicy: "no-referrer",
+          cache: "no-store",
+        });
+        if (!response.ok) throw Error();
+        const data = activeHub((await response.json()) as HubData);
+        void recordFeedDiagnostics(data.health);
         if (
-          d.health.length &&
-          d.health.every((h) => h.status === "unavailable")
+          data.health.length &&
+          data.health.every((health) => health.status === "unavailable")
         )
           throw Error();
-        setNewsPages((pages) => ({ ...pages, [id]: d }));
-        newsChecked.current.set(id, Date.now());
-        setNewsStatus((s) => ({ ...s, [id]: "ready" }));
+        cacheNewsPages(data, [id]);
       } catch (error) {
         void recordRequestDiagnostic("News request", [id], error);
         setNewsStatus((s) => ({ ...s, [id]: "error" }));
       }
     });
   }
-  function refreshNews() {
-    return once("news-queue", async () => {
-      const selected = activePage.current;
-      if (isTeamId(selected)) await fetchNewsPage(selected, true);
-      // Background work is bounded to one page at a time. Selecting a new page
-      // can immediately start its request without waiting behind this queue.
-      for (const t of teams) {
-        if (!requests.current.running) break;
-        if (t.id !== selected) await fetchNewsPage(t.id);
+  function fetchAllNews(force = false) {
+    const ids = teams.map((team) => team.id);
+    const pagesFresh = () =>
+      ids.every(
+        (id) => Date.now() - (newsChecked.current.get(id) || 0) < 300000,
+      );
+    if (!force && pagesFresh()) return Promise.resolve();
+    return once("news:all", async () => {
+      if (!force && pagesFresh()) return;
+      setNewsStatus((statuses) => {
+        const next = { ...statuses };
+        for (const id of ids) next[id] = "loading";
+        return next;
+      });
+      try {
+        const data = await fetchGenericNews(force);
+        cacheNewsPages(data, ids);
+      } catch (error) {
+        void recordRequestDiagnostic("News request", ids, error);
+        setNewsStatus((statuses) => {
+          const next = { ...statuses };
+          for (const id of ids) next[id] = "error";
+          return next;
+        });
       }
     });
   }
@@ -279,7 +389,7 @@ export function useDashboardFeeds(active: DashboardPageId) {
         setData((previous) => {
           const merged = {
             ...(previous || d),
-            games: d.games,
+            games: mergeScoreUpdates(previous?.games || [], d.games),
             health: [
               ...(previous?.health || []).filter(
                 (h) =>
@@ -296,7 +406,6 @@ export function useDashboardFeeds(active: DashboardPageId) {
           return merged;
         });
         setScheduleError(false);
-        void refreshOdds();
       } catch (error) {
         void recordRequestDiagnostic("Schedule request", [], error);
         setScheduleError(true);
@@ -321,14 +430,89 @@ export function useDashboardFeeds(active: DashboardPageId) {
       }
     });
   }
-  function refresh() {
-    void refreshInfo();
-    void refreshScores();
-    void refreshSocial();
-    void refreshSchedules();
-    void refreshNews();
+  const marchChecked = useRef(0);
+  function refreshMarchMadness(force = false) {
+    if (!force && Date.now() - marchChecked.current < 60000)
+      return Promise.resolve();
+    return once("march-madness", async () => {
+      try {
+        const response = await requests.current.fetch("/api/march-madness", {
+          cache: "no-store",
+          credentials: "omit",
+          referrerPolicy: "no-referrer",
+        });
+        if (!response.ok) throw Error();
+        setMarchData((await response.json()) as MarchData);
+        setMarchUnavailable(false);
+      } catch {
+        setMarchUnavailable(true);
+      } finally {
+        marchChecked.current = Date.now();
+      }
+    });
   }
-  const pollingCallbacks = useRef({ refresh, refreshScores, refreshSocial });
+  const dashboardChecked = useRef(0);
+  function refreshDashboardContent(force = false) {
+    if (!force && Date.now() - dashboardChecked.current < 300000)
+      return Promise.resolve();
+    return once("dashboard-content", async () => {
+      await Promise.all([
+        refreshInfo(),
+        refreshScores(),
+        refreshSocial(),
+        refreshSchedules().then(() => {
+          if (requests.current.running) return refreshOdds();
+        }),
+      ]);
+      dashboardChecked.current = Date.now();
+    });
+  }
+  async function refreshPage(page: DashboardPageId, force = false) {
+    if (page === "march-madness") {
+      await refreshMarchMadness(force);
+      return;
+    }
+    await Promise.all([
+      refreshDashboardContent(force),
+      ...(isTeamId(page)
+        ? [fetchNewsPage(page, force)]
+        : [fetchAllNews(force)]),
+    ]);
+  }
+  function selectPage(page: DashboardPageId) {
+    activePage.current = page;
+    void refreshPage(page);
+  }
+  function refresh() {
+    return once("page-feeds", async () => {
+      let firstPage = true;
+      await loadPageBeforeBackground({
+        currentPage: () => activePage.current,
+        loadPage: (page) => {
+          const force = firstPage;
+          firstPage = false;
+          return refreshPage(page, force);
+        },
+        background: [
+          () => refreshDashboardContent(),
+          ...teams.map((team) => () => fetchNewsPage(team.id)),
+        ],
+        isRunning: () => requests.current.running,
+      });
+    });
+  }
+  function refreshLive() {
+    if (activePage.current === "march-madness") {
+      void refreshMarchMadness(true);
+    } else {
+      void refreshScores();
+      void refreshSocial();
+    }
+  }
+  const pollingCallbacks = useRef({ refresh, refreshLive });
+  useEffect(() => {
+    pollingCallbacks.current = { refresh, refreshLive };
+  });
   useEffect(() => {
     const publicRequests = requests.current;
     publicRequests.start();
@@ -336,34 +520,15 @@ export function useDashboardFeeds(active: DashboardPageId) {
     activePage.current = storedDashboardPage();
     queueMicrotask(() => {
       if (!alive) return;
-      setPlayerStats(readPlayerStatsCache(browserStorage));
+      const cachedStats = readPlayerStatsCache(browserStorage);
+      rosterLoader.current.seed(cachedStats);
+      setPlayerStats(cachedStats);
       setSocialData(readStored("wf-social-cache", isStories, []));
       setData(readStored<HubData | null>("wf-cache", isHubData, null));
     });
-    // Split fallbacks out of the main client chunk. Never replace a live/cache response.
-    void import("../data/snapshots/initial.json")
-      .then(({ default: seed }) => {
-        if (!alive) return;
-        setData((previous) => previous || activeHub(seed as HubData));
-        setSocialData((previous) =>
-          socialQueue([...previous, ...socialQueue(seed.stories as Story[])]),
-        );
-      })
-      .catch(() => {});
-    void import("../data/snapshots/team-info-initial.json")
-      .then(({ default: seed }) => {
-        if (alive)
-          setTeamInfo((previous) =>
-            previous.length ? previous : (seed as TeamInfo[]),
-          );
-      })
-      .catch(() => {});
     const stopPolling = pollPublicFeeds(
       () => pollingCallbacks.current.refresh(),
-      () => {
-        pollingCallbacks.current.refreshScores();
-        pollingCallbacks.current.refreshSocial();
-      },
+      () => pollingCallbacks.current.refreshLive(),
     );
     return () => {
       alive = false;
@@ -387,11 +552,13 @@ export function useDashboardFeeds(active: DashboardPageId) {
     oddsGames,
     playerStats,
     playerStatsStatus,
+    marchData,
+    marchUnavailable,
     socialRefreshing,
     socialRefreshError,
     refreshSocial,
     refreshRosterStats,
-    fetchNewsPage,
-    activePage,
+    selectPage,
   };
 }
+
