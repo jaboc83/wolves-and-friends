@@ -1,8 +1,7 @@
 import type { Game } from "./feed-types";
 
 const cacheDuration = 30 * 1000;
-const pastDateWindow = 7 * 24 * 60 * 60 * 1000;
-const futureDateWindow = 36 * 60 * 60 * 1000;
+const dateWindow = 36 * 60 * 60 * 1000;
 const feedBase =
   "https://feeds.incrowdsports.com/provider/euroleague-feeds/v2/competitions/E/seasons/";
 
@@ -53,7 +52,7 @@ export function parseEuroLeagueGames(payload: unknown, checked: string): Game[] 
     throw new Error("EuroLeague game feed unavailable");
 
   const now = Date.parse(checked);
-  return root.data.flatMap((entry): Game[] => {
+  const games = root.data.flatMap((entry): Game[] => {
     const game = record(entry);
     const home = record(game?.home);
     const away = record(game?.away);
@@ -63,9 +62,7 @@ export function parseEuroLeagueGames(payload: unknown, checked: string): Game[] 
       !home ||
       !away ||
       ![home.code, home.tla, away.code, away.tla].includes("ZAL") ||
-      !Number.isFinite(timestamp) ||
-      timestamp < now - pastDateWindow ||
-      timestamp > now + futureDateWindow
+      !Number.isFinite(timestamp)
     )
       return [];
 
@@ -126,6 +123,17 @@ export function parseEuroLeagueGames(payload: unknown, checked: string): Game[] 
       },
     ];
   });
+  const recentResults = games
+    .filter((game) => game.state === "post")
+    .sort((a, b) => Date.parse(b.date) - Date.parse(a.date))
+    .slice(0, 3);
+  const currentGames = games.filter(
+    (game) =>
+      game.state !== "post" &&
+      Date.parse(game.date) >= now - dateWindow &&
+      Date.parse(game.date) <= now + dateWindow,
+  );
+  return [...recentResults, ...currentGames];
 }
 
 export function fetchEuroLeagueGames(): Promise<FeedResult> {
