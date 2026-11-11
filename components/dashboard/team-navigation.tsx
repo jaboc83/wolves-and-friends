@@ -1,5 +1,6 @@
 // Team picker menu for switching dashboard pages, marking teams that play today.
 "use client";
+import { useState } from "react";
 import Image from "next/image";
 import { sportTerms } from "../../lib/teams/sport-terms";
 import { teamLogoPath } from "../../lib/teams/team-logo";
@@ -8,30 +9,32 @@ import type { DashboardPageId } from "../../lib/dashboard/page-id";
 
 type TeamNavigationProps = {
   active: DashboardPageId;
-  open: boolean;
   teamsPlayingToday: ReadonlySet<string>;
   onChoose: (id: DashboardPageId) => void;
-  onToggle: () => void;
 };
 
 export default function TeamNavigation({
   active,
-  open,
   teamsPlayingToday,
   onChoose,
-  onToggle,
 }: TeamNavigationProps) {
+  const [open, setOpen] = useState(false);
   const activeTeam = teams.find((team) => team.id === active);
   const menuTitle =
     active === "march-madness"
       ? "March Madness"
       : activeTeam?.short || "All teams";
 
+  function choose(id: DashboardPageId) {
+    setOpen(false);
+    onChoose(id);
+  }
+
   return (
     <>
       <button
         className="team-menu-toggle"
-        onClick={onToggle}
+        onClick={() => setOpen((value) => !value)}
         aria-expanded={open}
         aria-controls="team-filters"
       >
@@ -49,7 +52,7 @@ export default function TeamNavigation({
         <button
           aria-pressed={active === "all"}
           className={active === "all" ? "selected" : ""}
-          onClick={() => onChoose("all")}
+          onClick={() => choose("all")}
         >
           <Image
             unoptimized
@@ -67,7 +70,7 @@ export default function TeamNavigation({
             data-tab-team={team.id}
             aria-pressed={active === team.id}
             className={active === team.id ? "selected" : ""}
-            onClick={() => onChoose(team.id)}
+            onClick={() => choose(team.id)}
           >
             <span className="dot" style={{ background: team.color }} />
             <Image
@@ -93,7 +96,7 @@ export default function TeamNavigation({
           data-tab-team="march-madness"
           aria-pressed={active === "march-madness"}
           className={active === "march-madness" ? "selected" : ""}
-          onClick={() => onChoose("march-madness")}
+          onClick={() => choose("march-madness")}
         >
           <Image
             unoptimized
