@@ -36,6 +36,7 @@ const links = (html: string) =>
   [...html.matchAll(/<a\b([^>]*)>([\s\S]*?)<\/a>/gi)].map((m) => ({
     text: plain(m[2]),
     href: decode(m[1].match(/\bhref=["']([^"']+)["']/i)?.[1] || ""),
+    index: m.index || 0,
   }));
 const absolute = (href: string, origin: string) => {
   try {
@@ -610,7 +611,7 @@ export function parsePwhlSchedule(
         html: anchor.text,
         text: anchor.text,
         href: anchor.href,
-        index: html.indexOf(anchor.text),
+        index: anchor.index,
       });
     }
   }
