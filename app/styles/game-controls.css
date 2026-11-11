@@ -210,6 +210,11 @@
   color: #754400;
   border-color: #e9c47c;
 }
+.hub[data-mode="dark"] .badge-preseason {
+  background: #46321d;
+  color: #fff2cc;
+  border-color: #9b7743;
+}
 .badge-playoffs {
   background: #eee4ff;
   color: #52317a;
