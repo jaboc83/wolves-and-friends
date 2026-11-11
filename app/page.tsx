@@ -45,7 +45,6 @@ export default function Home() {
   const [active, setActive] = useState<DashboardPageId>(TEAM_IDS.WOLVES),
     [search, setSearch] = useState(""),
     [sources, setSources] = useState(false),
-    [teamMenuOpen, setTeamMenuOpen] = useState(false),
     [readIds, setReadIds] = useState<string[]>([]),
     [showRead, setShowRead] = useState(false),
     [showOlder, setShowOlder] = useState(false),
@@ -100,7 +99,6 @@ export default function Home() {
     selectPage(id);
     setActive(id);
     setAutoOpenStandings(false);
-    setTeamMenuOpen(false);
     setShowOlder(false);
     setShowOlderResults(false);
     browserStorage.setItem("wf-team", id);
@@ -278,10 +276,8 @@ export default function Home() {
         <div className="shell">
           <TeamNavigation
             active={active}
-            open={teamMenuOpen}
             teamsPlayingToday={teamsPlayingToday}
             onChoose={choose}
-            onToggle={() => setTeamMenuOpen(!teamMenuOpen)}
           />
           <div className="intro">
             <div>
