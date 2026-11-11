@@ -593,10 +593,11 @@ export function parsePwhlSchedule(
   sourceUrl: string = frostProviders.urls.schedule,
 ): Game[] {
   const output = new Map<string, Game>();
-  const candidates = rows(html).map((r) => ({
-    html: r,
-    text: plain(r),
-    href: links(r).find((a) => /game|schedule|match/i.test(a.href))?.href,
+  const candidates = [...html.matchAll(/<tr\b[^>]*>([\s\S]*?)<\/tr>/gi)].map((match) => ({
+    html: match[1],
+    text: plain(match[1]),
+    href: links(match[1]).find((a) => /game|schedule|match/i.test(a.href))?.href,
+    index: match.index || 0,
   }));
   for (const anchor of links(html)) {
     if (
@@ -609,6 +610,7 @@ export function parsePwhlSchedule(
         html: anchor.text,
         text: anchor.text,
         href: anchor.href,
+        index: html.indexOf(anchor.text),
       });
     }
   }
@@ -655,6 +657,15 @@ export function parsePwhlSchedule(
         ?.trim() || "";
     const eventUrl =
       absolute(candidate.href || "", new URL(sourceUrl).origin) || sourceUrl;
+    const earlierScheduleText = plain(html.slice(0, candidate.index));
+    const seasonMarkers = [
+      ...earlierScheduleText.matchAll(/\b(pre[- ]?season|regular season)\b/gi),
+    ];
+    const sectionLabel = seasonMarkers.at(-1)?.[1] || "";
+    const competitionNote =
+      /pre[- ]?season/i.test(text) || /pre[- ]?season/i.test(sectionLabel)
+        ? "Preseason"
+        : undefined;
     const id = `pwhl-frost-${dateTime.date.slice(0, 10)}-${other.toLowerCase().replace(/[^a-z0-9]+/g, "-")}`;
     output.set(id, {
       id,
@@ -665,6 +676,7 @@ export function parsePwhlSchedule(
       status: hasResult ? "Final" : "Scheduled",
       state: Date.parse(dateTime.date) > Date.parse(checked) ? "pre" : "post",
       league: "hockey/pwhl",
+      competitionNote,
       venue,
       broadcast,
       url: eventUrl,
