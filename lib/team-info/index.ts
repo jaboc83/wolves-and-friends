@@ -11,6 +11,7 @@ import {
   analystPremierLeaguePowerRankingsEndpoint,
   parseAnalystPremierLeaguePowerRanking,
   parseCbsMlbPowerRanking,
+  parseCbsNbaPowerRanking,
   parseCbsNhlPowerRanking,
   parseSimmonsMlsPowerRanking,
   powerRankingFallback,
@@ -19,6 +20,7 @@ import {
 export {
   parseAnalystPremierLeaguePowerRanking,
   parseCbsMlbPowerRanking,
+  parseCbsNbaPowerRanking,
   parseCbsNhlPowerRanking,
   parseSimmonsMlsPowerRanking,
 } from "./power-ranking-fallbacks";
@@ -411,6 +413,11 @@ export async function fetchTeamInfo() {
               } else if (rankingSource === "cbs-mlb") {
                 info.powerRanking = parseCbsMlbPowerRanking(
                   await getText("https://www.cbssports.com/mlb/powerrankings/"),
+                  checked,
+                );
+              } else if (rankingSource === "cbs-nba") {
+                info.powerRanking = parseCbsNbaPowerRanking(
+                  await getText("https://www.cbssports.com/nba/powerrankings/"),
                   checked,
                 );
               } else if (rankingSource === "cbs-nhl") {
