@@ -115,7 +115,7 @@ export type TeamProviders = {
   // Fixed season window when no provider publishes one.
   season?: TeamSeason;
   // Power-ranking source when ESPN has no league index.
-  powerRankingSource?: "cbs-mlb" | "cbs-nhl" | "opta-epl" | "simmons-mls";
+  powerRankingSource?: "cbs-mlb" | "cbs-nhl" | "cbs-nba" | "opta-epl" | "simmons-mls";
   // Team-specific pages and endpoints used by scrapers and parsers.
   urls?: Readonly<Record<string, string>>;
 };
