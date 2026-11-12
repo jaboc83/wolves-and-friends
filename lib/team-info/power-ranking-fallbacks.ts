@@ -194,6 +194,74 @@ const nbaLogoIds: Record<string, string> = {
   "Memphis Grizzlies": "29",
   "Charlotte Hornets": "30",
 };
+const nflRankingNames: Record<string, string> = {
+  "49ers": "San Francisco 49ers",
+  "Bears": "Chicago Bears",
+  "Bengals": "Cincinnati Bengals",
+  "Bills": "Buffalo Bills",
+  "Broncos": "Denver Broncos",
+  "Browns": "Cleveland Browns",
+  "Buccaneers": "Tampa Bay Buccaneers",
+  "Cardinals": "Arizona Cardinals",
+  "Chargers": "Los Angeles Chargers",
+  "Chiefs": "Kansas City Chiefs",
+  "Colts": "Indianapolis Colts",
+  "Commanders": "Washington Commanders",
+  "Cowboys": "Dallas Cowboys",
+  "Dolphins": "Miami Dolphins",
+  "Eagles": "Philadelphia Eagles",
+  "Falcons": "Atlanta Falcons",
+  "Giants": "New York Giants",
+  "Jaguars": "Jacksonville Jaguars",
+  "Jets": "New York Jets",
+  "Lions": "Detroit Lions",
+  "Packers": "Green Bay Packers",
+  "Panthers": "Carolina Panthers",
+  "Patriots": "New England Patriots",
+  "Raiders": "Las Vegas Raiders",
+  "Rams": "Los Angeles Rams",
+  "Ravens": "Baltimore Ravens",
+  "Saints": "New Orleans Saints",
+  "Seahawks": "Seattle Seahawks",
+  "Steelers": "Pittsburgh Steelers",
+  "Texans": "Houston Texans",
+  "Titans": "Tennessee Titans",
+  "Vikings": "Minnesota Vikings"
+};
+const nflLogoIds: Record<string, string> = {
+  "Atlanta Falcons": "1",
+  "Buffalo Bills": "2",
+  "Chicago Bears": "3",
+  "Cincinnati Bengals": "4",
+  "Cleveland Browns": "5",
+  "Dallas Cowboys": "6",
+  "Denver Broncos": "7",
+  "Detroit Lions": "8",
+  "Green Bay Packers": "9",
+  "Tennessee Titans": "10",
+  "Indianapolis Colts": "11",
+  "Kansas City Chiefs": "12",
+  "Las Vegas Raiders": "13",
+  "Los Angeles Rams": "14",
+  "Miami Dolphins": "15",
+  "Minnesota Vikings": "16",
+  "New England Patriots": "17",
+  "New Orleans Saints": "18",
+  "New York Giants": "19",
+  "New York Jets": "20",
+  "Philadelphia Eagles": "21",
+  "Arizona Cardinals": "22",
+  "Pittsburgh Steelers": "23",
+  "Los Angeles Chargers": "24",
+  "San Francisco 49ers": "25",
+  "Seattle Seahawks": "26",
+  "Tampa Bay Buccaneers": "27",
+  "Washington Commanders": "28",
+  "Carolina Panthers": "29",
+  "Jacksonville Jaguars": "30",
+  "Baltimore Ravens": "33",
+  "Houston Texans": "34"
+};
 const nhlLogoIds: Record<string, string> = {
   "anaheim-ducks": "25",
   "boston-bruins": "1",
@@ -736,6 +804,21 @@ export function parseCbsNbaPowerRanking(
     publishedAt: checked,
     note: "Latest CBS Sports NBA Power Rankings.",
   };
+}
+
+export function parseCbsNflPowerRanking(html: string, checked: string): PowerRanking | undefined {
+  const table = cbsRankingTable(html);
+  const rows = [...table.matchAll(/<tr\b[^>]*>([\s\S]*?)<\/tr>/gi)].flatMap((match) => {
+    const cells = [...match[1].matchAll(/<t[dh]\b[^>]*>([\s\S]*?)<\/t[dh]>/gi)].map((cell) => plainHtml(cell[1]));
+    const rank = Number(cells[0]);
+    const shortName = cells[1]?.replace(/\s*\(.*$/, "");
+    const name = nflRankingNames[shortName] || shortName;
+    const logoId = nflLogoIds[name];
+    if (!Number.isInteger(rank) || rank < 1 || !name || !logoId) return [];
+    return [{ id: teamLogoSlug(name), name, url: "https://www.cbssports.com/nfl/powerrankings/", logo: `/api/team-logo?league=football%2Fnfl&id=${logoId}`, cells: [ordinal(rank)] }];
+  });
+  if (rows.length < 32 || !rows.some((row) => row.name === "Minnesota Vikings")) return;
+  return { name: "NFL Power Rankings", metric: "Rank", rows, source: "CBS Sports", url: "https://www.cbssports.com/nfl/powerrankings/", checked, publishedAt: checked, note: "Latest CBS Sports NFL Power Rankings." };
 }
 
 export function parseCbsNhlPowerRanking(

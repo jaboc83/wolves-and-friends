@@ -118,6 +118,7 @@ export type TeamProviders = {
   powerRankingSource?:
     | "cbs-mlb"
     | "cbs-nba"
+    | "cbs-nfl"
     | "cbs-nhl"
     | "opta-epl"
     | "simmons-mls";
