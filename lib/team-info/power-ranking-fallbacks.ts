@@ -100,6 +100,100 @@ const wnbaBpiFallbackRows = [
   url: `https://www.espn.com/wnba/team/_/id/${id}`,
   cells: [rank, bpi],
 }));
+const nbaRankingNames: Record<string, string> = {
+  "76ers": "Philadelphia 76ers",
+  "Atlanta Hawks": "Atlanta Hawks",
+  "Boston Celtics": "Boston Celtics",
+  "Brooklyn Nets": "Brooklyn Nets",
+  "Blazers": "Portland Trail Blazers",
+  "Bucks": "Milwaukee Bucks",
+  "Bulls": "Chicago Bulls",
+  "Cavaliers": "Cleveland Cavaliers",
+  "Celtics": "Boston Celtics",
+  "Charlotte Hornets": "Charlotte Hornets",
+  "Clippers": "Los Angeles Clippers",
+  "Cleveland Cavaliers": "Cleveland Cavaliers",
+  "Dallas Mavericks": "Dallas Mavericks",
+  "Denver Nuggets": "Denver Nuggets",
+  "Detroit Pistons": "Detroit Pistons",
+  "Golden State Warriors": "Golden State Warriors",
+  "Grizzlies": "Memphis Grizzlies",
+  "Hawks": "Atlanta Hawks",
+  "Heat": "Miami Heat",
+  "Hornets": "Charlotte Hornets",
+  "Houston Rockets": "Houston Rockets",
+  "Indiana Pacers": "Indiana Pacers",
+  "Jazz": "Utah Jazz",
+  "Kings": "Sacramento Kings",
+  "Knicks": "New York Knicks",
+  "Lakers": "Los Angeles Lakers",
+  "Los Angeles Clippers": "Los Angeles Clippers",
+  "Los Angeles Lakers": "Los Angeles Lakers",
+  "Magic": "Orlando Magic",
+  "Mavericks": "Dallas Mavericks",
+  "Memphis Grizzlies": "Memphis Grizzlies",
+  "Miami Heat": "Miami Heat",
+  "Milwaukee Bucks": "Milwaukee Bucks",
+  "Minnesota Timberwolves": "Minnesota Timberwolves",
+  "Nets": "Brooklyn Nets",
+  "New Orleans Pelicans": "New Orleans Pelicans",
+  "New York Knicks": "New York Knicks",
+  "Nuggets": "Denver Nuggets",
+  "Oklahoma City Thunder": "Oklahoma City Thunder",
+  "Orlando Magic": "Orlando Magic",
+  "Pacers": "Indiana Pacers",
+  "Pelicans": "New Orleans Pelicans",
+  "Philadelphia 76ers": "Philadelphia 76ers",
+  "Phoenix Suns": "Phoenix Suns",
+  "Pistons": "Detroit Pistons",
+  "Portland Trail Blazers": "Portland Trail Blazers",
+  "Raptors": "Toronto Raptors",
+  "Rockets": "Houston Rockets",
+  "Sacramento Kings": "Sacramento Kings",
+  "San Antonio Spurs": "San Antonio Spurs",
+  "Spurs": "San Antonio Spurs",
+  "Suns": "Phoenix Suns",
+  "Thunder": "Oklahoma City Thunder",
+  "Timberwolves": "Minnesota Timberwolves",
+  "Toronto Raptors": "Toronto Raptors",
+  "Trail Blazers": "Portland Trail Blazers",
+  "Utah Jazz": "Utah Jazz",
+  "Warriors": "Golden State Warriors",
+  "Washington Wizards": "Washington Wizards",
+  "Wizards": "Washington Wizards",
+};
+const nbaLogoIds: Record<string, string> = {
+  "Atlanta Hawks": "1",
+  "Boston Celtics": "2",
+  "New Orleans Pelicans": "3",
+  "Chicago Bulls": "4",
+  "Cleveland Cavaliers": "5",
+  "Dallas Mavericks": "6",
+  "Denver Nuggets": "7",
+  "Detroit Pistons": "8",
+  "Golden State Warriors": "9",
+  "Houston Rockets": "10",
+  "Indiana Pacers": "11",
+  "Los Angeles Clippers": "12",
+  "Los Angeles Lakers": "13",
+  "Miami Heat": "14",
+  "Milwaukee Bucks": "15",
+  "Minnesota Timberwolves": "16",
+  "Brooklyn Nets": "17",
+  "New York Knicks": "18",
+  "Orlando Magic": "19",
+  "Philadelphia 76ers": "20",
+  "Phoenix Suns": "21",
+  "Portland Trail Blazers": "22",
+  "Sacramento Kings": "23",
+  "San Antonio Spurs": "24",
+  "Oklahoma City Thunder": "25",
+  "Utah Jazz": "26",
+  "Washington Wizards": "27",
+  "Toronto Raptors": "28",
+  "Memphis Grizzlies": "29",
+  "Charlotte Hornets": "30",
+};
 const nhlLogoIds: Record<string, string> = {
   "anaheim-ducks": "25",
   "boston-bruins": "1",
@@ -597,6 +691,50 @@ export function parseCbsMlbPowerRanking(
     checked,
     publishedAt: checked,
     note: "Latest CBS Sports MLB Power Rankings.",
+  };
+}
+
+export function parseCbsNbaPowerRanking(
+  html: string,
+  checked: string,
+): PowerRanking | undefined {
+  const table = cbsRankingTable(html);
+  const rows = [...table.matchAll(/<tr\\b[^>]*>([\\s\\S]*?)<\\/tr>/gi)].flatMap(
+    (match) => {
+      const cells = [
+        ...match[1].matchAll(/<t[dh]\\b[^>]*>([\\s\\S]*?)<\\/t[dh]>/gi),
+      ].map((cell) => plainHtml(cell[1]));
+      const rank = Number(cells[0]);
+      const shortName = cells[1]?.replace(/\\s*\\(.*$/, "");
+      const name = nbaRankingNames[shortName] || shortName;
+      const logoId = nbaLogoIds[name];
+      if (!Number.isInteger(rank) || rank < 1 || !name || !logoId) return [];
+      const slug = teamLogoSlug(name);
+      return [
+        {
+          id: slug,
+          name,
+          url: "https://www.cbssports.com/nba/powerrankings/",
+          logo: `/api/team-logo?league=basketball%2Fnba&id=${logoId}`,
+          cells: [ordinal(rank)],
+        },
+      ];
+    },
+  );
+  if (
+    rows.length < 30 ||
+    !rows.some((row) => row.name === "Minnesota Timberwolves")
+  )
+    return;
+  return {
+    name: "NBA Power Rankings",
+    metric: "Rank",
+    rows,
+    source: "CBS Sports",
+    url: "https://www.cbssports.com/nba/powerrankings/",
+    checked,
+    publishedAt: checked,
+    note: "Latest CBS Sports NBA Power Rankings.",
   };
 }
 
