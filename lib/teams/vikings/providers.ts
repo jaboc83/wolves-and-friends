@@ -35,4 +35,5 @@ export const vikingsProviders = {
   youtube: { name: "Minnesota Vikings", channel: "UCpn2WAITh-6SP4PHBzj3seg" },
   socialTags: ["#Skol"],
   espnTeamId: "16",
+  powerRankingSource: "cbs-nfl",
 } as const satisfies TeamProviders;
