@@ -699,13 +699,13 @@ export function parseCbsNbaPowerRanking(
   checked: string,
 ): PowerRanking | undefined {
   const table = cbsRankingTable(html);
-  const rows = [...table.matchAll(/<tr\\b[^>]*>([\\s\\S]*?)<\\/tr>/gi)].flatMap(
+  const rows = [...table.matchAll(/<tr\b[^>]*>([\s\S]*?)<\/tr>/gi)].flatMap(
     (match) => {
       const cells = [
-        ...match[1].matchAll(/<t[dh]\\b[^>]*>([\\s\\S]*?)<\\/t[dh]>/gi),
+        ...match[1].matchAll(/<t[dh]\b[^>]*>([\s\S]*?)<\/t[dh]>/gi),
       ].map((cell) => plainHtml(cell[1]));
       const rank = Number(cells[0]);
-      const shortName = cells[1]?.replace(/\\s*\\(.*$/, "");
+      const shortName = cells[1]?.replace(/\s*\(.*$/, "");
       const name = nbaRankingNames[shortName] || shortName;
       const logoId = nbaLogoIds[name];
       if (!Number.isInteger(rank) || rank < 1 || !name || !logoId) return [];
