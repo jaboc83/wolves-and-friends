@@ -43,6 +43,7 @@ export const wolvesProviders = {
       /timberwolves|\bwolves\b|timbies|anthony edwards|\bant\b|naz reid|jaden mcdaniels|rudy gobert|lamelo ball|jonathan kuminga|chris finch|ayo dosunmu|canis hoopus/i,
   },
   espnTeamId: "16",
+  powerRankingSource: "cbs-nba",
   urls: {
     officialNews: "https://www.nba.com/timberwolves/news",
   },
