@@ -12,6 +12,7 @@ import { teamProfile } from "../../lib/teams/teams";
 import type { PlayerStats } from "../../lib/team-info/player-stats";
 import type { StatsStatus } from "../../lib/team-info/roster-stats-loader";
 import {
+  combineVikingsOffensiveLineGroups,
   combineVikingsRunningBackGroups,
   createRosterStatsTable,
   rosterStatValue,
@@ -38,6 +39,7 @@ const abbreviation = (position: string) => {
   if (/left guard|\blg\b/.test(value)) return "LG";
   if (/right guard|\brg\b/.test(value)) return "RG";
   if (/offensive guard|\bog\b/.test(value)) return "OG";
+  if (/long snapper|\bls\b/.test(value)) return "LS";
   if (/fullback|\bfb\b/.test(value)) return "FB";
   if (/running back|\brb\b/.test(value)) return "RB";
   if (/quarterback|\bqb\b/.test(value)) return "QB";
@@ -149,14 +151,18 @@ export default function RosterPanel({
 
   const groups = useMemo(() => {
     if (!depth) return [];
-    return combineVikingsRunningBackGroups(
-      depth.groups.map((group) => ({
-        position: group.position,
-        players: group.players.map((player) => ({
-          ...player,
-          position: abbreviation(group.position),
+    return combineVikingsOffensiveLineGroups(
+      combineVikingsRunningBackGroups(
+        depth.groups.map((group) => ({
+          position: group.position,
+          players: group.players.map((player) => ({
+            ...player,
+            position: abbreviation(group.position),
+          })),
         })),
-      })),
+        teamId,
+        league || "",
+      ),
       teamId,
       league || "",
     );
@@ -279,13 +285,16 @@ export default function RosterPanel({
                   <div
                     className="roster-stats-table-scroll"
                     role="region"
-                    aria-label={`${group.position} player season stats`}
+                    aria-label={`${group.position} ${positionOnlyTable ? "roster" : "player season stats"}`}
                     tabIndex={0}
                   >
                     <table className="roster-stats-table">
                       <caption>
-                        {group.position} season stats
-                        {seasonTitles.length > 0 &&
+                        {positionOnlyTable
+                          ? group.position
+                          : `${group.position} season stats`}
+                        {!positionOnlyTable &&
+                          seasonTitles.length > 0 &&
                           ` · ${seasonTitles.join(" / ")}`}
                       </caption>
                       <thead>

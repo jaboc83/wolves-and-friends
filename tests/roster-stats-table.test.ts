@@ -1,6 +1,7 @@
 import assert from "node:assert/strict";
 import test from "node:test";
 import {
+  combineVikingsOffensiveLineGroups,
   combineVikingsRunningBackGroups,
   visibleRosterStatColumns,
 } from "../lib/team-info/roster-stats-table.ts";
@@ -105,5 +106,46 @@ test("only the Vikings NFL combines running back and fullback groups", () => {
   assert.deepEqual(
     combineVikingsRunningBackGroups(groups, "wild", "football/nfl"),
     groups,
+  );
+});
+
+test("Vikings offensive-line positions share one position-only table", () => {
+  const groups = [
+    { position: "Quarterback", players: ["qb"] },
+    { position: "Center", players: ["c"] },
+    { position: "Long Snapper", players: ["ls"] },
+    { position: "Offensive Tackle", players: ["ot"] },
+    { position: "Right Tackle", players: ["rt"] },
+    { position: "Left Guard", players: ["lg"] },
+    { position: "Right Guard", players: ["rg"] },
+    { position: "Wide Receiver", players: ["wr"] },
+  ];
+
+  const combined = combineVikingsOffensiveLineGroups(
+    groups,
+    "vikings",
+    "football/nfl",
+  );
+
+  assert.deepEqual(combined, [
+    groups[0],
+    {
+      position: "Offensive Line",
+      players: ["c", "ls", "ot", "rt", "lg", "rg"],
+    },
+    groups[7],
+  ]);
+  assert.deepEqual(
+    combineVikingsOffensiveLineGroups(groups, "wild", "football/nfl"),
+    groups,
+  );
+  assert.deepEqual(
+    visibleRosterStatColumns(
+      "vikings",
+      "football/nfl",
+      "Offensive Line",
+      ["TOT", "SACK"],
+    ),
+    { columns: [], positionOnly: true },
   );
 });
