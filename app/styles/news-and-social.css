@@ -303,6 +303,40 @@
   display: flex;
   gap: 12px;
 }
+.quoted-post {
+  margin: 12px 0;
+  padding: 12px;
+  border: 1px solid var(--line, #d5dfe4);
+  border-radius: 8px;
+  background: var(--raised, #f1f4f3);
+  color: var(--ink, #213b4b);
+}
+.quoted-post-meta {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 5px;
+  font-size: 11px;
+  color: var(--muted, #526777);
+}
+.quoted-post-meta a {
+  color: var(--ink, #213b4b);
+  font-weight: 700;
+}
+.quoted-post > p,
+.quoted-post-link p {
+  margin: 8px 0 0;
+  font-size: 12px;
+  line-height: 1.5;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}
+.quoted-post-link {
+  margin-top: 8px;
+  padding-top: 8px;
+  border-top: 1px solid var(--line, #d5dfe4);
+  font-size: 12px;
+}
 
 .headlines-content .message-feed {
   margin-top: 0;

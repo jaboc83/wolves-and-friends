@@ -3,20 +3,8 @@ import type { Story } from "../feeds/feed-types";
 import { TEAM_IDS, type TeamId } from "../teams/teams";
 import { wolvesProviders } from "../teams/wolves/providers";
 import { blueskyImageUrl } from "./bluesky-images";
+import { parseBlueskyQuote, type BlueskyEmbed } from "./bluesky-quote";
 import { socialQueue, SOCIAL_QUEUE_LIMIT } from "./social-queue";
-type BlueskyImage = {
-  thumb?: string;
-  fullsize?: string;
-  alt?: string;
-  aspectRatio?: { width?: number; height?: number };
-};
-type BlueskyEmbed = {
-  $type?: string;
-  external?: { title?: string };
-  record?: { value?: { text?: string } };
-  images?: BlueskyImage[];
-  media?: BlueskyEmbed;
-};
 type BlueskyPost = {
   record?: { text?: string; reply?: unknown; createdAt?: string };
   author?: { handle?: string; displayName?: string; avatar?: string };
@@ -53,13 +41,16 @@ export function parseBlueskyFeed(
       )
     )
       return [];
+    const quotedPost = parseBlueskyQuote(p.embed);
     const title = String(r.text || "").trim();
     const context =
       title +
       " " +
       (p.embed?.external?.title || "") +
       " " +
-      (p.embed?.record?.value?.text || "");
+      (quotedPost?.text || p.embed?.record?.value?.text || "") +
+      " " +
+      (quotedPost?.linkTitle || "");
     if (
       !pattern.test(context) ||
       !title ||
@@ -109,6 +100,7 @@ export function parseBlueskyFeed(
         teams: [team],
         kind: "social",
         avatar: blueskyImageUrl(a.avatar, "avatar"),
+        ...(quotedPost ? { quotedPost } : {}),
         ...(images.length ? { images } : {}),
       },
     ];
