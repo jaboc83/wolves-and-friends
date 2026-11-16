@@ -1,6 +1,7 @@
 import assert from "node:assert/strict";
 import test from "node:test";
 import {
+  combineVikingsDefensiveLineGroups,
   combineVikingsOffensiveLineGroups,
   combineVikingsReceiverGroups,
   combineVikingsRunningBackGroups,
@@ -185,5 +186,45 @@ test("Vikings wide receivers and tight ends share one Receivers table", () => {
   assert.deepEqual(
     combineVikingsReceiverGroups(groups, "wild", "football/nfl"),
     groups,
+  );
+});
+
+test("Vikings defensive ends and tackles share a Defensive Line table", () => {
+  const groups = [
+    { position: "Quarterback", players: ["qb"] },
+    { position: "Defensive End", players: ["de1", "de2"] },
+    { position: "Cornerback", players: ["cb"] },
+    { position: "Defensive Tackle", players: ["dt"] },
+  ];
+
+  assert.deepEqual(
+    combineVikingsDefensiveLineGroups(groups, "vikings", "football/nfl"),
+    [
+      groups[0],
+      {
+        position: "Defensive Line",
+        players: ["de1", "de2", "dt"],
+      },
+      groups[2],
+    ],
+  );
+  assert.deepEqual(
+    combineVikingsDefensiveLineGroups(groups, "wild", "football/nfl"),
+    groups,
+  );
+  assert.deepEqual(
+    visibleRosterStatColumns("vikings", "football/nfl", "Defensive Line", [
+      "TOT",
+      "SOLO",
+      "AST",
+      "SACK",
+      "FF",
+      "FR",
+      "PD",
+    ]),
+    {
+      columns: ["TOT", "SOLO", "AST", "SACK", "FF", "FR", "PD"],
+      positionOnly: false,
+    },
   );
 });

@@ -30,6 +30,15 @@ const vikingsOffensiveLinePositions = [
 
 const vikingsReceiverPositions = ["wide receiver", "wr", "tight end", "te"];
 const vikingsReceiverStatColumns = ["REC", "TGTS", "YDS", "AVG", "TD", "LNG"];
+const vikingsDefensiveLinePositions = [
+  "defensive line",
+  "defensive lineman",
+  "dl",
+  "defensive end",
+  "de",
+  "defensive tackle",
+  "dt",
+];
 
 const vikingsNflPositionColumns: {
   positions: string[];
@@ -174,6 +183,28 @@ export function combineVikingsReceiverGroups<T>(
   return groups.flatMap((group, index) =>
     index === firstIndex
       ? [{ position: "Receivers", players }]
+      : indexSet.has(index)
+        ? []
+        : [group],
+  );
+}
+
+export function combineVikingsDefensiveLineGroups<T>(
+  groups: { position: string; players: T[] }[],
+  teamId: string,
+  league: string,
+) {
+  if (teamId !== "vikings" || league !== "football/nfl") return groups;
+  const defensiveLineIndexes = groups.flatMap((group, index) =>
+    hasPosition(group.position, vikingsDefensiveLinePositions) ? [index] : [],
+  );
+  if (!defensiveLineIndexes.length) return groups;
+  const firstIndex = defensiveLineIndexes[0];
+  const players = defensiveLineIndexes.flatMap((index) => groups[index].players);
+  const indexSet = new Set(defensiveLineIndexes);
+  return groups.flatMap((group, index) =>
+    index === firstIndex
+      ? [{ position: "Defensive Line", players }]
       : indexSet.has(index)
         ? []
         : [group],
