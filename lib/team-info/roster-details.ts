@@ -8,6 +8,23 @@ export type RosterDetails = {
   signedForSeason?: boolean;
   draftPick?: boolean;
 };
+
+export function highestPaidPlayers<T extends { annualSalary?: number }>(
+  players: readonly T[],
+): Set<T> {
+  return new Set(
+    players
+      .filter(
+        (player) =>
+          player.annualSalary !== undefined &&
+          Number.isFinite(player.annualSalary) &&
+          player.annualSalary > 0,
+      )
+      .sort((a, b) => b.annualSalary! - a.annualSalary!)
+      .slice(0, 5),
+  );
+}
+
 export function rosterDetails(
   athlete: {
     dateOfBirth?: string;

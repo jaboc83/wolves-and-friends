@@ -261,6 +261,13 @@ body:has(.score-choice[open]) {
   padding-left: 18px;
   font-size: 12px;
 }
+.roster-salary-top {
+  color: #875100;
+  font-weight: 700;
+}
+.hub[data-mode="dark"] .roster-salary-top {
+  color: #ffd27a;
+}
 .roster-player-list li {
   padding: 4px;
 }

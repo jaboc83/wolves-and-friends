@@ -13,6 +13,7 @@ import type { PlayerStats } from "../../lib/team-info/player-stats";
 import type { StatsStatus } from "../../lib/team-info/roster-stats-loader";
 import { useRosterSalaries } from "../../hooks/use-roster-salaries";
 import { salaryForPlayer } from "../../lib/team-info/salaryswish";
+import { highestPaidPlayers } from "../../lib/team-info/roster-details";
 import {
   combineVikingsDefensiveLineGroups,
   combineVikingsLinebackerAndDefensiveBackGroups,
@@ -107,17 +108,31 @@ function PlayerMeta({ player }: { player: RosterPlayer }) {
   );
 }
 
-function PlayerAgeAndSalary({ player }: { player: RosterPlayer }) {
-  const details = [
-    player.age !== undefined ? `Age ${player.age}` : undefined,
-    player.annualSalary !== undefined
-      ? `${annualSalaryFormatter.format(player.annualSalary)}/yr`
-      : undefined,
-  ].filter(Boolean);
-  if (!details.length) return null;
+function PlayerAgeAndSalary({
+  player,
+  highestPaid,
+}: {
+  player: RosterPlayer;
+  highestPaid: boolean;
+}) {
+  if (player.age === undefined && player.annualSalary === undefined) return null;
+  const SalaryTag = highestPaid ? "strong" : "span";
   return (
     <span className="roster-player-age">
-      {details.join(" · ")}
+      {player.age !== undefined && `Age ${player.age}`}
+      {player.age !== undefined && player.annualSalary !== undefined && " · "}
+      {player.annualSalary !== undefined && (
+        <SalaryTag
+          className={highestPaid ? "roster-salary-top" : undefined}
+          title={
+            highestPaid
+              ? "One of this team's five highest-paid players"
+              : undefined
+          }
+        >
+          {annualSalaryFormatter.format(player.annualSalary)}/yr
+        </SalaryTag>
+      )}
     </span>
   );
 }
@@ -231,6 +246,10 @@ export default function RosterPanel({
     );
   }, [depth, league, salaries, teamId]);
 
+  const highestPaid = useMemo(
+    () => highestPaidPlayers(groups.flatMap((group) => group.players)),
+    [groups],
+  );
   const note = league ? statusNotes[playerStatsStatus] : undefined;
 
   return (
@@ -382,7 +401,10 @@ export default function RosterPanel({
                                 >
                                   {p.name} ↗
                                 </a>
-                                <PlayerAgeAndSalary player={p} />
+                                <PlayerAgeAndSalary
+                                  player={p}
+                                  highestPaid={highestPaid.has(p)}
+                                />
                                 <PlayerMeta player={p} />
                               </th>
                               <td className={sortedClass("Position")}>
@@ -415,7 +437,10 @@ export default function RosterPanel({
                           <a href={p.url} target="_blank" rel="noreferrer">
                             {p.name} ↗
                           </a>
-                          <PlayerAgeAndSalary player={p} />
+                          <PlayerAgeAndSalary
+                            player={p}
+                            highestPaid={highestPaid.has(p)}
+                          />
                           <PlayerMeta player={p} />
                         </li>
                       ))}
