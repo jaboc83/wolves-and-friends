@@ -3,6 +3,7 @@ import assert from "node:assert/strict";
 import test from "node:test";
 import {
   createRosterStatsLoader,
+  RosterManifestChangedError,
   type StatsBatch,
   type StatsStatus,
 } from "../lib/team-info/roster-stats-loader.ts";
@@ -91,6 +92,78 @@ test("a manifest version change refetches the manifest next time", async () => {
   await run(["a:1"]);
   await run(["a:1"]);
   assert.equal(manifestCalls(), 2);
+});
+
+test("HTTP manifest conflicts refresh the manifest instead of retrying an obsolete version", async () => {
+  let conflict = true;
+  const requestedVersions: string[] = [];
+  const { run, manifestCalls, statuses } = setup(
+    async (batch, version) => {
+      requestedVersions.push(version);
+      if (conflict) throw new RosterManifestChangedError();
+      return okBatch(version)(batch);
+    },
+    () => (conflict ? "v1" : "v2"),
+  );
+
+  await run(["a:1"]);
+  conflict = false;
+  await run(["a:1"]);
+
+  assert.equal(manifestCalls(), 2);
+  assert.deepEqual(requestedVersions, ["v1", "v2"]);
+  assert.equal(statuses.at(-1), "ready");
+});
+
+test("slow early batches do not consume the time budget of queued roster players", async (t) => {
+  t.mock.timers.enable({ apis: ["setTimeout"] });
+  t.mock.method(AbortSignal, "timeout", (milliseconds: number) => {
+    const controller = new AbortController();
+    setTimeout(() => controller.abort(), milliseconds);
+    return controller.signal;
+  });
+  const manifestKeys = Array.from({ length: 30 }, (_, index) => `nhl:${index}`);
+  const requested: number[] = [];
+  let finalStatus: StatsStatus = "idle";
+  const request = createRosterStatsLoader()({
+    priorityKeys: manifestKeys,
+    fetchManifest: async () => ({
+      players: [],
+      totalBatches: 10,
+      batchSize: 3,
+      manifestVersion: "v1",
+      manifestKeys,
+    }),
+    fetchBatch: (batch, version, signal) =>
+      new Promise((resolve, reject) => {
+        requested.push(batch);
+        signal.addEventListener("abort", () => reject(new Error("Timed out")));
+        setTimeout(
+          () =>
+            resolve({
+              players: manifestKeys
+                .slice(batch * 3, batch * 3 + 3)
+                .map((key) => ({ key, stats: stat })),
+              totalBatches: 10,
+              manifestVersion: version,
+            }),
+          19000,
+        );
+      }),
+    onStats: () => {},
+    onStatus: (status) => {
+      finalStatus = status;
+    },
+  });
+
+  for (let wave = 0; wave < 5; wave++) {
+    await new Promise<void>((resolve) => setImmediate(resolve));
+    t.mock.timers.tick(19000);
+  }
+  await request;
+
+  assert.equal(requested.length, 10);
+  assert.equal(finalStatus, "ready");
 });
 
 test("seeded stats count for the requested team", async () => {

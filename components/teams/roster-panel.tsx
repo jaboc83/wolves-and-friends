@@ -169,7 +169,7 @@ export default function RosterPanel({
   const rosterNote = teamProfile(teamId)?.rosterNote;
   const salaryState = useRosterSalaries(
     teamId,
-    league === "basketball/nba" && Boolean(depth?.salarySourceUrl),
+    Boolean(depth?.salarySourceUrl),
     ["ready", "partial", "empty", "unavailable"].includes(playerStatsStatus),
   );
   const salaries =
@@ -461,7 +461,7 @@ export default function RosterPanel({
                   target="_blank"
                   rel="noreferrer"
                 >
-                  SalarySwish salaries ↗
+                  {league === "hockey/nhl" ? "CapWages" : "SalarySwish"} ↗
                 </a>{" "}
               </>
             )}

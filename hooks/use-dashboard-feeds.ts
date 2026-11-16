@@ -13,6 +13,7 @@ import {
 } from "../lib/browser/storage";
 import {
   createRosterStatsLoader,
+  RosterManifestChangedError,
   type StatsStatus,
 } from "../lib/team-info/roster-stats-loader";
 import {
@@ -102,10 +103,8 @@ export function useDashboardFeeds(active: DashboardPageId) {
             (version ? "&version=" + encodeURIComponent(version) : ""),
           { credentials: "omit", referrerPolicy: "no-referrer", signal },
         );
-        if (!response.ok)
-          throw Error(
-            response.status === 409 ? "Manifest changed" : "Stats unavailable",
-          );
+        if (response.status === 409) throw new RosterManifestChangedError();
+        if (!response.ok) throw Error("Stats unavailable");
         return response.json();
       },
       fetchBatch: async (batch, version, signal) => {
@@ -119,10 +118,8 @@ export function useDashboardFeeds(active: DashboardPageId) {
             signal,
           },
         );
-        if (!response.ok)
-          throw Error(
-            response.status === 409 ? "Manifest changed" : "Stats unavailable",
-          );
+        if (response.status === 409) throw new RosterManifestChangedError();
+        if (!response.ok) throw Error("Stats unavailable");
         return response.json();
       },
       onStats: (stats) => {

@@ -30,4 +30,7 @@ export const wildProviders = {
   socialTags: ["#MNWild"],
   espnTeamId: "30",
   powerRankingSource: "cbs-nhl",
+  urls: {
+    salary: "https://capwages.com/teams/minnesota_wild",
+  },
 } as const satisfies TeamProviders;

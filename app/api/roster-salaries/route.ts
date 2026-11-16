@@ -1,5 +1,6 @@
 import { teamProviders } from "../../../lib/teams/providers";
 import { isTeamId } from "../../../lib/teams/teams";
+import { parseCapWagesRoster } from "../../../lib/team-info/capwages";
 import {
   parseSalarySwishRoster,
   type RosterSalaryResponse,
@@ -25,8 +26,12 @@ async function fetchSalaries(
     },
     cache: "no-store",
   });
-  if (!response.ok) throw new Error(`SalarySwish HTTP ${response.status}`);
-  const roster = parseSalarySwishRoster(await response.text(), year);
+  if (!response.ok) throw new Error(`Salary source HTTP ${response.status}`);
+  const parseRoster =
+    new URL(sourceUrl).hostname === "capwages.com"
+      ? parseCapWagesRoster
+      : parseSalarySwishRoster;
+  const roster = parseRoster(await response.text(), year);
   return {
     ...roster,
     team,

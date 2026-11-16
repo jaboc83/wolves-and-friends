@@ -10,6 +10,8 @@ export type StatsBatch = {
   batchSize?: number;
 };
 
+export class RosterManifestChangedError extends Error {}
+
 // The manifest and batch indices are shared and generic. The selected team's
 // player keys stay in the browser and are used only to choose requested batches.
 export function createRosterStatsLoader() {
@@ -41,12 +43,14 @@ export function createRosterStatsLoader() {
       return Promise.resolve();
     }
 
-    const signal = AbortSignal.timeout(60000);
     options.onStatus([...wanted].some((key) => key in known) ? "ready" : "loading");
     inflight = (async () => {
       try {
         if (!version) {
-          const data = await options.fetchManifest("", signal);
+          const data = await options.fetchManifest(
+            "",
+            AbortSignal.timeout(20000),
+          );
           if (
             !Number.isSafeInteger(data.totalBatches) ||
             data.totalBatches < 0 ||
@@ -74,13 +78,13 @@ export function createRosterStatsLoader() {
         let failed = false;
         await Promise.all(
           Array.from({ length: 2 }, async () => {
-            while (next < queue.length && !signal.aborted) {
+            while (next < queue.length && version) {
               const index = queue[next++];
               try {
                 const data = await options.fetchBatch(
                   index,
                   version,
-                  AbortSignal.any([signal, AbortSignal.timeout(20000)]),
+                  AbortSignal.timeout(20000),
                 );
                 if (
                   !Number.isSafeInteger(data.totalBatches) ||
@@ -105,9 +109,15 @@ export function createRosterStatsLoader() {
                 };
                 if (available.length) options.onStats(known);
                 loaded.add(index);
-              } catch {
+              } catch (error) {
                 // One failed batch must not discard the others.
                 failed = true;
+                if (error instanceof RosterManifestChangedError) {
+                  version = "";
+                  total = 0;
+                  manifestKeys = [];
+                  loaded.clear();
+                }
                 if (!version) return;
               }
             }
