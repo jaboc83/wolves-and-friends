@@ -1,42 +1,71 @@
 // Derives safe roster details such as age from public athlete data.
+import type { ESPNContract } from "./provider-types";
+
 export type RosterDetails = {
   age?: number;
+  annualSalary?: number;
   campTeam?: string;
   signedForSeason?: boolean;
   draftPick?: boolean;
 };
 export function rosterDetails(
-  athlete: { dateOfBirth?: string; age?: number },
+  athlete: {
+    dateOfBirth?: string;
+    age?: number;
+    contract?: ESPNContract;
+    contracts?: ESPNContract[];
+  },
   _league: string,
-  _season: string | number,
+  season: string | number,
   checked: string,
   _team: string,
 ): RosterDetails {
   void _team;
   const birth = String(athlete.dateOfBirth || "").slice(0, 10),
     now = new Date(checked);
-  if (
+  let age: number | undefined;
+  const hasValidBirthDate =
     /^\d{4}-\d{2}-\d{2}$/.test(birth) &&
     Number.isFinite(Date.parse(birth)) &&
-    Number.isFinite(now.getTime())
-  ) {
+    Number.isFinite(now.getTime());
+  if (hasValidBirthDate) {
     const today = new Intl.DateTimeFormat("en-CA", {
       timeZone: "America/Chicago",
       year: "numeric",
       month: "2-digit",
       day: "2-digit",
     }).format(now);
-    const age =
+    const calculatedAge =
       Number(today.slice(0, 4)) -
       Number(birth.slice(0, 4)) -
       (today.slice(5) < birth.slice(5) ? 1 : 0);
-    return age >= 15 && age < 100 ? { age } : {};
+    if (calculatedAge >= 15 && calculatedAge < 100) age = calculatedAge;
+  } else {
+    const rosterAge = athlete.age;
+    if (
+      typeof rosterAge === "number" &&
+      Number.isInteger(rosterAge) &&
+      rosterAge >= 15 &&
+      rosterAge < 100
+    ) {
+      age = rosterAge;
+    }
   }
-  const age = athlete.age;
-  return typeof age === "number" &&
-    Number.isInteger(age) &&
-    age >= 15 &&
-    age < 100
-    ? { age }
-    : {};
+  const seasonYear = String(season);
+  const salaryFromSeasonContracts = athlete.contracts?.find(
+    (contract) => String(contract.season?.year ?? "") === seasonYear,
+  )?.salary;
+  const salaryFromCurrentContract =
+    String(athlete.contract?.season?.year ?? "") === seasonYear
+      ? athlete.contract?.salary
+      : undefined;
+  const annualSalary = Number(
+    salaryFromSeasonContracts ?? salaryFromCurrentContract,
+  );
+  return {
+    ...(age !== undefined ? { age } : {}),
+    ...(Number.isFinite(annualSalary) && annualSalary > 0
+      ? { annualSalary }
+      : {}),
+  };
 }

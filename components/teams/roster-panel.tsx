@@ -34,6 +34,13 @@ type Row = RosterStatRow<RosterPlayer>;
 const defaultSortDirection = (column: string): "asc" | "desc" =>
   column === "Player" || column === "Position" ? "asc" : "desc";
 
+const annualSalaryFormatter = new Intl.NumberFormat("en-US", {
+  style: "currency",
+  currency: "USD",
+  notation: "compact",
+  maximumFractionDigits: 1,
+});
+
 const abbreviation = (position: string) => {
   const value = position.toLowerCase();
   if (/goalkeeper|goaltender|\bgk\b/.test(value)) return "GK";
@@ -93,6 +100,21 @@ function PlayerMeta({ player }: { player: RosterPlayer }) {
       ]
         .filter(Boolean)
         .join(" · ")}
+    </span>
+  );
+}
+
+function PlayerAgeAndSalary({ player }: { player: RosterPlayer }) {
+  const details = [
+    player.age !== undefined ? `Age ${player.age}` : undefined,
+    player.annualSalary !== undefined
+      ? `Salary ${annualSalaryFormatter.format(player.annualSalary)}/yr`
+      : undefined,
+  ].filter(Boolean);
+  if (!details.length) return null;
+  return (
+    <span className="roster-player-age">
+      {details.join(" · ")}
     </span>
   );
 }
@@ -344,9 +366,7 @@ export default function RosterPanel({
                                 >
                                   {p.name} ↗
                                 </a>
-                                <span className="roster-player-age">
-                                  {p.age !== undefined ? `Age ${p.age}` : ""}
-                                </span>
+                                <PlayerAgeAndSalary player={p} />
                                 <PlayerMeta player={p} />
                               </th>
                               <td className={sortedClass("Position")}>
@@ -379,12 +399,7 @@ export default function RosterPanel({
                           <a href={p.url} target="_blank" rel="noreferrer">
                             {p.name} ↗
                           </a>
-                          {p.age !== undefined && (
-                            <span className="roster-player-age">
-                              {" "}
-                              · Age {p.age}
-                            </span>
-                          )}
+                          <PlayerAgeAndSalary player={p} />
                           <PlayerMeta player={p} />
                         </li>
                       ))}

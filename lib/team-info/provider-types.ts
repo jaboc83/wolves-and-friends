@@ -26,6 +26,11 @@ export type ESPNStat = {
   displayValue?: string | number;
 };
 
+export type ESPNContract = {
+  salary?: number | string;
+  season?: Pick<ESPNSeason, "year">;
+};
+
 export type ESPNStandingEntry = {
   team?: ESPNTeam;
   stats?: ESPNStat[];
@@ -57,6 +62,8 @@ export type ESPNAthlete = {
   name?: string;
   dateOfBirth?: string;
   age?: number;
+  contract?: ESPNContract;
+  contracts?: ESPNContract[];
   links?: ESPNLink[];
   position?: ESPNPosition;
   items?: ESPNRosterEntry[];
