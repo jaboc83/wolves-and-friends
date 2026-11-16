@@ -108,7 +108,7 @@ function PlayerAgeAndSalary({ player }: { player: RosterPlayer }) {
   const details = [
     player.age !== undefined ? `Age ${player.age}` : undefined,
     player.annualSalary !== undefined
-      ? `Salary ${annualSalaryFormatter.format(player.annualSalary)}/yr`
+      ? `${annualSalaryFormatter.format(player.annualSalary)}/yr`
       : undefined,
   ].filter(Boolean);
   if (!details.length) return null;
