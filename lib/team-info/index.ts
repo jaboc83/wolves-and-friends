@@ -6,6 +6,7 @@ import { teamProviders } from "../teams/providers";
 import { serverHooksFor } from "../teams/server";
 import { fetchPostseason, type Postseason } from "../games/postseason";
 import { rosterDetails, type RosterDetails } from "./roster-details";
+import { salarySourceForYear } from "./salaryswish";
 import { parsePowerRanking, powerRankingLeague } from "./power-rankings";
 import {
   analystPremierLeaguePowerRankingsEndpoint,
@@ -51,6 +52,7 @@ export type Depth = {
   source: string;
   url: string;
   checked: string;
+  salarySourceUrl?: string;
   note?: string;
 };
 export type TeamInfo = {
@@ -134,6 +136,7 @@ export function parseRoster(
   checked: string,
   url: string,
   teamId = "",
+  salarySourceUrl?: string,
 ): Depth | undefined {
   const groups = new Map<
     string,
@@ -165,6 +168,14 @@ export function parseRoster(
         source: "ESPN",
         url,
         checked,
+        ...(salarySourceUrl
+          ? {
+              salarySourceUrl: salarySourceForYear(
+                salarySourceUrl,
+                new Date(checked).getUTCFullYear(),
+              ),
+            }
+          : {}),
         note: "Players grouped by position. Links open player bios and profiles.",
       }
     : undefined;
@@ -397,6 +408,8 @@ export async function fetchTeamInfo() {
                   "/team/roster/_/name/" +
                   t.espn,
                 t.id,
+                teamProviders.find((provider) => provider.team === t.id)?.urls
+                  ?.salary,
               );
             } catch {}
             if (!info.depth) info.unavailable.push("roster");

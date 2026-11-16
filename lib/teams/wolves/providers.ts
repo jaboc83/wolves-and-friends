@@ -46,5 +46,6 @@ export const wolvesProviders = {
   powerRankingSource: "cbs-nba",
   urls: {
     officialNews: "https://www.nba.com/timberwolves/news",
+    salary: "https://www.salaryswish.com/teams/timberwolves",
   },
 } as const satisfies TeamProviders;

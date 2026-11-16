@@ -16,6 +16,7 @@ export const palaceProviders = {
     "soccer/eng.charity": "Community Shield",
   },
   urls: {
+    salary: "https://salarysport.com/football/premier-league/crystal-palace/",
     injuryAvailabilityReport:
       "https://api.premierleague.com/content/premierleague/playlist/en/4509826",
     palaceRadar: "https://www.palaceradar.co.uk/",

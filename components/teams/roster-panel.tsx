@@ -11,9 +11,19 @@ import type { TeamInfo } from "../../lib/team-info";
 import { teamProfile } from "../../lib/teams/teams";
 import type { PlayerStats } from "../../lib/team-info/player-stats";
 import type { StatsStatus } from "../../lib/team-info/roster-stats-loader";
+import { useRosterSalaries } from "../../hooks/use-roster-salaries";
+import { salaryForPlayer } from "../../lib/team-info/salaryswish";
+import { highestPaidPlayers } from "../../lib/team-info/roster-details";
 import {
+  combineVikingsDefensiveLineGroups,
+  combineVikingsLinebackerAndDefensiveBackGroups,
+  combineVikingsOffensiveLineGroups,
+  combineVikingsReceiverGroups,
+  combineVikingsRunningBackGroups,
   createRosterStatsTable,
+  orderVikingsRosterGroups,
   rosterStatValue,
+  visibleRosterStatColumns,
   type RosterStatRow,
 } from "../../lib/team-info/roster-stats-table";
 
@@ -23,13 +33,50 @@ type RosterPlayer = Depth["groups"][number]["players"][number] & {
 };
 type RosterSort = { column: string; direction: "asc" | "desc" };
 type Row = RosterStatRow<RosterPlayer>;
+const emptySalaries: Record<string, number> = {};
 
 const defaultSortDirection = (column: string): "asc" | "desc" =>
   column === "Player" || column === "Position" ? "asc" : "desc";
 
+const annualSalaryFormatters = {
+  USD: new Intl.NumberFormat("en-US", {
+    style: "currency",
+    currency: "USD",
+    notation: "compact",
+    maximumFractionDigits: 1,
+  }),
+  GBP: new Intl.NumberFormat("en-US", {
+    style: "currency",
+    currency: "GBP",
+    notation: "compact",
+    maximumFractionDigits: 1,
+  }),
+};
+
 const abbreviation = (position: string) => {
   const value = position.toLowerCase();
   if (/goalkeeper|goaltender|\bgk\b/.test(value)) return "GK";
+  if (/offensive tackle|\bot\b/.test(value)) return "OT";
+  if (/\bleft tackle\b|\blt\b/.test(value)) return "LT";
+  if (/\bright tackle\b|\brt\b/.test(value)) return "RT";
+  if (/left guard|\blg\b/.test(value)) return "LG";
+  if (/right guard|\brg\b/.test(value)) return "RG";
+  if (/offensive guard|\bog\b/.test(value)) return "OG";
+  if (/long snapper|\bls\b/.test(value)) return "LS";
+  if (/fullback|\bfb\b/.test(value)) return "FB";
+  if (/running back|\brb\b/.test(value)) return "RB";
+  if (/quarterback|\bqb\b/.test(value)) return "QB";
+  if (/wide receiver|\bwr\b/.test(value)) return "WR";
+  if (/tight end|\bte\b/.test(value)) return "TE";
+  if (/outside linebacker|\bolb\b/.test(value)) return "OLB";
+  if (/inside linebacker|\bilb\b/.test(value)) return "ILB";
+  if (/linebacker|\blb\b/.test(value)) return "LB";
+  if (/defensive end|\bde\b/.test(value)) return "DE";
+  if (/defensive tackle|\bdt\b/.test(value)) return "DT";
+  if (/cornerback|\bcb\b/.test(value)) return "CB";
+  if (/free safety|\bfs\b/.test(value)) return "FS";
+  if (/strong safety|\bss\b/.test(value)) return "SS";
+  if (/safety/.test(value)) return "S";
   if (/defen[cs]e|back|\bdef\b|\bdb\b/.test(value)) return "D";
   if (/forward|wing|\bf\b/.test(value)) return "F";
   if (/center|centre|\bc\b/.test(value)) return "C";
@@ -69,6 +116,38 @@ function PlayerMeta({ player }: { player: RosterPlayer }) {
   );
 }
 
+function PlayerAgeAndSalary({
+  player,
+  highestPaid,
+  currency,
+}: {
+  player: RosterPlayer;
+  highestPaid: boolean;
+  currency: keyof typeof annualSalaryFormatters;
+}) {
+  if (player.age === undefined && player.annualSalary === undefined)
+    return null;
+  const SalaryTag = highestPaid ? "strong" : "span";
+  return (
+    <span className="roster-player-age">
+      {player.age !== undefined && `Age ${player.age}`}
+      {player.age !== undefined && player.annualSalary !== undefined && " · "}
+      {player.annualSalary !== undefined && (
+        <SalaryTag
+          className={highestPaid ? "roster-salary-top" : undefined}
+          title={
+            highestPaid
+              ? "One of this team's five highest-paid players"
+              : undefined
+          }
+        >
+          {annualSalaryFormatters[currency].format(player.annualSalary)}/yr
+        </SalaryTag>
+      )}
+    </span>
+  );
+}
+
 const statusNotes: Partial<Record<StatsStatus, string>> = {
   idle: "Season stats will load shortly.",
   loading: "Loading ESPN season stats…",
@@ -99,6 +178,17 @@ export default function RosterPanel({
   onRosterOpen: (priorityKeys?: string[]) => void;
 }) {
   const rosterNote = teamProfile(teamId)?.rosterNote;
+  const salaryCurrency = league === "soccer/eng.1" ? "GBP" : "USD";
+  const salaryState = useRosterSalaries(
+    teamId,
+    Boolean(depth?.salarySourceUrl),
+    ["ready", "partial", "empty", "unavailable"].includes(playerStatsStatus),
+    league,
+  );
+  const salaries =
+    salaryState.team === teamId ? salaryState.salaries : emptySalaries;
+  const salaryStatus =
+    salaryState.team === teamId ? salaryState.status : "loading";
   const priorityKeys = useMemo(
     () =>
       depth?.groups.flatMap((group) =>
@@ -127,31 +217,52 @@ export default function RosterPanel({
 
   const groups = useMemo(() => {
     if (!depth) return [];
-    const buckets = new Map<
-      string,
-      { position: string; players: RosterPlayer[] }
-    >();
-    for (const group of depth.groups) {
-      const key = createRosterStatsTable(
-        group.players,
-        league || "",
-        playerStats,
-      ).columns.join("\u0001");
-      const existing = buckets.get(key) || { position: "", players: [] };
-      existing.position = existing.position
-        ? existing.position + " / " + group.position
-        : group.position;
-      existing.players.push(
-        ...group.players.map((player) => ({
+    const sourceGroups = depth.groups.map((group) => ({
+      position: group.position,
+      players: group.players.map((player) => {
+        const annualSalary = salaryForPlayer(salaries, player.name);
+        return {
           ...player,
+          ...(annualSalary !== undefined ? { annualSalary } : {}),
           position: abbreviation(group.position),
-        })),
-      );
-      buckets.set(key, existing);
-    }
-    return [...buckets.values()];
-  }, [depth, playerStats, league]);
+        };
+      }),
+    }));
+    const runningBackGroups = combineVikingsRunningBackGroups(
+      sourceGroups,
+      teamId,
+      league || "",
+    );
+    const offensiveLineGroups = combineVikingsOffensiveLineGroups(
+      runningBackGroups,
+      teamId,
+      league || "",
+    );
+    const receiverGroups = combineVikingsReceiverGroups(
+      offensiveLineGroups,
+      teamId,
+      league || "",
+    );
+    const defensiveLineGroups = combineVikingsDefensiveLineGroups(
+      receiverGroups,
+      teamId,
+      league || "",
+    );
+    return orderVikingsRosterGroups(
+      combineVikingsLinebackerAndDefensiveBackGroups(
+        defensiveLineGroups,
+        teamId,
+        league || "",
+      ),
+      teamId,
+      league || "",
+    );
+  }, [depth, league, salaries, teamId]);
 
+  const highestPaid = useMemo(
+    () => highestPaidPlayers(groups.flatMap((group) => group.players)),
+    [groups],
+  );
   const note = league ? statusNotes[playerStatsStatus] : undefined;
 
   return (
@@ -179,6 +290,15 @@ export default function RosterPanel({
               league || "",
               playerStats,
             );
+            const {
+              columns,
+              positionOnly: positionOnlyTable,
+            } = visibleRosterStatColumns(
+              teamId,
+              league || "",
+              group.position,
+              statsTable.columns,
+            );
             const seasonTitles = Array.from(
               new Set(
                 statsTable.rows
@@ -186,11 +306,17 @@ export default function RosterPanel({
                   .filter((title): title is string => Boolean(title)),
               ),
             );
-            const defaultColumn = statsTable.columns[0] ?? "Player";
-            const sort: RosterSort = sortOverride ?? {
-              column: defaultColumn,
-              direction: defaultSortDirection(defaultColumn),
-            };
+            const defaultColumn = columns[0] ?? "Player";
+            const sort: RosterSort =
+              sortOverride &&
+              (sortOverride.column === "Player" ||
+                sortOverride.column === "Position" ||
+                columns.includes(sortOverride.column))
+                ? sortOverride
+                : {
+                    column: defaultColumn,
+                    direction: defaultSortDirection(defaultColumn),
+                  };
             const toggleSort = (column: string) =>
               setSortOverride({
                 column,
@@ -250,24 +376,27 @@ export default function RosterPanel({
             return (
               <section className="depth-row" key={group.position + i}>
                 <h3 className="visually-hidden">{group.position}</h3>
-                {statsTable.columns.length > 0 ? (
+                {columns.length > 0 || positionOnlyTable ? (
                   <div
                     className="roster-stats-table-scroll"
                     role="region"
-                    aria-label={`${group.position} player season stats`}
+                    aria-label={`${group.position} ${positionOnlyTable ? "roster" : "player season stats"}`}
                     tabIndex={0}
                   >
                     <table className="roster-stats-table">
                       <caption>
-                        {group.position} season stats
-                        {seasonTitles.length > 0 &&
+                        {positionOnlyTable
+                          ? group.position
+                          : `${group.position} season stats`}
+                        {!positionOnlyTable &&
+                          seasonTitles.length > 0 &&
                           ` · ${seasonTitles.join(" / ")}`}
                       </caption>
                       <thead>
                         <tr>
                           {header("Player", "Player", "roster-player-header")}
                           {header("Position", "Pos.")}
-                          {statsTable.columns.map((column) =>
+                          {columns.map((column) =>
                             header(column, column),
                           )}
                         </tr>
@@ -285,15 +414,17 @@ export default function RosterPanel({
                                 >
                                   {p.name} ↗
                                 </a>
-                                <span className="roster-player-age">
-                                  {p.age !== undefined ? `Age ${p.age}` : ""}
-                                </span>
+                                <PlayerAgeAndSalary
+                                  player={p}
+                                  highestPaid={highestPaid.has(p)}
+                                  currency={salaryCurrency}
+                                />
                                 <PlayerMeta player={p} />
                               </th>
                               <td className={sortedClass("Position")}>
                                 {p.position || "—"}
                               </td>
-                              {statsTable.columns.map((column) => (
+                              {columns.map((column) => (
                                 <td
                                   key={column}
                                   title={
@@ -320,12 +451,11 @@ export default function RosterPanel({
                           <a href={p.url} target="_blank" rel="noreferrer">
                             {p.name} ↗
                           </a>
-                          {p.age !== undefined && (
-                            <span className="roster-player-age">
-                              {" "}
-                              · Age {p.age}
-                            </span>
-                          )}
+                          <PlayerAgeAndSalary
+                            player={p}
+                            highestPaid={highestPaid.has(p)}
+                            currency={salaryCurrency}
+                          />
                           <PlayerMeta player={p} />
                         </li>
                       ))}
@@ -338,8 +468,51 @@ export default function RosterPanel({
             <a href={depth.url} target="_blank" rel="noreferrer">
               {depth.source} ↗
             </a>{" "}
+            {depth.salarySourceUrl && (
+              <>
+                ·{" "}
+                <a
+                  href={depth.salarySourceUrl}
+                  target="_blank"
+                  rel="noreferrer"
+                >
+                  {league === "hockey/nhl"
+                    ? "CapWages"
+                    : league === "baseball/mlb"
+                      ? "FanGraphs"
+                      : league === "soccer/eng.1"
+                        ? "SalarySport"
+                        : "SalarySwish"}{" "}
+                  ↗
+                </a>{" "}
+              </>
+            )}
             {rosterNote ? "· " + rosterNote : ""}
           </p>
+          {depth.salarySourceUrl && league === "baseball/mlb" && (
+            <p className="panel-note">
+              Unreported or estimated amounts are omitted.
+            </p>
+          )}
+          {depth.salarySourceUrl && league === "soccer/eng.1" && (
+            <p className="panel-note">
+              Reported annual basic wages in GBP; bonuses excluded.
+            </p>
+          )}
+          {depth.salarySourceUrl &&
+            salaryStatus === "loading" &&
+            !Object.keys(salaries).length && (
+              <p className="panel-note" role="status">
+                Loading salary data…
+              </p>
+            )}
+          {depth.salarySourceUrl && salaryStatus === "error" && (
+            <p className="panel-note" role="status">
+              {Object.keys(salaries).length
+                ? "Salary refresh unavailable; showing cached figures."
+                : "Salary data is temporarily unavailable."}
+            </p>
+          )}
         </>
       ) : (
         <p className="panel-note">
