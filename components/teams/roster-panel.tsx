@@ -13,6 +13,7 @@ import type { PlayerStats } from "../../lib/team-info/player-stats";
 import type { StatsStatus } from "../../lib/team-info/roster-stats-loader";
 import {
   combineVikingsOffensiveLineGroups,
+  combineVikingsReceiverGroups,
   combineVikingsRunningBackGroups,
   createRosterStatsTable,
   rosterStatValue,
@@ -151,18 +152,25 @@ export default function RosterPanel({
 
   const groups = useMemo(() => {
     if (!depth) return [];
-    return combineVikingsOffensiveLineGroups(
-      combineVikingsRunningBackGroups(
-        depth.groups.map((group) => ({
-          position: group.position,
-          players: group.players.map((player) => ({
-            ...player,
-            position: abbreviation(group.position),
-          })),
-        })),
-        teamId,
-        league || "",
-      ),
+    const sourceGroups = depth.groups.map((group) => ({
+      position: group.position,
+      players: group.players.map((player) => ({
+        ...player,
+        position: abbreviation(group.position),
+      })),
+    }));
+    const runningBackGroups = combineVikingsRunningBackGroups(
+      sourceGroups,
+      teamId,
+      league || "",
+    );
+    const offensiveLineGroups = combineVikingsOffensiveLineGroups(
+      runningBackGroups,
+      teamId,
+      league || "",
+    );
+    return combineVikingsReceiverGroups(
+      offensiveLineGroups,
       teamId,
       league || "",
     );

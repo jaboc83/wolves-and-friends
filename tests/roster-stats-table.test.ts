@@ -2,6 +2,7 @@ import assert from "node:assert/strict";
 import test from "node:test";
 import {
   combineVikingsOffensiveLineGroups,
+  combineVikingsReceiverGroups,
   combineVikingsRunningBackGroups,
   visibleRosterStatColumns,
 } from "../lib/team-info/roster-stats-table.ts";
@@ -12,6 +13,18 @@ test("Vikings receiving and defensive tables use selected stat columns", () => {
       "vikings",
       "football/nfl",
       "Wide Receiver",
+      ["GP", "REC", "TGTS", "YDS", "AVG", "TD", "LNG", "QBR"],
+    ),
+    {
+      columns: ["REC", "TGTS", "YDS", "AVG", "TD", "LNG"],
+      positionOnly: false,
+    },
+  );
+  assert.deepEqual(
+    visibleRosterStatColumns(
+      "vikings",
+      "football/nfl",
+      "Receivers",
       ["GP", "REC", "TGTS", "YDS", "AVG", "TD", "LNG", "QBR"],
     ),
     {
@@ -147,5 +160,30 @@ test("Vikings offensive-line positions share one position-only table", () => {
       ["TOT", "SACK"],
     ),
     { columns: [], positionOnly: true },
+  );
+});
+
+test("Vikings wide receivers and tight ends share one Receivers table", () => {
+  const groups = [
+    { position: "Quarterback", players: ["qb"] },
+    { position: "Wide Receiver", players: ["wr1", "wr2"] },
+    { position: "Running Back", players: ["rb"] },
+    { position: "Tight End", players: ["te"] },
+  ];
+
+  assert.deepEqual(
+    combineVikingsReceiverGroups(groups, "vikings", "football/nfl"),
+    [
+      groups[0],
+      {
+        position: "Receivers",
+        players: ["wr1", "wr2", "te"],
+      },
+      groups[2],
+    ],
+  );
+  assert.deepEqual(
+    combineVikingsReceiverGroups(groups, "wild", "football/nfl"),
+    groups,
   );
 });
