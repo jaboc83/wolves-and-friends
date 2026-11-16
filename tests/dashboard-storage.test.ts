@@ -1,23 +1,40 @@
 import assert from "node:assert/strict";
 import test from "node:test";
-import { storedDashboardPage } from "../lib/dashboard/storage.ts";
+import { restoreStoredPage } from "../lib/dashboard/page-selection.ts";
 
-test("the dashboard defaults to All Teams without a stored page", () => {
-  assert.equal(storedDashboardPage({ getItem: () => null }), "all");
-});
+type Page = "all" | "twins";
+const isPage = (value: unknown): value is Page =>
+  value === "all" || value === "twins";
 
-test("the dashboard preserves a valid stored page", () => {
-  assert.equal(storedDashboardPage({ getItem: () => "twins" }), "twins");
-});
-
-test("the dashboard defaults to All Teams for invalid or unavailable storage", () => {
-  assert.equal(storedDashboardPage({ getItem: () => "not-a-page" }), "all");
+test("a missing stored page uses the fallback", () => {
   assert.equal(
-    storedDashboardPage({
-      getItem: () => {
-        throw new Error("Unavailable");
+    restoreStoredPage({ getItem: () => null }, isPage, "all"),
+    "all",
+  );
+});
+
+test("a valid stored page is preserved", () => {
+  assert.equal(
+    restoreStoredPage({ getItem: () => "twins" }, isPage, "all"),
+    "twins",
+  );
+});
+
+test("invalid or unavailable storage uses the fallback", () => {
+  assert.equal(
+    restoreStoredPage({ getItem: () => "nope" }, isPage, "all"),
+    "all",
+  );
+  assert.equal(
+    restoreStoredPage(
+      {
+        getItem: () => {
+          throw new Error("Unavailable");
+        },
       },
-    }),
+      isPage,
+      "all",
+    ),
     "all",
   );
 });

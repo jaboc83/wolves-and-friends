@@ -7,6 +7,7 @@ import {
   type DashboardPageId,
 } from "./page-id";
 import { browserStorage } from "../browser/storage";
+import { restoreStoredPage } from "./page-selection";
 const object = (value: unknown): value is Record<string, unknown> =>
   Boolean(value) && typeof value === "object";
 export function isStories(value: unknown): value is Story[] {
@@ -70,9 +71,5 @@ export function isHubData(value: unknown): value is HubData {
 export function storedDashboardPage(
   storage: Pick<Storage, "getItem"> = browserStorage,
 ): DashboardPageId {
-  let id: string | null = null;
-  try {
-    id = storage.getItem("wf-team");
-  } catch {}
-  return isDashboardPageId(id) ? id : DASHBOARD_PAGE_IDS.ALL;
+  return restoreStoredPage(storage, isDashboardPageId, DASHBOARD_PAGE_IDS.ALL);
 }
