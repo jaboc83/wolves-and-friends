@@ -12,8 +12,10 @@ import { teamProfile } from "../../lib/teams/teams";
 import type { PlayerStats } from "../../lib/team-info/player-stats";
 import type { StatsStatus } from "../../lib/team-info/roster-stats-loader";
 import {
+  combineVikingsRunningBackGroups,
   createRosterStatsTable,
   rosterStatValue,
+  visibleRosterStatColumns,
   type RosterStatRow,
 } from "../../lib/team-info/roster-stats-table";
 
@@ -30,6 +32,26 @@ const defaultSortDirection = (column: string): "asc" | "desc" =>
 const abbreviation = (position: string) => {
   const value = position.toLowerCase();
   if (/goalkeeper|goaltender|\bgk\b/.test(value)) return "GK";
+  if (/offensive tackle|\bot\b/.test(value)) return "OT";
+  if (/\bleft tackle\b|\blt\b/.test(value)) return "LT";
+  if (/\bright tackle\b|\brt\b/.test(value)) return "RT";
+  if (/left guard|\blg\b/.test(value)) return "LG";
+  if (/right guard|\brg\b/.test(value)) return "RG";
+  if (/offensive guard|\bog\b/.test(value)) return "OG";
+  if (/fullback|\bfb\b/.test(value)) return "FB";
+  if (/running back|\brb\b/.test(value)) return "RB";
+  if (/quarterback|\bqb\b/.test(value)) return "QB";
+  if (/wide receiver|\bwr\b/.test(value)) return "WR";
+  if (/tight end|\bte\b/.test(value)) return "TE";
+  if (/outside linebacker|\bolb\b/.test(value)) return "OLB";
+  if (/inside linebacker|\bilb\b/.test(value)) return "ILB";
+  if (/linebacker|\blb\b/.test(value)) return "LB";
+  if (/defensive end|\bde\b/.test(value)) return "DE";
+  if (/defensive tackle|\bdt\b/.test(value)) return "DT";
+  if (/cornerback|\bcb\b/.test(value)) return "CB";
+  if (/free safety|\bfs\b/.test(value)) return "FS";
+  if (/strong safety|\bss\b/.test(value)) return "SS";
+  if (/safety/.test(value)) return "S";
   if (/defen[cs]e|back|\bdef\b|\bdb\b/.test(value)) return "D";
   if (/forward|wing|\bf\b/.test(value)) return "F";
   if (/center|centre|\bc\b/.test(value)) return "C";
@@ -127,30 +149,18 @@ export default function RosterPanel({
 
   const groups = useMemo(() => {
     if (!depth) return [];
-    const buckets = new Map<
-      string,
-      { position: string; players: RosterPlayer[] }
-    >();
-    for (const group of depth.groups) {
-      const key = createRosterStatsTable(
-        group.players,
-        league || "",
-        playerStats,
-      ).columns.join("\u0001");
-      const existing = buckets.get(key) || { position: "", players: [] };
-      existing.position = existing.position
-        ? existing.position + " / " + group.position
-        : group.position;
-      existing.players.push(
-        ...group.players.map((player) => ({
+    return combineVikingsRunningBackGroups(
+      depth.groups.map((group) => ({
+        position: group.position,
+        players: group.players.map((player) => ({
           ...player,
           position: abbreviation(group.position),
         })),
-      );
-      buckets.set(key, existing);
-    }
-    return [...buckets.values()];
-  }, [depth, playerStats, league]);
+      })),
+      teamId,
+      league || "",
+    );
+  }, [depth, league, teamId]);
 
   const note = league ? statusNotes[playerStatsStatus] : undefined;
 
@@ -179,6 +189,15 @@ export default function RosterPanel({
               league || "",
               playerStats,
             );
+            const {
+              columns,
+              positionOnly: positionOnlyTable,
+            } = visibleRosterStatColumns(
+              teamId,
+              league || "",
+              group.position,
+              statsTable.columns,
+            );
             const seasonTitles = Array.from(
               new Set(
                 statsTable.rows
@@ -186,11 +205,17 @@ export default function RosterPanel({
                   .filter((title): title is string => Boolean(title)),
               ),
             );
-            const defaultColumn = statsTable.columns[0] ?? "Player";
-            const sort: RosterSort = sortOverride ?? {
-              column: defaultColumn,
-              direction: defaultSortDirection(defaultColumn),
-            };
+            const defaultColumn = columns[0] ?? "Player";
+            const sort: RosterSort =
+              sortOverride &&
+              (sortOverride.column === "Player" ||
+                sortOverride.column === "Position" ||
+                columns.includes(sortOverride.column))
+                ? sortOverride
+                : {
+                    column: defaultColumn,
+                    direction: defaultSortDirection(defaultColumn),
+                  };
             const toggleSort = (column: string) =>
               setSortOverride({
                 column,
@@ -250,7 +275,7 @@ export default function RosterPanel({
             return (
               <section className="depth-row" key={group.position + i}>
                 <h3 className="visually-hidden">{group.position}</h3>
-                {statsTable.columns.length > 0 ? (
+                {columns.length > 0 || positionOnlyTable ? (
                   <div
                     className="roster-stats-table-scroll"
                     role="region"
@@ -267,7 +292,7 @@ export default function RosterPanel({
                         <tr>
                           {header("Player", "Player", "roster-player-header")}
                           {header("Position", "Pos.")}
-                          {statsTable.columns.map((column) =>
+                          {columns.map((column) =>
                             header(column, column),
                           )}
                         </tr>
@@ -293,7 +318,7 @@ export default function RosterPanel({
                               <td className={sortedClass("Position")}>
                                 {p.position || "—"}
                               </td>
-                              {statsTable.columns.map((column) => (
+                              {columns.map((column) => (
                                 <td
                                   key={column}
                                   title={
