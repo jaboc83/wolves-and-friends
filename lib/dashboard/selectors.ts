@@ -8,6 +8,8 @@ import { authorStories } from "../feeds/author-stories";
 import { recentStories } from "../browser/news-window";
 import type { DashboardPageId } from "./page-id";
 import { DASHBOARD_PAGE_IDS } from "./page-id";
+export const OLDER_BATCH_SIZE = 10;
+
 export function selectStories({
   newsData,
   active,
@@ -15,6 +17,7 @@ export function selectStories({
   readIds,
   showRead,
   showOlder,
+  olderLimit = Infinity,
   timeZone = "America/Chicago",
 }: {
   newsData: HubData;
@@ -23,6 +26,7 @@ export function selectStories({
   readIds: string[];
   showRead: boolean;
   showOlder: boolean;
+  olderLimit?: number;
   timeZone?: string;
 }) {
   const filtered = [
@@ -60,8 +64,22 @@ export function selectStories({
     active === DASHBOARD_PAGE_IDS.ALL
       ? recentStoriesForView.slice(0, 8)
       : recentStoriesForView.slice(0, 5);
-  const displayed = compactNews && !showOlder ? recent : filtered;
-  const olderCount = filtered.length - recent.length;
+  // The all-teams page reveals older stories in batches; team pages show all.
+  const recentSet = new Set(recent);
+  const olderStories = filtered.filter((s) => !recentSet.has(s));
+  const olderVisible = new Set(
+    active === DASHBOARD_PAGE_IDS.ALL
+      ? olderStories.slice(0, olderLimit)
+      : olderStories,
+  );
+  const displayed =
+    compactNews && !showOlder
+      ? recent
+      : filtered.filter((s) => recentSet.has(s) || olderVisible.has(s));
+  const olderCount = olderStories.length;
+  const olderRemaining = showOlder
+    ? olderStories.length - olderVisible.size
+    : olderCount;
   const newest = (newsData.stories || [])
     .filter(
       (s) =>
@@ -70,7 +88,7 @@ export function selectStories({
           (isTeamId(active) && s.teams.includes(active))),
     )
     .sort((a, b) => Date.parse(b.date) - Date.parse(a.date))[0];
-  return { compactNews, displayed, olderCount, newest };
+  return { compactNews, displayed, olderCount, olderRemaining, newest };
 }
 export function selectGames({
   data,

@@ -4,6 +4,7 @@ import type { ReactNode } from "react";
 import Image from "next/image";
 import StoryCard from "../stories/story-card";
 import { recentStories } from "../../lib/browser/news-window";
+import { OLDER_BATCH_SIZE } from "../../lib/dashboard/selectors";
 import { teamLogoPath } from "../../lib/teams/team-logo";
 import { teams } from "../../lib/teams/teams";
 import type { DashboardPageId } from "../../lib/dashboard/page-id";
@@ -24,6 +25,7 @@ type NewsSectionState = {
   displayed: Story[];
   newest?: Story;
   olderCount: number;
+  olderRemaining: number;
   compactNews: boolean;
   newsMode: NewsMode;
   newsFailed: boolean;
@@ -296,9 +298,15 @@ export default function NewsSection({
               <p></p>
               {(state.olderCount > 0 || state.showOlder) && (
                 <button onClick={actions.toggleOlder}>
-                  {state.showOlder
-                    ? "Hide older"
-                    : "View older (" + state.olderCount + ")"}
+                  {!state.showOlder
+                    ? "View older (" + state.olderCount + ")"
+                    : state.olderRemaining > 0
+                      ? "View " +
+                        Math.min(OLDER_BATCH_SIZE, state.olderRemaining) +
+                        " more (" +
+                        state.olderRemaining +
+                        " left)"
+                      : "Hide older"}
                 </button>
               )}
             </div>

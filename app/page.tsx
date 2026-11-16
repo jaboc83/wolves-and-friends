@@ -8,7 +8,11 @@ import { useDashboardFeeds } from "../hooks/use-dashboard-feeds";
 import { browserStorage, readStored, stringList } from "../lib/browser/storage";
 import { storedDashboardPage } from "../lib/dashboard/storage";
 import { newsDisplayMode } from "../lib/browser/news-page-data";
-import { selectStories, selectGames } from "../lib/dashboard/selectors";
+import {
+  OLDER_BATCH_SIZE,
+  selectStories,
+  selectGames,
+} from "../lib/dashboard/selectors";
 import GameCard from "../components/games/game-card";
 import LeagueHeadlines from "../components/games/league-headlines";
 import BackToTop from "../components/dashboard/back-to-top";
@@ -47,6 +51,7 @@ export default function Home() {
     [readIds, setReadIds] = useState<string[]>([]),
     [showRead, setShowRead] = useState(false),
     [showOlder, setShowOlder] = useState(false),
+    [olderLimit, setOlderLimit] = useState(OLDER_BATCH_SIZE),
     [showOlderResults, setShowOlderResults] = useState(false),
     [revealed, setRevealed] = useState<string[]>([]),
     [hideScores, setHideResults] = useState(false),
@@ -99,8 +104,19 @@ export default function Home() {
     setActive(id);
     setAutoOpenStandings(false);
     setShowOlder(false);
+    setOlderLimit(OLDER_BATCH_SIZE);
     setShowOlderResults(false);
     browserStorage.setItem("wf-team", id);
+  }
+
+  // Opens older stories one batch at a time; once all are shown, collapses them.
+  function toggleOlder() {
+    if (showOlder && olderRemaining > 0) {
+      setOlderLimit(olderLimit + OLDER_BATCH_SIZE);
+      return;
+    }
+    setShowOlder(!showOlder);
+    setOlderLimit(OLDER_BATCH_SIZE);
   }
   // Toggles score visibility and persists the preference in this browser.
   function toggleResults() {
@@ -141,15 +157,17 @@ export default function Home() {
   const team = teams.find((t) => t.id === active);
   const activeScoreboardUrl = teamProfile(active)?.scoreboardUrl;
   const terms = sportTerms(active);
-  const { compactNews, displayed, olderCount, newest } = selectStories({
-    newsData,
-    active,
-    search,
-    readIds,
-    showRead,
-    showOlder,
-    timeZone,
-  });
+  const { compactNews, displayed, olderCount, olderRemaining, newest } =
+    selectStories({
+      newsData,
+      active,
+      search,
+      readIds,
+      showRead,
+      showOlder,
+      olderLimit,
+      timeZone,
+    });
   const {
     teamsPlayingToday,
     visibleGames,
@@ -390,6 +408,7 @@ export default function Home() {
                     displayed,
                     newest,
                     olderCount,
+                    olderRemaining,
                     compactNews,
                     newsMode,
                     newsFailed,
@@ -406,7 +425,7 @@ export default function Home() {
                     markRead,
                     setSearch,
                     setShowRead,
-                    toggleOlder: () => setShowOlder(!showOlder),
+                    toggleOlder,
                     refreshSocial,
                   }}
                   teamDetails={teamDetails}
