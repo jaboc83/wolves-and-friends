@@ -2,7 +2,7 @@ import assert from "node:assert/strict";
 import test from "node:test";
 import { rosterDetails } from "../lib/team-info/roster-details.ts";
 
-test("roster details use the salary for the current season", () => {
+test("roster details use the salary for the current calendar year", () => {
   const details = rosterDetails(
     {
       dateOfBirth: "1997-08-07T07:00Z",
@@ -16,7 +16,7 @@ test("roster details use the salary for the current season", () => {
       },
     },
     "football/nfl",
-    2026,
+    2027,
     "2026-11-16T18:00:00Z",
     "vikings",
   );
@@ -24,7 +24,7 @@ test("roster details use the salary for the current season", () => {
   assert.deepEqual(details, { age: 29, annualSalary: 13_000_000 });
 });
 
-test("roster details omit salary when the current season has none", () => {
+test("roster details omit salary when the current year has none", () => {
   const details = rosterDetails(
     {
       age: 29,

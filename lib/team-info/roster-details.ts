@@ -16,7 +16,7 @@ export function rosterDetails(
     contracts?: ESPNContract[];
   },
   _league: string,
-  season: string | number,
+  _season: string | number,
   checked: string,
   _team: string,
 ): RosterDetails {
@@ -51,12 +51,12 @@ export function rosterDetails(
       age = rosterAge;
     }
   }
-  const seasonYear = String(season);
+  const salaryYear = String(now.getUTCFullYear());
   const salaryFromSeasonContracts = athlete.contracts?.find(
-    (contract) => String(contract.season?.year ?? "") === seasonYear,
+    (contract) => String(contract.season?.year ?? "") === salaryYear,
   )?.salary;
   const salaryFromCurrentContract =
-    String(athlete.contract?.season?.year ?? "") === seasonYear
+    String(athlete.contract?.season?.year ?? "") === salaryYear
       ? athlete.contract?.salary
       : undefined;
   const annualSalary = Number(
