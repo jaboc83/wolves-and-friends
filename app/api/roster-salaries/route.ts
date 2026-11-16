@@ -1,8 +1,10 @@
 import { teamProviders } from "../../../lib/teams/providers";
 import { isTeamId } from "../../../lib/teams/teams";
 import { parseCapWagesRoster } from "../../../lib/team-info/capwages";
+import { parseFanGraphsRoster } from "../../../lib/team-info/fangraphs";
 import {
   parseSalarySwishRoster,
+  salarySourceForYear,
   type RosterSalaryResponse,
 } from "../../../lib/team-info/salaryswish";
 
@@ -18,7 +20,7 @@ async function fetchSalaries(
   sourceUrl: string,
   year: number,
 ): Promise<RosterSalaryResponse> {
-  const response = await fetch(sourceUrl, {
+  const response = await fetch(salarySourceForYear(sourceUrl, year), {
     signal: AbortSignal.timeout(10000),
     headers: {
       Accept: "text/html",
@@ -30,7 +32,9 @@ async function fetchSalaries(
   const parseRoster =
     new URL(sourceUrl).hostname === "capwages.com"
       ? parseCapWagesRoster
-      : parseSalarySwishRoster;
+      : new URL(sourceUrl).hostname === "www.fangraphs.com"
+        ? parseFanGraphsRoster
+        : parseSalarySwishRoster;
   const roster = parseRoster(await response.text(), year);
   return {
     ...roster,

@@ -9,8 +9,17 @@ export type RosterSalaryResponse = SalarySwishRoster & {
   stale?: boolean;
 };
 
-export const salarySeasonLabel = (year: number) =>
-  `${year}-${String(year + 1).slice(-2)}`;
+export const salarySeasonLabel = (year: number, league = "") =>
+  league === "baseball/mlb"
+    ? String(year)
+    : `${year}-${String(year + 1).slice(-2)}`;
+
+export function salarySourceForYear(source: string, year: number): string {
+  const url = new URL(source);
+  if (url.hostname === "www.fangraphs.com")
+    url.searchParams.set("season", String(year));
+  return url.href;
+}
 
 const isRecord = (value: unknown): value is Record<string, unknown> =>
   typeof value === "object" && value !== null && !Array.isArray(value);
@@ -38,7 +47,7 @@ export function isRosterSalaryResponse(
     typeof value.checked === "string" &&
     Number.isFinite(Date.parse(value.checked)) &&
     typeof value.season === "string" &&
-    /^\d{4}-\d{2}$/.test(value.season) &&
+    /^\d{4}(?:-\d{2})?$/.test(value.season) &&
     (value.stale === undefined || typeof value.stale === "boolean") &&
     isSalaryMap(value.salaries)
   );

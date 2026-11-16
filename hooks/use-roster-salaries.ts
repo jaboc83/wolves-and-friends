@@ -21,6 +21,7 @@ export function useRosterSalaries(
   team: string,
   enabled: boolean,
   higherPriorityDataReady: boolean,
+  league = "",
 ): SalaryState {
   const [state, setState] = useState<SalaryState>({
     team: "",
@@ -32,7 +33,7 @@ export function useRosterSalaries(
     if (!enabled) return;
     let active = true;
     const controller = new AbortController();
-    const season = salarySeasonLabel(new Date().getUTCFullYear());
+    const season = salarySeasonLabel(new Date().getUTCFullYear(), league);
     const cached = readRosterSalaryCache(browserStorage, team, season);
     let timeout: ReturnType<typeof setTimeout> | undefined;
     let deferTimer: ReturnType<typeof setTimeout> | undefined;
@@ -51,7 +52,11 @@ export function useRosterSalaries(
         );
         if (!response.ok) throw new Error("Salary data unavailable");
         const payload: unknown = await response.json();
-        if (!isRosterSalaryResponse(payload) || payload.team !== team)
+        if (
+          !isRosterSalaryResponse(payload) ||
+          payload.team !== team ||
+          payload.season !== season
+        )
           throw new Error("Invalid salary data");
         if (!active) return;
         setState({
@@ -102,7 +107,7 @@ export function useRosterSalaries(
         window.cancelIdleCallback(idleCallback);
       if (timeout !== undefined) clearTimeout(timeout);
     };
-  }, [enabled, higherPriorityDataReady, team]);
+  }, [enabled, higherPriorityDataReady, league, team]);
 
   return state;
 }

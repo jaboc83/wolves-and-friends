@@ -171,6 +171,7 @@ export default function RosterPanel({
     teamId,
     Boolean(depth?.salarySourceUrl),
     ["ready", "partial", "empty", "unavailable"].includes(playerStatsStatus),
+    league,
   );
   const salaries =
     salaryState.team === teamId ? salaryState.salaries : emptySalaries;
@@ -461,12 +462,21 @@ export default function RosterPanel({
                   target="_blank"
                   rel="noreferrer"
                 >
-                  {league === "hockey/nhl" ? "CapWages" : "SalarySwish"} ↗
+                  {league === "hockey/nhl"
+                    ? "CapWages"
+                    : league === "baseball/mlb"
+                      ? "FanGraphs"
+                      : "SalarySwish"} ↗
                 </a>{" "}
               </>
             )}
             {rosterNote ? "· " + rosterNote : ""}
           </p>
+          {depth.salarySourceUrl && league === "baseball/mlb" && (
+            <p className="panel-note">
+              Unreported or estimated amounts are omitted.
+            </p>
+          )}
           {depth.salarySourceUrl &&
             salaryStatus === "loading" &&
             !Object.keys(salaries).length && (

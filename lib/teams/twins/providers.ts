@@ -18,4 +18,7 @@ export const twinsProviders = {
   socialTags: ["#MNTwins"],
   espnTeamId: "9",
   powerRankingSource: "cbs-mlb",
+  urls: {
+    salary: "https://www.fangraphs.com/roster-resource/payroll/twins",
+  },
 } as const satisfies TeamProviders;

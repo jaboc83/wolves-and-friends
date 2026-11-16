@@ -6,6 +6,7 @@ import { teamProviders } from "../teams/providers";
 import { serverHooksFor } from "../teams/server";
 import { fetchPostseason, type Postseason } from "../games/postseason";
 import { rosterDetails, type RosterDetails } from "./roster-details";
+import { salarySourceForYear } from "./salaryswish";
 import { parsePowerRanking, powerRankingLeague } from "./power-rankings";
 import {
   analystPremierLeaguePowerRankingsEndpoint,
@@ -167,7 +168,14 @@ export function parseRoster(
         source: "ESPN",
         url,
         checked,
-        ...(salarySourceUrl ? { salarySourceUrl } : {}),
+        ...(salarySourceUrl
+          ? {
+              salarySourceUrl: salarySourceForYear(
+                salarySourceUrl,
+                new Date(checked).getUTCFullYear(),
+              ),
+            }
+          : {}),
         note: "Players grouped by position. Links open player bios and profiles.",
       }
     : undefined;

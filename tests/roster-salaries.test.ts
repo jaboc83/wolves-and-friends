@@ -1,9 +1,12 @@
 import assert from "node:assert/strict";
 import test from "node:test";
 import { parseCapWagesRoster } from "../lib/team-info/capwages.ts";
+import { parseFanGraphsRoster } from "../lib/team-info/fangraphs.ts";
 import {
+  isRosterSalaryResponse,
   parseSalarySwishRoster,
   salaryForPlayer,
+  salarySeasonLabel,
 } from "../lib/team-info/salaryswish.ts";
 import {
   readRosterSalaryCache,
@@ -40,6 +43,84 @@ const salaryTable = `
     </tr>
   </tbody>
 </table>`;
+
+test("FanGraphs selects reported calendar-year salary, not AAV, projections or options", () => {
+  const contract = (
+    name: string,
+    Salary: number,
+    Type = "GUARANTEED",
+    isEstimate = 0,
+  ) => ({
+    contractSummary: { playerName: name, AAV: 18_375_000 },
+    contractYears: [
+      { Season: 2025, Salary: 8_000_000, Type, isEstimate },
+      { Season: 2026, Salary, BaseSalary: 21_500_000, Type, isEstimate },
+    ],
+  });
+  const html = `<script id="__NEXT_DATA__" type="application/json">${JSON.stringify(
+    {
+      props: {
+        pageProps: {
+          dehydratedState: {
+            queries: [
+              {
+                queryKey: [
+                  "roster-resource/payroll2020/data",
+                  { season: 2026, teamid: 8 },
+                ],
+                state: {
+                  data: {
+                    dataContract: [
+                      contract("Pablo López", 21_750_000),
+                      contract("Mick Abel", 782_500, "PRE-ARB"),
+                      contract("Projected Player", 900_000, "GUARANTEED", 1),
+                      contract("Option Player", 10_000_000, "CLUB OPTION"),
+                    ],
+                  },
+                },
+              },
+            ],
+          },
+        },
+      },
+    },
+  )}</script>`;
+  const roster = parseFanGraphsRoster(html, 2026);
+
+  assert.equal(roster.season, "2026");
+  assert.equal(salaryForPlayer(roster.salaries, "Pablo Lopez"), 21_750_000);
+  assert.equal(salaryForPlayer(roster.salaries, "Mick Abel"), 782_500);
+  assert.equal(salaryForPlayer(roster.salaries, "Projected Player"), undefined);
+  assert.equal(salaryForPlayer(roster.salaries, "Option Player"), undefined);
+  assert.throws(() => parseFanGraphsRoster(html, 2027), /no 2027/);
+});
+
+test("MLB salary responses and local cache use calendar-year seasons", () => {
+  const season = salarySeasonLabel(2026, "baseball/mlb");
+  const salaries = { "lopez pablo": 21_750_000 };
+  const payload = {
+    team: "twins",
+    season,
+    salaries,
+    checked: "2026-11-16T18:00:00Z",
+  };
+  const values = new Map<string, string>();
+  const storage = {
+    getItem: (key: string) => values.get(key) ?? null,
+    setItem: (key: string, value: string) => values.set(key, value),
+  };
+
+  assert.equal(isRosterSalaryResponse(payload), true);
+  writeRosterSalaryCache(storage, "twins", season, salaries, 1000);
+  assert.deepEqual(
+    readRosterSalaryCache(storage, "twins", "2026", 2000),
+    salaries,
+  );
+  assert.deepEqual(
+    readRosterSalaryCache(storage, "twins", "2026-27", 2000),
+    {},
+  );
+});
 
 test("CapWages uses current-season annual cash, including signing bonuses, not cap hit", () => {
   const player = (name: string, season = "2026-27") => ({
