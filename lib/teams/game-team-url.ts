@@ -2,6 +2,7 @@
 import { teams, type TeamId } from "./teams";
 import { palaceOpponentPage, teamWikipediaUrl } from "./team-wikipedia";
 import { pwhlTeamUrl } from "./pwhl-team-url";
+import { espnTeamUrl } from "./espn-team-url";
 
 const officialSoccerUrls: Record<string, string> = {
   "Minnesota United": "https://www.mnufc.com/",
@@ -63,7 +64,7 @@ export function gameTeamUrl(
   teamId: TeamId,
   name?: string,
   ownTeam = false,
-  espnTeamId?: string,
+  teamUrl?: string,
 ) {
   const team = teams.find((candidate) => candidate.id === teamId);
   const league = team?.league || "";
@@ -74,15 +75,11 @@ export function gameTeamUrl(
   const officialUrl = officialSoccerUrl(teamId, name, ownTeam);
   if (officialUrl) return officialUrl;
 
-  if (espnTeamId && /^\d+$/.test(espnTeamId) && league) {
-    const route = league.startsWith("soccer/")
-      ? "soccer"
-      : league.split("/")[1];
-    if (route)
-      return (
-        `https://www.espn.com/${route}/team/_/id/` +
-        encodeURIComponent(espnTeamId)
-      );
-  }
+  const espnUrl = espnTeamUrl(league, {
+    links: teamUrl ? [{ href: teamUrl }] : [],
+    abbreviation: ownTeam ? team?.espn : undefined,
+    displayName: ownTeam ? team?.name : name,
+  });
+  if (espnUrl) return espnUrl;
   return teamWikipediaUrl(teamId, name, ownTeam);
 }

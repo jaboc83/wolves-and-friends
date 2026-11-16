@@ -148,7 +148,7 @@ export default function GameCard({
                   t.name
                 ) : (
                   <a
-                    href={gameTeamUrl(g.team, t.name, true, club?.teamId)}
+                    href={gameTeamUrl(g.team, t.name, true, club?.teamUrl)}
                     target="_blank"
                     rel="noreferrer"
                   >
@@ -228,7 +228,7 @@ export default function GameCard({
           >
             <span>
               <a
-                href={gameTeamUrl(g.team, p.name, p === club, p.teamId)}
+                href={gameTeamUrl(g.team, p.name, p === club, p.teamUrl)}
                 target="_blank"
                 rel="noreferrer"
               >
@@ -372,7 +372,7 @@ export default function GameCard({
                   t.short
                 ) : (
                   <a
-                    href={gameTeamUrl(g.team, t.name, true, club?.teamId)}
+                    href={gameTeamUrl(g.team, t.name, true, club?.teamUrl)}
                     target="_blank"
                     rel="noreferrer"
                     onClick={(e) => e.stopPropagation()}
@@ -400,7 +400,7 @@ export default function GameCard({
                     g.team,
                     opponent,
                     false,
-                    opponentCompetitor?.teamId,
+                    opponentCompetitor?.teamUrl,
                   )}
                   target="_blank"
                   rel="noreferrer"

@@ -85,6 +85,8 @@ The shared types are defined in [lib/feeds/feed-types.ts](lib/feeds/feed-types.t
 
 A story can belong to several teams. A game belongs to one tracked team. ESPN games normally use an ID such as `wolves-<ESPN event ID>`; official club fixtures can have a different ID format. Matching across providers sometimes therefore requires the team and kickoff time as well as the ID.
 
+Game-card team links use ESPN's canonical `/team/_/name/<abbreviation>/<name>` URLs, not numeric-ID landing pages, so ESPN's team navigation keeps working. Competitors retain their numeric IDs for internal score matching. Official soccer and PWHL team links still take precedence; teams without a name-based ESPN link use the existing Wikipedia destination.
+
 | Module                                                                                                                               | What it does                                                                                                                                                                                                                                     |
 | ------------------------------------------------------------------------------------------------------------------------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
 | [feeds/index.ts](lib/feeds/index.ts)                                                                                                 | Coordinates news and schedule requests, parses RSS/ESPN data, removes duplicates, retains selected cached data on source failures, and adds odds. Wolves schedules explicitly include season phases so the calendar is not limited to preseason. |
@@ -112,7 +114,7 @@ Odds lookups are currently limited to eligible games within the next seven days 
 
 - **Today's games:** placed in the right rail on desktop and first in the mobile single-column content flow when games exist.
 - **Latest Social Media:** separate from the headlines, showing two unread posts for All Teams and up to five for a selected team, within what the feed returned.
-- **Headlines:** All Teams defaults to articles published today in Central Time. Individual teams default to the last 72 hours. View older widens the window over the loaded articles; it does not search an unlimited archive.
+- **Headlines:** All Teams defaults to articles published today in Central Time and reveals older articles 10 at a time via View older. Individual teams default to the last 72 hours and View older shows the rest of the loaded articles at once. View older widens the window over the loaded articles; it does not search an unlimited archive.
 - **Team insights and calendar:** expandable standings, rosters with player-profile links, and a month calendar containing the available past and upcoming fixtures.
 - **Communities/source links:** direct reference links to relevant communities and publishers.
 - **Coming up/recent results:** compact cards with expandable details. All Teams shows the next future event per team; selected-team views show more.

@@ -53,6 +53,7 @@ export type Game = {
     record?: string;
     name: string;
     teamId?: string;
+    teamUrl?: string;
     score: string;
     winner: boolean;
     homeAway: string;

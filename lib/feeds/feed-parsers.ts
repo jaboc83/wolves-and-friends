@@ -7,6 +7,7 @@ import {
   teamPlaysCompetition,
 } from "../teams/competitions";
 import { palaceProviders } from "../teams/palace/providers";
+import { espnTeamUrl } from "../teams/espn-team-url";
 import type { Story, Game } from "./feed-types";
 type GameStatus = {
   completed?: boolean;
@@ -29,6 +30,7 @@ type ScoreCompetitor = {
     abbreviation?: string;
     displayName?: string;
     shortDisplayName?: string;
+    links?: { href?: string }[];
   };
 };
 type ScoreCompetition = {
@@ -273,6 +275,7 @@ export function parseGames(data: unknown, team: TeamId, sport: string): Game[] {
           .map((p) => ({
             name: p.team?.shortDisplayName || p.team?.displayName || "",
             teamId: p.team?.id === undefined ? undefined : String(p.team.id),
+            teamUrl: espnTeamUrl(league, p.team),
             record:
               (p.records || []).find(
                 (r) =>
