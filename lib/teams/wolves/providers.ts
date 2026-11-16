@@ -25,13 +25,6 @@ export const wolvesProviders = {
       publisherAuthorFeed: true,
       titleFilters: [/timberwolves|wolves|edwards|finch/i],
     },
-    {
-      name: "Jon Krawczynski",
-      label: "Google News index · bylines unverified",
-      url: "https://www.nytimes.com/athletic/author/jon-krawczynski/",
-      feed: "https://news.google.com/rss/search?q=%22Jon+Krawczynski%22+site%3Anytimes.com%2Fathletic+when%3A14d&hl=en-US&gl=US&ceid=US%3Aen",
-      titleFilters: [/ - The New York Times$/, /timberwolves|wolves/i],
-    },
   ],
   youtube: {
     name: "Minnesota Timberwolves",

@@ -25,10 +25,7 @@ export const wolvesProfile = {
       "https://www.yardbarker.com/nba/teams/minnesota_timberwolves/83",
     ],
     ["Howls and Growls", "https://www.youtube.com/@howlsandgrowlshoops"],
-    [
-      "Jon Krawczynski · The Athletic",
-      "https://www.nytimes.com/athletic/author/jon-krawczynski/",
-    ],
+    ["The Athletic", "https://www.nytimes.com/athletic/nba/team/timberwolves/"],
     [
       "Britt Robson · MinnPost",
       "https://www.minnpost.com/author/britt-robson/",
