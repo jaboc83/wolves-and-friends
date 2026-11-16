@@ -2,6 +2,7 @@ import assert from "node:assert/strict";
 import test from "node:test";
 import { parseCapWagesRoster } from "../lib/team-info/capwages.ts";
 import { parseFanGraphsRoster } from "../lib/team-info/fangraphs.ts";
+import { parseSalarySportRoster } from "../lib/team-info/salarysport.ts";
 import {
   isRosterSalaryResponse,
   parseSalarySwishRoster,
@@ -43,6 +44,66 @@ const salaryTable = `
     </tr>
   </tbody>
 </table>`;
+
+const palaceWages = (rows: string, season = "2026/27", currency = "GBP") => `
+<html data-page-currency="${currency}">
+  <table data-squad-table>
+    <caption>Crystal Palace squad salaries, ${season}.</caption>
+    <thead><tr><th>Player</th><th>Weekly</th><th>Yearly</th></tr></thead>
+    <tbody>${rows}</tbody>
+  </table>
+</html>`;
+
+test("SalarySport uses season-specific yearly GBP wages, not weekly wages", () => {
+  const html = palaceWages(`
+    <tr data-name="Y&#233;remy Pino" data-weekly="120000" data-yearly="6240000">
+      <td>Yeremy Pino</td><td>£120,000</td><td>£6,240,000</td>
+    </tr>
+    <tr data-name="J&#248;rgen Strand Larsen" data-weekly="110000" data-yearly="5720000"></tr>
+    <tr data-name="Unknown Player" data-weekly="1000"></tr>
+    <tr data-name="Invalid Player" data-yearly="NaN"></tr>
+    <tr data-name="Negative Player" data-yearly="-100"></tr>
+    <tr data-name="Zero Player" data-yearly="0"></tr>
+  `);
+  const roster = parseSalarySportRoster(html, 2026);
+
+  assert.equal(roster.season, "2026-27");
+  assert.equal(salaryForPlayer(roster.salaries, "Yeremy Pino"), 6_240_000);
+  assert.equal(
+    salaryForPlayer(roster.salaries, "Jørgen Strand Larsen"),
+    5_720_000,
+  );
+  assert.equal(Object.keys(roster.salaries).length, 2);
+  assert.throws(() => parseSalarySportRoster(html, 2027), /no 2027-28/);
+});
+
+test("SalarySport rejects other currencies, unrelated tables and conflicting names", () => {
+  const row = '<tr data-name="Dean Henderson" data-yearly="5200000"></tr>';
+  assert.throws(
+    () => parseSalarySportRoster(palaceWages(row, "2026/27", "USD"), 2026),
+    /GBP wage data/,
+  );
+  assert.throws(
+    () =>
+      parseSalarySportRoster(
+        palaceWages(row).replace("data-squad-table", "data-comparison-table"),
+        2026,
+      ),
+    /no 2026-27/,
+  );
+  assert.throws(
+    () =>
+      parseSalarySportRoster(
+        palaceWages(
+          row +
+            '<tr data-name="Dean Henderson" data-yearly="6200000"></tr>' +
+            row,
+        ),
+        2026,
+      ),
+    /no 2026-27/,
+  );
+});
 
 test("FanGraphs selects reported calendar-year salary, not AAV, projections or options", () => {
   const contract = (

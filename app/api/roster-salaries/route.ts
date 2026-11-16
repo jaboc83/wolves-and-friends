@@ -2,6 +2,7 @@ import { teamProviders } from "../../../lib/teams/providers";
 import { isTeamId } from "../../../lib/teams/teams";
 import { parseCapWagesRoster } from "../../../lib/team-info/capwages";
 import { parseFanGraphsRoster } from "../../../lib/team-info/fangraphs";
+import { parseSalarySportRoster } from "../../../lib/team-info/salarysport";
 import {
   parseSalarySwishRoster,
   salarySourceForYear,
@@ -34,7 +35,9 @@ async function fetchSalaries(
       ? parseCapWagesRoster
       : new URL(sourceUrl).hostname === "www.fangraphs.com"
         ? parseFanGraphsRoster
-        : parseSalarySwishRoster;
+        : new URL(sourceUrl).hostname === "salarysport.com"
+          ? parseSalarySportRoster
+          : parseSalarySwishRoster;
   const roster = parseRoster(await response.text(), year);
   return {
     ...roster,

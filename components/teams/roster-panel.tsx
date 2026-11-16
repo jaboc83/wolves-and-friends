@@ -38,12 +38,20 @@ const emptySalaries: Record<string, number> = {};
 const defaultSortDirection = (column: string): "asc" | "desc" =>
   column === "Player" || column === "Position" ? "asc" : "desc";
 
-const annualSalaryFormatter = new Intl.NumberFormat("en-US", {
-  style: "currency",
-  currency: "USD",
-  notation: "compact",
-  maximumFractionDigits: 1,
-});
+const annualSalaryFormatters = {
+  USD: new Intl.NumberFormat("en-US", {
+    style: "currency",
+    currency: "USD",
+    notation: "compact",
+    maximumFractionDigits: 1,
+  }),
+  GBP: new Intl.NumberFormat("en-US", {
+    style: "currency",
+    currency: "GBP",
+    notation: "compact",
+    maximumFractionDigits: 1,
+  }),
+};
 
 const abbreviation = (position: string) => {
   const value = position.toLowerCase();
@@ -111,11 +119,14 @@ function PlayerMeta({ player }: { player: RosterPlayer }) {
 function PlayerAgeAndSalary({
   player,
   highestPaid,
+  currency,
 }: {
   player: RosterPlayer;
   highestPaid: boolean;
+  currency: keyof typeof annualSalaryFormatters;
 }) {
-  if (player.age === undefined && player.annualSalary === undefined) return null;
+  if (player.age === undefined && player.annualSalary === undefined)
+    return null;
   const SalaryTag = highestPaid ? "strong" : "span";
   return (
     <span className="roster-player-age">
@@ -130,7 +141,7 @@ function PlayerAgeAndSalary({
               : undefined
           }
         >
-          {annualSalaryFormatter.format(player.annualSalary)}/yr
+          {annualSalaryFormatters[currency].format(player.annualSalary)}/yr
         </SalaryTag>
       )}
     </span>
@@ -167,6 +178,7 @@ export default function RosterPanel({
   onRosterOpen: (priorityKeys?: string[]) => void;
 }) {
   const rosterNote = teamProfile(teamId)?.rosterNote;
+  const salaryCurrency = league === "soccer/eng.1" ? "GBP" : "USD";
   const salaryState = useRosterSalaries(
     teamId,
     Boolean(depth?.salarySourceUrl),
@@ -405,6 +417,7 @@ export default function RosterPanel({
                                 <PlayerAgeAndSalary
                                   player={p}
                                   highestPaid={highestPaid.has(p)}
+                                  currency={salaryCurrency}
                                 />
                                 <PlayerMeta player={p} />
                               </th>
@@ -441,6 +454,7 @@ export default function RosterPanel({
                           <PlayerAgeAndSalary
                             player={p}
                             highestPaid={highestPaid.has(p)}
+                            currency={salaryCurrency}
                           />
                           <PlayerMeta player={p} />
                         </li>
@@ -466,7 +480,10 @@ export default function RosterPanel({
                     ? "CapWages"
                     : league === "baseball/mlb"
                       ? "FanGraphs"
-                      : "SalarySwish"} ↗
+                      : league === "soccer/eng.1"
+                        ? "SalarySport"
+                        : "SalarySwish"}{" "}
+                  ↗
                 </a>{" "}
               </>
             )}
@@ -475,6 +492,11 @@ export default function RosterPanel({
           {depth.salarySourceUrl && league === "baseball/mlb" && (
             <p className="panel-note">
               Unreported or estimated amounts are omitted.
+            </p>
+          )}
+          {depth.salarySourceUrl && league === "soccer/eng.1" && (
+            <p className="panel-note">
+              Reported annual basic wages in GBP; bonuses excluded.
             </p>
           )}
           {depth.salarySourceUrl &&

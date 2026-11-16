@@ -82,7 +82,7 @@ export function salaryForPlayer(
   return matches.length === 1 ? matches[0][1] : undefined;
 }
 
-function plainText(value: string): string {
+export function plainText(value: string): string {
   return value
     .replace(/<[^>]*>/g, " ")
     .replace(/&#x([0-9a-f]+);/gi, (_, hex: string) => {
