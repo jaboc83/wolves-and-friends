@@ -7,6 +7,7 @@ import {
   combineVikingsReceiverGroups,
   combineVikingsRunningBackGroups,
   visibleRosterStatColumns,
+  orderVikingsRosterGroups,
 } from "../lib/team-info/roster-stats-table.ts";
 
 test("Vikings receiving and defensive tables use selected stat columns", () => {
@@ -277,5 +278,38 @@ test("Vikings linebackers, cornerbacks, and safeties share one table", () => {
       columns: ["TOT", "SOLO", "AST", "SACK", "FF", "FR"],
       positionOnly: false,
     },
+  );
+});
+
+test("Vikings roster tables follow the requested position order", () => {
+  const groups = [
+    { position: "Offensive Line", players: ["ol"] },
+    { position: "Punter", players: ["p"] },
+    { position: "Defensive Line", players: ["dl"] },
+    { position: "Running Back / Fullback", players: ["rb"] },
+    { position: "Kicker", players: ["k"] },
+    { position: "Linebackers and Defensive backs", players: ["lbdb"] },
+    { position: "Receivers", players: ["wrte"] },
+    { position: "Quarterback", players: ["qb"] },
+  ];
+
+  assert.deepEqual(
+    orderVikingsRosterGroups(groups, "vikings", "football/nfl").map(
+      ({ position }) => position,
+    ),
+    [
+      "Quarterback",
+      "Receivers",
+      "Running Back / Fullback",
+      "Linebackers and Defensive backs",
+      "Defensive Line",
+      "Kicker",
+      "Punter",
+      "Offensive Line",
+    ],
+  );
+  assert.deepEqual(
+    orderVikingsRosterGroups(groups, "wild", "football/nfl"),
+    groups,
   );
 });

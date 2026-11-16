@@ -18,6 +18,7 @@ import {
   combineVikingsReceiverGroups,
   combineVikingsRunningBackGroups,
   createRosterStatsTable,
+  orderVikingsRosterGroups,
   rosterStatValue,
   visibleRosterStatColumns,
   type RosterStatRow,
@@ -181,8 +182,12 @@ export default function RosterPanel({
       teamId,
       league || "",
     );
-    return combineVikingsLinebackerAndDefensiveBackGroups(
-      defensiveLineGroups,
+    return orderVikingsRosterGroups(
+      combineVikingsLinebackerAndDefensiveBackGroups(
+        defensiveLineGroups,
+        teamId,
+        league || "",
+      ),
       teamId,
       league || "",
     );

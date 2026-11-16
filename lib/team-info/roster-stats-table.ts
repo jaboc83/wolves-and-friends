@@ -56,6 +56,16 @@ const vikingsLinebackerAndDefensiveBackPositions = [
   "defensive back",
   "db",
 ];
+const vikingsRosterPositionOrder = [
+  ["quarterback", "qb"],
+  [...vikingsReceiverPositions, "receiver"],
+  ["running back", "rb", "fullback", "fb"],
+  vikingsLinebackerAndDefensiveBackPositions,
+  vikingsDefensiveLinePositions,
+  ["kicker", "k"],
+  ["punter", "p"],
+  vikingsOffensiveLinePositions,
+];
 
 const vikingsNflPositionColumns: {
   positions: string[];
@@ -85,6 +95,29 @@ const positionParts = (position: string) =>
 
 function hasPosition(position: string, names: string[]) {
   return positionParts(position).some((part) => names.includes(part));
+}
+
+export function orderVikingsRosterGroups<T>(
+  groups: { position: string; players: T[] }[],
+  teamId: string,
+  league: string,
+) {
+  if (teamId !== "vikings" || league !== "football/nfl") return groups;
+  return groups
+    .map((group, index) => ({
+      group,
+      index,
+      order: vikingsRosterPositionOrder.findIndex((positions) =>
+        hasPosition(group.position, positions),
+      ),
+    }))
+    .sort(
+      (a, b) =>
+        (a.order < 0 ? vikingsRosterPositionOrder.length : a.order) -
+          (b.order < 0 ? vikingsRosterPositionOrder.length : b.order) ||
+        a.index - b.index,
+    )
+    .map(({ group }) => group);
 }
 
 function rosterStatColumnPreference(
