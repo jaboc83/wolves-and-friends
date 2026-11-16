@@ -27,7 +27,7 @@ import TeamInsights from "../components/teams/team-insights";
 import { teamThemes } from "../lib/teams/team-themes";
 import { unreadSocial } from "../lib/social/social-queue";
 import { teamProfile, teams } from "../lib/teams/teams";
-import { isTeamId, TEAM_IDS } from "../lib/teams/teams";
+import { isTeamId } from "../lib/teams/teams";
 import {
   DASHBOARD_PAGE_IDS,
   type DashboardPageId,
@@ -42,7 +42,7 @@ export default function Home() {
   const localDateTime = (s: string, opts: Intl.DateTimeFormatOptions = {}) =>
     formatInTimeZone(s, timeZone, opts);
   const zoneLabel = timeZoneLabel(timeZone);
-  const [active, setActive] = useState<DashboardPageId>(TEAM_IDS.WOLVES),
+  const [active, setActive] = useState<DashboardPageId>(DASHBOARD_PAGE_IDS.ALL),
     [search, setSearch] = useState(""),
     [sources, setSources] = useState(false),
     [readIds, setReadIds] = useState<string[]>([]),

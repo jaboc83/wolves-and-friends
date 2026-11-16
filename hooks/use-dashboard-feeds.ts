@@ -32,7 +32,7 @@ import {
 } from "../lib/browser/news-page-data";
 import { loadPageBeforeBackground } from "../lib/browser/page-first-feeds";
 import type { MarchData } from "../lib/games/march-madness";
-import { isTeamId, TEAM_IDS, teams, type TeamId } from "../lib/teams/teams";
+import { isTeamId, teams, type TeamId } from "../lib/teams/teams";
 import {
   isHubData,
   isStories,
@@ -42,7 +42,10 @@ import {
   recordFeedDiagnostics,
   recordRequestDiagnostic,
 } from "../lib/feeds/feed-diagnostics";
-import type { DashboardPageId } from "../lib/dashboard/page-id";
+import {
+  DASHBOARD_PAGE_IDS,
+  type DashboardPageId,
+} from "../lib/dashboard/page-id";
 const emptyHub: HubData = {
   checked: "",
   stories: [],
@@ -250,7 +253,7 @@ export function useDashboardFeeds(active: DashboardPageId) {
       }
     });
   }
-  const activePage = useRef<DashboardPageId>(TEAM_IDS.WOLVES);
+  const activePage = useRef<DashboardPageId>(DASHBOARD_PAGE_IDS.ALL);
   const newsChecked = useRef(new Map<TeamId, number>());
   const newsSource = useRef<{ checked: number; data: HubData } | null>(null);
   const newsRequest = useRef<Promise<HubData> | null>(null);

@@ -1,7 +1,11 @@
 // Validates cached feed shapes and restores a supported dashboard page.
 import type { HubData, Story } from "../feeds/feed-types";
-import { isTeamId, TEAM_IDS } from "../teams/teams";
-import { isDashboardPageId, type DashboardPageId } from "./page-id";
+import { isTeamId } from "../teams/teams";
+import {
+  DASHBOARD_PAGE_IDS,
+  isDashboardPageId,
+  type DashboardPageId,
+} from "./page-id";
 import { browserStorage } from "../browser/storage";
 const object = (value: unknown): value is Record<string, unknown> =>
   Boolean(value) && typeof value === "object";
@@ -70,5 +74,5 @@ export function storedDashboardPage(
   try {
     id = storage.getItem("wf-team");
   } catch {}
-  return isDashboardPageId(id) ? id : TEAM_IDS.WOLVES;
+  return isDashboardPageId(id) ? id : DASHBOARD_PAGE_IDS.ALL;
 }
