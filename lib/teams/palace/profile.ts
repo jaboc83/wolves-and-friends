@@ -13,6 +13,7 @@ export const palaceProfile = {
   league: "soccer/eng.1",
   espn: "384",
   sources: [
+    ["Premier League news", "https://www.premierleague.com/en/news"],
     ["Official Palace schedule", "https://www.cpfc.co.uk/matches/"],
     ["Official Palace", "https://www.cpfc.co.uk/news/"],
     ["PalaceRadar", "https://www.palaceradar.co.uk/"],

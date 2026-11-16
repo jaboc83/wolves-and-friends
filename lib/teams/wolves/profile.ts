@@ -14,6 +14,7 @@ export const wolvesProfile = {
   league: "basketball/nba",
   espn: "min",
   sources: [
+    ["NBA news", "https://www.nba.com/news"],
     [
       "Bluesky · Wolves starter pack",
       "https://bsky.app/starter-pack/canishoopus.bsky.social/3lal4p6wu5o2a",
@@ -25,10 +26,7 @@ export const wolvesProfile = {
       "https://www.yardbarker.com/nba/teams/minnesota_timberwolves/83",
     ],
     ["Howls and Growls", "https://www.youtube.com/@howlsandgrowlshoops"],
-    [
-      "Jon Krawczynski · The Athletic",
-      "https://www.nytimes.com/athletic/author/jon-krawczynski/",
-    ],
+    ["The Athletic", "https://www.nytimes.com/athletic/nba/team/timberwolves/"],
     [
       "Britt Robson · MinnPost",
       "https://www.minnpost.com/author/britt-robson/",

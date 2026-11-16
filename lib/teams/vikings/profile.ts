@@ -13,6 +13,7 @@ export const vikingsProfile = {
   league: "football/nfl",
   espn: "min",
   sources: [
+    ["NFL news", "https://www.nfl.com/news/"],
     [
       "Ben Goessling · Star Tribune",
       "https://www.startribune.com/author/ben-goessling/6134708",

@@ -1,5 +1,17 @@
 # Wolves headline investigation, October 22, 2026
 
+## Update, November 16, 2026
+
+The Athletic is now a direct link to its Timberwolves team page only.
+Jon Krawczynski's Google News author feed has been removed; no replacement
+Athletic headline feed or page scraper is configured. NYT's published
+[access rules](https://www.nytimes.com/robots.txt) prohibit automated scraping
+without prior written permission. Google News RSS also restricts reuse to
+personal, non-commercial feed readers. The October findings below describe
+the previous configuration.
+
+## Original investigation
+
 The flaky Howls and Growls YouTube RSS provider has been removed from headline
 collection. The team's clickable YouTube source link remains available in the
 team catalog; removing the feed does not remove that external link.

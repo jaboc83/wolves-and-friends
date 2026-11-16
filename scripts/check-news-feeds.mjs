@@ -79,8 +79,22 @@ assert.equal(britt.feed, "https://www.minnpost.com/author/britt-robson/feed/");
 assert.equal(britt.publisherAuthorFeed, true);
 const alec = authorSources.find((source) => source.name === "Alec Lewis");
 assert.match(alec.feed, /site%3Anytimes\.com%2Fathletic/);
-const jon = authorSources.find((source) => source.name === "Jon Krawczynski");
-assert.match(jon.feed, /site%3Anytimes\.com%2Fathletic/);
+const { wolvesProviders } = await loadModule("../lib/teams/wolves/providers.ts");
+const { wolvesProfile } = await loadModule("../lib/teams/wolves/profile.ts");
+assert.equal(
+  wolvesProviders.newsFeeds.some(({ url }) =>
+    /nytimes\.com|news\.google\.com/.test(url),
+  ),
+  false,
+);
+assert.deepEqual(
+  wolvesProfile.sources.find(([name]) => name === "The Athletic"),
+  ["The Athletic", "https://www.nytimes.com/athletic/nba/team/timberwolves/"],
+);
+assert.equal(
+  authorSources.some(({ name }) => name === "Jon Krawczynski"),
+  false,
+);
 assert.equal(
   authorSources.find((source) => source.name === "Michael Russo").team,
   "wild",

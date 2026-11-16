@@ -4,7 +4,6 @@ import type { ReactNode } from "react";
 import Image from "next/image";
 import StoryCard from "../stories/story-card";
 import { recentStories } from "../../lib/browser/news-window";
-import { communities } from "../../lib/social/communities";
 import { teamLogoPath } from "../../lib/teams/team-logo";
 import { teams } from "../../lib/teams/teams";
 import type { DashboardPageId } from "../../lib/dashboard/page-id";
@@ -35,7 +34,6 @@ type NewsSectionState = {
   search: string;
   showRead: boolean;
   showOlder: boolean;
-  sources: boolean;
 };
 
 type NewsSectionActions = {
@@ -45,7 +43,6 @@ type NewsSectionActions = {
   setShowRead: (value: boolean) => void;
   toggleOlder: () => void;
   refreshSocial: (force?: boolean) => unknown;
-  toggleSources: () => void;
 };
 
 type NewsSectionProps = {
@@ -136,82 +133,60 @@ export default function NewsSection({
           </section>
           {teamDetails}
           <div className="news-resources">
-            <section className="community-panel">
-              <h2>Fan communities</h2>
-              {communities
-                .filter(
-                  (community) =>
-                    state.active === "all" || community.team === state.active,
-                )
-                .map((community) => (
-                  <a
-                    key={community.url}
-                    href={community.url}
-                    target="_blank"
-                    rel="noreferrer"
-                  >
-                    <Image
-                      unoptimized
-                      src={teamLogoPath(community.team)}
-                      alt=""
-                      width={24}
-                      height={24}
-                    />
-                    <span>{community.name} ↗</span>
-                  </a>
-                ))}
-            </section>
-            <div className="source-panel">
-              <button
-                className="source-toggle"
-                onClick={actions.toggleSources}
-                aria-expanded={state.sources}
-              >
-                Source desk <span>{state.sources ? "−" : "+"}</span>
-              </button>
+            <details className="community-panel">
+              <summary>
+                <h2>External Links</h2>
+              </summary>
               <p>
-                Direct links to your trusted voices, including sources whose
-                feeds aren’t available.
+                Team sources, fan communities, and news from around the league.
               </p>
-              {state.sources && (
-                <div className="source-grid">
-                  {(team ? [team] : teams).map((sourceTeam) => (
-                    <div key={sourceTeam.id}>
-                      <h4>{sourceTeam.short}</h4>
-                      {sourceTeam.sources.map(([name, url]) => (
-                        <a
-                          key={url}
-                          href={url}
-                          target="_blank"
-                          rel="noreferrer"
-                        >
-                          {name} ↗
-                        </a>
-                      ))}
-                    </div>
+              {(team ? [team] : teams).map((sourceTeam) => (
+                <div key={sourceTeam.id}>
+                  {!team && <h3>{sourceTeam.short}</h3>}
+                  {[
+                    ...sourceTeam.communities.map(
+                      ({ name, url }) => [name, url] as const,
+                    ),
+                    ...sourceTeam.sources,
+                  ].map(([name, url]) => (
+                    <a
+                      key={url}
+                      href={url}
+                      target="_blank"
+                      rel="noreferrer"
+                    >
+                      <Image
+                        unoptimized
+                        src={teamLogoPath(sourceTeam.id)}
+                        alt=""
+                        width={24}
+                        height={24}
+                      />
+                      <span>{name} ↗</span>
+                    </a>
                   ))}
                 </div>
-              )}
-              {state.failed.length > 0 && (
-                <details className="health">
-                  <summary>
-                    {state.failed.length} feed
-                    {state.failed.length === 1 ? "" : "s"} unavailable · cached
-                    items may remain
-                  </summary>
-                  {state.failed.map((health) => (
-                    <p key={health.name}>
-                      {health.name} · checked{" "}
-                      {localDateTime(health.checked, {
-                        hour: "numeric",
-                        minute: "2-digit",
-                      })}{" "}
-                      {zoneLabel}
-                    </p>
-                  ))}
-                </details>
-              )}
-            </div>
+              ))}
+            </details>
+            {state.failed.length > 0 && (
+              <details className="health">
+                <summary>
+                  {state.failed.length} feed
+                  {state.failed.length === 1 ? "" : "s"} unavailable · cached
+                  items may remain
+                </summary>
+                {state.failed.map((health) => (
+                  <p key={health.name}>
+                    {health.name} · checked{" "}
+                    {localDateTime(health.checked, {
+                      hour: "numeric",
+                      minute: "2-digit",
+                    })}{" "}
+                    {zoneLabel}
+                  </p>
+                ))}
+              </details>
+            )}
           </div>
         </div>
         <div className="headline-column">
@@ -297,7 +272,7 @@ export default function NewsSection({
               <p>
                 {state.olderCount > 0
                   ? "Use View older to catch up on earlier articles."
-                  : "Check the Source desk for more coverage."}
+                  : "Check External Links for more coverage."}
               </p>
             </div>
           )}

@@ -13,6 +13,7 @@ export const twinsProfile = {
   league: "baseball/mlb",
   espn: "min",
   sources: [
+    ["MLB news", "https://www.mlb.com/news"],
     [
       "Dan Hayes · The Athletic",
       "https://www.nytimes.com/athletic/author/dan-hayes/",
