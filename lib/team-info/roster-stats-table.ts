@@ -79,7 +79,7 @@ const vikingsNflPositionColumns: {
     positions: vikingsLinebackerAndDefensiveBackPositions,
     columns: ["TOT", "SOLO", "AST", "SACK", "FF", "FR"],
   },
-  { positions: vikingsOffensiveLinePositions, columns: ["GP"] },
+  { positions: vikingsOffensiveLinePositions, columns: [] },
 ];
 
 const positionParts = (position: string) =>
@@ -137,13 +137,6 @@ export function visibleRosterStatColumns(
   position: string,
   availableColumns: string[],
 ) {
-  const vikingsOffensiveLine =
-    teamId === "vikings" &&
-    league === "football/nfl" &&
-    hasPosition(position, vikingsOffensiveLinePositions);
-  if (vikingsOffensiveLine) {
-    return { columns: ["GP"], positionOnly: false };
-  }
   const preference = rosterStatColumnPreference(teamId, league, position);
   const columns = preference
     ? preference.filter((column) => availableColumns.includes(column))

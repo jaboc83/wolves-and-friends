@@ -18,46 +18,6 @@ const seasonYear = (value: unknown) => {
   return match ? Number(match[1]) : undefined;
 };
 
-const offensiveLinePositions = new Set([
-  "c",
-  "center",
-  "centre",
-  "g",
-  "guard",
-  "leftguard",
-  "rightguard",
-  "lg",
-  "rg",
-  "og",
-  "offensiveguard",
-  "offensiveline",
-  "offensivelineman",
-  "ol",
-  "offensivetackle",
-  "lefttackle",
-  "righttackle",
-  "tackle",
-  "ot",
-  "lt",
-  "rt",
-  "longsnapper",
-  "ls",
-]);
-
-const isGamesPlayed = (stat: Pick<Stat, "abbreviation" | "name">) =>
-  String(stat.abbreviation || "").toUpperCase() === "GP" ||
-  String(stat.name || "").toLowerCase() === "gamesplayed";
-
-const gamesPlayedFirst = <T extends Pick<Stat, "abbreviation" | "name">>(
-  stats: T[],
-) => {
-  const gamesPlayed = stats.find(isGamesPlayed);
-  return [
-    ...(gamesPlayed ? [gamesPlayed] : []),
-    ...stats.filter((stat) => !isGamesPlayed(stat)),
-  ];
-};
-
 export function parsePlayerStats(
   data: PlayerStatsData,
   rosterTeamId = "",
@@ -65,9 +25,6 @@ export function parsePlayerStats(
   position = "",
   targetSeasonYear?: number,
 ): PlayerStats | undefined {
-  const keepGamesPlayed =
-    league === "football/nfl" &&
-    offensiveLinePositions.has(position.toLowerCase().replace(/[^a-z0-9]/g, ""));
   const commonCategories = Array.isArray(data.categories)
     ? data.categories
     : [];
@@ -118,18 +75,15 @@ export function parsePlayerStats(
         (league === "football/nfl" || league === "baseball/mlb")
       ) {
         const removeGames =
-          league === "football/nfl"
-            ? !keepGamesPlayed
-            : commonCategory.name !== "pitching";
-        const stats = raw
+          league === "football/nfl" || commonCategory.name !== "pitching";
+        values = raw
           .filter(
             (stat: Stat) =>
               !removeGames ||
               !["GP", "GAMES", "gamesPlayed"].includes(
                 String(stat.abbreviation || stat.name),
               ),
-          );
-        values = (keepGamesPlayed ? gamesPlayedFirst(stats) : stats)
+          )
           .slice(0, 6)
           .map((stat: Stat) => ({
             label: String(stat.abbreviation || stat.name),
@@ -186,7 +140,7 @@ export function parsePlayerStats(
           .filter((stat) => !/rank|rating|projected/i.test(stat.name || ""))
           .filter((stat) => {
             const removeGames =
-              (league === "football/nfl" && !keepGamesPlayed) ||
+              league === "football/nfl" ||
               (league === "baseball/mlb" &&
                 !coreCategories.some(
                   (category) =>
@@ -195,10 +149,7 @@ export function parsePlayerStats(
                 ));
             return !(removeGames && stat.abbreviation === "GP");
           });
-    const orderedFallback = keepGamesPlayed
-      ? gamesPlayedFirst(selectedFallback)
-      : selectedFallback;
-    const values = orderedFallback
+    const values = selectedFallback
       .filter(
         (stat) =>
           stat.abbreviation &&
@@ -228,19 +179,13 @@ export function parsePlayerStats(
   );
   if (overviewStats) {
     const values = (
-      keepGamesPlayed
-        ? overviewStats.stats.filter(isGamesPlayed).map((stat: Stat) => ({
-            label: String(stat.abbreviation || stat.name),
+      league
+        ? selectedValues(overviewStats.stats, league, position)
+        : overviewStats.stats.map((stat: Stat) => ({
+            label: String(stat.abbreviation),
             value: statValue(stat),
             description: String(stat.displayName || stat.abbreviation),
           }))
-        : league
-          ? selectedValues(overviewStats.stats, league, position)
-          : overviewStats.stats.map((stat: Stat) => ({
-              label: String(stat.abbreviation),
-              value: statValue(stat),
-              description: String(stat.displayName || stat.abbreviation),
-            }))
     )
       .filter((stat: PlayerStats["values"][number]) => stat.value.trim() !== "")
       .slice(0, 6);
@@ -317,14 +262,13 @@ export function parsePlayerStats(
       statByName(summaryStatistics, ["gamesPlayed"]) ||
       statByLabel(summaryStatistics, ["GP"]);
     if (games && Number(games.value ?? games.displayValue) === 0) return;
-    const stats = summaryStatistics
+    values = summaryStatistics
       .filter(
         (stat) =>
           (stat.abbreviation || stat.name) &&
           stat.displayValue !== undefined &&
           String(stat.displayValue).trim() !== "",
-      );
-    values = (keepGamesPlayed ? gamesPlayedFirst(stats) : stats)
+      )
       .slice(0, 6)
       .map((stat) => ({
         label: String(stat.abbreviation || stat.name),
@@ -338,7 +282,7 @@ export function parsePlayerStats(
       }));
   } else if (seasonRow) {
     const rowStats = seasonRow.stats || [];
-    const stats = (category.labels || [])
+    values = (category.labels || [])
       .map((label, index) => ({
         label: String(label),
         value: String(rowStats[index] ?? ""),
@@ -350,11 +294,11 @@ export function parsePlayerStats(
             label,
         ),
       }))
-      .filter((stat) => stat.value.trim() !== "");
-    values = (keepGamesPlayed ? gamesPlayedFirst(stats) : stats).slice(0, 6);
+      .filter((stat) => stat.value.trim() !== "")
+      .slice(0, 6);
   } else if (!targetSeasonYear && category?.totals?.length) {
     const totals = category.totals;
-    const stats = (category.labels || [])
+    values = (category.labels || [])
       .map((label, index) => ({
         label: String(label),
         value: String(totals[index] ?? ""),
@@ -363,8 +307,8 @@ export function parsePlayerStats(
             ?.displayName || label,
         ),
       }))
-      .filter((stat) => stat.value.trim() !== "");
-    values = (keepGamesPlayed ? gamesPlayedFirst(stats) : stats).slice(0, 6);
+      .filter((stat) => stat.value.trim() !== "")
+      .slice(0, 6);
   }
 
   const seasonLabel =

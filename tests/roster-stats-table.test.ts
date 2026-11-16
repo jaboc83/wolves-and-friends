@@ -49,7 +49,7 @@ test("Vikings receiving and defensive tables use selected stat columns", () => {
   );
 });
 
-test("Vikings offensive line tables keep GP only", () => {
+test("Vikings offensive line tables keep position headers only", () => {
   assert.deepEqual(
     visibleRosterStatColumns("vikings", "football/nfl", "Offensive Tackle", [
       "GP",
@@ -57,25 +57,25 @@ test("Vikings offensive line tables keep GP only", () => {
       "SOLO",
       "AST",
     ]),
-    { columns: ["GP"], positionOnly: false },
+    { columns: [], positionOnly: true },
   );
   assert.deepEqual(
     visibleRosterStatColumns("vikings", "football/nfl", "Left Guard", [
       "GP",
       "TOT",
     ]),
-    { columns: ["GP"], positionOnly: false },
+    { columns: [], positionOnly: true },
   );
   assert.deepEqual(
     visibleRosterStatColumns("vikings", "football/nfl", "Long Snapper", [
       "GP",
       "TOT",
     ]),
-    { columns: ["GP"], positionOnly: false },
+    { columns: [], positionOnly: true },
   );
   assert.deepEqual(
     visibleRosterStatColumns("vikings", "football/nfl", "Offensive Line", []),
-    { columns: ["GP"], positionOnly: false },
+    { columns: [], positionOnly: true },
   );
 });
 
@@ -169,7 +169,7 @@ test("Vikings offensive-line positions share one table", () => {
       "Offensive Line",
       ["GP", "TOT", "SACK"],
     ),
-    { columns: ["GP"], positionOnly: false },
+    { columns: [], positionOnly: true },
   );
 });
 
