@@ -13,6 +13,7 @@ import type { PlayerStats } from "../../lib/team-info/player-stats";
 import type { StatsStatus } from "../../lib/team-info/roster-stats-loader";
 import {
   combineVikingsDefensiveLineGroups,
+  combineVikingsLinebackerAndDefensiveBackGroups,
   combineVikingsOffensiveLineGroups,
   combineVikingsReceiverGroups,
   combineVikingsRunningBackGroups,
@@ -175,8 +176,13 @@ export default function RosterPanel({
       teamId,
       league || "",
     );
-    return combineVikingsDefensiveLineGroups(
+    const defensiveLineGroups = combineVikingsDefensiveLineGroups(
       receiverGroups,
+      teamId,
+      league || "",
+    );
+    return combineVikingsLinebackerAndDefensiveBackGroups(
+      defensiveLineGroups,
       teamId,
       league || "",
     );

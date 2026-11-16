@@ -39,6 +39,23 @@ const vikingsDefensiveLinePositions = [
   "defensive tackle",
   "dt",
 ];
+const vikingsLinebackerAndDefensiveBackPositions = [
+  "outside linebacker",
+  "olb",
+  "inside linebacker",
+  "ilb",
+  "linebacker",
+  "lb",
+  "cornerback",
+  "cb",
+  "safety",
+  "free safety",
+  "strong safety",
+  "fs",
+  "ss",
+  "defensive back",
+  "db",
+];
 
 const vikingsNflPositionColumns: {
   positions: string[];
@@ -49,19 +66,7 @@ const vikingsNflPositionColumns: {
     columns: vikingsReceiverStatColumns,
   },
   {
-    positions: [
-      "outside linebacker",
-      "olb",
-      "inside linebacker",
-      "ilb",
-      "cornerback",
-      "cb",
-      "safety",
-      "free safety",
-      "strong safety",
-      "fs",
-      "ss",
-    ],
+    positions: vikingsLinebackerAndDefensiveBackPositions,
     columns: ["TOT", "SOLO", "AST", "SACK", "FF", "FR"],
   },
   { positions: vikingsOffensiveLinePositions, columns: [] },
@@ -69,7 +74,7 @@ const vikingsNflPositionColumns: {
 
 const positionParts = (position: string) =>
   position
-    .split("/")
+    .split(/\s*\/\s*|\s+and\s+/i)
     .map((part) =>
       part
         .toLowerCase()
@@ -205,6 +210,30 @@ export function combineVikingsDefensiveLineGroups<T>(
   return groups.flatMap((group, index) =>
     index === firstIndex
       ? [{ position: "Defensive Line", players }]
+      : indexSet.has(index)
+        ? []
+        : [group],
+  );
+}
+
+export function combineVikingsLinebackerAndDefensiveBackGroups<T>(
+  groups: { position: string; players: T[] }[],
+  teamId: string,
+  league: string,
+) {
+  if (teamId !== "vikings" || league !== "football/nfl") return groups;
+  const indexes = groups.flatMap((group, index) =>
+    hasPosition(group.position, vikingsLinebackerAndDefensiveBackPositions)
+      ? [index]
+      : [],
+  );
+  if (!indexes.length) return groups;
+  const firstIndex = indexes[0];
+  const players = indexes.flatMap((index) => groups[index].players);
+  const indexSet = new Set(indexes);
+  return groups.flatMap((group, index) =>
+    index === firstIndex
+      ? [{ position: "Linebackers and Defensive backs", players }]
       : indexSet.has(index)
         ? []
         : [group],
