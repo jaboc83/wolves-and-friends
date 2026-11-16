@@ -11,6 +11,8 @@ import type { TeamInfo } from "../../lib/team-info";
 import { teamProfile } from "../../lib/teams/teams";
 import type { PlayerStats } from "../../lib/team-info/player-stats";
 import type { StatsStatus } from "../../lib/team-info/roster-stats-loader";
+import { useRosterSalaries } from "../../hooks/use-roster-salaries";
+import { salaryForPlayer } from "../../lib/team-info/salaryswish";
 import {
   combineVikingsDefensiveLineGroups,
   combineVikingsLinebackerAndDefensiveBackGroups,
@@ -30,6 +32,7 @@ type RosterPlayer = Depth["groups"][number]["players"][number] & {
 };
 type RosterSort = { column: string; direction: "asc" | "desc" };
 type Row = RosterStatRow<RosterPlayer>;
+const emptySalaries: Record<string, number> = {};
 
 const defaultSortDirection = (column: string): "asc" | "desc" =>
   column === "Player" || column === "Position" ? "asc" : "desc";
@@ -149,6 +152,15 @@ export default function RosterPanel({
   onRosterOpen: (priorityKeys?: string[]) => void;
 }) {
   const rosterNote = teamProfile(teamId)?.rosterNote;
+  const salaryState = useRosterSalaries(
+    teamId,
+    league === "nba" && Boolean(depth?.salarySourceUrl),
+    ["ready", "partial", "empty", "unavailable"].includes(playerStatsStatus),
+  );
+  const salaries =
+    salaryState.team === teamId ? salaryState.salaries : emptySalaries;
+  const salaryStatus =
+    salaryState.team === teamId ? salaryState.status : "loading";
   const priorityKeys = useMemo(
     () =>
       depth?.groups.flatMap((group) =>
@@ -179,10 +191,14 @@ export default function RosterPanel({
     if (!depth) return [];
     const sourceGroups = depth.groups.map((group) => ({
       position: group.position,
-      players: group.players.map((player) => ({
-        ...player,
-        position: abbreviation(group.position),
-      })),
+      players: group.players.map((player) => {
+        const annualSalary = salaryForPlayer(salaries, player.name);
+        return {
+          ...player,
+          ...(annualSalary !== undefined ? { annualSalary } : {}),
+          position: abbreviation(group.position),
+        };
+      }),
     }));
     const runningBackGroups = combineVikingsRunningBackGroups(
       sourceGroups,
@@ -213,7 +229,7 @@ export default function RosterPanel({
       teamId,
       league || "",
     );
-  }, [depth, league, teamId]);
+  }, [depth, league, salaries, teamId]);
 
   const note = league ? statusNotes[playerStatsStatus] : undefined;
 
@@ -412,8 +428,34 @@ export default function RosterPanel({
             <a href={depth.url} target="_blank" rel="noreferrer">
               {depth.source} ↗
             </a>{" "}
+            {depth.salarySourceUrl && (
+              <>
+                ·{" "}
+                <a
+                  href={depth.salarySourceUrl}
+                  target="_blank"
+                  rel="noreferrer"
+                >
+                  SalarySwish salaries ↗
+                </a>{" "}
+              </>
+            )}
             {rosterNote ? "· " + rosterNote : ""}
           </p>
+          {depth.salarySourceUrl &&
+            salaryStatus === "loading" &&
+            !Object.keys(salaries).length && (
+              <p className="panel-note" role="status">
+                Loading salary data…
+              </p>
+            )}
+          {depth.salarySourceUrl && salaryStatus === "error" && (
+            <p className="panel-note" role="status">
+              {Object.keys(salaries).length
+                ? "Salary refresh unavailable; showing cached figures."
+                : "Salary data is temporarily unavailable."}
+            </p>
+          )}
         </>
       ) : (
         <p className="panel-note">

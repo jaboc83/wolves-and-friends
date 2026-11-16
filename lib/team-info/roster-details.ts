@@ -15,7 +15,7 @@ export function rosterDetails(
     contract?: ESPNContract;
     contracts?: ESPNContract[];
   },
-  _league: string,
+  league: string,
   _season: string | number,
   checked: string,
   _team: string,
@@ -59,12 +59,15 @@ export function rosterDetails(
     String(athlete.contract?.season?.year ?? "") === salaryYear
       ? athlete.contract?.salary
       : undefined;
-  const annualSalary = Number(
-    salaryFromSeasonContracts ?? salaryFromCurrentContract,
-  );
+  const annualSalary =
+    league === "basketball/nba"
+      ? undefined
+      : Number(salaryFromSeasonContracts ?? salaryFromCurrentContract);
   return {
     ...(age !== undefined ? { age } : {}),
-    ...(Number.isFinite(annualSalary) && annualSalary > 0
+    ...(annualSalary !== undefined &&
+    Number.isFinite(annualSalary) &&
+    annualSalary > 0
       ? { annualSalary }
       : {}),
   };
