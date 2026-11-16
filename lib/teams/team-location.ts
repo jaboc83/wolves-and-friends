@@ -1,5 +1,6 @@
 // Maps known team names to static home locations; never reads visitor location.
 import { teams, type TeamId } from "./teams";
+import { pwhlTeamLocation } from "./pwhl-team-url";
 const groups: [string, string, string][] = [
   ["basketball", "Hawks", "Atlanta"],
   ["basketball", "Celtics", "Boston"],
@@ -133,6 +134,7 @@ const compactLocations: Record<string, string> = {
   florida: "FLA",
   "golden state": "GS",
   houston: "HOU",
+  hamilton: "HAM",
   indiana: "IND",
   istanbul: "IST",
   kaunas: "KAU",
@@ -141,6 +143,7 @@ const compactLocations: Record<string, string> = {
   liverpool: "LIV",
   london: "LON",
   "los angeles": "LA",
+  "las vegas": "VGS",
   lyon: "LYO",
   madrid: "MAD",
   manchester: "MAN",
@@ -199,6 +202,10 @@ export function teamLocation(
   if (teamId === "disc") return "";
   if (isOwn && teamId !== "zalgiris")
     return teams.find((t) => t.id === teamId)?.homeLocation || "";
+  if (teamId === "frost") {
+    const location = pwhlTeamLocation(name);
+    if (location) return location;
+  }
   const normalized = key(isOwn && teamId === "zalgiris" ? "zalgiris" : name);
   const category = ["wolves", "lynx"].includes(teamId)
     ? "basketball"

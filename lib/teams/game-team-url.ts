@@ -1,6 +1,7 @@
 // Prefer ESPN team pages for teams identified by an ESPN game feed.
 import { teams, type TeamId } from "./teams";
 import { palaceOpponentPage, teamWikipediaUrl } from "./team-wikipedia";
+import { pwhlTeamUrl } from "./pwhl-team-url";
 
 const officialSoccerUrls: Record<string, string> = {
   "Minnesota United": "https://www.mnufc.com/",
@@ -66,6 +67,10 @@ export function gameTeamUrl(
 ) {
   const team = teams.find((candidate) => candidate.id === teamId);
   const league = team?.league || "";
+  if (teamId === "frost") {
+    const pwhlUrl = pwhlTeamUrl(name, ownTeam);
+    if (pwhlUrl) return pwhlUrl;
+  }
   const officialUrl = officialSoccerUrl(teamId, name, ownTeam);
   if (officialUrl) return officialUrl;
 
