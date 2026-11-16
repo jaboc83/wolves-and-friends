@@ -154,7 +154,7 @@ export default function RosterPanel({
   const rosterNote = teamProfile(teamId)?.rosterNote;
   const salaryState = useRosterSalaries(
     teamId,
-    league === "nba" && Boolean(depth?.salarySourceUrl),
+    league === "basketball/nba" && Boolean(depth?.salarySourceUrl),
     ["ready", "partial", "empty", "unavailable"].includes(playerStatsStatus),
   );
   const salaries =
