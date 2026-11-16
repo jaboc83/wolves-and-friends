@@ -169,6 +169,50 @@ test("common-v3 missing requested-season rows block summary fallback", () => {
   assert.equal(stats, undefined);
 });
 
+test("NFL offensive-line stats retain GP without adding it to other positions", () => {
+  const data = {
+    categories: [
+      {
+        name: "general",
+        labels: ["GP", "GS", "TOT"],
+        names: ["gamesPlayed", "gamesStarted", "totalTackles"],
+        displayNames: ["Games Played", "Games Started", "Total Tackles"],
+        statistics: [
+          {
+            teamId: "current",
+            season: { year: 2026, displayName: "2026" },
+            stats: [9, 8, 0],
+          },
+        ],
+      },
+    ],
+  };
+
+  const offensiveLineStats = parsePlayerStats(
+    data,
+    "current",
+    "football/nfl",
+    "Offensive Tackle",
+    2026,
+  );
+  const quarterbackStats = parsePlayerStats(
+    data,
+    "current",
+    "football/nfl",
+    "Quarterback",
+    2026,
+  );
+
+  assert.equal(
+    offensiveLineStats?.values.find((stat) => stat.label === "GP")?.value,
+    "9",
+  );
+  assert.equal(
+    quarterbackStats?.values.some((stat) => stat.label === "GP"),
+    false,
+  );
+});
+
 test("core split stats retain their season label and selected values", () => {
   const stats = parsePlayerStats(
     {

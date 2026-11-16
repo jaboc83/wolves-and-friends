@@ -48,26 +48,29 @@ test("Vikings receiving and defensive tables use selected stat columns", () => {
   );
 });
 
-test("Vikings offensive line and long snapper tables keep position only", () => {
+test("Vikings offensive line tables keep GP only", () => {
   assert.deepEqual(
     visibleRosterStatColumns("vikings", "football/nfl", "Offensive Tackle", [
+      "GP",
       "TOT",
       "SOLO",
       "AST",
     ]),
-    { columns: [], positionOnly: true },
+    { columns: ["GP"], positionOnly: false },
   );
   assert.deepEqual(
     visibleRosterStatColumns("vikings", "football/nfl", "Left Guard", [
+      "GP",
       "TOT",
     ]),
-    { columns: [], positionOnly: true },
+    { columns: ["GP"], positionOnly: false },
   );
   assert.deepEqual(
     visibleRosterStatColumns("vikings", "football/nfl", "Long Snapper", [
+      "GP",
       "TOT",
     ]),
-    { columns: [], positionOnly: true },
+    { columns: ["GP"], positionOnly: false },
   );
 });
 
@@ -86,7 +89,7 @@ test("position stat preferences do not change other teams or leagues", () => {
       "wild",
       "football/nfl",
       "Cornerback",
-      ["TOT", "PD"],
+      ["GP", "TOT", "PD"],
     ).columns.join(","),
     "TOT,PD",
   );
@@ -95,7 +98,7 @@ test("position stat preferences do not change other teams or leagues", () => {
       "vikings",
       "football/nfl",
       "Quarterback",
-      ["CMP", "YDS", "TD"],
+      ["GP", "CMP", "YDS", "TD"],
     ).columns.join(","),
     "CMP,YDS,TD",
   );
@@ -124,7 +127,7 @@ test("only the Vikings NFL combines running back and fullback groups", () => {
   );
 });
 
-test("Vikings offensive-line positions share one position-only table", () => {
+test("Vikings offensive-line positions share one table", () => {
   const groups = [
     { position: "Quarterback", players: ["qb"] },
     { position: "Center", players: ["c"] },
@@ -159,9 +162,9 @@ test("Vikings offensive-line positions share one position-only table", () => {
       "vikings",
       "football/nfl",
       "Offensive Line",
-      ["TOT", "SACK"],
+      ["GP", "TOT", "SACK"],
     ),
-    { columns: [], positionOnly: true },
+    { columns: ["GP"], positionOnly: false },
   );
 });
 
