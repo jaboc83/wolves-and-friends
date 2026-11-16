@@ -2,8 +2,8 @@
 import type { Game } from "./feed-types";
 import type { Depth, Table } from "../team-info/index";
 import type { RosterDetails } from "../team-info/roster-details";
-import { zalgirisProviders } from "../teams/zalgiris/providers";
-import { frostProviders } from "../teams/frost/providers";
+import { zalgirisProviders } from "../teams/zalgiris/providers.ts";
+import { frostProviders } from "../teams/frost/providers.ts";
 
 const decode = (s: string) =>
   s
@@ -342,17 +342,80 @@ const pwhlTeams = [
   "PWHL San Jose",
 ];
 export function parsePwhlRoster(
-  html: string,
+  payload: unknown,
   checked: string,
 ): Depth | undefined {
-  if (!/Minnesota Frost|Minnesota/i.test(plain(html).slice(0, 12000))) return;
-  return rosterFromRows(
-    html,
-    checked,
-    new URL(frostProviders.urls.roster).origin,
-    "PWHL · Minnesota Frost roster",
-    frostProviders.urls.roster,
+  if (
+    !isRecord(payload) ||
+    payload.teamName !== "Minnesota Frost" ||
+    !Array.isArray(payload.roster)
+  )
+    return;
+
+  const sections = payload.roster.flatMap((teamRoster) =>
+    isRecord(teamRoster) && Array.isArray(teamRoster.sections)
+      ? teamRoster.sections.filter(isRecord)
+      : [],
   );
+  const groups = sections.flatMap((section) => {
+    if (
+      typeof section.title !== "string" ||
+      !Array.isArray(section.data) ||
+      section.title === "Coaches"
+    )
+      return [];
+    const players = section.data.flatMap((entry) => {
+      if (!isRecord(entry) || !isRecord(entry.row)) return [];
+      const row = entry.row;
+      const name = typeof row.name === "string" ? row.name.trim() : "";
+      if (!name) return [];
+      const playerProperties =
+        isRecord(entry.prop) && isRecord(entry.prop.name)
+          ? entry.prop.name
+          : undefined;
+      const playerId =
+        (typeof playerProperties?.playerLink === "string" &&
+        /^\d+$/.test(playerProperties.playerLink)
+          ? playerProperties.playerLink
+          : undefined) ||
+        (typeof row.player_id === "string" && /^\d+$/.test(row.player_id)
+          ? row.player_id
+          : undefined);
+      return [
+        {
+          name,
+          url: playerId
+            ? `https://www.thepwhl.com/en/stats/player/${playerId}`
+            : frostProviders.urls.roster,
+          ...ageFromText(
+            typeof row.birthdate === "string" ? row.birthdate : "",
+            checked,
+          ),
+        },
+      ];
+    });
+    if (!players.length) return [];
+    return [
+      {
+        position: section.title === "Goalies" ? "Goaltenders" : section.title,
+        players,
+      },
+    ];
+  });
+  if (!groups.length) return;
+
+  const seasonName =
+    typeof payload.seasonName === "string"
+      ? payload.seasonName
+      : "current season";
+  return {
+    label: "Roster",
+    groups,
+    source: "PWHL official roster",
+    url: frostProviders.urls.roster,
+    checked,
+    note: `${seasonName} · checked ${checked.slice(0, 10)}.`,
+  };
 }
 
 const pwhlStandingsUrl = "https://www.thepwhl.com/en/stats/standings";
@@ -445,76 +508,6 @@ export function parsePwhlStandings(
     checked,
     seasonType: /pre.?season/i.test(seasonName) ? 1 : 2,
     note: `${seasonName} standings · checked ${checked.slice(0, 10)}.`,
-  };
-}
-
-const trainingCampRosterUrl = frostProviders.urls.trainingCampRoster;
-
-export function parsePwhlTrainingCampRoster(
-  html: string,
-  checked: string,
-): Depth | undefined {
-  if (
-    !/Minnesota Frost announce 2026.?27 training camp roster/i.test(plain(html))
-  )
-    return;
-  const groups: Depth["groups"] = [];
-  const groupPatterns = [
-    { title: "Forwards", pattern: /Forwards\s*\(\d+\):/i },
-    { title: "Defenders", pattern: /Defenders\s*\(\d+\):/i },
-    { title: "Goaltenders", pattern: /Goaltenders\s*\(\d+\):/i },
-  ];
-  const text =
-    html
-      .replace(/<script\b[^>]*>[\s\S]*?<\/script>/gi, " ")
-      .replace(/<style\b[^>]*>[\s\S]*?<\/style>/gi, " ")
-      .replace(/<br\s*\/?>/gi, "\n")
-      .replace(/<\/(?:p|li|h[1-6])\s*>/gi, "\n")
-      .replace(/<[^>]*>/g, " ")
-      .split("2026-27 Frost Training Camp Roster")
-      .pop() || "";
-  const normalized = decode(text)
-    .replace(/&nbsp;|\u00a0/g, " ")
-    .split(/\r?\n/)
-    .map((line) => line.replace(/\s+/g, " ").trim())
-    .filter(Boolean);
-  for (const group of groupPatterns) {
-    const headingIndex = normalized.findIndex((line) =>
-      group.pattern.test(line),
-    );
-    if (headingIndex < 0) continue;
-    const players: Depth["groups"][number]["players"] = [];
-    for (const line of normalized.slice(headingIndex + 1)) {
-      if (groupPatterns.some((other) => other.pattern.test(line))) break;
-      const match = line.match(/^(.+?)\s+\(([^()]*)\)\s*([*^]*)$/);
-      if (!match) continue;
-      const name = match[1].trim();
-      const team = match[2].trim();
-      const markers = match[3];
-      if (!name || !team || players.some((player) => player.name === name))
-        continue;
-      players.push({
-        name,
-        url: trainingCampRosterUrl,
-        campTeam: team,
-        signedForSeason: markers.includes("*"),
-        draftPick: markers.includes("^"),
-      });
-    }
-    if (players.length) groups.push({ position: group.title, players });
-  }
-  if (
-    !groups.length ||
-    groups.reduce((total, group) => total + group.players.length, 0) < 25
-  )
-    return;
-  return {
-    label: "Training camp roster",
-    groups,
-    source: "PWHL · 2026–27 training camp announcement",
-    url: trainingCampRosterUrl,
-    checked,
-    note: "Preliminary training camp roster announced Oct. 7, 2026. “Signed” marks players signed for 2026–27; this is not yet the final season roster.",
   };
 }
 

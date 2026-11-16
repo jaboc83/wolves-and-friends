@@ -16,6 +16,7 @@ export const frostProviders = {
     pattern: /Minnesota|\bFrost\b/i,
   },
   socialTags: ["#MinnesotaFrost"],
+  salarySeason: "2025-26",
   season: {
     name: "2026–27 regular season",
     start: "2026-12-05",
@@ -24,13 +25,12 @@ export const frostProviders = {
     url: "https://www.thepwhl.com/en/news/2026/october/02/pwhl-announces-2026-27-regular-season-schedule",
   },
   urls: {
+    salary: "https://www.pwhlpa.com/salary-guide",
     officialNews: "https://www.thepwhl.com/en/teams/minnesota-frost/news",
     schedule:
       "https://www.thepwhl.com/en/stats/schedule/2/11/all-months/homeaway?league=1",
     scheduleFallback:
       "https://www.thepwhl.com/en/teams/minnesota-frost/schedule",
     roster: "https://www.thepwhl.com/en/stats/roster/2/10?league=1",
-    trainingCampRoster:
-      "https://www.thepwhl.com/en/teams/minnesota-frost/news/2026/october/07/minnesota-frost-announce-2026-27-training-camp-roster",
   },
 } as const satisfies TeamProviders;

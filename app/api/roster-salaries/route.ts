@@ -2,7 +2,10 @@ import { teamProviders } from "../../../lib/teams/providers";
 import { isTeamId } from "../../../lib/teams/teams";
 import { parseCapWagesRoster } from "../../../lib/team-info/capwages";
 import { parseFanGraphsRoster } from "../../../lib/team-info/fangraphs";
+import { parseHerHoopStatsRoster } from "../../../lib/team-info/herhoopstats";
+import { parsePwhlpaRoster } from "../../../lib/team-info/pwhlpa";
 import { parseSalarySportRoster } from "../../../lib/team-info/salarysport";
+import { parseSpotracRoster } from "../../../lib/team-info/spotrac";
 import {
   parseSalarySwishRoster,
   salarySourceForYear,
@@ -21,24 +24,72 @@ async function fetchSalaries(
   sourceUrl: string,
   year: number,
 ): Promise<RosterSalaryResponse> {
-  const response = await fetch(salarySourceForYear(sourceUrl, year), {
-    signal: AbortSignal.timeout(10000),
-    headers: {
-      Accept: "text/html",
-      "User-Agent": "WolvesAndFriends/1.0",
-    },
-    cache: "no-store",
-  });
+  const requestUrl = salarySourceForYear(sourceUrl, year);
+  const hostname = new URL(sourceUrl).hostname;
+  const signal = AbortSignal.timeout(
+    hostname === "www.pwhlpa.com" || hostname === "herhoopstats.com"
+      ? 20000
+      : 10000,
+  );
+  const request = (url: string) =>
+    fetch(url, {
+      signal,
+      headers: {
+        Accept: "text/html",
+        "User-Agent": "WolvesAndFriends/1.0",
+      },
+      cache: "no-store",
+    });
+  const response = await request(requestUrl);
   if (!response.ok) throw new Error(`Salary source HTTP ${response.status}`);
-  const parseRoster =
-    new URL(sourceUrl).hostname === "capwages.com"
-      ? parseCapWagesRoster
-      : new URL(sourceUrl).hostname === "www.fangraphs.com"
-        ? parseFanGraphsRoster
-        : new URL(sourceUrl).hostname === "salarysport.com"
-          ? parseSalarySportRoster
-          : parseSalarySwishRoster;
-  const roster = parseRoster(await response.text(), year);
+  const html = await response.text();
+  const pages = [html];
+  if (hostname === "www.pwhlpa.com") {
+    const origin = new URL(sourceUrl).origin;
+    const sourcePath = new URL(sourceUrl).pathname;
+    const visited = new Set([new URL(requestUrl).href]);
+    let page = html;
+    for (let pageNumber = 1; pageNumber < 20; pageNumber += 1) {
+      const next = page.match(
+        /<a\b(?=[^>]*\baria-label=["']Next Page["'])[^>]*\bhref=["']([^"']+)["']/i,
+      )?.[1];
+      if (!next) break;
+      const nextUrl = new URL(next, requestUrl);
+      if (
+        nextUrl.origin !== origin ||
+        nextUrl.pathname !== sourcePath ||
+        visited.has(nextUrl.href)
+      )
+        throw new Error("Invalid PWHLPA salary-guide pagination");
+      visited.add(nextUrl.href);
+      const nextResponse = await request(nextUrl.href);
+      if (!nextResponse.ok)
+        throw new Error(`PWHLPA salary source HTTP ${nextResponse.status}`);
+      page = await nextResponse.text();
+      pages.push(page);
+      if (
+        pageNumber === 19 &&
+        /<a\b(?=[^>]*\baria-label=["']Next Page["'])[^>]*\bhref=["']([^"']+)["']/i.test(
+          page,
+        )
+      )
+        throw new Error("PWHLPA salary guide has too many pages");
+    }
+  }
+  const roster =
+    hostname === "capwages.com"
+      ? parseCapWagesRoster(html, year)
+      : hostname === "www.fangraphs.com"
+        ? parseFanGraphsRoster(html, year)
+        : hostname === "salarysport.com"
+          ? parseSalarySportRoster(html, year)
+          : hostname === "www.spotrac.com"
+            ? parseSpotracRoster(html, year)
+            : hostname === "www.pwhlpa.com"
+              ? parsePwhlpaRoster(pages, year)
+              : hostname === "herhoopstats.com"
+                ? parseHerHoopStatsRoster(html, year)
+                : parseSalarySwishRoster(html, year);
   return {
     ...roster,
     team,
@@ -54,15 +105,17 @@ export async function GET(request: Request) {
       { status: 400 },
     );
 
-  const sourceUrl = teamProviders.find((provider) => provider.team === team)
-    ?.urls?.salary;
+  const teamProvider = teamProviders.find((provider) => provider.team === team);
+  const sourceUrl = teamProvider?.urls?.salary;
   if (!sourceUrl)
     return Response.json(
       { error: "Salary data is not available for this team." },
       { status: 404 },
     );
 
-  const year = new Date().getUTCFullYear();
+  const year = teamProvider?.salarySeason
+    ? Number(teamProvider.salarySeason.slice(0, 4))
+    : new Date().getUTCFullYear();
   const key = `${team}:${year}`;
   const previous = cached.get(key);
   if (previous && Date.now() - previous.loadedAt < cacheDuration)

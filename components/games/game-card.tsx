@@ -18,6 +18,7 @@ import {
 import { gameTeamUrl } from "../../lib/teams/game-team-url";
 import { sportTerms } from "../../lib/teams/sport-terms";
 import { teamLogoPath } from "../../lib/teams/team-logo";
+import { pwhlTeamShortName } from "../../lib/teams/pwhl-team-url";
 import type { TeamId } from "../../lib/teams/teams";
 import { useLocalTimeZone } from "../../hooks/use-local-time-zone";
 import { formatInTimeZone, timeZoneLabel } from "../../lib/browser/local-time";
@@ -110,6 +111,8 @@ export default function GameCard({
   const hidden = g.state !== "pre" && !scoreVisible;
   const logo = teamLogoPath(t.id);
   const { club, opponent } = matchup(g);
+  const compactOpponent =
+    g.team === "frost" ? pwhlTeamShortName(opponent) || opponent : opponent;
   const homeAway = !g.eventOnly ? club?.homeAway : undefined;
   const opponentCompetitor = g.competitors.find((p) => p !== club);
   const result = outcome(g);
@@ -403,7 +406,7 @@ export default function GameCard({
                   rel="noreferrer"
                   onClick={(e) => e.stopPropagation()}
                 >
-                  {opponent}
+                  {compactOpponent}
                 </a>
                 <Location
                   team={g.team}

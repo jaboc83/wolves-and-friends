@@ -184,6 +184,7 @@ export default function RosterPanel({
     Boolean(depth?.salarySourceUrl),
     ["ready", "partial", "empty", "unavailable"].includes(playerStatsStatus),
     league,
+    depth?.salarySeason,
   );
   const salaries =
     salaryState.team === teamId ? salaryState.salaries : emptySalaries;
@@ -476,7 +477,11 @@ export default function RosterPanel({
                   target="_blank"
                   rel="noreferrer"
                 >
-                  {league === "hockey/nhl"
+                  {teamId === "lynx"
+                    ? "Her Hoop Stats"
+                    : teamId === "frost"
+                      ? "PWHLPA"
+                      : league === "hockey/nhl"
                     ? "CapWages"
                     : league === "baseball/mlb"
                       ? "FanGraphs"
@@ -497,6 +502,17 @@ export default function RosterPanel({
           {depth.salarySourceUrl && league === "soccer/eng.1" && (
             <p className="panel-note">
               Reported annual basic wages in GBP; bonuses excluded.
+            </p>
+          )}
+          {depth.salarySourceUrl && teamId === "lynx" && (
+            <p className="panel-note">
+              Her Hoop Stats 2026 salary-cap figures in USD; unreported figures
+              are omitted.
+            </p>
+          )}
+          {depth.salarySourceUrl && teamId === "frost" && (
+            <p className="panel-note">
+              PWHLPA 2025–26 salary guide in USD; current contracts may differ.
             </p>
           )}
           {depth.salarySourceUrl &&

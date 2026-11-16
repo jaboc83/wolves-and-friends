@@ -53,6 +53,7 @@ export type Depth = {
   url: string;
   checked: string;
   salarySourceUrl?: string;
+  salarySeason?: string;
   note?: string;
 };
 export type TeamInfo = {
@@ -137,6 +138,7 @@ export function parseRoster(
   url: string,
   teamId = "",
   salarySourceUrl?: string,
+  salarySeason?: string,
 ): Depth | undefined {
   const groups = new Map<
     string,
@@ -172,8 +174,11 @@ export function parseRoster(
           ? {
               salarySourceUrl: salarySourceForYear(
                 salarySourceUrl,
-                new Date(checked).getUTCFullYear(),
+                salarySeason
+                  ? Number(salarySeason.slice(0, 4))
+                  : new Date(checked).getUTCFullYear(),
               ),
+              ...(salarySeason ? { salarySeason } : {}),
             }
           : {}),
         note: "Players grouped by position. Links open player bios and profiles.",
@@ -399,6 +404,9 @@ export async function fetchTeamInfo() {
           })(),
           (async () => {
             try {
+              const teamProvider = teamProviders.find(
+                (provider) => provider.team === t.id,
+              );
               info.depth = parseRoster(
                 await get(base + "/roster"),
                 t.league,
@@ -408,8 +416,8 @@ export async function fetchTeamInfo() {
                   "/team/roster/_/name/" +
                   t.espn,
                 t.id,
-                teamProviders.find((provider) => provider.team === t.id)?.urls
-                  ?.salary,
+                teamProvider?.urls?.salary,
+                teamProvider?.salarySeason,
               );
             } catch {}
             if (!info.depth) info.unavailable.push("roster");

@@ -28,8 +28,8 @@ export const frostProfile = {
       "https://www.thepwhl.com/en/stats/schedule/2/11/all-months/homeaway?league=1",
     ],
     [
-      "Official Frost training camp roster",
-      "https://www.thepwhl.com/en/teams/minnesota-frost/news/2026/october/07/minnesota-frost-announce-2026-27-training-camp-roster",
+      "Official Frost roster · PWHL stats",
+      "https://www.thepwhl.com/en/stats/roster/2/10?league=1",
     ],
   ],
   communities: [
@@ -44,8 +44,7 @@ export const frostProfile = {
   sportKind: "hockey",
   scoreboardUrl: "https://www.thepwhl.com/en/teams/minnesota-frost",
   standingsPage: "https://www.thepwhl.com/en/stats/standings",
-  rosterPage:
-    "https://www.thepwhl.com/en/teams/minnesota-frost/news/2026/october/07/minnesota-frost-announce-2026-27-training-camp-roster",
+  rosterPage: "https://www.thepwhl.com/en/stats/roster/2/10?league=1",
   rosterNote:
-    "Preliminary names and positions from the official training-camp announcement; final roster may change.",
+    "Official PWHL preseason roster; final regular-season roster may change.",
 } as const satisfies TeamProfile;

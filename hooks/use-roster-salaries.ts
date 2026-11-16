@@ -22,6 +22,7 @@ export function useRosterSalaries(
   enabled: boolean,
   higherPriorityDataReady: boolean,
   league = "",
+  sourceSeason?: string,
 ): SalaryState {
   const [state, setState] = useState<SalaryState>({
     team: "",
@@ -33,7 +34,8 @@ export function useRosterSalaries(
     if (!enabled) return;
     let active = true;
     const controller = new AbortController();
-    const season = salarySeasonLabel(new Date().getUTCFullYear(), league);
+    const season =
+      sourceSeason || salarySeasonLabel(new Date().getUTCFullYear(), league);
     const cached = readRosterSalaryCache(browserStorage, team, season);
     let timeout: ReturnType<typeof setTimeout> | undefined;
     let deferTimer: ReturnType<typeof setTimeout> | undefined;
@@ -107,7 +109,7 @@ export function useRosterSalaries(
         window.cancelIdleCallback(idleCallback);
       if (timeout !== undefined) clearTimeout(timeout);
     };
-  }, [enabled, higherPriorityDataReady, league, team]);
+  }, [enabled, higherPriorityDataReady, league, sourceSeason, team]);
 
   return state;
 }
