@@ -1,10 +1,12 @@
 // Shared data contracts for normalized stories, games, provider health, and feed responses.
 import type { Odds } from "./odds";
 import type { TeamId } from "../teams/teams";
+import type { BlueskyQuote } from "../social/bluesky-quote";
 export type Story = {
   socialPlatform?: "youtube";
   avatar?: string;
   images?: { src: string; alt: string; width?: number; height?: number }[];
+  quotedPost?: BlueskyQuote;
   originalTitle?: string;
   dateApproximate?: boolean;
   premium?: boolean;

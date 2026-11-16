@@ -93,6 +93,35 @@ export default function StoryCard({
             {s.title} <span>↗</span>
           </a>
         </h3>
+        {s.quotedPost && (
+          <blockquote className="quoted-post">
+            <div className="quoted-post-meta">
+              <span>Quoted post</span>
+              <span>·</span>
+              {s.quotedPost.url ? (
+                <a
+                  href={s.quotedPost.url}
+                  target="_blank"
+                  rel="noreferrer"
+                >
+                  {s.quotedPost.author}
+                </a>
+              ) : (
+                <strong>{s.quotedPost.author}</strong>
+              )}
+              <span>@{s.quotedPost.handle}</span>
+            </div>
+            <p>{s.quotedPost.text}</p>
+            {s.quotedPost.linkTitle && (
+              <div className="quoted-post-link">
+                <strong>{s.quotedPost.linkTitle}</strong>
+                {s.quotedPost.linkDescription && (
+                  <p>{s.quotedPost.linkDescription}</p>
+                )}
+              </div>
+            )}
+          </blockquote>
+        )}
         {s.kind === "social" && !!s.images?.length && (
           <div
             className={
