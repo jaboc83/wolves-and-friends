@@ -73,6 +73,10 @@ test("Vikings offensive line tables keep GP only", () => {
     ]),
     { columns: ["GP"], positionOnly: false },
   );
+  assert.deepEqual(
+    visibleRosterStatColumns("vikings", "football/nfl", "Offensive Line", []),
+    { columns: ["GP"], positionOnly: false },
+  );
 });
 
 test("position stat preferences do not change other teams or leagues", () => {
@@ -287,7 +291,7 @@ test("Vikings roster tables follow the requested position order", () => {
     { position: "Punter", players: ["p"] },
     { position: "Defensive Line", players: ["dl"] },
     { position: "Running Back / Fullback", players: ["rb"] },
-    { position: "Kicker", players: ["k"] },
+    { position: "Place Kicker", players: ["k"] },
     { position: "Linebackers and Defensive backs", players: ["lbdb"] },
     { position: "Receivers", players: ["wrte"] },
     { position: "Quarterback", players: ["qb"] },
@@ -303,7 +307,7 @@ test("Vikings roster tables follow the requested position order", () => {
       "Running Back / Fullback",
       "Linebackers and Defensive backs",
       "Defensive Line",
-      "Kicker",
+      "Place Kicker",
       "Punter",
       "Offensive Line",
     ],

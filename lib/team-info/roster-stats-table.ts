@@ -62,8 +62,8 @@ const vikingsRosterPositionOrder = [
   ["running back", "rb", "fullback", "fb"],
   vikingsLinebackerAndDefensiveBackPositions,
   vikingsDefensiveLinePositions,
-  ["kicker", "k"],
-  ["punter", "p"],
+  ["kicker", "place kicker", "placekicker", "kicking", "k"],
+  ["punter", "punting", "p"],
   vikingsOffensiveLinePositions,
 ];
 
@@ -141,13 +141,16 @@ export function visibleRosterStatColumns(
     teamId === "vikings" &&
     league === "football/nfl" &&
     hasPosition(position, vikingsOffensiveLinePositions);
+  if (vikingsOffensiveLine) {
+    return { columns: ["GP"], positionOnly: false };
+  }
   const preference = rosterStatColumnPreference(teamId, league, position);
   const columns = preference
     ? preference.filter((column) => availableColumns.includes(column))
     : availableColumns;
   return {
     columns:
-      league === "football/nfl" && !vikingsOffensiveLine
+      league === "football/nfl"
         ? columns.filter((column) => column !== "GP")
         : columns,
     positionOnly: preference?.length === 0,
