@@ -4,7 +4,7 @@ import type { TeamProfile } from "../team-types";
 export const discProfile = {
   id: "disc",
   name: "Pro Disc Golf",
-  short: "Disc golf",
+  short: "Disc Golf",
   sport: "DGPT / PDGA",
   color: "#d4a84c",
   theme: { primary: "#172f45", accent: "#d4a84c", soft: "#f7f2e7" },
