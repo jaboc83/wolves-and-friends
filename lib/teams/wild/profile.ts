@@ -13,6 +13,7 @@ export const wildProfile = {
   league: "hockey/nhl",
   espn: "min",
   sources: [
+    ["NHL news", "https://www.nhl.com/news/"],
     [
       "Jess Myers · Pioneer Press",
       "https://www.twincities.com/author/jess-myers/",

@@ -14,6 +14,7 @@ export const wolvesProfile = {
   league: "basketball/nba",
   espn: "min",
   sources: [
+    ["NBA news", "https://www.nba.com/news"],
     [
       "Bluesky · Wolves starter pack",
       "https://bsky.app/starter-pack/canishoopus.bsky.social/3lal4p6wu5o2a",

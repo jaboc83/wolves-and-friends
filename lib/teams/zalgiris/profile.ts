@@ -13,6 +13,7 @@ export const zalgirisProfile = {
   league: "",
   espn: "",
   sources: [
+    ["EuroLeague news", "https://www.euroleaguebasketball.net/en/euroleague/news/"],
     [
       "Official Žalgiris news",
       "https://zalgiris.lt/naujienos?category=zalgiris&subCategory=naujienos",

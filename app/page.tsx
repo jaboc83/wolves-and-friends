@@ -44,7 +44,6 @@ export default function Home() {
   const zoneLabel = timeZoneLabel(timeZone);
   const [active, setActive] = useState<DashboardPageId>(DASHBOARD_PAGE_IDS.ALL),
     [search, setSearch] = useState(""),
-    [sources, setSources] = useState(false),
     [readIds, setReadIds] = useState<string[]>([]),
     [showRead, setShowRead] = useState(false),
     [showOlder, setShowOlder] = useState(false),
@@ -401,7 +400,6 @@ export default function Home() {
                     search,
                     showRead,
                     showOlder,
-                    sources,
                   }}
                   actions={{
                     choose,
@@ -410,7 +408,6 @@ export default function Home() {
                     setShowRead,
                     toggleOlder: () => setShowOlder(!showOlder),
                     refreshSocial,
-                    toggleSources: () => setSources(!sources),
                   }}
                   teamDetails={teamDetails}
                   zoneLabel={zoneLabel}

@@ -13,6 +13,7 @@ export const usmntProfile = {
   league: "soccer/fifa.friendly",
   espn: "660",
   sources: [
+    ["FIFA news", "https://www.fifa.com/en/articles"],
     ["U.S. Soccer · Matches", "https://www.ussoccer.com/all-matches"],
     ["Jeff Carlisle · ESPN", "https://www.espn.com/soccer/"],
     ["Stars and Stripes FC", "https://www.starsandstripesfc.com/"],

@@ -13,6 +13,7 @@ export const frostProfile = {
   league: "",
   espn: "",
   sources: [
+    ["PWHL news", "https://www.thepwhl.com/en/news"],
     [
       "Official Frost news",
       "https://www.thepwhl.com/en/teams/minnesota-frost/news",

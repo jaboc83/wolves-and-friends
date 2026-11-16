@@ -13,6 +13,7 @@ export const lynxProfile = {
   league: "basketball/wnba",
   espn: "min",
   sources: [
+    ["WNBA news", "https://www.wnba.com/news"],
     ["Canis Hoopus · Lynx", "https://www.canishoopus.com/minnesota-lynx"],
     ["Official Lynx", "https://lynx.wnba.com/"],
   ],
