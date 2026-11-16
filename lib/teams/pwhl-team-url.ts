@@ -1,31 +1,38 @@
-type PwhlTeam = { slug: string; location: string };
+type PwhlTeam = { slug: string; location: string; shortName: string };
 
-const detroit: PwhlTeam = { slug: "detroit-clutch", location: "Detroit" };
-const hamilton: PwhlTeam = { slug: "hamilton-havoc", location: "Hamilton" };
-const sanJose: PwhlTeam = { slug: "san-jose-sea-lions", location: "San Jose" };
-const vegas: PwhlTeam = { slug: "vegas-vanguards", location: "Las Vegas" };
+const pwhlTeam = (
+  slug: string,
+  location: string,
+  shortName: string,
+): PwhlTeam => ({ slug, location, shortName });
+
+const detroit = pwhlTeam("detroit-clutch", "Detroit", "Clutch");
+const hamilton = pwhlTeam("hamilton-havoc", "Hamilton", "Havoc");
+const sanJose = pwhlTeam("san-jose-sea-lions", "San Jose", "Sea Lions");
+const vegas = pwhlTeam("vegas-vanguards", "Las Vegas", "Vanguards");
 
 const officialPwhlTeams: Record<string, PwhlTeam> = {
-  "boston fleet": { slug: "boston-fleet", location: "Boston" },
+  "boston fleet": pwhlTeam("boston-fleet", "Boston", "Fleet"),
   "detroit clutch": detroit,
   detroit,
   "pwhl detroit": detroit,
   "hamilton havoc": hamilton,
   hamilton,
   "pwhl hamilton": hamilton,
-  "minnesota frost": { slug: "minnesota-frost", location: "Minnesota" },
-  "montreal victoire": { slug: "montreal-victoire", location: "Montréal" },
-  "new york sirens": { slug: "new-york-sirens", location: "New York" },
-  "ottawa charge": { slug: "ottawa-charge", location: "Ottawa" },
+  "minnesota frost": pwhlTeam("minnesota-frost", "Minnesota", "Frost"),
+  "montreal victoire": pwhlTeam("montreal-victoire", "Montréal", "Victoire"),
+  "new york sirens": pwhlTeam("new-york-sirens", "New York", "Sirens"),
+  "ottawa charge": pwhlTeam("ottawa-charge", "Ottawa", "Charge"),
   "san jose sea lions": sanJose,
   "san jose": sanJose,
   "pwhl san jose": sanJose,
-  "seattle torrent": { slug: "seattle-torrent", location: "Seattle" },
-  "toronto sceptres": { slug: "toronto-sceptres", location: "Toronto" },
-  "vancouver goldeneyes": {
-    slug: "vancouver-goldeneyes",
-    location: "Vancouver",
-  },
+  "seattle torrent": pwhlTeam("seattle-torrent", "Seattle", "Torrent"),
+  "toronto sceptres": pwhlTeam("toronto-sceptres", "Toronto", "Sceptres"),
+  "vancouver goldeneyes": pwhlTeam(
+    "vancouver-goldeneyes",
+    "Vancouver",
+    "Goldeneyes",
+  ),
   "vegas vanguards": vegas,
   "las vegas": vegas,
   "pwhl las vegas": vegas,
@@ -51,4 +58,8 @@ export function pwhlTeamUrl(name?: string, ownTeam = false) {
 
 export function pwhlTeamLocation(name: string) {
   return officialPwhlTeams[normalize(name)]?.location;
+}
+
+export function pwhlTeamShortName(name?: string) {
+  return officialPwhlTeams[normalize(name || "")]?.shortName;
 }
