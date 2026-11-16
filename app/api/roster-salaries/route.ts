@@ -2,6 +2,7 @@ import { teamProviders } from "../../../lib/teams/providers";
 import { isTeamId } from "../../../lib/teams/teams";
 import { parseCapWagesRoster } from "../../../lib/team-info/capwages";
 import { parseFanGraphsRoster } from "../../../lib/team-info/fangraphs";
+import { parseHerHoopStatsRoster } from "../../../lib/team-info/herhoopstats";
 import { parsePwhlpaRoster } from "../../../lib/team-info/pwhlpa";
 import { parseSalarySportRoster } from "../../../lib/team-info/salarysport";
 import { parseSpotracRoster } from "../../../lib/team-info/spotrac";
@@ -25,7 +26,11 @@ async function fetchSalaries(
 ): Promise<RosterSalaryResponse> {
   const requestUrl = salarySourceForYear(sourceUrl, year);
   const hostname = new URL(sourceUrl).hostname;
-  const signal = AbortSignal.timeout(hostname === "www.pwhlpa.com" ? 20000 : 10000);
+  const signal = AbortSignal.timeout(
+    hostname === "www.pwhlpa.com" || hostname === "herhoopstats.com"
+      ? 20000
+      : 10000,
+  );
   const request = (url: string) =>
     fetch(url, {
       signal,
@@ -82,7 +87,9 @@ async function fetchSalaries(
             ? parseSpotracRoster(html, year)
             : hostname === "www.pwhlpa.com"
               ? parsePwhlpaRoster(pages, year)
-              : parseSalarySwishRoster(html, year);
+              : hostname === "herhoopstats.com"
+                ? parseHerHoopStatsRoster(html, year)
+                : parseSalarySwishRoster(html, year);
   return {
     ...roster,
     team,

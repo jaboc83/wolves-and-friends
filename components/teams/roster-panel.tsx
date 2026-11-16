@@ -478,7 +478,7 @@ export default function RosterPanel({
                   rel="noreferrer"
                 >
                   {teamId === "lynx"
-                    ? "Spotrac"
+                    ? "Her Hoop Stats"
                     : teamId === "frost"
                       ? "PWHLPA"
                       : league === "hockey/nhl"
@@ -506,7 +506,8 @@ export default function RosterPanel({
           )}
           {depth.salarySourceUrl && teamId === "lynx" && (
             <p className="panel-note">
-              Spotrac-reported 2027 cash salaries; unreported figures are omitted.
+              Her Hoop Stats 2026 salary-cap figures in USD; unreported figures
+              are omitted.
             </p>
           )}
           {depth.salarySourceUrl && teamId === "frost" && (
