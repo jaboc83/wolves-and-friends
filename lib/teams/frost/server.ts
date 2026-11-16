@@ -6,7 +6,6 @@ import {
   parsePwhlRoster,
   parsePwhlSchedule,
   parsePwhlStandings,
-  parsePwhlTrainingCampRoster,
 } from "../../feeds/special-team-data";
 import { frostProviders } from "./providers";
 
@@ -53,9 +52,18 @@ export const frostServer: TeamServerHooks = {
     [officialSchedule]: { games: (g) => g.team === "frost" },
   },
   loadTeamInfo: async ({ info, checked, getText, getJsonp }) => {
-    await Promise.all([
-      (async () => {
-        try {
+    let statsContext:
+      | Promise<{
+          appKey: string;
+          siteId: string;
+          seasonId: string;
+          leagueId: string;
+          seasonName: string;
+        }>
+      | undefined;
+    const getStatsContext = () => {
+      if (!statsContext)
+        statsContext = (async () => {
           const standingsPage = await getText(
             "https://www.thepwhl.com/en/stats/standings",
           );
@@ -90,6 +98,16 @@ export const frostServer: TeamServerHooks = {
             bootstrap?.seasons?.find((season) => String(season.id) === seasonId)
               ?.name || "current season";
           if (!seasonId || !leagueId) throw Error("PWHL season unavailable");
+          return { appKey, siteId, seasonId, leagueId, seasonName };
+        })();
+      return statsContext;
+    };
+
+    await Promise.all([
+      (async () => {
+        try {
+          const { appKey, siteId, seasonId, leagueId, seasonName } =
+            await getStatsContext();
           const standingsResult = await getJsonp({
             feed: "statviewfeed",
             view: "teams",
@@ -121,16 +139,27 @@ export const frostServer: TeamServerHooks = {
       })(),
       (async () => {
         try {
-          info.depth = parsePwhlRoster(
-            await getText(frostProviders.urls.roster),
-            checked,
-          );
-          if (!info.depth)
-            info.depth = parsePwhlTrainingCampRoster(
-              await getText(frostProviders.urls.trainingCampRoster),
-              checked,
-            );
-          if (!info.depth) throw Error("No Frost roster parsed");
+          const { appKey, siteId, seasonId, leagueId } =
+            await getStatsContext();
+          const roster = await getJsonp({
+            feed: "statviewfeed",
+            view: "roster",
+            team_id: "2",
+            season_id: seasonId,
+            key: appKey,
+            client_code: "pwhl",
+            site_id: siteId,
+            league_id: leagueId,
+            lang: "en",
+            callback: "wolvesFriendsCallback",
+          });
+          const depth = parsePwhlRoster(roster, checked);
+          if (!depth) throw Error("No current Frost roster parsed");
+          info.depth = {
+            ...depth,
+            salarySourceUrl: frostProviders.urls.salary,
+            salarySeason: frostProviders.salarySeason,
+          };
         } catch {
           info.unavailable.push("roster");
         }

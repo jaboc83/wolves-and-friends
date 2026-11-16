@@ -114,6 +114,8 @@ export type TeamProviders = {
   extraCompetitions?: Readonly<Record<string, string>>;
   // Fixed season window when no provider publishes one.
   season?: TeamSeason;
+  // Published salary season when the source differs from the current season.
+  salarySeason?: string;
   // Overrides the league's default power-ranking feed for this team.
   powerRankingSource?:
     | "cbs-mlb"

@@ -9,4 +9,8 @@ export const lynxProviders = {
   },
   socialTags: ["#MinnesotaLynx"],
   espnTeamId: "8",
+  salarySeason: "2027",
+  urls: {
+    salary: "https://www.spotrac.com/wnba/minnesota-lynx/yearly",
+  },
 } as const satisfies TeamProviders;
