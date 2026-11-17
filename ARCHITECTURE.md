@@ -126,6 +126,8 @@ Odds lookups are currently limited to eligible games within the next seven days 
 - **Communities/source links:** direct reference links to relevant communities and publishers.
 - **Coming up/recent results:** compact cards with expandable details. All Teams shows the next future event per team; selected-team views show more.
 
+Team-data action buttons immediately below an expander header have 12px of vertical separation, consistently across standings and roster panels.
+
 [GameCard](components/games/game-card.tsx) owns its expanded state. Results start hidden. Opening a completed-game card reveals its result; unchecking Hide Results exposes W/L/D and scores on minimized cards too. Game-type badges come from [game-badges.ts](lib/games/game-badges.ts) and [GameBadges](components/games/game-badges.tsx).
 
 [MatchCalendar](components/games/match-calendar.tsx) owns the displayed month and selected day. Past dates are muted but remain clickable. Calendar entries themselves do not expose scores. Display dates and the definition of today use **America/Chicago**; source-time conversion can use the provider's timezone. Date-only events avoid inventing a start time.

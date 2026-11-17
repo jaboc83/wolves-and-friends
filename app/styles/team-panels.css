@@ -251,6 +251,9 @@
   cursor: pointer;
   min-height: 24px;
 }
+.data-panel > summary + .roster-contracts-actions {
+  margin-top: 12px;
+}
 .data-panel > summary small {
   margin-left: 10px;
   font-size: 11px;
