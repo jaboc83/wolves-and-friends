@@ -1,10 +1,18 @@
 // Fetches and combines public standings, rosters, postseason, and team-season data.
 import { decorateTable } from "./standings";
+import {
+  clincherFlags,
+  isConferenceOrLeagueTable,
+  markPlayoffPositions,
+  withDivisionRanks,
+} from "./standings-display";
 export { decorateTable, tableSeasonType } from "./standings";
 import { teams } from "../teams/teams";
+import type { TeamProfile } from "../teams/team-types";
 import { teamProviders } from "../teams/providers";
 import { serverHooksFor } from "../teams/server";
 import { fetchPostseason, type Postseason } from "../games/postseason";
+import { createRequestQueue } from "../feeds/request-queue";
 import { rosterDetails, type RosterDetails } from "./roster-details";
 import { salarySourceForYear } from "./salaryswish";
 import { parsePowerRanking, powerRankingLeague } from "./power-rankings";
@@ -189,8 +197,9 @@ export function parseStandings(
   x: ProviderResponse,
   id: string,
   checked: string,
+  rankDivisionGroups = false,
 ): Table[] {
-  const team = teams.find((t) => t.id === id)!;
+  const team: TeamProfile = teams.find((t) => t.id === id)!;
   const league = team.league;
   const result: Table[] = [];
   const cols = league.startsWith("soccer/")
@@ -225,6 +234,7 @@ export function parseStandings(
   function walk(node: ESPNStandingsNode) {
     const standings = node.standings;
     const entries = standings?.entries || [];
+    const tableName = node.name || x.name || "Standings";
     const owns = (e: ESPNStandingEntry) =>
       String(e.team?.id) === team.espn ||
       e.team?.abbreviation?.toLowerCase() === team.espn;
@@ -235,7 +245,7 @@ export function parseStandings(
         standings.links?.find((l) => l.href?.startsWith("https:"))?.href ||
         "https://www.espn.com/" + league.split("/")[1] + "/standings";
       result.push({
-        name: node.name || x.name || "Standings",
+        name: tableName,
         columns: ["#", ...cols.map((c) => c[0])],
         rows: entries.map((e, i) => {
           const stat = (names: string[]) => {
@@ -243,6 +253,11 @@ export function parseStandings(
             return String(s?.displayValue ?? s?.value ?? "—");
           };
           const entryTeam = e.team!;
+          const clincher = stat(["clincher"]);
+          const clinched = clincherFlags(
+            clincher === "—" ? "" : clincher,
+            league,
+          );
           return {
             id: String(entryTeam.id),
             name: entryTeam.displayName || entryTeam.name || "",
@@ -250,6 +265,11 @@ export function parseStandings(
               entryTeam.links?.find((l) => l.rel?.includes("clubhouse"))
                 ?.href || url,
             highlight: owns(e),
+            ...(clinched.playoffsClinched ? { playoffsClinched: true } : {}),
+            ...(clinched.playInClinched ? { playInClinched: true } : {}),
+            ...(clinched.homeAdvantageClinched
+              ? { homeAdvantageClinched: true }
+              : {}),
             cells: [
               stat(["playoffSeed", "rank"]) === "—"
                 ? String(i + 1)
@@ -285,10 +305,17 @@ export function parseStandings(
     for (const child of node.children || []) walk(child);
   }
   walk(x);
-  return result.map((table) => decorateTable(table, id));
+  return result.map((table) => {
+    const divisionName =
+      rankDivisionGroups && !isConferenceOrLeagueTable(table)
+        ? table.name
+        : team.divisionStandings?.name;
+    return decorateTable(withDivisionRanks(table, divisionName), id);
+  });
 }
 export async function fetchTeamInfo() {
   const checked = new Date().toISOString();
+  const queueRequest = createRequestQueue();
   const powerRankingCache = new Map<
     string,
     Promise<PowerRanking | undefined>
@@ -296,35 +323,43 @@ export async function fetchTeamInfo() {
   const get = async (
     url: string,
     timeoutMs = 10000,
-  ): Promise<ProviderResponse> => {
-    const r = await fetch(url, {
-      signal: AbortSignal.timeout(timeoutMs),
-      headers: {
-        Accept: "application/json",
-        "User-Agent": "WolvesAndFriends/1.0",
-      },
-      cache: "no-store",
+  ): Promise<ProviderResponse> =>
+    queueRequest(async () => {
+      const r = await fetch(url, {
+        signal: AbortSignal.timeout(timeoutMs),
+        headers: {
+          Accept: "application/json",
+          "User-Agent": "WolvesAndFriends/1.0",
+        },
+        cache: "no-store",
+      });
+      if (!r.ok) {
+        await r.body?.cancel();
+        throw Error("HTTP " + r.status);
+      }
+      return (await r.json()) as ProviderResponse;
     });
-    if (!r.ok) throw Error("HTTP " + r.status);
-    return (await r.json()) as ProviderResponse;
-  };
-  const getText = async (url: string) => {
-    const r = await fetch(url, {
-      signal: AbortSignal.timeout(
-        url.includes("eurohoops.net") ||
-          url.includes("thepwhl.com") ||
-          url.includes("lkl.lt")
-          ? 30000
-          : 10000,
-      ),
-      headers: {
-        Accept: "text/html",
-        "User-Agent": "WolvesAndFriends/1.0",
-      },
+  const getText = async (url: string) =>
+    queueRequest(async () => {
+      const r = await fetch(url, {
+        signal: AbortSignal.timeout(
+          url.includes("eurohoops.net") ||
+            url.includes("thepwhl.com") ||
+            url.includes("lkl.lt")
+            ? 30000
+            : 10000,
+        ),
+        headers: {
+          Accept: "text/html",
+          "User-Agent": "WolvesAndFriends/1.0",
+        },
+      });
+      if (!r.ok) {
+        await r.body?.cancel();
+        throw Error(String(r.status));
+      }
+      return r.text();
     });
-    if (!r.ok) throw Error(String(r.status));
-    return r.text();
-  };
   const getJsonp = async (
     params: Record<string, string>,
   ): Promise<ProviderResponse | ProviderResponse[]> => {
@@ -339,7 +374,7 @@ export async function fetchTeamInfo() {
       ProviderResponse | ProviderResponse[];
   };
   return Promise.all(
-    teams.map(async (t) => {
+    teams.map(async (t: TeamProfile) => {
       const info: TeamInfo = { id: t.id, tables: [], unavailable: [] };
       if (t.league) {
         const base =
@@ -350,40 +385,96 @@ export async function fetchTeamInfo() {
         await Promise.all([
           (async () => {
             try {
-              info.postseason = await fetchPostseason(t.league);
+              info.postseason = await fetchPostseason(t.league, queueRequest);
             } catch {
               info.unavailable.push("postseason");
             }
           })(),
           (async () => {
             try {
-              const standingsUrl =
+              const standingsUrl = new URL(
                 "https://site.api.espn.com/apis/v2/sports/" +
-                t.league +
-                "/standings";
-              const x = await get(standingsUrl);
-              const parseTables = (value: ProviderResponse) =>
-                parseStandings(value, t.id, checked);
-              const currentTables = await parseTables(x);
+                  t.league +
+                  "/standings",
+              );
+              if (t.league === "basketball/wnba")
+                standingsUrl.searchParams.set("level", "1");
+              const x = await get(standingsUrl.href);
+              const parseTables = (
+                value: ProviderResponse,
+                rankDivisionGroups = false,
+              ) => parseStandings(value, t.id, checked, rankDivisionGroups);
+              let currentTables = await parseTables(x);
+              const seasonType = seasonTypeNumber(x.season?.type);
               info.tables = currentTables;
+              let divisionTables: Table[] = [];
+              if (t.divisionStandings) {
+                try {
+                  const divisionUrl = new URL(standingsUrl);
+                  divisionUrl.searchParams.set(
+                    "group",
+                    String(t.divisionStandings.group),
+                  );
+                  const grouped = await get(divisionUrl.href);
+                  let groupedTables = await parseTables(grouped, true);
+                  if (
+                    t.league === "football/nfl" ||
+                    t.league === "hockey/nhl" ||
+                    t.league === "baseball/mlb"
+                  ) {
+                    const marked = markPlayoffPositions(
+                      currentTables,
+                      groupedTables,
+                      t.league,
+                    );
+                    currentTables = marked.conferenceTables;
+                    groupedTables = marked.divisionTables;
+                    info.tables = currentTables;
+                  }
+                  const division = groupedTables.find(
+                    (table) =>
+                      table.name === t.divisionStandings?.name &&
+                      table.rows.some((row) => row.highlight),
+                  );
+                  if (division) {
+                    divisionTables = [division];
+                    currentTables = currentTables.map((table) =>
+                      table.name === division.name ? division : table,
+                    );
+                    info.tables = currentTables;
+                  } else {
+                    info.unavailable.push(
+                      `${t.divisionStandings.name} standings`,
+                    );
+                  }
+                } catch {
+                  info.unavailable.push(
+                    `${t.divisionStandings.name} standings`,
+                  );
+                }
+              }
               // During the postseason ESPN's default standings response switches
               // to playoff context. Keep the regular-season table too so the
               // final seeding and qualification lines remain visible.
-              const seasonType = seasonTypeNumber(x.season?.type);
               if (seasonType === 3 && x.season?.year) {
                 try {
-                  const regular = await get(
-                    standingsUrl +
-                      "?season=" +
-                      encodeURIComponent(String(x.season.year)) +
-                      "&seasontype=2",
-                  );
+                  const regularUrl = new URL(standingsUrl);
+                  regularUrl.searchParams.set("season", String(x.season.year));
+                  regularUrl.searchParams.set("seasontype", "2");
+                  const regular = await get(regularUrl.href);
                   const regularTables = await parseTables(regular);
                   info.tables = [...regularTables, ...currentTables];
                 } catch {
                   // Keep the postseason table if the historical lookup is unavailable.
                 }
               }
+              info.tables = [
+                ...info.tables,
+                ...divisionTables.filter(
+                  (division) =>
+                    !info.tables.some((table) => table.name === division.name),
+                ),
+              ];
               if (x.season?.startDate && x.season?.endDate)
                 info.season = {
                   name:

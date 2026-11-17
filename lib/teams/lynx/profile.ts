@@ -28,7 +28,8 @@ export const lynxProfile = {
   homeLocation: "Minnesota",
   sportKind: "basketball",
   standingsRules: {
+    qualificationTableNameIncludes: "Women's National Basketball",
     qualification:
-      "WNBA qualification: the top 8 across the entire league. This feed provides a conference table, so no conference cutoff is drawn.",
+      "WNBA qualification: the top 8 across the entire league, regardless of conference. Positions are provisional until clinched.",
   },
 } as const satisfies TeamProfile;

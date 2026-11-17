@@ -37,11 +37,14 @@ export type TeamProfile = {
   scoreboardUrl?: string;
   // Official pages used when the standings or roster feed returns nothing.
   standingsPage?: string;
+  // ESPN group and table for supplemental division standings.
+  divisionStandings?: { group: number; name: string };
   rosterPage?: string;
   noStandingsNote?: string;
   rosterNote?: string;
   standingsRules?: {
     qualification?: string;
+    qualificationTableNameIncludes?: string;
     // `tableNameIncludes` limits a cut to tables whose name contains it.
     cuts?: readonly {
       after: number;

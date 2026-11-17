@@ -43,11 +43,9 @@ export const vikingsProfile = {
   wikipediaPage: "Minnesota Vikings",
   homeLocation: "Minnesota",
   sportKind: "football",
+  divisionStandings: { group: 7, name: "NFC North" },
   standingsRules: {
-    cuts: [
-      { after: 4, label: "Division-winner seeds end · 5–7 are wild cards" },
-      { after: 7, label: "Playoff places end" },
-    ],
+    qualificationTableNameIncludes: "National Football Conference",
     qualification:
       "Conference playoff seeds: four division winners, then three wild cards. Positions are provisional until clinched.",
   },

@@ -1,5 +1,6 @@
 // Normalizes league playoff schedules into rounds and team matchups.
-import { espnTeamLogoUrl } from "./march-madness";
+import { espnTeamLogoUrl } from "./march-madness.ts";
+import type { RequestQueue } from "../feeds/request-queue";
 export type Postseason = {
   partial?: boolean;
   season: string;
@@ -13,7 +14,13 @@ export type Postseason = {
       status: string;
       summary?: string;
       metric: string;
-      teams: { id: string; name: string; logo: string; value?: string }[];
+      teams: {
+        id: string;
+        name: string;
+        logo: string;
+        value?: string;
+        winner?: boolean;
+      }[];
     }[];
   }[];
 };
@@ -26,6 +33,7 @@ type SeasonData = {
 };
 type EventStatus = {
   state?: string;
+  completed?: boolean;
   shortDetail?: string;
   description?: string;
 };
@@ -40,6 +48,7 @@ type PostseasonTeam = {
 type PostseasonEventCompetitor = {
   team?: PostseasonTeam;
   score?: string | number;
+  winner?: boolean;
 };
 type ResolvedPostseasonCompetitor = PostseasonEventCompetitor & {
   team: PostseasonTeam & { id: string | number; displayName: string };
@@ -50,6 +59,7 @@ type PostseasonCompetition = {
   status?: { type?: EventStatus };
   series?: {
     summary?: string;
+    completed?: boolean;
     competitors?: PostseasonCompetitor[];
   };
 };
@@ -74,6 +84,7 @@ const supported = new Set([
   "baseball/mlb",
   "soccer/usa.1",
 ]);
+const postseasonLookbackMs = 120 * 86400000;
 const phase = (s: SeasonData | undefined) =>
   Number(typeof s?.type === "object" ? (s.type.type ?? s.type) : s?.type);
 
@@ -89,7 +100,7 @@ export function postseasonWindow(current: PostseasonFeed, now = Date.now()) {
     now > end + 14 * 86400000
   )
     return;
-  if (phase(s) === 2 && now < end - 120 * 86400000) return;
+  if (phase(s) === 2 && now < end - postseasonLookbackMs) return;
   return {
     year: s.year,
     name: s.displayName || String(s.year),
@@ -153,6 +164,12 @@ export function parsePostseason(
     const prior = group.get(id);
     // Prefer the latest played game over later unplayed placeholders.
     if (prior && status.state === "pre") continue;
+    const seriesWins = competitors.map((p) => {
+      const wins = c.series?.competitors?.find(
+        (team) => String(team.id) === String(p.team.id),
+      )?.wins;
+      return wins === undefined || wins === "" ? NaN : Number(wins);
+    });
     group.set(id, {
       id,
       url,
@@ -160,10 +177,15 @@ export function parsePostseason(
       status: status.shortDetail || status.description || "Scheduled",
       summary: c.series?.summary,
       metric: c.series ? "Series wins" : "Score",
-      teams: competitors.map((p) => ({
+      teams: competitors.map((p, index) => ({
         id: String(p.team.id),
         name: p.team.displayName,
         logo: espnTeamLogoUrl(league, String(p.team.id)),
+        winner: c.series
+          ? c.series.completed === true &&
+            seriesWins.every(Number.isFinite) &&
+            seriesWins[index] > seriesWins[1 - index]
+          : status.completed === true && p.winner === true,
         value: c.series
           ? String(
               c.series.competitors?.find(
@@ -200,37 +222,50 @@ function isResolvedPostseasonCompetitor(
 
 export async function fetchPostseason(
   league: string,
+  queueRequest: RequestQueue = async (request) => request(),
 ): Promise<Postseason | undefined> {
   if (!supported.has(league)) return;
-  const get = async (url: string): Promise<PostseasonFeed> => {
-    const r = await fetch(url, {
-      credentials: "omit",
-      referrerPolicy: "no-referrer",
-      signal: AbortSignal.timeout(10000),
+  const get = async (url: string): Promise<PostseasonFeed> =>
+    queueRequest(async () => {
+      const r = await fetch(url, {
+        credentials: "omit",
+        referrerPolicy: "no-referrer",
+        signal: AbortSignal.timeout(10000),
+      });
+      if (!r.ok) {
+        await r.body?.cancel();
+        throw Error("Postseason feed unavailable");
+      }
+      return (await r.json()) as PostseasonFeed;
     });
-    if (!r.ok) throw Error("Postseason feed unavailable");
-    return (await r.json()) as PostseasonFeed;
-  };
   const base =
     "https://site.api.espn.com/apis/site/v2/sports/" + league + "/scoreboard";
   const current = await get(base);
   const window = postseasonWindow(current);
   if (!window) return;
   // The scoreboard accepts calendar months; day-range queries fail for MLB.
-  // Fetch the postseason's recent rounds plus published upcoming matchups.
+  // ESPN can revert the league phase to regular season after the Finals.
+  // Anchor history to the season end so earlier rounds do not age out.
   const now = new Date();
-  const offsets =
-    phase(current.leagues?.[0]?.season) === 3 ? [-2, -1, 0, 1] : [0, 1];
-  const months = offsets
-    .map((offset) =>
-      new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth() + offset, 1))
-        .toISOString()
-        .slice(0, 7),
-    )
-    .filter(
-      (month) =>
-        month >= window.start.slice(0, 7) && month <= window.end.slice(0, 7),
+  const first = new Date(
+    Math.max(
+      Date.parse(window.start),
+      Date.parse(window.end) - postseasonLookbackMs,
+    ),
+  );
+  const last = Math.min(
+    Date.parse(window.end),
+    Date.UTC(now.getUTCFullYear(), now.getUTCMonth() + 1, 1),
+  );
+  const months: string[] = [];
+  for (
+    const month = new Date(
+      Date.UTC(first.getUTCFullYear(), first.getUTCMonth(), 1),
     );
+    month.getTime() <= last;
+    month.setUTCMonth(month.getUTCMonth() + 1)
+  )
+    months.push(month.toISOString().slice(0, 7));
   const results = await Promise.allSettled(
     months.map((month) =>
       get(base + "?dates=" + month.replace("-", "") + "&limit=1000"),

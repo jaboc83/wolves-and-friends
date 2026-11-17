@@ -74,6 +74,14 @@ The API also has support routes for validated team/social images and tournament 
 
 These feed and team-info caches are **request-driven, in-memory caches**. They can disappear when a Worker instance is restarted, and different instances need not share them. There is no background scheduler continuously refreshing the site while nobody is viewing it. The server cache lifetime also does not guarantee a provider has published newer information.
 
+Each team-info refresh shares a four-request queue across standings, rosters, power rankings, and postseason feeds. Slots remain occupied until response bodies are consumed, and network timeouts start only after a queued request begins. This avoids overwhelming the local Workers runtime with all teams' provider requests at once.
+
+Postseason brackets fetch calendar months within the final 120 days of the provider's season window, through the next month or season end. This retains earlier rounds during the existing 14-day post-season grace period, even when ESPN relabels a completed postseason as regular season. Only confirmed postseason games for that season are displayed.
+
+Postseason layout groups parallel MLB league rounds and NBA/NHL/NFL conference rounds into the same stage column, with league/conference labels on the matchups. Earlier cards are ordered by their actual next-round participants, and arrow connectors follow shared team IDs rather than assuming adjacent boxes feed each other. Later rounds are vertically spaced to make progression easier to trace. Unconfirmed paths are not invented, including for byes and reseeding.
+
+Completed postseason winners use the same subtle page-theme fill, outline accent, and text color as clinched-playoff indicators in light and dark modes, with bold text and screen-reader winner status without a visible "Winner" label. Series require provider-confirmed completion and a higher series-win total; single-game matchups require a completed game and the provider's winner flag. Matchup cards are clickable as a whole, without redundant series-result summaries, link arrows, or "Series wins" captions. Cards without a series summary retain their game status. Unfinished series are never marked won merely because a game has ended. Hiding scores also hides winner status and highlights.
+
 ## 4. How provider data becomes page content
 
 The shared types are defined in [lib/feeds/feed-types.ts](lib/feeds/feed-types.ts):
@@ -118,9 +126,17 @@ Odds lookups are currently limited to eligible games within the next seven days 
 - **Communities/source links:** direct reference links to relevant communities and publishers.
 - **Coming up/recent results:** compact cards with expandable details. All Teams shows the next future event per team; selected-team views show more.
 
+Team-data action buttons immediately below an expander header have 12px of vertical separation, consistently across standings and roster panels.
+
 [GameCard](components/games/game-card.tsx) owns its expanded state. Results start hidden. Opening a completed-game card reveals its result; unchecking Hide Results exposes W/L/D and scores on minimized cards too. Game-type badges come from [game-badges.ts](lib/games/game-badges.ts) and [GameBadges](components/games/game-badges.tsx).
 
 [MatchCalendar](components/games/match-calendar.tsx) owns the displayed month and selected day. Past dates are muted but remain clickable. Calendar entries themselves do not expose scores. Display dates and the definition of today use **America/Chicago**; source-time conversion can use the provider's timezone. Date-only events avoid inventing a start time.
+
+Standings panels omit conferences or baseball leagues the selected team is not in and provide a button to the full standings page. The Vikings, Wild, and Twins pages include division tables with division-order ranks and symbols for current division playoff positions and wild cards (lowercase `w`). Team names retain their normal color. Clinched teams have a softly tinted, circular, page-theme-colored badge with a subtle outline around their existing position marker; provisional markers remain unfilled. The clinched circle and its dot or wild-card symbol are drawn together in one SVG with a shared center, avoiding font baselines and separately rounded layout boxes at different zoom levels. Light mode uses primary-colored symbols on a light theme tint, and dark mode uses lighter theme ink on a dark tint. The legend uses the same badge, and marker labels/tooltips include the clinch status. Home advantage is not separately indicated; those teams retain the playoff-clinched badge and their division or wild-card symbol where applicable. Clinches come only from the provider. MLB marks three division winners and three wild cards per league. Position symbols use the conference or league table's regular-season metadata, since ESPN may omit the season type at the response root. Other sports retain their table-scoped qualification notes and cut lines.
+
+The Lynx page requests ESPN's league-wide WNBA table (`level=1`). WNBA qualification is league-wide, not per conference; the qualification note explains the top-eight format without a playoff cutoff line.
+
+The Wolves and Lynx standings use a single theme-colored dot badge for clinched playoff berths, including provider-confirmed NBA conference clinchers and the WNBA best-record clincher, without playoff or Play-In cutoff lines. Regular-season NBA conference standings also show a plain dot for current ranks 1–6 and a lowercase `p` for Play-In ranks 7–10; these provisional positions never imply a clinch. ESPN's NBA `pb` clincher uses a circled, vector-drawn `p` with its shape and surrounding circle centered together in the same SVG, distinct from a clinched playoff berth. A provider-confirmed playoff berth takes precedence over a Play-In berth. Provisional position markers are recalculated for cached NBA tables and omitted for invalid ranks, division tables, and preseason or postseason tables. Both pages retain their qualification notes, and unclinched Lynx teams do not receive a marker.
 
 ## 6. Where information is stored
 

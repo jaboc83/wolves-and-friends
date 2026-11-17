@@ -33,12 +33,10 @@ export const twinsProfile = {
   wikipediaPage: "Minnesota Twins",
   homeLocation: "Minnesota",
   sportKind: "baseball",
+  divisionStandings: { group: 7, name: "American League Central" },
   standingsRules: {
-    cuts: [
-      { after: 3, label: "Division-winner seeds end · 4–6 are wild cards" },
-      { after: 6, label: "Postseason places end" },
-    ],
+    qualificationTableNameIncludes: "American League",
     qualification:
-      "League playoff seeds: three division winners and three wild cards.",
+      "MLB qualification: three division winners and three wild cards per league. Positions are provisional until clinched.",
   },
 } as const satisfies TeamProfile;

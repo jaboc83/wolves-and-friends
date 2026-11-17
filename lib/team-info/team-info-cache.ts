@@ -9,6 +9,8 @@ function failed(table: Table, unavailable: string[]) {
   const competition = /EuroLeague|LKL|MPO|FPO/i.exec(table.name)?.[0];
   return (
     unavailable.includes("standings") ||
+    (unavailable.includes(`${table.name} standings`) &&
+      table.rows.some((row) => row.highlight)) ||
     Boolean(
       competition &&
       unavailable.some(

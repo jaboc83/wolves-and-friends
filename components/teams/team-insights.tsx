@@ -1,12 +1,13 @@
 // Team detail panels: standings, power rankings, postseason, and roster.
 "use client";
-import { Fragment, useState } from "react";
+import { Fragment, useMemo, useState } from "react";
 import { decorateTable } from "../../lib/team-info/standings";
 import { teamProfile, teams } from "../../lib/teams/teams";
 import { sportTerms } from "../../lib/teams/sport-terms";
 import type { TeamInfo } from "../../lib/team-info";
 import type { PlayerStats } from "../../lib/team-info/player-stats";
 import { espnTeamLogoUrl } from "../../lib/games/march-madness";
+import { layoutPostseasonRounds } from "../../lib/games/postseason-layout";
 import BracketConnectors from "../games/bracket-connectors";
 import RosterPanel from "./roster-panel";
 import Image from "next/image";
@@ -14,6 +15,50 @@ import { isTeamId, TEAM_IDS, type TeamId } from "../../lib/teams/teams";
 import type { DashboardPageId } from "../../lib/dashboard/page-id";
 import { useLocalTimeZone } from "../../hooks/use-local-time-zone";
 import { formatInTimeZone, timeZoneLabel } from "../../lib/browser/local-time";
+import {
+  standingsMarker,
+  visibleTeamStandings,
+} from "../../lib/team-info/standings-display";
+import { ExternalLink } from "lucide-react";
+
+function ClinchedMarkerIcon({ symbol = "●" }: { symbol?: "●" | "w" | "p" }) {
+  return (
+    <svg
+      className="standings-marker-icon"
+      width={18}
+      height={18}
+      viewBox="0 0 18 18"
+      aria-hidden="true"
+      focusable="false"
+    >
+      <circle className="standings-marker-disc" cx={9} cy={9} r={8.5} />
+      {symbol !== "●" ? (
+        <path
+          className="standings-marker-symbol"
+          d={
+            symbol === "w"
+              ? "M4.5 6.5 6.5 11.5 9 7 11.5 11.5 13.5 6.5"
+              : "M6.25 12.75V5.25H9a2.75 2.75 0 0 1 0 5.5H6.25"
+          }
+          fill="none"
+          stroke="currentColor"
+          strokeWidth={1.7}
+          strokeLinecap="round"
+          strokeLinejoin="round"
+        />
+      ) : (
+        <circle
+          className="standings-marker-symbol"
+          cx={9}
+          cy={9}
+          r={2.5}
+          fill="currentColor"
+        />
+      )}
+    </svg>
+  );
+}
+
 export default function TeamInsights({
   active,
   data,
@@ -54,6 +99,16 @@ export default function TeamInsights({
   const headings = sportTerms(active);
   const t = teamProfile(id);
   const info = data.find((i) => i.id === id);
+  const bracket = useMemo(
+    () =>
+      layoutPostseasonRounds(info?.postseason?.rounds ?? [], t?.league ?? ""),
+    [info?.postseason?.rounds, t?.league],
+  );
+  const standingsTables = visibleTeamStandings(info?.tables || []);
+  const divisionStandingsUnavailable = Boolean(
+    t?.divisionStandings &&
+    info?.unavailable.includes(`${t.divisionStandings.name} standings`),
+  );
   const myPowerRanking = info?.powerRanking?.rows.find(
     (row) =>
       row.name === t?.name ||
@@ -61,6 +116,14 @@ export default function TeamInsights({
       Boolean(t?.espn && row.url.includes(`/${t.espn}`)),
   );
   const league = t?.league?.split("/")[1];
+  const showPlayoffMarkers =
+    t?.league === "football/nfl" ||
+    t?.league === "hockey/nhl" ||
+    t?.league === "baseball/mlb";
+  const showClinchLegend =
+    showPlayoffMarkers ||
+    t?.league === "basketball/nba" ||
+    t?.league === "basketball/wnba";
   const tableUrl = league
     ? "https://www.espn.com/" + league + "/standings"
     : t?.standingsPage || "";
@@ -96,11 +159,25 @@ export default function TeamInsights({
         }
       >
         <summary>{headings.standings}</summary>
+        {tableUrl && (
+          <div className="roster-contracts-actions">
+            <a
+              className="roster-contracts-button"
+              href={tableUrl}
+              target="_blank"
+              rel="noreferrer"
+            >
+              <span>Full Standings</span>
+              <ExternalLink size={14} aria-hidden="true" />
+            </a>
+          </div>
+        )}
         {info?.postseason && (
           <section className="postseason-panel" aria-label="Postseason bracket">
             <h3>Postseason bracket · {info.postseason.season}</h3>
             <p className="panel-note">
-              Confirmed matchups only. Later rounds appear as announced.
+              Read left to right. Arrows connect confirmed matchups in
+              successive rounds; later rounds appear as announced.
               {info.postseason.partial &&
                 " Some rounds could not be refreshed."}
             </p>
@@ -110,52 +187,76 @@ export default function TeamInsights({
               role="region"
               aria-label="Postseason rounds"
             >
-              {info.postseason.rounds.map((round) => (
+              {bracket.rounds.map((round) => (
                 <section className="bracket-round" key={round.name}>
                   <h4>{round.name}</h4>
-                  {round.matchups.map((match) => (
-                    <a
-                      className="bracket-match"
-                      key={match.id}
-                      href={match.url}
-                      target="_blank"
-                      rel="noreferrer"
-                    >
-                      {match.teams.map((p) => (
-                        <span key={p.id}>
-                          <Image
-                            unoptimized
-                            className="bracket-team-logo"
-                            src={
-                              p.logo || espnTeamLogoUrl(t?.league || "", p.id)
-                            }
-                            alt=""
-                            width={22}
-                            height={22}
-                            loading="lazy"
-                          />
-                          {p.name}
-                          <b>{revealResults ? p.value : ""}</b>
-                        </span>
-                      ))}
-                      <small>
-                        {revealResults
-                          ? match.summary || match.status
-                          : "Results hidden"}{" "}
-                        ↗
-                      </small>
-                      {revealResults &&
-                        match.teams.some((p) => p.value !== undefined) && (
-                          <small>{match.metric}</small>
+                  <div className="bracket-matches">
+                    {round.matchups.map((match) => (
+                      <a
+                        className="bracket-match"
+                        key={match.id}
+                        data-bracket-match-id={match.id}
+                        href={match.url}
+                        target="_blank"
+                        rel="noreferrer"
+                      >
+                        {match.group && (
+                          <small className="bracket-match-group">
+                            {match.group}
+                          </small>
                         )}
-                    </a>
-                  ))}
+                        {match.teams.map((p) => (
+                          <span
+                            key={p.id}
+                            className={
+                              revealResults && p.winner
+                                ? "bracket-winner"
+                                : undefined
+                            }
+                          >
+                            <Image
+                              unoptimized
+                              className="bracket-team-logo"
+                              src={
+                                p.logo || espnTeamLogoUrl(t?.league || "", p.id)
+                              }
+                              alt=""
+                              width={22}
+                              height={22}
+                              loading="lazy"
+                            />
+                            <span className="bracket-team-name">
+                              {p.name}
+                              {revealResults && p.winner && (
+                                <span className="visually-hidden">
+                                  {" "}
+                                  · Winner
+                                </span>
+                              )}
+                            </span>
+                            <b>{revealResults ? p.value : ""}</b>
+                          </span>
+                        ))}
+                        {(!revealResults || !match.summary) && (
+                          <small>
+                            {revealResults ? match.status : "Results hidden"}
+                          </small>
+                        )}
+                        {revealResults &&
+                          match.metric !== "Series wins" &&
+                          match.teams.some((p) => p.value !== undefined) && (
+                            <small>{match.metric}</small>
+                          )}
+                      </a>
+                    ))}
+                  </div>
                 </section>
               ))}
               <BracketConnectors
                 key={info.postseason.checked}
                 roundClass="bracket-round"
                 matchClass="bracket-match"
+                connections={bracket.connections}
               />
             </div>
             <p className="panel-note">
@@ -189,8 +290,51 @@ export default function TeamInsights({
               ))}
             </section>
           )}
-        {info?.tables.length ? (
-          info.tables.map((raw) => {
+        {divisionStandingsUnavailable && (
+          <p className="panel-note" role="status">
+            Division standings are temporarily unavailable.
+          </p>
+        )}
+        {showClinchLegend && (
+          <p className="panel-note standings-marker-legend">
+            {showPlayoffMarkers && (
+              <>
+                <span>
+                  <b aria-hidden="true">●</b> Division playoff position
+                </span>
+                <span>
+                  <b aria-hidden="true">w</b> Wild-card position
+                </span>
+              </>
+            )}
+            {t?.league === "basketball/nba" && (
+              <>
+                <span>
+                  <b aria-hidden="true">●</b> Playoff position
+                </span>
+                <span>
+                  <b aria-hidden="true">p</b> Play-In position
+                </span>
+              </>
+            )}
+            <span>
+              <b className="standings-clinched" aria-hidden="true">
+                <ClinchedMarkerIcon />
+              </b>
+              Playoffs clinched
+            </span>
+            {t?.league === "basketball/nba" && (
+              <span>
+                <b className="standings-clinched" aria-hidden="true">
+                  <ClinchedMarkerIcon symbol="p" />
+                </b>
+                Play-In clinched
+              </span>
+            )}
+          </p>
+        )}
+        {standingsTables.length ? (
+          standingsTables.map((raw) => {
             const table = decorateTable(raw, id);
             const groupKey = `${id}:${table.name}`;
             const groupOpen =
@@ -225,37 +369,63 @@ export default function TeamInsights({
                       </tr>
                     </thead>
                     <tbody>
-                      {table.rows.map((row) => (
-                        <Fragment key={row.id}>
-                          <tr
-                            key={row.id}
-                            className={row.highlight ? "my-team" : ""}
-                          >
-                            <td>{row.cells[0]}</td>
-                            <th scope="row">
-                              <a
-                                href={row.url}
-                                target="_blank"
-                                rel="noreferrer"
-                              >
-                                {row.name} ↗
-                              </a>
-                            </th>
-                            {row.cells.slice(1).map((c, i) => (
-                              <td key={i}>{c}</td>
-                            ))}
-                          </tr>
-                          {table.cuts
-                            ?.filter((c) => c.after === Number(row.cells[0]))
-                            .map((c) => (
-                              <tr className="qualification-line" key={c.after}>
-                                <td colSpan={table.columns.length + 1}>
-                                  {c.label}
-                                </td>
-                              </tr>
-                            ))}
-                        </Fragment>
-                      ))}
+                      {table.rows.map((row) => {
+                        const marker = standingsMarker(row);
+                        return (
+                          <Fragment key={row.id}>
+                            <tr className={row.highlight ? "my-team" : ""}>
+                              <td>{row.cells[0]}</td>
+                              <th scope="row">
+                                <a
+                                  href={row.url}
+                                  target="_blank"
+                                  rel="noreferrer"
+                                >
+                                  {row.name} ↗
+                                </a>
+                                {marker && (
+                                  <span
+                                    className={
+                                      "standings-markers" +
+                                      (marker.clinched
+                                        ? " standings-clinched"
+                                        : "")
+                                    }
+                                    role="img"
+                                    aria-label={marker.label}
+                                    title={marker.label}
+                                  >
+                                    {marker.clinched ? (
+                                      <ClinchedMarkerIcon
+                                        symbol={marker.symbol}
+                                      />
+                                    ) : (
+                                      <span aria-hidden="true">
+                                        {marker.symbol}
+                                      </span>
+                                    )}
+                                  </span>
+                                )}
+                              </th>
+                              {row.cells.slice(1).map((c, i) => (
+                                <td key={i}>{c}</td>
+                              ))}
+                            </tr>
+                            {table.cuts
+                              ?.filter((c) => c.after === Number(row.cells[0]))
+                              .map((c) => (
+                                <tr
+                                  className="qualification-line"
+                                  key={c.after}
+                                >
+                                  <td colSpan={table.columns.length + 1}>
+                                    {c.label}
+                                  </td>
+                                </tr>
+                              ))}
+                          </Fragment>
+                        );
+                      })}
                     </tbody>
                   </table>
                 </div>
@@ -284,10 +454,7 @@ export default function TeamInsights({
         ) : (
           <p className="panel-note">
             {t?.noStandingsNote ||
-              `No ${terms.standings.toLowerCase()} returned by the available feed.`}{" "}
-            <a href={tableUrl} target="_blank" rel="noreferrer">
-              Open official {terms.standings.toLowerCase()} ↗
-            </a>
+              `No ${terms.standings.toLowerCase()} returned by the available feed.`}
           </p>
         )}
       </details>
