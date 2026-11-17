@@ -7,7 +7,7 @@ import {
   useState,
   type KeyboardEvent,
 } from "react";
-import { DollarSign, ExternalLink } from "lucide-react";
+import { ExternalLink } from "lucide-react";
 import type { TeamInfo } from "../../lib/team-info";
 import { teamProfile } from "../../lib/teams/teams";
 import type { PlayerStats } from "../../lib/team-info/player-stats";
@@ -299,9 +299,6 @@ export default function RosterPanel({
               target="_blank"
               rel="noreferrer"
             >
-              <span className="roster-contracts-button-icon">
-                <DollarSign size={16} aria-hidden="true" />
-              </span>
               <span>Player Contracts</span>
               <ExternalLink
                 size={14}
