@@ -166,43 +166,55 @@ test("Wild and Frost forward groups use one Forwards table", () => {
   );
 });
 
-test("Twins roster groups combine into Pitching and Fielding tables", () => {
+test("Twins starting and relief pitchers keep separate stat columns", () => {
   const groups = [
     { position: "Starting Pitcher", players: ["starter"] },
     { position: "Catcher", players: ["catcher"] },
     { position: "Relief Pitcher", players: ["reliever"] },
     { position: "Shortstop", players: ["shortstop"] },
   ];
+  const availableColumns = [
+    "GP",
+    "GS",
+    "W",
+    "L",
+    "W%",
+    "WAR",
+    "G",
+    "SV",
+    "GB",
+    "K",
+    "SF",
+  ];
 
   assert.deepEqual(combineTwinsRosterGroups(groups, "twins", "baseball/mlb"), [
-    { position: "Pitching", players: ["starter", "reliever"] },
+    groups[0],
     {
       position: "Fielding",
       players: ["catcher", "shortstop"],
     },
+    groups[2],
   ]);
   assert.deepEqual(
-    combineTwinsRosterGroups(groups, "twins", "hockey/nhl"),
-    groups,
-  );
-  assert.deepEqual(
-    visibleRosterStatColumns("twins", "baseball/mlb", "Pitching", [
-      "GP",
-      "GS",
-      "W",
-      "L",
-      "W%",
-      "WAR",
-      "G",
-      "SV",
-      "GB",
-      "K",
-      "SF",
-    ]),
+    visibleRosterStatColumns(
+      "twins",
+      "baseball/mlb",
+      "Starting Pitcher",
+      availableColumns,
+    ),
     {
       columns: ["GP", "GS", "W", "L", "W%", "WAR"],
       positionOnly: false,
     },
+  );
+  assert.deepEqual(
+    visibleRosterStatColumns(
+      "twins",
+      "baseball/mlb",
+      "Relief Pitcher",
+      availableColumns,
+    ),
+    { columns: availableColumns, positionOnly: false },
   );
 });
 

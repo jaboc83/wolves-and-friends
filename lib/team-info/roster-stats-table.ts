@@ -148,7 +148,7 @@ function rosterStatColumnPreference(
   if (
     teamId === "twins" &&
     league === "baseball/mlb" &&
-    position === "Pitching"
+    hasPosition(position, ["starting pitcher"])
   )
     return twinsPitchingStatColumns;
   if (teamId !== "vikings" || league !== "football/nfl") return;
@@ -230,29 +230,12 @@ export function combineTwinsRosterGroups<T>(
   league: string,
 ) {
   if (teamId !== "twins" || league !== "baseball/mlb") return groups;
-  const isPitcher = (position: string) =>
-    hasPosition(position, ["pitcher", "starting pitcher", "relief pitcher"]);
-  const firstPitcherIndex = groups.findIndex((group) =>
-    isPitcher(group.position),
+  const fieldingIndexes = groups.flatMap((group, index) =>
+    hasPosition(group.position, ["pitcher", "starting pitcher", "relief pitcher"])
+      ? []
+      : [index],
   );
-  const firstFieldingIndex = groups.findIndex(
-    (group) => !isPitcher(group.position),
-  );
-  const pitcherPlayers = groups.flatMap((group) =>
-    isPitcher(group.position) ? group.players : [],
-  );
-  const fieldingPlayers = groups.flatMap((group) =>
-    isPitcher(group.position) ? [] : group.players,
-  );
-  return groups.flatMap((group, index) =>
-    isPitcher(group.position)
-      ? index === firstPitcherIndex
-        ? [{ position: "Pitching", players: pitcherPlayers }]
-        : []
-      : index === firstFieldingIndex
-        ? [{ position: "Fielding", players: fieldingPlayers }]
-        : [],
-  );
+  return combineRosterGroups(groups, fieldingIndexes, "Fielding");
 }
 
 export function combineVikingsRunningBackGroups<T>(
