@@ -12,7 +12,7 @@ import {
   type RosterSalaryResponse,
 } from "../../../lib/team-info/salaryswish";
 
-const cacheDuration = 15 * 60 * 1000;
+const cacheDuration = 24 * 60 * 60 * 1000;
 const cached = new Map<
   string,
   { loadedAt: number; value: RosterSalaryResponse }
@@ -120,7 +120,7 @@ export async function GET(request: Request) {
   const previous = cached.get(key);
   if (previous && Date.now() - previous.loadedAt < cacheDuration)
     return Response.json(previous.value, {
-      headers: { "Cache-Control": "no-store" },
+      headers: { "Cache-Control": "public, max-age=0, s-maxage=86400" },
     });
 
   let pending = inflight.get(key);
@@ -132,7 +132,7 @@ export async function GET(request: Request) {
     const value = await pending;
     cached.set(key, { loadedAt: Date.now(), value });
     return Response.json(value, {
-      headers: { "Cache-Control": "no-store" },
+      headers: { "Cache-Control": "public, max-age=0, s-maxage=86400" },
     });
   } catch {
     if (previous)

@@ -854,13 +854,33 @@ export async function collect(
     health,
   };
 }
+const HUB_NEWS_TTL_MS = 60 * 60 * 1000;
+const HUB_SCHEDULE_TTL_MS = 6 * 60 * 60 * 1000;
+const HUB_UNFINISHED_RECHECK_MS = 10 * 60 * 1000;
+const HUB_UNFINISHED_AFTER_MS = 4 * 60 * 60 * 1000;
+
+// Schedules change rarely, but a game that started hours ago and never reached
+// "post" (live, delayed, or postponed) is rechecked at most every 10 minutes.
+export function hubTtlMs(
+  section: "news" | "schedules" | "all",
+  data: Pick<HubData, "games">,
+  now = Date.now(),
+) {
+  const base = section === "schedules" ? HUB_SCHEDULE_TTL_MS : HUB_NEWS_TTL_MS;
+  const unfinished = data.games.some(
+    (g) =>
+      Date.parse(g.date) < now - HUB_UNFINISHED_AFTER_MS && g.state !== "post",
+  );
+  return unfinished ? Math.min(base, HUB_UNFINISHED_RECHECK_MS) : base;
+}
+
 export function hubData(
   section: "news" | "schedules" | "all" = "all",
   team?: TeamId,
 ) {
   const key = team ? `${section}:${team}` : section;
   const cached = sectionCache[key];
-  if (cached && Date.now() - Date.parse(cached.checked) < 300000)
+  if (cached && Date.now() - Date.parse(cached.checked) < hubTtlMs(section, cached))
     return Promise.resolve(cached);
   if (sectionInflight[key]) return sectionInflight[key]!;
   const request = collect(section, team)
@@ -877,7 +897,7 @@ export function hubData(
 let oddsInflight: Promise<{ games: Game[]; checked: string }> | null = null;
 let oddsCached: { games: Game[]; checked: string } | null = null;
 export function oddsData() {
-  if (oddsCached && Date.now() - Date.parse(oddsCached.checked) < 300000)
+  if (oddsCached && Date.now() - Date.parse(oddsCached.checked) < 600000)
     return Promise.resolve(oddsCached);
   if (oddsInflight) return oddsInflight;
   oddsInflight = hubData("schedules")

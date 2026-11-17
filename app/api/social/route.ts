@@ -64,5 +64,7 @@ export async function GET(request: Request) {
         });
     await inflight;
   }
-  return Response.json(cached, { headers: { "Cache-Control": "no-store" } });
+  return Response.json(cached, {
+    headers: { "Cache-Control": "public, max-age=0, s-maxage=60" },
+  });
 }

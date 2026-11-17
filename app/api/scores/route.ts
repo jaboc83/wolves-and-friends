@@ -3,6 +3,9 @@ import { fetchScoreboard } from "../../../lib/feeds/scoreboard";
 import { scoreboardLeagues } from "../../../lib/teams/competitions";
 import { mergeLiveScoreboard, type Game } from "../../../lib/feeds";
 type ScoreData = { checked: string; games: Game[]; unavailable: string[] };
+const SCORES_CACHE_HEADERS = {
+  "Cache-Control": "public, max-age=0, s-maxage=30",
+};
 let cached: ScoreData | null = null;
 let inflight: Promise<ScoreData> | null = null;
 async function collect() {
@@ -32,12 +35,12 @@ async function collect() {
 
 export async function GET() {
   if (cached && Date.now() - Date.parse(cached.checked) < 30000)
-    return Response.json(cached, { headers: { "Cache-Control": "no-store" } });
+    return Response.json(cached, { headers: SCORES_CACHE_HEADERS });
   if (!inflight)
     inflight = collect().finally(() => {
       inflight = null;
     });
   return Response.json(await inflight, {
-    headers: { "Cache-Control": "no-store" },
+    headers: SCORES_CACHE_HEADERS,
   });
 }

@@ -47,17 +47,26 @@ export function eventLifecycle(
           : "Scheduled",
   };
 }
+const labelFormatters = new Map<string, Intl.DateTimeFormat>();
+function labelFormatter(timeZone: string) {
+  let formatter = labelFormatters.get(timeZone);
+  if (!formatter) {
+    formatter = new Intl.DateTimeFormat("en-US", {
+      timeZone,
+      weekday: "short",
+      month: "short",
+      day: "numeric",
+    });
+    labelFormatters.set(timeZone, formatter);
+  }
+  return formatter;
+}
 export function eventDateLabel(g: Game, timeZone = defaultTimeZone) {
   const fmt = (date: string) => {
     const value = g.dateOnly
       ? new Date(`${date.slice(0, 10)}T00:00:00Z`)
       : new Date(date);
-    return value.toLocaleDateString("en-US", {
-      timeZone: g.dateOnly ? "UTC" : timeZone,
-      weekday: "short",
-      month: "short",
-      day: "numeric",
-    });
+    return labelFormatter(g.dateOnly ? "UTC" : timeZone).format(value);
   };
   return (
     fmt(g.date) +

@@ -59,20 +59,26 @@ Each team has a folder, `lib/teams/<id>/`, so its external URLs, IDs, and specia
 4. React updates each section as responses arrive. A separate score feed can update game status without waiting for the larger news refresh.
 5. While the page stays open, timers request updates. The Refresh button also requests fresh endpoint responses, subject to each server cache.
 
-| Endpoint                | Data                                        | Browser request timing                                | Server memory cache                                  |
-| ----------------------- | ------------------------------------------- | ----------------------------------------------------- | ---------------------------------------------------- |
-| `/api/news?team=<team>` | News and author feeds for the selected team | On load, team selection, Refresh, and every 5 minutes | 5 minutes per Worker/team                            |
-| `/api/news`             | News and author feeds for all tracked teams | On All Teams, Refresh, and every 5 minutes            | 5 minutes per Worker                                 |
-| `/api/schedules`        | Schedules and source health                 | On load, Refresh, and every 5 minutes                 | 5 minutes                                            |
-| `/api/odds`             | Odds enrichment for eligible games          | After schedules load and on Refresh                   | 5 minutes                                            |
-| `/api/scores`           | Today's ESPN scoreboard data                | On load, Refresh, and every minute                    | 30 seconds                                           |
-| `/api/social`           | Public Bluesky posts and inline avatars     | On load, Refresh, and every minute                    | 1 minute; Refresh can request a forced update        |
-| `/api/team-info`        | Standings, rosters, and season metadata     | On load and with the main refresh                     | 15 minutes                                           |
-| `/api/roster-stats`     | Player statistics in fixed batches          | When roster statistics are requested                  | 15 minutes for available stats; 2 minutes for misses |
+| Endpoint                | Data                                        | Browser request timing                                | Server memory cache                                                   | HTTP cache header (`s-maxage`) |
+| ----------------------- | ------------------------------------------- | ----------------------------------------------------- | --------------------------------------------------------------------- | ------------------------------ |
+| `/api/news?team=<team>` | News and author feeds for the selected team | On load, team selection, Refresh, and every 5 minutes | 60 minutes per Worker/team                                            | 3600                           |
+| `/api/news`             | News and author feeds for all tracked teams | On All Teams, Refresh, and every 5 minutes            | 60 minutes per Worker                                                 | 3600                           |
+| `/api/schedules`        | Schedules and source health                 | On load, Refresh, and every 5 minutes                 | 6 hours; 10 minutes while a game past its start window is not final   | 21600                          |
+| `/api/odds`             | Odds enrichment for eligible games          | After schedules load and on Refresh                   | 10 minutes                                                            | 600                            |
+| `/api/scores`           | Today's ESPN scoreboard data                | On load, Refresh, and every minute                    | 30 seconds                                                            | 30                             |
+| `/api/social`           | Public Bluesky posts and inline avatars     | On load, Refresh, and every minute                    | 1 minute; Refresh can request a forced update                         | 60                             |
+| `/api/march-madness`    | Tournament bracket and games                | On load and every minute                              | 1 minute, falling back to the bundled snapshot                        | 60                             |
+| `/api/team-info`        | Standings, power rankings, and season metadata | On load and with the main refresh                  | 60 minutes (standings and power rankings); rosters held 12 hours      | 3600                           |
+| `/api/roster-stats`     | Player statistics in fixed batches          | When roster statistics are requested                  | 10 minutes for available stats; 2 minutes for misses                  | Batch 300 / manifest 60        |
+| `/api/roster-salaries`  | Public salary figures for one team          | After roster stats settle and the browser is idle     | 24 hours (stale value served if refresh fails)                        | 86400                          |
 
-The API also has support routes for validated team/social images and tournament data. `/api/hub` remains an aggregate feed route; the dashboard currently requests news, schedules, and odds separately.
+Rosters are the slowest-changing data and are cached inside `lib/team-info` for 12 hours per team, so a standings or power-ranking refresh does not re-request every roster. Schedules are the next slowest: the cached schedule is served for 6 hours, but if a game started more than 4 hours ago and is not final (`state` other than `post`), the cache is rechecked at most every 10 minutes so live, delayed, or postponed games still update.
 
-These feed and team-info caches are **request-driven, in-memory caches**. They can disappear when a Worker instance is restarted, and different instances need not share them. There is no background scheduler continuously refreshing the site while nobody is viewing it. The server cache lifetime also does not guarantee a provider has published newer information.
+The `s-maxage` values are the shared-cache lifetimes sent with successful responses (`Cache-Control: public, max-age=0, s-maxage=<seconds>`). Error responses stay `no-store`. Whether a shared cache in front of the Worker honors these headers is not verified. `max-age=0` keeps browsers revalidating, so the in-process TTLs above still control freshness.
+
+The API also has support routes for validated team/social images. `/api/hub` remains an aggregate feed route; the dashboard currently requests news, schedules, and odds separately.
+
+These feed and team-info caches are **request-driven, in-memory caches**. They can disappear when a Worker instance is restarted, and different instances need not share them. There is no background scheduler continuously refreshing the site while nobody is viewing it. The server cache lifetime also does not guarantee a provider has published newer information. Scores, social, and tournament data stay short-lived because they change quickly during events; headlines and power rankings are medium-term; schedules and rosters are long-term because they rarely change during a season. Source sites are therefore hit at most once per TTL per Worker, regardless of how many devices are viewing the site.
 
 Each team-info refresh shares a four-request queue across standings, rosters, power rankings, and postseason feeds. Slots remain occupied until response bodies are consumed, and network timeouts start only after a queued request begins. This avoids overwhelming the local Workers runtime with all teams' provider requests at once.
 

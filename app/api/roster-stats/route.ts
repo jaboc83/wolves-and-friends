@@ -11,7 +11,7 @@ import {
   type RosterResponse,
 } from "../../../lib/team-info/roster-response";
 const batchSize = 3,
-  ttl = 15 * 60000,
+  ttl = 10 * 60000,
   statsDeadlineMs = 15000,
   statsRequestTimeoutMs = 10000;
 // Responses are identical for every visitor, so shared caching is safe.

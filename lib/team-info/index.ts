@@ -318,6 +318,12 @@ export function parseStandings(
     return decorateTable(withDivisionRanks(table, divisionName), id);
   });
 }
+const ROSTER_TTL_MS = 12 * 60 * 60 * 1000;
+const rosterCache = new Map<
+  string,
+  { at: number; depth: ReturnType<typeof parseRoster> }
+>();
+
 export async function fetchTeamInfo() {
   const checked = new Date().toISOString();
   const queueRequest = createRequestQueue();
@@ -499,6 +505,11 @@ export async function fetchTeamInfo() {
             }
           })(),
           (async () => {
+            const cachedRoster = rosterCache.get(t.id);
+            if (cachedRoster && Date.now() - cachedRoster.at < ROSTER_TTL_MS) {
+              info.depth = cachedRoster.depth;
+              return;
+            }
             try {
               const teamProvider = teamProviders.find(
                 (provider) => provider.team === t.id,
@@ -515,6 +526,8 @@ export async function fetchTeamInfo() {
                 teamProvider?.urls?.salary,
                 teamProvider?.salarySeason,
               );
+              if (info.depth)
+                rosterCache.set(t.id, { at: Date.now(), depth: info.depth });
             } catch {}
             if (!info.depth) info.unavailable.push("roster");
           })(),
