@@ -37,33 +37,43 @@ type RosterPlayer = Depth["groups"][number]["players"][number] & {
 };
 type RosterSort = { column: string; direction: "asc" | "desc" };
 type Row = RosterStatRow<RosterPlayer>;
-type RosterExternalLinks = { contracts: string; advancedStats: string };
+type RosterExternalLinks = {
+  contracts: string;
+  advancedStats: string;
+  draftInfo?: string;
+};
 const emptySalaries: Record<string, number> = {};
 const rosterExternalLinks: Partial<Record<string, RosterExternalLinks>> = {
   wolves: {
     contracts: "https://www.basketball-reference.com/contracts/MIN.html",
     advancedStats: "https://cleaningtheglass.com/stats/team/18",
+    draftInfo: "https://www.spotrac.com/nba/draft/team/_/team/min",
   },
   lynx: {
     contracts: "https://www.spotrac.com/wnba/minnesota-lynx/yearly",
     advancedStats: "https://www.basketball-reference.com/wnba/teams/MIN/2026.html",
+    draftInfo: "https://www.spotrac.com/wnba/minnesota-lynx/draft",
   },
   wild: {
     contracts: "https://puckpedia.com/team/minnesota-wild",
     advancedStats: "https://hockeyviz.com/team/MIN/2627",
+    draftInfo: "https://www.spotrac.com/nhl/minnesota-wild/draft",
   },
   vikings: {
     contracts: "https://www.spotrac.com/nfl/minnesota-vikings/contracts",
     advancedStats: "https://nflsavant.com/teams/MIN",
+    draftInfo: "https://www.spotrac.com/nfl/minnesota-vikings/draft",
   },
   twins: {
     contracts: "https://www.nbcsports.com/mlb/minnesota-twins/contracts",
     advancedStats: "https://www.baseball-reference.com/teams/MIN/",
+    draftInfo: "https://www.spotrac.com/mlb/draft",
   },
   loons: {
     contracts: "https://www.spotrac.com/mls/minnesota-united-fc/cap",
     advancedStats:
       "https://www.mlssoccer.com/clubs/minnesota-united-fc/stats/",
+    draftInfo: "https://www.spotrac.com/mls/draft",
   },
   palace: {
     contracts: "https://www.spotrac.com/epl/crystal-palace/yearly",
@@ -346,6 +356,17 @@ export default function RosterPanel({
                 <span>Advanced Stats</span>
                 <ExternalLink size={14} aria-hidden="true" />
               </a>
+              {externalLinks.draftInfo && (
+                <a
+                  className="roster-contracts-button"
+                  href={externalLinks.draftInfo}
+                  target="_blank"
+                  rel="noreferrer"
+                >
+                  <span>Draft Info</span>
+                  <ExternalLink size={14} aria-hidden="true" />
+                </a>
+              )}
             </div>
           )}
           {note && (
