@@ -222,7 +222,7 @@ export default function TeamInsights({
               <b aria-hidden="true">●</b> Division playoff position
             </span>
             <span>
-              <b aria-hidden="true">◆</b> Wild-card position
+              <b aria-hidden="true">w</b> Wild-card position
             </span>
             <span>
               <b aria-hidden="true">✓</b> Playoffs clinched
@@ -278,7 +278,7 @@ export default function TeamInsights({
                           });
                         if (row.playoffPosition === "wildcard")
                           markers.push({
-                            symbol: "◆",
+                            symbol: "w",
                             label: "Wild-card position",
                           });
                         if (row.playoffsClinched)
