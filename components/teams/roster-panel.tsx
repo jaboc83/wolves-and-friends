@@ -15,6 +15,9 @@ import { useRosterSalaries } from "../../hooks/use-roster-salaries";
 import { salaryForPlayer } from "../../lib/team-info/salaryswish";
 import { highestPaidPlayers } from "../../lib/team-info/roster-details";
 import {
+  combineBasketballRosterGroups,
+  combineHockeyForwardGroups,
+  combineTwinsRosterGroups,
   combineVikingsDefensiveLineGroups,
   combineVikingsLinebackerAndDefensiveBackGroups,
   combineVikingsOffensiveLineGroups,
@@ -78,6 +81,8 @@ const abbreviation = (position: string) => {
   if (/strong safety|\bss\b/.test(value)) return "SS";
   if (/safety/.test(value)) return "S";
   if (/defen[cs]e|back|\bdef\b|\bdb\b/.test(value)) return "D";
+  if (/\bleft winger?\b/.test(value)) return "LW";
+  if (/\bright winger?\b/.test(value)) return "RW";
   if (/forward|wing|\bf\b/.test(value)) return "F";
   if (/center|centre|\bc\b/.test(value)) return "C";
   if (/guard|\bg\b/.test(value)) return "G";
@@ -249,9 +254,18 @@ export default function RosterPanel({
       teamId,
       league || "",
     );
-    return orderVikingsRosterGroups(
+    const orderedGroups = orderVikingsRosterGroups(
       combineVikingsLinebackerAndDefensiveBackGroups(
         defensiveLineGroups,
+        teamId,
+        league || "",
+      ),
+      teamId,
+      league || "",
+    );
+    return combineTwinsRosterGroups(
+      combineHockeyForwardGroups(
+        combineBasketballRosterGroups(orderedGroups, teamId, league || ""),
         teamId,
         league || "",
       ),

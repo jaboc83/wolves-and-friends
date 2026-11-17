@@ -82,6 +82,8 @@ const vikingsNflPositionColumns: {
   { positions: vikingsOffensiveLinePositions, columns: [] },
 ];
 
+const twinsPitchingStatColumns = ["GP", "GS", "W", "L", "W%", "WAR"];
+
 const positionParts = (position: string) =>
   position
     .split(/\s*\/\s*|\s+and\s+/i)
@@ -95,6 +97,24 @@ const positionParts = (position: string) =>
 
 function hasPosition(position: string, names: string[]) {
   return positionParts(position).some((part) => names.includes(part));
+}
+
+function combineRosterGroups<T>(
+  groups: { position: string; players: T[] }[],
+  indexes: number[],
+  position: string,
+) {
+  if (!indexes.length) return groups;
+  const firstIndex = indexes[0];
+  const indexSet = new Set(indexes);
+  const players = indexes.flatMap((index) => groups[index].players);
+  return groups.flatMap((group, index) =>
+    index === firstIndex
+      ? [{ position, players }]
+      : indexSet.has(index)
+        ? []
+        : [group],
+  );
 }
 
 export function orderVikingsRosterGroups<T>(
@@ -125,7 +145,14 @@ function rosterStatColumnPreference(
   league: string,
   position: string,
 ): string[] | undefined {
+  if (
+    teamId === "twins" &&
+    league === "baseball/mlb" &&
+    position === "Pitching"
+  )
+    return twinsPitchingStatColumns;
   if (teamId !== "vikings" || league !== "football/nfl") return;
+  if (hasPosition(position, ["quarterback", "qb"])) return;
   return vikingsNflPositionColumns.find(({ positions }) =>
     hasPosition(position, positions),
   )?.columns;
@@ -138,9 +165,17 @@ export function visibleRosterStatColumns(
   availableColumns: string[],
 ) {
   const preference = rosterStatColumnPreference(teamId, league, position);
-  const columns = preference
+  let columns = preference
     ? preference.filter((column) => availableColumns.includes(column))
     : availableColumns;
+  if (
+    teamId === "vikings" &&
+    league === "football/nfl" &&
+    hasPosition(position, ["quarterback", "qb"]) &&
+    columns.includes("YDS")
+  ) {
+    columns = ["YDS", ...columns.filter((column) => column !== "YDS")];
+  }
   return {
     columns:
       league === "football/nfl"
@@ -148,6 +183,76 @@ export function visibleRosterStatColumns(
         : columns,
     positionOnly: preference?.length === 0,
   };
+}
+
+export function combineBasketballRosterGroups<T>(
+  groups: { position: string; players: T[] }[],
+  teamId: string,
+  league: string,
+) {
+  const isBasketballTeam =
+    (teamId === "wolves" && league === "basketball/nba") ||
+    (teamId === "lynx" && league === "basketball/wnba");
+  if (!isBasketballTeam) return groups;
+  return combineRosterGroups(
+    groups,
+    groups.map((_, index) => index),
+    "Roster",
+  );
+}
+
+export function combineHockeyForwardGroups<T>(
+  groups: { position: string; players: T[] }[],
+  teamId: string,
+  league: string,
+) {
+  const isHockeyTeam =
+    (teamId === "wild" && league === "hockey/nhl") ||
+    (teamId === "frost" && league === "");
+  if (!isHockeyTeam) return groups;
+  const indexes = groups.flatMap((group, index) =>
+    hasPosition(group.position, [
+      "left wing",
+      "right wing",
+      "center",
+      "forward",
+      "forwards",
+    ])
+      ? [index]
+      : [],
+  );
+  return combineRosterGroups(groups, indexes, "Forwards");
+}
+
+export function combineTwinsRosterGroups<T>(
+  groups: { position: string; players: T[] }[],
+  teamId: string,
+  league: string,
+) {
+  if (teamId !== "twins" || league !== "baseball/mlb") return groups;
+  const isPitcher = (position: string) =>
+    hasPosition(position, ["pitcher", "starting pitcher", "relief pitcher"]);
+  const firstPitcherIndex = groups.findIndex((group) =>
+    isPitcher(group.position),
+  );
+  const firstFieldingIndex = groups.findIndex(
+    (group) => !isPitcher(group.position),
+  );
+  const pitcherPlayers = groups.flatMap((group) =>
+    isPitcher(group.position) ? group.players : [],
+  );
+  const fieldingPlayers = groups.flatMap((group) =>
+    isPitcher(group.position) ? [] : group.players,
+  );
+  return groups.flatMap((group, index) =>
+    isPitcher(group.position)
+      ? index === firstPitcherIndex
+        ? [{ position: "Pitching", players: pitcherPlayers }]
+        : []
+      : index === firstFieldingIndex
+        ? [{ position: "Fielding", players: fieldingPlayers }]
+        : [],
+  );
 }
 
 export function combineVikingsRunningBackGroups<T>(
