@@ -11,6 +11,9 @@ export type Table = {
     cells: string[];
     highlight?: boolean;
     zone?: string;
+    playoffPosition?: "division" | "wildcard";
+    playoffsClinched?: boolean;
+    homeAdvantageClinched?: boolean;
   }[];
   source: string;
   url: string;

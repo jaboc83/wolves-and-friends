@@ -13,6 +13,17 @@
   border-left: 3px solid var(--accent, #79bc43);
   padding-left: 10px;
 }
+.standings-marker-legend {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px 12px;
+}
+.standings-markers {
+  display: inline-flex;
+  gap: 4px;
+  margin-left: 6px;
+  white-space: nowrap;
+}
 .starter-badge {
   display: inline-block;
   margin-left: 8px;

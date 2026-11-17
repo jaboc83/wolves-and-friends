@@ -1,6 +1,10 @@
 // Fetches and combines public standings, rosters, postseason, and team-season data.
 import { decorateTable } from "./standings";
-import { withDivisionRanks } from "./standings-display";
+import {
+  clincherFlags,
+  markPlayoffPositions,
+  withDivisionRanks,
+} from "./standings-display";
 export { decorateTable, tableSeasonType } from "./standings";
 import { teams } from "../teams/teams";
 import { teamProviders } from "../teams/providers";
@@ -190,6 +194,7 @@ export function parseStandings(
   x: ProviderResponse,
   id: string,
   checked: string,
+  rankDivisionGroups = false,
 ): Table[] {
   const team = teams.find((t) => t.id === id)!;
   const league = team.league;
@@ -245,6 +250,11 @@ export function parseStandings(
             return String(s?.displayValue ?? s?.value ?? "—");
           };
           const entryTeam = e.team!;
+          const clincher = stat(["clincher"]);
+          const clinched = clincherFlags(
+            clincher === "—" ? "" : clincher,
+            league,
+          );
           return {
             id: String(entryTeam.id),
             name: entryTeam.displayName || entryTeam.name || "",
@@ -252,6 +262,10 @@ export function parseStandings(
               entryTeam.links?.find((l) => l.rel?.includes("clubhouse"))
                 ?.href || url,
             highlight: owns(e),
+            ...(clinched.playoffsClinched ? { playoffsClinched: true } : {}),
+            ...(clinched.homeAdvantageClinched
+              ? { homeAdvantageClinched: true }
+              : {}),
             cells: [
               stat(["playoffSeed", "rank"]) === "—"
                 ? String(i + 1)
@@ -287,12 +301,13 @@ export function parseStandings(
     for (const child of node.children || []) walk(child);
   }
   walk(x);
-  return result.map((table) =>
-    decorateTable(
-      withDivisionRanks(table, team.divisionStandings?.name),
-      id,
-    ),
-  );
+  return result.map((table) => {
+    const divisionName =
+      rankDivisionGroups && !/conference/i.test(table.name)
+        ? table.name
+        : team.divisionStandings?.name;
+    return decorateTable(withDivisionRanks(table, divisionName), id);
+  });
 }
 export async function fetchTeamInfo() {
   const checked = new Date().toISOString();
@@ -369,9 +384,12 @@ export async function fetchTeamInfo() {
                 t.league +
                 "/standings";
               const x = await get(standingsUrl);
-              const parseTables = (value: ProviderResponse) =>
-                parseStandings(value, t.id, checked);
-              const currentTables = await parseTables(x);
+              const parseTables = (
+                value: ProviderResponse,
+                rankDivisionGroups = false,
+              ) => parseStandings(value, t.id, checked, rankDivisionGroups);
+              let currentTables = await parseTables(x);
+              const seasonType = seasonTypeNumber(x.season?.type);
               info.tables = currentTables;
               let divisionTables: Table[] = [];
               if (t.divisionStandings) {
@@ -381,16 +399,36 @@ export async function fetchTeamInfo() {
                       "?group=" +
                       encodeURIComponent(String(t.divisionStandings.group)),
                   );
-                  const division = (await parseTables(grouped)).find(
+                  let groupedTables = await parseTables(grouped, true);
+                  if (
+                    seasonType === 2 &&
+                    (t.league === "football/nfl" || t.league === "hockey/nhl")
+                  ) {
+                    const marked = markPlayoffPositions(
+                      currentTables,
+                      groupedTables,
+                      t.league,
+                    );
+                    currentTables = marked.conferenceTables;
+                    groupedTables = marked.divisionTables;
+                    info.tables = currentTables;
+                  }
+                  const division = groupedTables.find(
                     (table) =>
                       table.name === t.divisionStandings?.name &&
                       table.rows.some((row) => row.highlight),
                   );
-                  if (division) divisionTables = [division];
-                  else
+                  if (division) {
+                    divisionTables = [division];
+                    currentTables = currentTables.map((table) =>
+                      table.name === division.name ? division : table,
+                    );
+                    info.tables = currentTables;
+                  } else {
                     info.unavailable.push(
                       `${t.divisionStandings.name} standings`,
                     );
+                  }
                 } catch {
                   info.unavailable.push(
                     `${t.divisionStandings.name} standings`,
@@ -400,7 +438,6 @@ export async function fetchTeamInfo() {
               // During the postseason ESPN's default standings response switches
               // to playoff context. Keep the regular-season table too so the
               // final seeding and qualification lines remain visible.
-              const seasonType = seasonTypeNumber(x.season?.type);
               if (seasonType === 3 && x.season?.year) {
                 try {
                   const regular = await get(

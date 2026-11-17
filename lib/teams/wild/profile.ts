@@ -42,18 +42,6 @@ export const wildProfile = {
   sportKind: "hockey",
   divisionStandings: { group: 8, name: "Central Division" },
   standingsRules: {
-    cuts: [
-      {
-        after: 3,
-        label: "Automatic division playoff places end",
-        tableNameIncludes: "Division",
-      },
-      {
-        after: 2,
-        label: "Wild-card playoff places end",
-        tableNameIncludes: "Wild Card",
-      },
-    ],
     qualificationTableNameIncludes: "Conference",
     qualification:
       "NHL qualification: top 3 in each division plus 2 wild cards per conference. Division tables show automatic places; the wild-card table excludes the top 3 from each division. Positions are provisional until clinched.",

@@ -68,6 +68,8 @@ export default function TeamInsights({
       Boolean(t?.espn && row.url.includes(`/${t.espn}`)),
   );
   const league = t?.league?.split("/")[1];
+  const showPlayoffMarkers =
+    t?.league === "football/nfl" || t?.league === "hockey/nhl";
   const tableUrl = league
     ? "https://www.espn.com/" + league + "/standings"
     : t?.standingsPage || "";
@@ -214,6 +216,22 @@ export default function TeamInsights({
             Division standings are temporarily unavailable.
           </p>
         )}
+        {showPlayoffMarkers && (
+          <p className="panel-note standings-marker-legend">
+            <span>
+              <b aria-hidden="true">●</b> Division playoff position
+            </span>
+            <span>
+              <b aria-hidden="true">◆</b> Wild-card position
+            </span>
+            <span>
+              <b aria-hidden="true">✓</b> Playoffs clinched
+            </span>
+            <span>
+              <b aria-hidden="true">★</b> Home-field/ice advantage clinched
+            </span>
+          </p>
+        )}
         {standingsTables.length ? (
           standingsTables.map((raw) => {
             const table = decorateTable(raw, id);
@@ -250,37 +268,83 @@ export default function TeamInsights({
                       </tr>
                     </thead>
                     <tbody>
-                      {table.rows.map((row) => (
-                        <Fragment key={row.id}>
-                          <tr
-                            key={row.id}
-                            className={row.highlight ? "my-team" : ""}
-                          >
-                            <td>{row.cells[0]}</td>
-                            <th scope="row">
-                              <a
-                                href={row.url}
-                                target="_blank"
-                                rel="noreferrer"
-                              >
-                                {row.name} ↗
-                              </a>
-                            </th>
-                            {row.cells.slice(1).map((c, i) => (
-                              <td key={i}>{c}</td>
-                            ))}
-                          </tr>
-                          {table.cuts
-                            ?.filter((c) => c.after === Number(row.cells[0]))
-                            .map((c) => (
-                              <tr className="qualification-line" key={c.after}>
-                                <td colSpan={table.columns.length + 1}>
-                                  {c.label}
-                                </td>
-                              </tr>
-                            ))}
-                        </Fragment>
-                      ))}
+                      {table.rows.map((row) => {
+                        const markers: { symbol: string; label: string }[] =
+                          [];
+                        if (row.playoffPosition === "division")
+                          markers.push({
+                            symbol: "●",
+                            label: "Division playoff position",
+                          });
+                        if (row.playoffPosition === "wildcard")
+                          markers.push({
+                            symbol: "◆",
+                            label: "Wild-card position",
+                          });
+                        if (row.playoffsClinched)
+                          markers.push({
+                            symbol: "✓",
+                            label: "Playoffs clinched",
+                          });
+                        if (row.homeAdvantageClinched)
+                          markers.push({
+                            symbol: "★",
+                            label: "Home-field/ice advantage clinched",
+                          });
+                        return (
+                          <Fragment key={row.id}>
+                            <tr
+                              className={row.highlight ? "my-team" : ""}
+                            >
+                              <td>{row.cells[0]}</td>
+                              <th scope="row">
+                                <a
+                                  href={row.url}
+                                  target="_blank"
+                                  rel="noreferrer"
+                                >
+                                  {row.name} ↗
+                                </a>
+                                {markers.length > 0 && (
+                                  <span
+                                    className="standings-markers"
+                                    role="img"
+                                    aria-label={markers
+                                      .map((marker) => marker.label)
+                                      .join(", ")}
+                                  >
+                                    {markers.map((marker) => (
+                                      <span
+                                        key={marker.label}
+                                        aria-hidden="true"
+                                      >
+                                        {marker.symbol}
+                                      </span>
+                                    ))}
+                                  </span>
+                                )}
+                              </th>
+                              {row.cells.slice(1).map((c, i) => (
+                                <td key={i}>{c}</td>
+                              ))}
+                            </tr>
+                            {table.cuts
+                              ?.filter(
+                                (c) => c.after === Number(row.cells[0]),
+                              )
+                              .map((c) => (
+                                <tr
+                                  className="qualification-line"
+                                  key={c.after}
+                                >
+                                  <td colSpan={table.columns.length + 1}>
+                                    {c.label}
+                                  </td>
+                                </tr>
+                              ))}
+                          </Fragment>
+                        );
+                      })}
                     </tbody>
                   </table>
                 </div>
