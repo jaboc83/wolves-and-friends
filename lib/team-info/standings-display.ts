@@ -1,6 +1,11 @@
 import type { Table } from "./types";
 
-export type PlayoffStandingsLeague = "football/nfl" | "hockey/nhl";
+export type PlayoffStandingsLeague =
+  "football/nfl" | "hockey/nhl" | "baseball/mlb";
+
+export function isConferenceOrLeagueTable(table: Table): boolean {
+  return /conference|^(?:American|National) League$/i.test(table.name);
+}
 
 export function clincherFlags(
   value: string,
@@ -9,14 +14,17 @@ export function clincherFlags(
   const code = value.trim().toLowerCase();
   const isNfl = league === "football/nfl";
   const isNhl = league === "hockey/nhl";
+  const isMlb = league === "baseball/mlb";
   const clinchedCodes = isNfl
     ? ["*", "y", "z"]
     : isNhl
       ? ["*", "x", "y", "z"]
-      : [];
+      : isMlb
+        ? ["*", "x", "y"]
+        : [];
   return {
-    playoffsClinched: (isNfl || isNhl) && clinchedCodes.includes(code),
-    homeAdvantageClinched: (isNfl || isNhl) && code === "*",
+    playoffsClinched: clinchedCodes.includes(code),
+    homeAdvantageClinched: (isNfl || isNhl || isMlb) && code === "*",
   };
 }
 
@@ -27,17 +35,19 @@ export function markPlayoffPositions(
 ): { conferenceTables: Table[]; divisionTables: Table[] } {
   const conferenceIndex = conferenceTables.findIndex(
     (table) =>
-      /conference/i.test(table.name) && table.rows.some((row) => row.highlight),
+      isConferenceOrLeagueTable(table) &&
+      table.rows.some((row) => row.highlight),
   );
   if (conferenceIndex < 0) return { conferenceTables, divisionTables };
 
   const conference = conferenceTables[conferenceIndex];
   if (conference.seasonType !== 2) return { conferenceTables, divisionTables };
-  const divisionPlaces = league === "football/nfl" ? 1 : 3;
-  const wildcardPlaces = league === "football/nfl" ? 3 : 2;
+  const divisionPlaces = league === "hockey/nhl" ? 3 : 1;
+  const wildcardPlaces = league === "hockey/nhl" ? 2 : 3;
   const positions = new Map<string, "division" | "wildcard">();
   for (const division of divisionTables.filter(
-    (table) => !/conference|wild.?card/i.test(table.name),
+    (table) =>
+      !isConferenceOrLeagueTable(table) && !/wild.?card/i.test(table.name),
   )) {
     for (const row of division.rows.slice(0, divisionPlaces)) {
       positions.set(row.id, "division");
@@ -69,17 +79,19 @@ export function withDivisionRanks(table: Table, divisionName?: string): Table {
   if (!divisionName || table.name !== divisionName) return table;
   return {
     ...table,
-    rows: table.rows.map((row, index) => ({
-      ...row,
-      cells: [String(index + 1), ...row.cells.slice(1)],
-    })),
+    rows: [...table.rows]
+      .sort((a, b) => Number(a.cells[0]) - Number(b.cells[0]))
+      .map((row, index) => ({
+        ...row,
+        cells: [String(index + 1), ...row.cells.slice(1)],
+      })),
   };
 }
 
 export function visibleTeamStandings(tables: Table[]): Table[] {
   return tables.filter(
     (table) =>
-      !/conference/i.test(table.name) ||
+      !isConferenceOrLeagueTable(table) ||
       table.rows.some((row) => row.highlight),
   );
 }

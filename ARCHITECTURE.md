@@ -124,7 +124,7 @@ Odds lookups are currently limited to eligible games within the next seven days 
 
 [MatchCalendar](components/games/match-calendar.tsx) owns the displayed month and selected day. Past dates are muted but remain clickable. Calendar entries themselves do not expose scores. Display dates and the definition of today use **America/Chicago**; source-time conversion can use the provider's timezone. Date-only events avoid inventing a start time.
 
-Standings panels omit conferences the selected team is not in and provide a button to the full standings page. The Vikings and Wild pages include division tables with division-order ranks and symbols for current division playoff positions, wild cards, and provider-reported clinches. Position symbols use the conference table's regular-season metadata, since ESPN may omit the season type at the response root. Other leagues retain their table-scoped qualification notes and cut lines.
+Standings panels omit conferences or baseball leagues the selected team is not in and provide a button to the full standings page. The Vikings, Wild, and Twins pages include division tables with division-order ranks and symbols for current division playoff positions, wild cards (lowercase `w`), and provider-reported clinches. MLB marks three division winners and three wild cards per league. Position symbols use the conference or league table's regular-season metadata, since ESPN may omit the season type at the response root. Other sports retain their table-scoped qualification notes and cut lines.
 
 ## 6. Where information is stored
 

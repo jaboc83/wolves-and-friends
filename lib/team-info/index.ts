@@ -2,6 +2,7 @@
 import { decorateTable } from "./standings";
 import {
   clincherFlags,
+  isConferenceOrLeagueTable,
   markPlayoffPositions,
   withDivisionRanks,
 } from "./standings-display";
@@ -305,7 +306,7 @@ export function parseStandings(
   walk(x);
   return result.map((table) => {
     const divisionName =
-      rankDivisionGroups && !/conference/i.test(table.name)
+      rankDivisionGroups && !isConferenceOrLeagueTable(table)
         ? table.name
         : team.divisionStandings?.name;
     return decorateTable(withDivisionRanks(table, divisionName), id);
@@ -413,7 +414,8 @@ export async function fetchTeamInfo() {
                   let groupedTables = await parseTables(grouped, true);
                   if (
                     t.league === "football/nfl" ||
-                    t.league === "hockey/nhl"
+                    t.league === "hockey/nhl" ||
+                    t.league === "baseball/mlb"
                   ) {
                     const marked = markPlayoffPositions(
                       currentTables,

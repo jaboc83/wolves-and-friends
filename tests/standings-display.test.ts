@@ -75,6 +75,112 @@ test("standings omit only conferences without the selected team", () => {
   );
 });
 
+test("Twins standings retain the American League and division but omit the National League", () => {
+  const twins = {
+    id: "MIN",
+    name: "Minnesota Twins",
+    url: "/",
+    cells: ["10"],
+    highlight: true,
+  };
+  const american = table("American League", [twins]);
+  const national = table("National League", [
+    { ...twins, id: "MIL", name: "Milwaukee Brewers", highlight: false },
+  ]);
+  const central = table("American League Central", [twins]);
+
+  assert.deepEqual(
+    visibleTeamStandings([american, national, central]).map(
+      (item) => item.name,
+    ),
+    ["American League", "American League Central"],
+  );
+});
+
+test("MLB division ranks sort league seeds before numbering division places", () => {
+  const division = table("American League Central", [
+    { id: "CWS", name: "Chicago", url: "/", cells: ["6", "84", "78"] },
+    { id: "CLE", name: "Cleveland", url: "/", cells: ["2", "85", "77"] },
+    { id: "MIN", name: "Minnesota", url: "/", cells: ["10", "77", "85"] },
+  ]);
+
+  assert.deepEqual(
+    withDivisionRanks(division, division.name).rows.map((row) => [
+      row.id,
+      row.cells,
+    ]),
+    [
+      ["CLE", ["1", "85", "77"]],
+      ["CWS", ["2", "84", "78"]],
+      ["MIN", ["3", "77", "85"]],
+    ],
+  );
+  assert.equal(division.rows[0].cells[0], "6");
+});
+
+test("MLB marks three division winners and three wild cards in the selected league", () => {
+  const row = (id: string, seed: number) => ({
+    id,
+    name: id,
+    url: "/",
+    cells: [String(seed)],
+    highlight: id === "MIN",
+  });
+  const american = table("American League", [
+    row("TB", 1),
+    row("CLE", 2),
+    row("HOU", 3),
+    row("NYY", 4),
+    row("BOS", 5),
+    row("CWS", 6),
+    row("MIN", 10),
+  ]);
+  const national = table("National League", [row("MIL", 1)]);
+  const divisions = [
+    table("American League East", [row("NYY", 4), row("BOS", 5), row("TB", 1)]),
+    table("American League Central", [
+      row("CWS", 6),
+      row("CLE", 2),
+      row("MIN", 10),
+    ]),
+    table("American League West", [row("HOU", 3)]),
+  ].map((division) => withDivisionRanks(division, division.name));
+
+  const marked = markPlayoffPositions(
+    [american, national],
+    [american, ...divisions],
+    "baseball/mlb",
+  );
+
+  assert.deepEqual(
+    marked.conferenceTables[0].rows.map((item) => [
+      item.id,
+      item.playoffPosition,
+    ]),
+    [
+      ["TB", "division"],
+      ["CLE", "division"],
+      ["HOU", "division"],
+      ["NYY", "wildcard"],
+      ["BOS", "wildcard"],
+      ["CWS", "wildcard"],
+      ["MIN", undefined],
+    ],
+  );
+  assert.deepEqual(
+    marked.divisionTables[2].rows.map((item) => [
+      item.id,
+      item.playoffPosition,
+    ]),
+    [
+      ["CLE", "division"],
+      ["CWS", "wildcard"],
+      ["MIN", undefined],
+    ],
+  );
+  assert.equal(marked.conferenceTables[1].rows[0].playoffPosition, undefined);
+});
+
 test("NFL marks division winners and the next three conference teams", () => {
   const conference = table("National Football Conference", [
     { id: "MIN", name: "Minnesota", url: "/", cells: ["1"], highlight: true },
@@ -214,4 +320,23 @@ test("clincher codes distinguish playoff status from top-seed home advantage", (
     playoffsClinched: false,
     homeAdvantageClinched: false,
   });
+});
+
+test("MLB clinchers distinguish division and wild-card clinches from home advantage", () => {
+  for (const code of ["x", "y"]) {
+    assert.deepEqual(clincherFlags(code, "baseball/mlb"), {
+      playoffsClinched: true,
+      homeAdvantageClinched: false,
+    });
+  }
+  assert.deepEqual(clincherFlags("*", "baseball/mlb"), {
+    playoffsClinched: true,
+    homeAdvantageClinched: true,
+  });
+  for (const code of ["", "e"]) {
+    assert.deepEqual(clincherFlags(code, "baseball/mlb"), {
+      playoffsClinched: false,
+      homeAdvantageClinched: false,
+    });
+  }
 });

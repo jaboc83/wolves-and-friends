@@ -59,7 +59,7 @@ export default function TeamInsights({
   const standingsTables = visibleTeamStandings(info?.tables || []);
   const divisionStandingsUnavailable = Boolean(
     t?.divisionStandings &&
-      info?.unavailable.includes(`${t.divisionStandings.name} standings`),
+    info?.unavailable.includes(`${t.divisionStandings.name} standings`),
   );
   const myPowerRanking = info?.powerRanking?.rows.find(
     (row) =>
@@ -69,7 +69,9 @@ export default function TeamInsights({
   );
   const league = t?.league?.split("/")[1];
   const showPlayoffMarkers =
-    t?.league === "football/nfl" || t?.league === "hockey/nhl";
+    t?.league === "football/nfl" ||
+    t?.league === "hockey/nhl" ||
+    t?.league === "baseball/mlb";
   const tableUrl = league
     ? "https://www.espn.com/" + league + "/standings"
     : t?.standingsPage || "";
@@ -269,8 +271,7 @@ export default function TeamInsights({
                     </thead>
                     <tbody>
                       {table.rows.map((row) => {
-                        const markers: { symbol: string; label: string }[] =
-                          [];
+                        const markers: { symbol: string; label: string }[] = [];
                         if (row.playoffPosition === "division")
                           markers.push({
                             symbol: "●",
@@ -293,9 +294,7 @@ export default function TeamInsights({
                           });
                         return (
                           <Fragment key={row.id}>
-                            <tr
-                              className={row.highlight ? "my-team" : ""}
-                            >
+                            <tr className={row.highlight ? "my-team" : ""}>
                               <td>{row.cells[0]}</td>
                               <th scope="row">
                                 <a
@@ -329,9 +328,7 @@ export default function TeamInsights({
                               ))}
                             </tr>
                             {table.cuts
-                              ?.filter(
-                                (c) => c.after === Number(row.cells[0]),
-                              )
+                              ?.filter((c) => c.after === Number(row.cells[0]))
                               .map((c) => (
                                 <tr
                                   className="qualification-line"
