@@ -47,7 +47,7 @@ const rosterExternalLinks: Partial<Record<string, RosterExternalLinks>> = {
   wolves: {
     contracts: "https://www.basketball-reference.com/contracts/MIN.html",
     advancedStats: "https://cleaningtheglass.com/stats/team/18",
-    draftInfo: "https://www.spotrac.com/nba/draft/team/_/team/min",
+    draftInfo: "https://www.spotrac.com/nba/draft/future#future-draft-tabs_109",
   },
   lynx: {
     contracts: "https://www.spotrac.com/wnba/minnesota-lynx/yearly",
@@ -60,7 +60,7 @@ const rosterExternalLinks: Partial<Record<string, RosterExternalLinks>> = {
     draftInfo: "https://www.spotrac.com/nhl/minnesota-wild/draft",
   },
   vikings: {
-    contracts: "https://www.spotrac.com/nfl/minnesota-vikings/contracts",
+    contracts: "https://www.spotrac.com/nfl/minnesota-vikings/yearly",
     advancedStats: "https://nflsavant.com/teams/MIN",
     draftInfo: "https://www.spotrac.com/nfl/minnesota-vikings/draft",
   },
