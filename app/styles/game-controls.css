@@ -139,10 +139,6 @@
   color: var(--muted, #738078);
   border-color: var(--line, #dce2dc);
 }
-.calendar-day.is-past .calendar-dots {
-  opacity: 0.4;
-  filter: grayscale(1);
-}
 .calendar-day.is-past small {
   color: var(--muted, #7d8780);
 }

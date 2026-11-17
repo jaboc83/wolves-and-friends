@@ -12,6 +12,10 @@ import type { TeamProfile } from "../teams/team-types";
 import { teamProviders } from "../teams/providers";
 import { serverHooksFor } from "../teams/server";
 import { fetchPostseason, type Postseason } from "../games/postseason";
+import {
+  completeMlsBracket,
+  projectPostseason,
+} from "../games/postseason-projection";
 import { createRequestQueue } from "../feeds/request-queue";
 import { rosterDetails, type RosterDetails } from "./roster-details";
 import { salarySourceForYear } from "./salaryswish";
@@ -66,6 +70,7 @@ export type Depth = {
 };
 export type TeamInfo = {
   postseason?: Postseason;
+  projectedPostseason?: Postseason;
   powerRanking?: PowerRanking;
   id: string;
   tables: Table[];
@@ -581,6 +586,47 @@ export async function fetchTeamInfo() {
             }
           })(),
         ]);
+        const seasonActive =
+          !info.season ||
+          (Date.parse(info.season.start) <= Date.parse(checked) &&
+            Date.parse(checked) <= Date.parse(info.season.end));
+        if (info.postseason && t.league === "soccer/usa.1") {
+          try {
+            info.postseason = completeMlsBracket(
+              info.postseason,
+              info.tables,
+              t.league,
+            );
+          } catch {
+            // The confirmed bracket stands on its own if placeholders fail.
+          }
+        }
+        if (!info.postseason && seasonActive) {
+          try {
+            let divisions: Table[] | undefined;
+            if (t.league === "hockey/nhl" || t.league === "baseball/mlb") {
+              const divisionUrl = new URL(
+                "https://site.api.espn.com/apis/v2/sports/" +
+                  t.league +
+                  "/standings",
+              );
+              divisionUrl.searchParams.set("level", "3");
+              divisions = parseStandings(
+                await get(divisionUrl.href),
+                t.id,
+                checked,
+              );
+            }
+            info.projectedPostseason = projectPostseason({
+              league: t.league,
+              tables: info.tables,
+              divisions,
+              checked,
+            });
+          } catch {
+            // A missing projection only hides the optional projected bracket.
+          }
+        }
         if (!info.season) {
           try {
             const x = await get(

@@ -17,7 +17,11 @@ import {
 } from "../../lib/teams/team-location";
 import { gameTeamUrl } from "../../lib/teams/game-team-url";
 import { sportTerms } from "../../lib/teams/sport-terms";
-import { teamLogoPath } from "../../lib/teams/team-logo";
+import {
+  dgptEventLogoPath,
+  opponentLogoPath,
+  teamLogoPath,
+} from "../../lib/teams/team-logo";
 import { pwhlTeamShortName } from "../../lib/teams/pwhl-team-url";
 import type { TeamId } from "../../lib/teams/teams";
 import { useLocalTimeZone } from "../../hooks/use-local-time-zone";
@@ -98,6 +102,7 @@ export default function GameCard({
   const localDateTime = (s: string, o: Intl.DateTimeFormatOptions = {}) =>
     formatInTimeZone(s, timeZone, o);
   const [expanded, setExpanded] = useState(false);
+  const [opponentLogoFailed, setOpponentLogoFailed] = useState(false);
   const [renderedAt] = useState(() => Date.now());
   const detailsRef = useRef<HTMLDetailsElement>(null);
   const expandReveals = compact && g.state === "post";
@@ -107,8 +112,20 @@ export default function GameCard({
   const t = teamProfile(g.team);
   if (!t) return null;
   const hidden = g.state !== "pre" && !scoreVisible;
-  const logo = teamLogoPath(t.id);
+  const logo =
+    (g.eventOnly && g.team === "disc" && !opponentLogoFailed
+      ? dgptEventLogoPath(g.url)
+      : undefined) ?? teamLogoPath(t.id);
   const { club, opponent } = matchup(g);
+  const opponentCompetitorForLogo = g.competitors.find((p) => p !== club);
+  const opponentLogo =
+    !g.eventOnly && !opponentLogoFailed
+      ? opponentLogoPath(
+          g.team,
+          opponentCompetitorForLogo?.teamId,
+          opponentCompetitorForLogo?.name,
+        )
+      : undefined;
   const compactOpponent =
     g.team === "frost" ? pwhlTeamShortName(opponent) || opponent : opponent;
   const homeAway = !g.eventOnly ? club?.homeAway : undefined;
@@ -122,11 +139,7 @@ export default function GameCard({
       <span
         className={"result-cap cap-" + result}
         aria-label={
-          result === "W"
-            ? "Win"
-            : result === "L"
-              ? "Loss"
-              : terms.tieLabel
+          result === "W" ? "Win" : result === "L" ? "Loss" : terms.tieLabel
         }
       >
         <span>{result}</span>
@@ -138,7 +151,37 @@ export default function GameCard({
     <article className="game">
       <div className="game-top">
         <div className="game-identity">
-          <Image unoptimized src={logo} alt="" width={36} height={36} />
+          {opponentLogo ? (
+            <span className="full-logo-stack">
+              <Image
+                unoptimized
+                src={logo}
+                alt=""
+                width={36}
+                height={36}
+                onError={() => setOpponentLogoFailed(true)}
+              />
+              <Image
+                unoptimized
+                loading="eager"
+                className="full-logo-opponent"
+                src={opponentLogo}
+                alt=""
+                width={36}
+                height={36}
+                onError={() => setOpponentLogoFailed(true)}
+              />
+            </span>
+          ) : (
+            <Image
+              unoptimized
+              src={logo}
+              alt=""
+              width={36}
+              height={36}
+              onError={() => setOpponentLogoFailed(true)}
+            />
+          )}
           <div className="game-identity-text">
             <div className="game-title">
               <strong>
@@ -159,21 +202,23 @@ export default function GameCard({
         </div>
         <div className="game-meta">
           <span className={g.state === "in" ? "live" : ""}>
-            {g.state === "post"
-              ? (
-                  <time dateTime={g.date}>{eventDateLabel(g, timeZone)}</time>
-                )
-              : g.state === "in"
-                ? g.eventOnly
-                  ? "IN PROGRESS"
-                  : "LIVE"
-                : <AddToCalendar game={g}>
-                    {localDateTime(g.date, {
-                    weekday: "short",
-                    month: "short",
-                    day: "numeric",
-                    })}
-                  </AddToCalendar>}
+            {g.state === "post" ? (
+              <time dateTime={g.date}>{eventDateLabel(g, timeZone)}</time>
+            ) : g.state === "in" ? (
+              g.eventOnly ? (
+                "IN PROGRESS"
+              ) : (
+                "LIVE"
+              )
+            ) : (
+              <AddToCalendar game={g}>
+                {localDateTime(g.date, {
+                  weekday: "short",
+                  month: "short",
+                  day: "numeric",
+                })}
+              </AddToCalendar>
+            )}
             {g.state === "pre" && !g.dateOnly && (
               <span className="event-time">
                 {localDateTime(g.date, {
@@ -255,8 +300,8 @@ export default function GameCard({
         </button>
       )}
       <div className="game-footer">
-        {g.state === "pre" && !g.dateOnly ? null :
-        g.eventOnly && g.state === "post" ? null : g.dateOnly ? (
+        {g.state === "pre" && !g.dateOnly ? null : g.eventOnly &&
+          g.state === "post" ? null : g.dateOnly ? (
           g.state === "pre" ? (
             "All-day event · tee times not listed"
           ) : (
@@ -335,8 +380,31 @@ export default function GameCard({
       >
         <summary>
           {resultCap}
-          <span className="compact-team-logo">
-            <Image unoptimized src={logo} alt="" width={30} height={30} />
+          <span
+            className={
+              "compact-team-logo" + (opponentLogo ? " split-logo" : "")
+            }
+          >
+            <Image
+              unoptimized
+              src={logo}
+              alt=""
+              width={30}
+              height={30}
+              onError={() => setOpponentLogoFailed(true)}
+            />
+            {opponentLogo && (
+              <Image
+                unoptimized
+                loading="eager"
+                className="split-logo-opponent"
+                src={opponentLogo}
+                alt=""
+                width={30}
+                height={30}
+                onError={() => setOpponentLogoFailed(true)}
+              />
+            )}
             {homeAway && (
               <span
                 className={"venue-marker venue-marker-" + homeAway}
@@ -436,7 +504,9 @@ export default function GameCard({
                 <AddToCalendar game={g}>
                   {eventDateLabel(g, timeZone)}
                 </AddToCalendar>
-              ) : eventDateLabel(g, timeZone)}
+              ) : (
+                eventDateLabel(g, timeZone)
+              )}
               {!g.dateOnly && g.state !== "post" && (
                 <small className="event-time">
                   {localDateTime(g.date, {

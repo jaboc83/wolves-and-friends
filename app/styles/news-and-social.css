@@ -166,6 +166,26 @@
   object-fit: contain;
   flex-shrink: 0;
 }
+.game-identity .full-logo-stack {
+  position: relative;
+  flex: 0 0 48px;
+  width: 48px;
+  height: 48px;
+}
+.game-identity .full-logo-stack img {
+  position: absolute;
+  width: 30px;
+  height: 30px;
+}
+.game-identity .full-logo-stack img:first-child {
+  top: 0;
+  left: 0;
+}
+.game-identity .full-logo-stack .full-logo-opponent {
+  right: 0;
+  bottom: 0;
+  filter: drop-shadow(0 0 2px #fff) drop-shadow(0 0 1px #fff);
+}
 .game-identity strong {
   display: block;
   font-size: 13px;
@@ -418,4 +438,3 @@
     gap: 16px;
   }
 }
-

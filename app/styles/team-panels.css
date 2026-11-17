@@ -37,6 +37,26 @@
   height: 100%;
   object-fit: contain;
 }
+/* Stacked pair: our logo top-left, the opponent's offset bottom-right. */
+.split-logo > img:first-child {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 30px;
+  height: 30px;
+}
+.split-logo > .split-logo-opponent {
+  position: absolute;
+  right: 0;
+  bottom: 0;
+  width: 30px;
+  height: 30px;
+  filter: drop-shadow(0 0 2px #fff) drop-shadow(0 0 1px #fff);
+}
+.split-logo > .venue-marker {
+  right: auto;
+  left: -4px;
+}
 .venue-marker {
   position: absolute;
   right: -4px;
@@ -254,6 +274,13 @@
 .data-panel > summary + .roster-contracts-actions {
   margin-top: 12px;
 }
+.data-panel > summary .summary-icon {
+  display: inline-block;
+  width: 16px;
+  height: 16px;
+  margin-right: 8px;
+  vertical-align: -3px;
+}
 .data-panel > summary small {
   margin-left: 10px;
   font-size: 11px;
@@ -430,15 +457,49 @@
 .calendar-day small {
   font-size: 9px;
 }
-.calendar-dots {
-  display: flex;
-  gap: 3px;
-  min-height: 5px;
+.calendar-day.has-event,
+.calendar-day.has-event.is-past {
+  color: white;
+  border-color: transparent;
+  text-shadow: 0 1px 2px rgb(0 0 0 / 0.65);
 }
-.calendar-dots i {
-  width: 5px;
-  height: 5px;
-  border-radius: 50%;
+.calendar-day.has-event small,
+.calendar-day.has-event.is-past small {
+  color: inherit;
+}
+.calendar-day.has-event.is-past {
+  opacity: 0.55;
+}
+.agenda-result {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 1.6em;
+  padding: 1px 6px;
+  border-radius: 4px;
+  color: #fff;
+  font-weight: 800;
+  line-height: 1.2;
+  text-shadow: none;
+}
+.day-results {
+  display: flex;
+  gap: 2px;
+  justify-content: center;
+}
+.day-results .agenda-result {
+  min-width: 2em;
+  padding: 2px 0;
+  font-size: 15px;
+  box-shadow: 0 0 0 1px rgb(255 255 255 / 0.85);
+}
+.calendar-day.has-event.selected,
+.calendar-day.has-event.is-past.selected {
+  color: white;
+  text-shadow: 0 1px 2px rgb(0 0 0 / 0.65);
+  outline: 3px solid var(--ink, #10283a);
+  outline-offset: 1px;
+  opacity: 1;
 }
 .calendar-agenda {
   border-top: 1px solid var(--line, #dce4db);

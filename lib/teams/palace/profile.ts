@@ -58,6 +58,7 @@ export const palaceProfile = {
   },
   competitionPanels: {
     label: "Crystal Palace cup and European links",
+    buttonLabel: "View cup & European links",
     hideDuringPostseason: true,
     sections: [
       {

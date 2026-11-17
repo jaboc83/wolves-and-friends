@@ -3,6 +3,9 @@ import { espnTeamLogoUrl } from "./march-madness.ts";
 import type { RequestQueue } from "../feeds/request-queue";
 export type Postseason = {
   partial?: boolean;
+  // Built from current standings rather than the provider's playoff schedule.
+  projected?: boolean;
+  note?: string;
   season: string;
   checked: string;
   rounds: {
@@ -14,18 +17,22 @@ export type Postseason = {
       status: string;
       summary?: string;
       metric: string;
+      tentative?: boolean;
       teams: {
         id: string;
         name: string;
         logo: string;
         value?: string;
         winner?: boolean;
+        seed?: number | string;
+        tbd?: boolean;
       }[];
     }[];
   }[];
 };
 type SeasonData = {
-  type?: number | string | { type?: number | string };
+  type?: number | string | { type?: number | string; name?: string };
+  slug?: string;
   year?: number | string;
   startDate?: string;
   endDate?: string;
@@ -85,8 +92,32 @@ const supported = new Set([
   "soccer/usa.1",
 ]);
 const postseasonLookbackMs = 120 * 86400000;
+// MLS labels each playoff round with its own season type id instead of 3.
+const isMlsPlayoff = (s: SeasonData | undefined) =>
+  /playoffs|mls.cup/i.test(
+    s?.slug ?? (typeof s?.type === "object" ? (s.type.name ?? "") : ""),
+  );
 const phase = (s: SeasonData | undefined) =>
-  Number(typeof s?.type === "object" ? (s.type.type ?? s.type) : s?.type);
+  isMlsPlayoff(s)
+    ? 3
+    : Number(typeof s?.type === "object" ? (s.type.type ?? s.type) : s?.type);
+
+const mlsRoundNames: Record<string, string> = {
+  "wild-card": "Wild Card",
+  "round-one": "Round One",
+  semifinals: "Conference Semifinals",
+  final: "Conference Finals",
+};
+function mlsRound(s: SeasonData | undefined) {
+  const match = /^(eastern|western)-conference-playoffs---(.+)$/.exec(
+    s?.slug ?? "",
+  );
+  if (match)
+    return `${match[1] === "eastern" ? "East" : "West"} ${
+      mlsRoundNames[match[2]] ?? match[2]
+    }`;
+  return s?.slug === "mls-cup" ? "MLS Cup" : undefined;
+}
 
 export function postseasonWindow(current: PostseasonFeed, now = Date.now()) {
   const s = current.leagues?.[0]?.season;
@@ -124,6 +155,22 @@ export function parsePostseason(
       (a.date ? Date.parse(a.date) : Infinity) -
       (b.date ? Date.parse(b.date) : Infinity),
   );
+  // MLS Round One is a best-of-3, but ESPN reports each game separately, so
+  // series wins are tallied from completed games.
+  const mlsWins = new Map<string, number>();
+  if (league === "soccer/usa.1")
+    for (const e of events) {
+      const c = e.competitions?.[0];
+      const round = mlsRound(e.season);
+      if (!c || !round?.endsWith("Round One")) continue;
+      if ((c.status?.type || e.status?.type)?.completed !== true) continue;
+      for (const p of c.competitors || [])
+        if (p.winner === true && p.team?.id !== undefined)
+          mlsWins.set(
+            `${round}:${p.team.id}`,
+            (mlsWins.get(`${round}:${p.team.id}`) ?? 0) + 1,
+          );
+    }
   for (const e of events) {
     if (
       !e.date ||
@@ -147,8 +194,11 @@ export function parsePostseason(
       continue;
     const note = (c.notes || []).map((n) => n.headline || "").find(Boolean);
     const round =
+      (league === "soccer/usa.1" ? mlsRound(e.season) : undefined) ||
       note?.replace(/\s*[-–·]\s*Game\s*\d+.*$/i, "").trim() ||
       "Postseason matchups";
+    const mlsSeries =
+      league === "soccer/usa.1" && Boolean(round.endsWith("Round One"));
     const pair = competitors
       .map((p) => String(p.team.id))
       .sort()
@@ -164,7 +214,9 @@ export function parsePostseason(
     const prior = group.get(id);
     // Prefer the latest played game over later unplayed placeholders.
     if (prior && status.state === "pre") continue;
+    const isSeries = Boolean(c.series) || mlsSeries;
     const seriesWins = competitors.map((p) => {
+      if (mlsSeries) return mlsWins.get(`${round}:${p.team.id}`) ?? 0;
       const wins = c.series?.competitors?.find(
         (team) => String(team.id) === String(p.team.id),
       )?.wins;
@@ -175,26 +227,30 @@ export function parsePostseason(
       url,
       date: e.date,
       status: status.shortDetail || status.description || "Scheduled",
-      summary: c.series?.summary,
-      metric: c.series ? "Series wins" : "Score",
+      summary: c.series?.summary ?? (mlsSeries ? note : undefined),
+      metric: isSeries ? "Series wins" : "Score",
       teams: competitors.map((p, index) => ({
         id: String(p.team.id),
         name: p.team.displayName,
         logo: espnTeamLogoUrl(league, String(p.team.id)),
-        winner: c.series
-          ? c.series.completed === true &&
-            seriesWins.every(Number.isFinite) &&
-            seriesWins[index] > seriesWins[1 - index]
-          : status.completed === true && p.winner === true,
-        value: c.series
-          ? String(
-              c.series.competitors?.find(
-                (x) => String(x.id) === String(p.team.id),
-              )?.wins ?? "—",
-            )
-          : status.state !== "pre"
-            ? String(p.score ?? "—")
-            : undefined,
+        winner: mlsSeries
+          ? seriesWins[index] >= 2 && seriesWins[index] > seriesWins[1 - index]
+          : c.series
+            ? c.series.completed === true &&
+              seriesWins.every(Number.isFinite) &&
+              seriesWins[index] > seriesWins[1 - index]
+            : status.completed === true && p.winner === true,
+        value: mlsSeries
+          ? String(seriesWins[index])
+          : c.series
+            ? String(
+                c.series.competitors?.find(
+                  (x) => String(x.id) === String(p.team.id),
+                )?.wins ?? "—",
+              )
+            : status.state !== "pre"
+              ? String(p.score ?? "—")
+              : undefined,
       })),
     });
   }

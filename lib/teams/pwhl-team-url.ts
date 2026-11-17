@@ -60,6 +60,22 @@ export function pwhlTeamLocation(name: string) {
   return officialPwhlTeams[normalize(name)]?.location;
 }
 
+const gifLogos = new Set([
+  "boston-fleet",
+  "minnesota-frost",
+  "montreal-victoire",
+  "new-york-sirens",
+  "ottawa-charge",
+  "toronto-sceptres",
+]);
+
+export function pwhlLogoPath(name?: string) {
+  const team = officialPwhlTeams[normalize(name || "")];
+  return team
+    ? `/logos/opponents/pwhl/${team.slug}.${gifLogos.has(team.slug) ? "gif" : "png"}`
+    : undefined;
+}
+
 export function pwhlTeamShortName(name?: string) {
   return officialPwhlTeams[normalize(name || "")]?.shortName;
 }

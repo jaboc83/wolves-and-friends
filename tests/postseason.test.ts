@@ -2,6 +2,13 @@ import assert from "node:assert/strict";
 import test from "node:test";
 import { fetchPostseason, parsePostseason } from "../lib/games/postseason.ts";
 import { layoutPostseasonRounds } from "../lib/games/postseason-layout.ts";
+import {
+  completeMlsBracket,
+  projectPostseason,
+} from "../lib/games/postseason-projection.ts";
+
+const range = (start: number, length: number) =>
+  Array.from({ length }, (_, i) => start + i);
 
 function matchup(id: string, teamIds: number[]) {
   return {
@@ -380,4 +387,403 @@ test("NBA first-round history remains available during the postseason grace peri
     bracket?.rounds.map((round) => round.name),
     ["First Round", "NBA Finals"],
   );
+});
+
+test("NBA projection builds a tentative bracket from conference standings", () => {
+  const table = (name: string, base: number) => ({
+    name,
+    columns: [],
+    seasonType: 2,
+    source: "ESPN",
+    url: "https://www.espn.com/nba/standings",
+    checked: "2026-11-17T00:00:00Z",
+    rows: Array.from({ length: 15 }, (_, i) => ({
+      id: String(base + i),
+      name: `Team ${base + i}`,
+      url: "",
+      cells: [String(i + 1)],
+    })),
+  });
+  const projected = projectPostseason({
+    league: "basketball/nba",
+    tables: [
+      table("Eastern Conference", 100),
+      table("Western Conference", 200),
+    ],
+    checked: "2026-11-17T00:00:00Z",
+  });
+  assert.ok(projected?.projected);
+  const layout = layoutPostseasonRounds(projected.rounds, "basketball/nba");
+  assert.deepEqual(
+    layout.rounds.map((r) => [r.name, r.matchups.length]),
+    [
+      ["First Round", 8],
+      ["Conference Semifinals", 4],
+      ["Conference Finals", 2],
+      ["NBA Finals", 1],
+    ],
+  );
+  assert.ok(layout.rounds.every((r) => r.matchups.every((m) => m.tentative)));
+  assert.deepEqual(
+    layout.rounds[0].matchups
+      .slice(0, 4)
+      .map((m) => m.teams.map((t) => t.seed)),
+    [
+      [1, 8],
+      [4, 5],
+      [3, 6],
+      [2, 7],
+    ],
+  );
+  // 8 + 4 + 2 feeder links.
+  assert.equal(layout.connections.length, 14);
+  assert.equal(
+    projectPostseason({
+      league: "basketball/nba",
+      tables: [table("Eastern Conference", 100)],
+      checked: "",
+    }),
+    undefined,
+  );
+});
+
+const standingsTable = (
+  name: string,
+  ids: number[],
+  seeds = ids.map((_, i) => i + 1),
+) => ({
+  name,
+  columns: [],
+  seasonType: 2,
+  source: "ESPN",
+  url: "https://www.espn.com/standings",
+  checked: "2026-11-17T00:00:00Z",
+  rows: ids.map((id, i) => ({
+    id: String(id),
+    name: `Team ${id}`,
+    url: "",
+    cells: [String(seeds[i])],
+  })),
+});
+
+test("NFL projection gives the top seed a bye and links each round", () => {
+  const projected = projectPostseason({
+    league: "football/nfl",
+    tables: [
+      standingsTable("American Football Conference", range(100, 16)),
+      standingsTable("National Football Conference", range(200, 16)),
+    ],
+    checked: "2026-11-17T00:00:00Z",
+  });
+  assert.ok(projected?.projected);
+  const layout = layoutPostseasonRounds(projected.rounds, "football/nfl");
+  assert.deepEqual(
+    layout.rounds.map((r) => [r.name, r.matchups.length]),
+    [
+      ["Wild Card", 6],
+      ["Divisional Round", 4],
+      ["Conference Championship", 2],
+      ["Super Bowl", 1],
+    ],
+  );
+  const wildCard = layout.rounds[0].matchups.flatMap((m) =>
+    m.teams.map((t) => t.seed),
+  );
+  assert.ok(!wildCard.slice(0, 6).includes(1));
+  assert.equal(layout.connections.length, 6 + 4 + 2);
+});
+
+test("NHL projection seeds division winners against wild cards", () => {
+  // East: Atlantic holds seeds 1, 3, 4, 6 and Metropolitan 2, 5, 7, 8; seeds 9+ miss out.
+  const atlantic = standingsTable(
+    "Atlantic Division",
+    [101, 103, 104, 106],
+    [1, 3, 4, 6],
+  );
+  const metro = standingsTable(
+    "Metropolitan Division",
+    [102, 105, 107, 108],
+    [2, 5, 7, 8],
+  );
+  const central = standingsTable(
+    "Central Division",
+    [201, 203, 204, 206],
+    [1, 3, 4, 6],
+  );
+  const pacific = standingsTable(
+    "Pacific Division",
+    [202, 205, 207, 208],
+    [2, 5, 7, 8],
+  );
+  const conference = (name: string, base: number) =>
+    standingsTable(name, range(base, 16));
+  const input = {
+    league: "hockey/nhl",
+    tables: [
+      conference("Eastern Conference", 101),
+      conference("Western Conference", 201),
+    ],
+    checked: "2026-11-17T00:00:00Z",
+  };
+  assert.equal(projectPostseason(input), undefined);
+  const projected = projectPostseason({
+    ...input,
+    divisions: [atlantic, metro, central, pacific],
+  });
+  assert.ok(projected?.projected);
+  const layout = layoutPostseasonRounds(projected.rounds, "hockey/nhl");
+  assert.deepEqual(
+    layout.rounds.map((r) => [r.name, r.matchups.length]),
+    [
+      ["First Round", 8],
+      ["Conference Semifinals", 4],
+      ["Conference Finals", 2],
+      ["Stanley Cup Finals", 1],
+    ],
+  );
+  const first = layout.rounds[0].matchups.filter((m) =>
+    m.id.startsWith("projected-east"),
+  );
+  assert.deepEqual(
+    first.map((m) => m.teams.map((t) => t.seed)),
+    [
+      ["A1", "WC2"],
+      ["A2", "A3"],
+      ["M1", "WC1"],
+      ["M2", "M3"],
+    ],
+  );
+  assert.equal(layout.connections.length, 8 + 4 + 2);
+
+  // A division table ranked locally (1–4) must not outrank a better conference seed.
+  const westFirst = layoutPostseasonRounds(
+    projectPostseason({
+      ...input,
+      divisions: [
+        atlantic,
+        metro,
+        standingsTable("Central Division", [202, 205, 207, 208], [1, 2, 3, 4]),
+        standingsTable("Pacific Division", [201, 203, 204, 206], [1, 3, 4, 6]),
+      ],
+    })!.rounds,
+    "hockey/nhl",
+  )
+    .rounds[0].matchups.filter((m) => m.id.startsWith("projected-west"))
+    .map((m) => m.teams.map((t) => t.seed));
+  assert.deepEqual(westFirst[0], ["P1", "WC2"]);
+});
+
+test("MLB, WNBA, and MLS projections follow each league's playoff format", () => {
+  const league = (name: string, base: number, size = 15) =>
+    standingsTable(name, range(base, size));
+  const ids = (base: number, ...offsets: number[]) =>
+    offsets.map((o) => base + o - 1);
+
+  const mlb = projectPostseason({
+    league: "baseball/mlb",
+    tables: [league("American League", 100), league("National League", 200)],
+    divisions: [
+      standingsTable("American League East", ids(100, 4, 1, 7, 9, 12)),
+      standingsTable("American League Central", ids(100, 2, 5, 8, 10, 13)),
+      standingsTable("American League West", ids(100, 3, 6, 11, 14, 15)),
+      standingsTable("National League East", ids(200, 1, 4, 7, 10, 13)),
+      standingsTable("National League Central", ids(200, 2, 5, 8, 11, 14)),
+      standingsTable("National League West", ids(200, 3, 6, 9, 12, 15)),
+    ],
+    checked: "2026-06-01T00:00:00Z",
+  });
+  const mlbLayout = layoutPostseasonRounds(mlb!.rounds, "baseball/mlb");
+  assert.deepEqual(
+    mlbLayout.rounds.map((r) => [r.name, r.matchups.length]),
+    [
+      ["Wild Card Series", 4],
+      ["Division Series", 4],
+      ["League Championship", 2],
+      ["World Series", 1],
+    ],
+  );
+  // AL: division winners are seeds 1–3 and wild cards 4–6; seeds 1 and 2 have byes.
+  assert.deepEqual(
+    mlbLayout.rounds[0].matchups
+      .filter((m) => m.id.startsWith("projected-al"))
+      .map((m) => m.teams.map((t) => t.seed)),
+    [
+      [3, 6],
+      [4, 5],
+    ],
+  );
+
+  const wnba = projectPostseason({
+    league: "basketball/wnba",
+    tables: [league("Women's National Basketball Assoc.", 300)],
+    checked: "",
+  });
+  assert.deepEqual(
+    layoutPostseasonRounds(wnba!.rounds, "basketball/wnba").rounds.map((r) => [
+      r.name,
+      r.matchups.length,
+    ]),
+    [
+      ["First Round", 4],
+      ["WNBA Semifinals", 2],
+      ["WNBA Finals", 1],
+    ],
+  );
+
+  const mls = projectPostseason({
+    league: "soccer/usa.1",
+    tables: [
+      { ...league("Eastern Conference", 400), seasonType: 1 },
+      { ...league("Western Conference", 500), seasonType: 1 },
+    ],
+    checked: "",
+  });
+  const mlsLayout = layoutPostseasonRounds(mls!.rounds, "soccer/usa.1");
+  assert.deepEqual(
+    mlsLayout.rounds.map((r) => [r.name, r.matchups.length]),
+    [
+      ["Wild Card", 2],
+      ["Round One", 8],
+      ["Conference Semifinals", 4],
+      ["Conference Finals", 2],
+      ["MLS Cup", 1],
+    ],
+  );
+  assert.equal(mlsLayout.connections.length, 2 + 8 + 4 + 2);
+});
+
+test("MLS playoffs use ESPN's per-round season slugs and tally Round One wins", () => {
+  const mlsGame = (
+    slug: string,
+    date: string,
+    winner: 0 | 1,
+    teams = [1, 2],
+  ) => ({
+    date,
+    season: { year: 2026, type: 13129, slug },
+    links: [{ href: `https://www.espn.com/soccer/match/_/gameId/${date}` }],
+    status: { type: { state: "post", completed: true, description: "FT" } },
+    competitions: [
+      {
+        notes: [{ headline: "Series update" }],
+        competitors: teams.map((id, index) => ({
+          team: { id: String(id), displayName: `Team ${id}` },
+          score: "1",
+          winner: index === winner,
+        })),
+      },
+    ],
+  });
+  const bracket = parsePostseason(
+    {
+      events: [
+        mlsGame(
+          "eastern-conference-playoffs---wild-card",
+          "2026-10-22T00:00Z",
+          0,
+          [8, 9],
+        ),
+        mlsGame(
+          "eastern-conference-playoffs---round-one",
+          "2026-10-25T00:00Z",
+          0,
+        ),
+        mlsGame(
+          "eastern-conference-playoffs---round-one",
+          "2026-11-01T00:00Z",
+          0,
+        ),
+        mlsGame("regular-season", "2026-09-01T00:00Z", 0, [5, 6]),
+      ],
+    },
+    { ...window, end: "2026-12-31T00:00:00Z" },
+    "2026-11-05T00:00:00Z",
+    "soccer/usa.1",
+  );
+  assert.deepEqual(
+    bracket?.rounds.map((r) => r.name),
+    ["East Wild Card", "East Round One"],
+  );
+  const series = bracket!.rounds[1].matchups[0];
+  assert.deepEqual(
+    series.teams.map((t) => [t.value, t.winner]),
+    [
+      ["2", true],
+      ["0", false],
+    ],
+  );
+});
+
+test("an in-progress MLS bracket gains placeholders for unannounced rounds", () => {
+  const conferences = [
+    { label: "East", name: "Eastern Conference", base: 400 },
+    { label: "West", name: "Western Conference", base: 500 },
+  ];
+  const tables = conferences.map((c) => ({
+    ...standingsTable(c.name, range(c.base, 16)),
+    seasonType: 1,
+  }));
+  const team = (id: number) => ({
+    id: String(id),
+    name: `Team ${id}`,
+    logo: "",
+  });
+  const match = (id: string, a: number, b: number) => ({
+    id,
+    url: "https://www.espn.com/mls",
+    date: "2026-11-20",
+    status: "Scheduled",
+    metric: "Best of 3",
+    teams: [team(a), team(b)],
+  });
+  const real = {
+    season: "2026",
+    checked: "2026-11-17T00:00:00Z",
+    rounds: [
+      {
+        name: "East Wild Card",
+        matchups: [match("e-wc", 407, 408)],
+      },
+      {
+        name: "West Wild Card",
+        matchups: [match("w-wc", 507, 508)],
+      },
+      {
+        name: "East Round One",
+        matchups: [
+          match("e-2", 401, 406),
+          match("e-3", 402, 405),
+          match("e-4", 403, 404),
+        ],
+      },
+      {
+        name: "West Round One",
+        matchups: [
+          match("w-2", 501, 506),
+          match("w-3", 502, 505),
+          match("w-4", 503, 504),
+        ],
+      },
+    ],
+  };
+  const completed = completeMlsBracket(real, tables, "soccer/usa.1");
+  const layout = layoutPostseasonRounds(completed.rounds, "soccer/usa.1");
+  assert.deepEqual(
+    layout.rounds.map((r) => [r.name, r.matchups.length]),
+    [
+      ["Wild Card", 2],
+      ["Round One", 8],
+      ["Conference Semifinals", 4],
+      ["Conference Finals", 2],
+      ["MLS Cup", 1],
+    ],
+  );
+  const topSeed = completed.rounds
+    .find((r) => r.name === "East Round One")!
+    .matchups.find((m) => m.id === "projected-east-r1-1")!;
+  assert.deepEqual(
+    topSeed.teams.map((t) => t.id),
+    ["400", "winner:e-wc"],
+  );
+  assert.equal(real.rounds[2].matchups.length, 3);
 });

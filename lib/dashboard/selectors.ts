@@ -57,12 +57,18 @@ export function selectStories({
     );
   const compactNews = true;
   const recentStoriesForView = recentStories(filtered, active, { timeZone });
-  // Keep team pages focused on the five latest stories from today while
-  // preserving the rest behind View older. The all-teams page is
-  // capped at 8 so its combined coverage is more visible.
+  // Team pages show the five latest stories from today. The all-teams page
+  // shows at most two per team so one team can't dominate; the rest stay
+  // behind View more.
+  const perTeam = new Map<string, number>();
   const recent =
     active === DASHBOARD_PAGE_IDS.ALL
-      ? recentStoriesForView.slice(0, 8)
+      ? recentStoriesForView.filter((s) => {
+          if (!s.teams.length) return true;
+          if (!s.teams.some((t) => (perTeam.get(t) ?? 0) < 2)) return false;
+          for (const t of s.teams) perTeam.set(t, (perTeam.get(t) ?? 0) + 1);
+          return true;
+        })
       : recentStoriesForView.slice(0, 5);
   // The all-teams page reveals older stories in batches; team pages show all.
   const recentSet = new Set(recent);
@@ -190,4 +196,3 @@ export function selectGames({
     futureGames,
   };
 }
-

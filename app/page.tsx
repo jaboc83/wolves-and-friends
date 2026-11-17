@@ -239,7 +239,11 @@ export default function Home() {
           onRosterOpen={refreshRosterStats}
         />
       )}
-      <MatchCalendar games={visibleGames} team={active} />
+      <MatchCalendar
+        games={visibleGames}
+        team={active}
+        revealResults={resultsReady && !hideScores}
+      />
     </div>
   );
 
@@ -372,18 +376,23 @@ export default function Home() {
                 >
                   <div className="rail-heading today-heading">
                     <h2>
-                      Today’s {terms.events}{" "}
+                      Today’s{" "}
+                      {active === DASHBOARD_PAGE_IDS.ALL
+                        ? terms.events
+                        : terms.event}{" "}
                       {active === DASHBOARD_PAGE_IDS.ALL && (
                         <small>{todayGames.length}</small>
                       )}
                     </h2>
-                    <span>
-                      {localDateTime(new Date().toISOString(), {
-                        month: "short",
-                        day: "numeric",
-                      })}{" "}
-                      · {zoneLabel}
-                    </span>
+                    {!todayGames.length && (
+                      <span>
+                        {localDateTime(new Date().toISOString(), {
+                          month: "short",
+                          day: "numeric",
+                        })}{" "}
+                        · {zoneLabel}
+                      </span>
+                    )}
                   </div>
                   {todayGames.length ? (
                     todayGames.map((g) =>
@@ -393,7 +402,7 @@ export default function Home() {
                     <div className="empty compact">
                       {loading
                         ? "Checking today’s schedule…"
-                        : `No ${terms.events} returned for today by the available feeds.`}
+                        : `No ${active === DASHBOARD_PAGE_IDS.ALL ? terms.events : terms.event} today`}
                     </div>
                   )}
                 </div>

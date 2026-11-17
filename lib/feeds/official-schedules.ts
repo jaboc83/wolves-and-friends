@@ -138,12 +138,17 @@ export function mergeOfficial(games: Game[], official: Game[]) {
     else if (games[index].state === "pre")
       games[index] = {
         ...g,
-        competitors: g.competitors.map((p) => ({
-          ...p,
-          record: games[index].competitors.find(
-            (old) => old.homeAway === p.homeAway,
-          )?.record,
-        })),
+        competitors: g.competitors.map((p) => {
+          const old = games[index].competitors.find(
+            (c) => c.homeAway === p.homeAway,
+          );
+          return {
+            ...p,
+            record: old?.record,
+            teamId: p.teamId ?? old?.teamId,
+            teamUrl: p.teamUrl ?? old?.teamUrl,
+          };
+        }),
         id: games[index].id,
         boxUrl: games[index].boxUrl,
         url: games[index].url || g.url,
