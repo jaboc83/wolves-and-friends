@@ -80,7 +80,7 @@ const abbreviation = (position: string) => {
   if (/free safety|\bfs\b/.test(value)) return "FS";
   if (/strong safety|\bss\b/.test(value)) return "SS";
   if (/safety/.test(value)) return "S";
-  if (/defen[cs]e|back|\bdef\b|\bdb\b/.test(value)) return "D";
+  if (/defender|defen[cs]e|back|\bdef\b|\bdb\b/.test(value)) return "D";
   if (/\bleft winger?\b/.test(value)) return "LW";
   if (/\bright winger?\b/.test(value)) return "RW";
   if (/forward|wing|\bf\b/.test(value)) return "F";
@@ -463,6 +463,14 @@ export default function RosterPanel({
                       .sort((a, b) => a.name.localeCompare(b.name))
                       .map((p) => (
                         <li key={p.url + p.name}>
+                          {teamId === "frost" && (
+                            <abbr
+                              className="roster-player-list-position"
+                              title={group.position}
+                            >
+                              {p.position}
+                            </abbr>
+                          )}
                           <a href={p.url} target="_blank" rel="noreferrer">
                             {p.name} ↗
                           </a>
