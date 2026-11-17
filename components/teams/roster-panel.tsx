@@ -291,6 +291,17 @@ export default function RosterPanel({
       <summary>{heading}</summary>
       {depth ? (
         <>
+          {teamId === "wolves" && (
+            <p className="panel-note">
+              <a
+                href="https://www.basketball-reference.com/contracts/MIN.html"
+                target="_blank"
+                rel="noreferrer"
+              >
+                Player Contracts ↗
+              </a>
+            </p>
+          )}
           {note && (
             <p
               className="panel-note"
