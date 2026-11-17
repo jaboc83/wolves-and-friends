@@ -6,21 +6,47 @@ export type PlayoffStandingsLeague =
 export function standingsMarker(
   row: Pick<
     Table["rows"][number],
-    "playoffPosition" | "playoffsClinched" | "homeAdvantageClinched"
+    | "playoffPosition"
+    | "playoffsClinched"
+    | "playInClinched"
+    | "homeAdvantageClinched"
   >,
-) {
-  const clinched = Boolean(row.playoffsClinched || row.homeAdvantageClinched);
-  const position =
-    row.playoffPosition === "division"
-      ? "Division playoff position"
-      : row.playoffPosition === "wildcard"
-        ? "Wild-card position"
-        : "";
+): { symbol: "●" | "w" | "p"; clinched: boolean; label: string } | undefined {
+  const playoffsClinched = Boolean(
+    row.playoffsClinched || row.homeAdvantageClinched,
+  );
+  const playInClinched = !playoffsClinched && Boolean(row.playInClinched);
+  const clinched = playoffsClinched || playInClinched;
+  const playoffPosition = playInClinched
+    ? "playin"
+    : playoffsClinched && row.playoffPosition === "playin"
+      ? "playoff"
+      : row.playoffPosition;
+  const position = playoffPosition
+    ? {
+        division: "Division playoff position",
+        wildcard: "Wild-card position",
+        playoff: "Playoff position",
+        playin: "Play-In position",
+      }[playoffPosition]
+    : "";
   if (!position && !clinched) return;
   return {
-    symbol: row.playoffPosition === "wildcard" ? "w" : "●",
+    symbol:
+      playoffPosition === "wildcard"
+        ? "w"
+        : playoffPosition === "playin"
+          ? "p"
+          : "●",
     clinched,
-    label: [position, clinched ? "Playoffs clinched" : ""]
+    label: [
+      position,
+      playoffsClinched
+        ? "Playoffs clinched"
+        : playInClinched
+          ? "Play-In clinched"
+          : "",
+    ]
       .filter(Boolean)
       .join(" · "),
   };
@@ -33,12 +59,17 @@ export function isConferenceOrLeagueTable(table: Table): boolean {
 export function clincherFlags(
   value: string,
   league: string,
-): { playoffsClinched: boolean; homeAdvantageClinched: boolean } {
+): {
+  playoffsClinched: boolean;
+  playInClinched?: boolean;
+  homeAdvantageClinched: boolean;
+} {
   const code = value.trim().toLowerCase();
   if (league === "basketball/nba")
     return {
       playoffsClinched: ["x", "xp", "y", "z"].includes(code),
       homeAdvantageClinched: code === "z",
+      ...(code === "pb" ? { playInClinched: true } : {}),
     };
   if (league === "basketball/wnba")
     return {

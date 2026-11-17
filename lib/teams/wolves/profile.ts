@@ -44,10 +44,6 @@ export const wolvesProfile = {
   homeLocation: "Minnesota",
   sportKind: "basketball",
   standingsRules: {
-    cuts: [
-      { after: 6, label: "Direct playoff places end · 7–10 enter the Play-In" },
-      { after: 10, label: "Play-In places end" },
-    ],
     qualification:
       "Regular-season format: top 6 in each conference qualify directly; 7–10 enter the Play-In.",
   },

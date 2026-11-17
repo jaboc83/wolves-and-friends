@@ -28,13 +28,6 @@ export const lynxProfile = {
   homeLocation: "Minnesota",
   sportKind: "basketball",
   standingsRules: {
-    cuts: [
-      {
-        after: 8,
-        label: "Playoff places end",
-        tableNameIncludes: "Women's National Basketball",
-      },
-    ],
     qualificationTableNameIncludes: "Women's National Basketball",
     qualification:
       "WNBA qualification: the top 8 across the entire league, regardless of conference. Positions are provisional until clinched.",

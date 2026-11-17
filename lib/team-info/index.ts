@@ -266,6 +266,7 @@ export function parseStandings(
                 ?.href || url,
             highlight: owns(e),
             ...(clinched.playoffsClinched ? { playoffsClinched: true } : {}),
+            ...(clinched.playInClinched ? { playInClinched: true } : {}),
             ...(clinched.homeAdvantageClinched
               ? { homeAdvantageClinched: true }
               : {}),

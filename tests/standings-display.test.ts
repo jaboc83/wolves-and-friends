@@ -61,7 +61,7 @@ test("clinched basketball teams get one dot without inventing provisional spots 
   assert.equal(standingsMarker({ playoffsClinched: false }), undefined);
 });
 
-test("WNBA league standings draw the playoff cutoff after eighth place", () => {
+test("WNBA league standings remove the playoff cutoff, including from cached tables", () => {
   const league = table(
     "Women's National Basketball Assoc.",
     Array.from({ length: 15 }, (_, index) => ({
@@ -71,12 +71,120 @@ test("WNBA league standings draw the playoff cutoff after eighth place", () => {
       cells: [String(index + 1), "20", "10"],
     })),
   );
+  league.cuts = [{ after: 8, label: "Playoff places end" }];
   const decorated = decorateTable(league, "lynx");
 
-  assert.deepEqual(decorated.cuts, [{ after: 8, label: "Playoff places end" }]);
+  assert.deepEqual(decorated.cuts, []);
   assert.match(decorated.qualification || "", /top 8 across the entire league/);
   assert.equal(decorated.rows[7].cells[0], "8");
   assert.equal(decorated.rows[8].cells[0], "9");
+});
+
+test("NBA standings remove both playoff and Play-In cutoffs from cached tables", () => {
+  const conference = table("Western Conference", []);
+  conference.cuts = [
+    { after: 6, label: "Direct playoff places end · 7–10 enter the Play-In" },
+    { after: 10, label: "Play-In places end" },
+  ];
+
+  assert.deepEqual(decorateTable(conference, "wolves").cuts, []);
+  for (const seasonType of [1, 3]) {
+    assert.deepEqual(
+      decorateTable({ ...conference, seasonType }, "wolves").cuts,
+      [],
+    );
+  }
+});
+
+test("NBA conference positions distinguish playoff and Play-In spots without inferring clinches", () => {
+  const conference = table(
+    "Western Conference",
+    Array.from({ length: 15 }, (_, index) => ({
+      id: String(index + 1),
+      name: `Team ${index + 1}`,
+      url: "/",
+      cells: [String(index + 1), "20", "10"],
+    })),
+  );
+  const { rows } = decorateTable(conference, "wolves");
+
+  assert.deepEqual(
+    rows.map((row) => row.playoffPosition),
+    [
+      ...Array(6).fill("playoff"),
+      ...Array(4).fill("playin"),
+      ...Array(5).fill(undefined),
+    ],
+  );
+  assert.deepEqual(standingsMarker(rows[0]), {
+    symbol: "●",
+    clinched: false,
+    label: "Playoff position",
+  });
+  assert.deepEqual(standingsMarker(rows[6]), {
+    symbol: "p",
+    clinched: false,
+    label: "Play-In position",
+  });
+  assert.equal(standingsMarker(rows[10]), undefined);
+});
+
+test("NBA position markers reject invalid ranks and clear cached markers outside regular-season conferences", () => {
+  const conference = table("Western Conference", [
+    {
+      id: "MIN",
+      name: "Minnesota",
+      url: "/",
+      cells: ["7", "20", "10"],
+      playoffPosition: "playin",
+    },
+  ]);
+  for (const other of [
+    { ...conference, seasonType: 1 },
+    { ...conference, seasonType: 3 },
+    { ...conference, name: "Northwest Division" },
+    { ...conference, name: "National Basketball Association" },
+  ]) {
+    assert.equal(
+      decorateTable(other, "wolves").rows[0].playoffPosition,
+      undefined,
+    );
+  }
+  for (const rank of ["", "—", "0", "-1", "1.5", "11"]) {
+    const invalid = {
+      ...conference,
+      rows: [{ ...conference.rows[0], cells: [rank, "20", "10"] }],
+    };
+    assert.equal(
+      decorateTable(invalid, "wolves").rows[0].playoffPosition,
+      undefined,
+    );
+  }
+});
+
+test("provider-confirmed NBA playoff clinches supersede provisional Play-In positions", () => {
+  for (const flags of [
+    { playoffsClinched: true },
+    { homeAdvantageClinched: true },
+  ]) {
+    const conference = table("Western Conference", [
+      {
+        id: "MIN",
+        name: "Minnesota",
+        url: "/",
+        cells: ["7", "20", "10"],
+        ...flags,
+      },
+    ]);
+    assert.deepEqual(
+      standingsMarker(decorateTable(conference, "wolves").rows[0]),
+      {
+        symbol: "●",
+        clinched: true,
+        label: "Playoff position · Playoffs clinched",
+      },
+    );
+  }
 });
 
 test("WNBA conference, preseason and postseason tables do not receive a league cutoff", () => {
@@ -101,10 +209,40 @@ test("NBA clinchers distinguish playoff berths and conference home court from pl
     playoffsClinched: true,
     homeAdvantageClinched: true,
   });
-  for (const code of ["", "e", "pb"]) {
+  assert.deepEqual(clincherFlags("pb", "basketball/nba"), {
+    playoffsClinched: false,
+    playInClinched: true,
+    homeAdvantageClinched: false,
+  });
+  for (const code of ["", "e"]) {
     assert.deepEqual(clincherFlags(code, "basketball/nba"), {
       playoffsClinched: false,
       homeAdvantageClinched: false,
+    });
+  }
+});
+
+test("NBA Play-In clinches use a circled p without implying a clinched playoff berth", () => {
+  for (const rank of ["5", "7"]) {
+    const conference = table("Western Conference", [
+      {
+        id: "MIN",
+        name: "Minnesota",
+        url: "/",
+        cells: [rank, "20", "10"],
+        ...clincherFlags("pb", "basketball/nba"),
+      },
+    ]);
+    const row = decorateTable(conference, "wolves").rows[0];
+    assert.deepEqual(standingsMarker(row), {
+      symbol: "p",
+      clinched: true,
+      label: "Play-In position · Play-In clinched",
+    });
+    assert.deepEqual(standingsMarker({ ...row, playoffsClinched: true }), {
+      symbol: "●",
+      clinched: true,
+      label: "Playoff position · Playoffs clinched",
     });
   }
 });

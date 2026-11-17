@@ -21,7 +21,7 @@ import {
 } from "../../lib/team-info/standings-display";
 import { ExternalLink } from "lucide-react";
 
-function ClinchedMarkerIcon({ wildcard = false }: { wildcard?: boolean }) {
+function ClinchedMarkerIcon({ symbol = "●" }: { symbol?: "●" | "w" | "p" }) {
   return (
     <svg
       className="standings-marker-icon"
@@ -32,10 +32,14 @@ function ClinchedMarkerIcon({ wildcard = false }: { wildcard?: boolean }) {
       focusable="false"
     >
       <circle className="standings-marker-disc" cx={9} cy={9} r={8.5} />
-      {wildcard ? (
+      {symbol !== "●" ? (
         <path
           className="standings-marker-symbol"
-          d="M4.5 6.5 6.5 11.5 9 7 11.5 11.5 13.5 6.5"
+          d={
+            symbol === "w"
+              ? "M4.5 6.5 6.5 11.5 9 7 11.5 11.5 13.5 6.5"
+              : "M6.25 12.75V5.25H9a2.75 2.75 0 0 1 0 5.5H6.25"
+          }
           fill="none"
           stroke="currentColor"
           strokeWidth={1.7}
@@ -304,12 +308,30 @@ export default function TeamInsights({
                 </span>
               </>
             )}
+            {t?.league === "basketball/nba" && (
+              <>
+                <span>
+                  <b aria-hidden="true">●</b> Playoff position
+                </span>
+                <span>
+                  <b aria-hidden="true">p</b> Play-In position
+                </span>
+              </>
+            )}
             <span>
               <b className="standings-clinched" aria-hidden="true">
                 <ClinchedMarkerIcon />
               </b>
               Playoffs clinched
             </span>
+            {t?.league === "basketball/nba" && (
+              <span>
+                <b className="standings-clinched" aria-hidden="true">
+                  <ClinchedMarkerIcon symbol="p" />
+                </b>
+                Play-In clinched
+              </span>
+            )}
           </p>
         )}
         {standingsTables.length ? (
@@ -376,7 +398,7 @@ export default function TeamInsights({
                                   >
                                     {marker.clinched ? (
                                       <ClinchedMarkerIcon
-                                        wildcard={marker.symbol === "w"}
+                                        symbol={marker.symbol}
                                       />
                                     ) : (
                                       <span aria-hidden="true">
