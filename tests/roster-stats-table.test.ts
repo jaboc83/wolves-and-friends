@@ -1,6 +1,9 @@
 import assert from "node:assert/strict";
 import test from "node:test";
 import {
+  combineBasketballRosterGroups,
+  combineHockeyForwardGroups,
+  combineTwinsRosterGroups,
   combineVikingsDefensiveLineGroups,
   combineVikingsLinebackerAndDefensiveBackGroups,
   combineVikingsOffensiveLineGroups,
@@ -103,9 +106,124 @@ test("position stat preferences do not change other teams or leagues", () => {
       "vikings",
       "football/nfl",
       "Quarterback",
-      ["GP", "CMP", "YDS", "TD"],
+      ["GP", "CMP", "ATT", "YDS", "TD"],
     ).columns.join(","),
-    "CMP,YDS,TD",
+    "YDS,CMP,ATT,TD",
+  );
+});
+
+test("Frost roster groups render as position-only tables", () => {
+  for (const position of ["Forwards", "Defenders", "Goaltenders"]) {
+    assert.deepEqual(
+      visibleRosterStatColumns("frost", "", position, []),
+      { columns: [], positionOnly: true },
+    );
+  }
+});
+
+test("Timberwolves and Lynx positions share one roster table", () => {
+  const groups = [
+    { position: "Guard", players: ["guard"] },
+    { position: "Forward", players: ["forward"] },
+    { position: "Center", players: ["center"] },
+  ];
+
+  assert.deepEqual(
+    combineBasketballRosterGroups(groups, "wolves", "basketball/nba"),
+    [{ position: "Roster", players: ["guard", "forward", "center"] }],
+  );
+  assert.deepEqual(
+    combineBasketballRosterGroups(groups, "lynx", "basketball/wnba"),
+    [{ position: "Roster", players: ["guard", "forward", "center"] }],
+  );
+  assert.deepEqual(
+    combineBasketballRosterGroups(groups, "wild", "basketball/nba"),
+    groups,
+  );
+});
+
+test("Wild and Frost forward groups use one Forwards table", () => {
+  const groups = [
+    { position: "Left Wing", players: [{ position: "LW" }] },
+    { position: "Defense", players: [{ position: "D" }] },
+    { position: "Center", players: [{ position: "C" }] },
+    { position: "Right Wing", players: [{ position: "RW" }] },
+  ];
+
+  const expected = [
+    {
+      position: "Forwards",
+      players: [{ position: "LW" }, { position: "C" }, { position: "RW" }],
+    },
+    groups[1],
+  ];
+  assert.deepEqual(
+    combineHockeyForwardGroups(groups, "wild", "hockey/nhl"),
+    expected,
+  );
+  const frostGroups = [
+    { position: "Forwards", players: [{ position: "F" }] },
+    { position: "Defenders", players: [{ position: "D" }] },
+  ];
+  assert.deepEqual(
+    combineHockeyForwardGroups(frostGroups, "frost", ""),
+    frostGroups,
+  );
+  assert.deepEqual(
+    combineHockeyForwardGroups(groups, "wild", "basketball/nba"),
+    groups,
+  );
+});
+
+test("Twins starting and relief pitchers keep separate stat columns", () => {
+  const groups = [
+    { position: "Starting Pitcher", players: ["starter"] },
+    { position: "Catcher", players: ["catcher"] },
+    { position: "Relief Pitcher", players: ["reliever"] },
+    { position: "Shortstop", players: ["shortstop"] },
+  ];
+  const availableColumns = [
+    "GP",
+    "GS",
+    "W",
+    "L",
+    "W%",
+    "WAR",
+    "G",
+    "SV",
+    "GB",
+    "K",
+    "SF",
+  ];
+
+  assert.deepEqual(combineTwinsRosterGroups(groups, "twins", "baseball/mlb"), [
+    groups[0],
+    {
+      position: "Fielding",
+      players: ["catcher", "shortstop"],
+    },
+    groups[2],
+  ]);
+  assert.deepEqual(
+    visibleRosterStatColumns(
+      "twins",
+      "baseball/mlb",
+      "Starting Pitcher",
+      availableColumns,
+    ),
+    {
+      columns: ["GP", "GS", "W", "L", "W%", "WAR"],
+      positionOnly: false,
+    },
+  );
+  assert.deepEqual(
+    visibleRosterStatColumns(
+      "twins",
+      "baseball/mlb",
+      "Relief Pitcher",
+      availableColumns,
+    ),
+    { columns: availableColumns, positionOnly: false },
   );
 });
 
