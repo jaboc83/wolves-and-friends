@@ -14,8 +14,7 @@ function sameFixture(previous: Game, incoming: Game) {
     previous.competitors.every((player) => incoming.competitors.some((other) => {
       if (player.homeAway !== other.homeAway) return false;
       const a = teamName(player.name), b = teamName(other.name);
-      return Boolean(a && b) && (a === b || a.includes(b) || b.includes(a) ||
-        (previous.team === "zalgiris" && a.includes("zalgiris") && b.includes("zalgiris")));
+      return Boolean(a && b) && (a === b || a.includes(b) || b.includes(a));
     }));
 }
 

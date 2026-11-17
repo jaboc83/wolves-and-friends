@@ -4,8 +4,6 @@ import { teams, type TeamId } from "./teams";
 const aliases: Record<string, string> = {
   "anadolu efes": "Anadolu Efes S.K.",
   "anadolu efes istanbul": "Anadolu Efes S.K.",
-  zalgiris: "BC Žalgiris",
-  "zalgiris kaunas": "BC Žalgiris",
 };
 const palaceOpponents: Record<string, string> = {
   fulham: "Fulham F.C.",

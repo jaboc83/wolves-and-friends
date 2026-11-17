@@ -8,9 +8,7 @@ import { loonsProviders } from "./loons/providers";
 import { palaceProviders } from "./palace/providers";
 import { discProviders } from "./disc/providers";
 import { lynxProviders } from "./lynx/providers";
-import { zalgirisProviders } from "./zalgiris/providers";
 import { frostProviders } from "./frost/providers";
-import { usmntProviders } from "./usmnt/providers";
 
 export const teamProviders: readonly TeamProviders[] = [
   wolvesProviders,
@@ -21,7 +19,5 @@ export const teamProviders: readonly TeamProviders[] = [
   palaceProviders,
   discProviders,
   lynxProviders,
-  zalgirisProviders,
   frostProviders,
-  usmntProviders,
 ];

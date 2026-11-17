@@ -1,5 +1,5 @@
 // Removes retired teams and their obsolete feed sources from loaded public content.
-import { teams } from "../teams/teams";
+import { teams } from "../teams/teams.ts";
 import type { HubData, Story } from "../feeds/feed-types";
 const retiredNews = (name: string) =>
   name === "EuroLeague · Google News index" ||
@@ -22,6 +22,9 @@ export function activeHub(d: HubData): HubData {
         h.teams.some((id) => teams.some((t) => t.id === id)) &&
         h.name !== "Official Žalgiris news" &&
         h.name !== "EuroLeague · Google News index",
+    ),
+    authors: d.authors?.filter(
+      (author) => !author.team || teams.some((t) => t.id === author.team),
     ),
   };
 }

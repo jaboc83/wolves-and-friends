@@ -1,16 +1,14 @@
 // Central team catalog: IDs plus the ordered list of client-safe team profiles.
 import type { TeamProfile } from "./team-types";
-import { wolvesProfile } from "./wolves/profile";
-import { wildProfile } from "./wild/profile";
-import { vikingsProfile } from "./vikings/profile";
-import { twinsProfile } from "./twins/profile";
-import { loonsProfile } from "./loons/profile";
-import { palaceProfile } from "./palace/profile";
-import { discProfile } from "./disc/profile";
-import { lynxProfile } from "./lynx/profile";
-import { zalgirisProfile } from "./zalgiris/profile";
-import { frostProfile } from "./frost/profile";
-import { usmntProfile } from "./usmnt/profile";
+import { wolvesProfile } from "./wolves/profile.ts";
+import { wildProfile } from "./wild/profile.ts";
+import { vikingsProfile } from "./vikings/profile.ts";
+import { twinsProfile } from "./twins/profile.ts";
+import { loonsProfile } from "./loons/profile.ts";
+import { palaceProfile } from "./palace/profile.ts";
+import { discProfile } from "./disc/profile.ts";
+import { lynxProfile } from "./lynx/profile.ts";
+import { frostProfile } from "./frost/profile.ts";
 
 export const TEAM_IDS = {
   WOLVES: "wolves",
@@ -21,9 +19,7 @@ export const TEAM_IDS = {
   PALACE: "palace",
   DISC: "disc",
   LYNX: "lynx",
-  ZALGIRIS: "zalgiris",
   FROST: "frost",
-  USMNT: "usmnt",
 } as const;
 
 export type TeamId = (typeof TEAM_IDS)[keyof typeof TEAM_IDS];
@@ -42,9 +38,7 @@ export const teams = [
   palaceProfile,
   discProfile,
   lynxProfile,
-  zalgirisProfile,
   frostProfile,
-  usmntProfile,
 ] as const satisfies readonly TeamProfile[];
 
 export const teamPriority = (id: TeamId) => teams.findIndex((t) => t.id === id);
