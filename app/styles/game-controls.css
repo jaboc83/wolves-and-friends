@@ -25,10 +25,13 @@
 }
 .data-panel a.standings-clinched,
 .standings-marker-legend .standings-clinched {
-  color: #11673d;
+  color: #581c87;
 }
 .hub[data-mode="dark"] .standings-clinched {
-  color: #8fe0ac;
+  color: #e9d5ff;
+}
+.hub[data-mode="dark"] #team-standings .my-team {
+  background: var(--raised, #252c35);
 }
 .standings-markers {
   display: inline-flex;
