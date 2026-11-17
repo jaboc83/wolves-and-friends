@@ -53,6 +53,14 @@
 }
 .community-panel > summary {
   cursor: pointer;
+  margin: -18px -18px 0;
+  padding: 18px;
+}
+.community-panel:not([open]) > summary {
+  margin-bottom: -18px;
+}
+.community-panel[open] > summary {
+  padding-bottom: 0;
 }
 .community-panel h3 {
   font-size: 12px;

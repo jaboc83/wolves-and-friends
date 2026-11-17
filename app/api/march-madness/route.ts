@@ -5,6 +5,9 @@ import {
 } from "../../../lib/games/march-madness";
 import { marchMadnessYear } from "../../../lib/games/march-madness-config";
 import initial from "../../../data/snapshots/march-madness-initial.json";
+const MARCH_CACHE_HEADERS = {
+  "Cache-Control": "public, max-age=0, s-maxage=60",
+};
 let cached = initial as MarchData,
   checked = 0;
 let inflight: Promise<MarchData> | null = null;
@@ -23,8 +26,8 @@ export async function GET() {
           inflight = null;
         });
     return Response.json(await inflight, {
-      headers: { "Cache-Control": "no-store" },
+      headers: MARCH_CACHE_HEADERS,
     });
   }
-  return Response.json(cached, { headers: { "Cache-Control": "no-store" } });
+  return Response.json(cached, { headers: MARCH_CACHE_HEADERS });
 }

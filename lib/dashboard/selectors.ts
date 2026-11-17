@@ -10,6 +10,18 @@ import type { DashboardPageId } from "./page-id";
 import { DASHBOARD_PAGE_IDS } from "./page-id";
 export const OLDER_BATCH_SIZE = 10;
 
+// Sorts ascending by a precomputed key so dates are parsed once per item, not per comparison.
+function sortByTime<T>(
+  items: T[],
+  timeOf: (item: T) => number,
+  tieBreak?: (a: T, b: T) => number,
+): T[] {
+  return items
+    .map((item) => ({ item, time: timeOf(item) }))
+    .sort((a, b) => a.time - b.time || (tieBreak?.(a.item, b.item) ?? 0))
+    .map(({ item }) => item);
+}
+
 export function selectStories({
   newsData,
   active,
@@ -29,7 +41,7 @@ export function selectStories({
   olderLimit?: number;
   timeZone?: string;
 }) {
-  const filtered = [
+  const filtered = sortByTime([
     ...new Map(
       [
         ...(newsData.stories || []).filter(
@@ -45,8 +57,7 @@ export function selectStories({
         ...authorStories(newsData.authors || []),
       ].map((s) => [s.url, s]),
     ).values(),
-  ]
-    .sort((a, b) => Date.parse(b.date) - Date.parse(a.date))
+  ], (s) => -Date.parse(s.date))
     .filter(
       (s) =>
         s.kind !== "social" &&
@@ -93,7 +104,11 @@ export function selectStories({
         (active === DASHBOARD_PAGE_IDS.ALL ||
           (isTeamId(active) && s.teams.includes(active))),
     )
-    .sort((a, b) => Date.parse(b.date) - Date.parse(a.date))[0];
+    .reduce<(typeof newsData.stories)[number] | undefined>(
+      (best, s) =>
+        !best || Date.parse(s.date) > Date.parse(best.date) ? s : best,
+      undefined,
+    );
   return { compactNews, displayed, olderCount, olderRemaining, newest };
 }
 export function selectGames({
@@ -113,6 +128,7 @@ export function selectGames({
 }) {
   const now = new Date();
   const isToday = (game: Game) => eventIsToday(game, now, timeZone);
+  const liveTimes = new Map(liveGames.map((x) => [x, Date.parse(x.date)]));
   const combinedGames = [
     ...(data?.games || []),
     ...discEvents.filter(
@@ -127,11 +143,12 @@ export function selectGames({
       const odds = oddsGames.find((x) => x.id === original.id)?.odds;
       const event = eventLifecycle(original, now, timeZone);
       const g = odds ? { ...event, odds } : event;
+      const gTime = Date.parse(g.date);
       const fresh = liveGames.find(
         (x) =>
           x.id === g.id ||
           (x.team === g.team &&
-            Math.abs(Date.parse(x.date) - Date.parse(g.date)) < 3 * 3600000),
+            Math.abs(liveTimes.get(x)! - gTime) < 3 * 3600000),
       );
       return fresh
         ? mergeScoreUpdate(g, {
@@ -149,42 +166,39 @@ export function selectGames({
   const visibleGames = combinedGames.filter(
     (g) => active === DASHBOARD_PAGE_IDS.ALL || g.team === active,
   );
-  const availableResults = visibleGames
-    .filter((g) => g.state === "post" && !isToday(g))
-    .sort(
-      (a, b) =>
-        Date.parse(b.endDate || b.date) - Date.parse(a.endDate || a.date),
-    );
+  const availableResults = sortByTime(
+    visibleGames.filter((g) => g.state === "post" && !isToday(g)),
+    (g) => -Date.parse(g.endDate || g.date),
+  );
   const results =
     active === DASHBOARD_PAGE_IDS.ALL
       ? availableResults.slice(0, 8)
       : showOlderResults
         ? availableResults
         : availableResults.slice(0, 3);
-  const upcoming = visibleGames
-    .filter(
+  const upcoming = sortByTime(
+    visibleGames.filter(
       (g) =>
         g.state !== "post" &&
         (isToday(g) || Date.parse(g.date) > now.getTime() - 12 * 3600000),
-    )
-    .sort((a, b) => Date.parse(a.date) - Date.parse(b.date));
-  const todayGames = visibleGames
-    .filter(isToday)
-    .sort(
-      (a, b) =>
-        Date.parse(a.date) - Date.parse(b.date) ||
-        teamPriority(a.team) - teamPriority(b.team),
-    );
+    ),
+    (g) => Date.parse(g.date),
+  );
+  const todayGames = sortByTime(
+    visibleGames.filter(isToday),
+    (g) => Date.parse(g.date),
+    (a, b) => teamPriority(a.team) - teamPriority(b.team),
+  );
   const futureCandidates = upcoming.filter((g) => !isToday(g));
   const nextByTeam = new Map<string, Game>();
   for (const g of futureCandidates)
     if (!nextByTeam.has(g.team)) nextByTeam.set(g.team, g);
   const futureGames =
     active === DASHBOARD_PAGE_IDS.ALL
-      ? [...nextByTeam.values()].sort(
-          (a, b) =>
-            Date.parse(a.date) - Date.parse(b.date) ||
-            teamPriority(a.team) - teamPriority(b.team),
+      ? sortByTime(
+          [...nextByTeam.values()],
+          (g) => Date.parse(g.date),
+          (a, b) => teamPriority(a.team) - teamPriority(b.team),
         )
       : futureCandidates.slice(0, 3);
   return {

@@ -7,7 +7,7 @@ export async function GET(request: Request) {
     return Response.json({ error: "Invalid team" }, { status: 400 });
   try {
     return Response.json(await hubData("news", requestedTeam || undefined), {
-      headers: { "Cache-Control": "private, no-store" },
+      headers: { "Cache-Control": "public, max-age=0, s-maxage=3600" },
     });
   } catch {
     return Response.json({ error: "Refresh unavailable" }, { status: 503 });

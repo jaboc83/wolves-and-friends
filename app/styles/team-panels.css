@@ -270,6 +270,15 @@
   font-size: 14px;
   cursor: pointer;
   min-height: 24px;
+  /* Stretch the hit area to the panel edges so the whole white box toggles. */
+  margin: -16px -16px 0;
+  padding: 16px;
+}
+.data-panel:not([open]) > summary {
+  margin-bottom: -16px;
+}
+.data-panel[open] > summary {
+  padding-bottom: 0;
 }
 .data-panel > summary + .roster-contracts-actions {
   margin-top: 12px;
