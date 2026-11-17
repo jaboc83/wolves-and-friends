@@ -44,6 +44,10 @@ const rosterExternalLinks: Partial<Record<string, RosterExternalLinks>> = {
     contracts: "https://www.basketball-reference.com/contracts/MIN.html",
     advancedStats: "https://cleaningtheglass.com/stats/team/18",
   },
+  lynx: {
+    contracts: "https://www.spotrac.com/wnba/minnesota-lynx/yearly",
+    advancedStats: "https://www.basketball-reference.com/wnba/teams/MIN/2026.html",
+  },
   wild: {
     contracts: "https://puckpedia.com/team/minnesota-wild",
     advancedStats: "https://hockeyviz.com/team/MIN/2627",
