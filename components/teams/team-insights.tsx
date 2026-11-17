@@ -54,6 +54,10 @@ export default function TeamInsights({
   const headings = sportTerms(active);
   const t = teamProfile(id);
   const info = data.find((i) => i.id === id);
+  const divisionStandingsUnavailable = Boolean(
+    t?.divisionStandings &&
+      info?.unavailable.includes(`${t.divisionStandings.name} standings`),
+  );
   const myPowerRanking = info?.powerRanking?.rows.find(
     (row) =>
       row.name === t?.name ||
@@ -189,6 +193,11 @@ export default function TeamInsights({
               ))}
             </section>
           )}
+        {divisionStandingsUnavailable && (
+          <p className="panel-note" role="status">
+            Division standings are temporarily unavailable.
+          </p>
+        )}
         {info?.tables.length ? (
           info.tables.map((raw) => {
             const table = decorateTable(raw, id);

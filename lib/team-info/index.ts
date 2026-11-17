@@ -366,6 +366,30 @@ export async function fetchTeamInfo() {
                 parseStandings(value, t.id, checked);
               const currentTables = await parseTables(x);
               info.tables = currentTables;
+              let divisionTables: Table[] = [];
+              if (t.divisionStandings) {
+                try {
+                  const grouped = await get(
+                    standingsUrl +
+                      "?group=" +
+                      encodeURIComponent(String(t.divisionStandings.group)),
+                  );
+                  const division = (await parseTables(grouped)).find(
+                    (table) =>
+                      table.name === t.divisionStandings?.name &&
+                      table.rows.some((row) => row.highlight),
+                  );
+                  if (division) divisionTables = [division];
+                  else
+                    info.unavailable.push(
+                      `${t.divisionStandings.name} standings`,
+                    );
+                } catch {
+                  info.unavailable.push(
+                    `${t.divisionStandings.name} standings`,
+                  );
+                }
+              }
               // During the postseason ESPN's default standings response switches
               // to playoff context. Keep the regular-season table too so the
               // final seeding and qualification lines remain visible.
@@ -384,6 +408,13 @@ export async function fetchTeamInfo() {
                   // Keep the postseason table if the historical lookup is unavailable.
                 }
               }
+              info.tables = [
+                ...info.tables,
+                ...divisionTables.filter(
+                  (division) =>
+                    !info.tables.some((table) => table.name === division.name),
+                ),
+              ];
               if (x.season?.startDate && x.season?.endDate)
                 info.season = {
                   name:

@@ -30,5 +30,15 @@ export function decorateTable(table: Table, id: string): Table {
         !cut.tableNameIncludes || table.name.includes(cut.tableNameIncludes),
     )
     .map(({ after, label }) => ({ after, label }));
-  return { ...table, rows, cuts, qualification: rules?.qualification || "" };
+  return {
+    ...table,
+    rows,
+    cuts,
+    qualification:
+      rules?.qualification &&
+      (!rules.qualificationTableNameIncludes ||
+        table.name.includes(rules.qualificationTableNameIncludes))
+        ? rules.qualification
+        : "",
+  };
 }
