@@ -27,6 +27,10 @@ export const vikingsProfile = {
       "https://www.si.com/nfl/vikings/onsi/author/will-ragatz",
     ],
     ["Daily Norseman", "https://www.dailynorseman.com/"],
+    [
+      "The Athletic",
+      "https://www.nytimes.com/athletic/nfl/team/vikings/",
+    ],
     ["Official Vikings", "https://www.vikings.com/"],
   ],
   communities: [

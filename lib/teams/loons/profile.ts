@@ -14,6 +14,10 @@ export const loonsProfile = {
   espn: "17362",
   sources: [
     ["MLS news", "https://www.mlssoccer.com/news/"],
+    [
+      "The Athletic",
+      "https://www.nytimes.com/athletic/football/team/mnufc/",
+    ],
     ["Official MNUFC schedule", "https://www.mnufc.com/schedule/matches"],
     ["Official MNUFC", "https://www.mnufc.com/news/"],
     [

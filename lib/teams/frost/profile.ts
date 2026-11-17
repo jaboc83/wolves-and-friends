@@ -22,6 +22,10 @@ export const frostProfile = {
       "Official Frost · Scores & news",
       "https://www.thepwhl.com/en/teams/minnesota-frost",
     ],
+    [
+      "The Athletic",
+      "https://www.nytimes.com/athletic/womens-hockey/team/minnesota-frost/",
+    ],
     ["The Ice Garden", "https://www.theicegarden.com/"],
     ["Official PWHL standings", "https://www.thepwhl.com/en/stats/standings"],
     [

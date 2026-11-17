@@ -14,6 +14,10 @@ export const palaceProfile = {
   espn: "384",
   sources: [
     ["Premier League news", "https://www.premierleague.com/en/news"],
+    [
+      "The Athletic",
+      "https://www.nytimes.com/athletic/football/team/crystal-palace/",
+    ],
     ["Official Palace schedule", "https://www.cpfc.co.uk/matches/"],
     ["Official Palace", "https://www.cpfc.co.uk/news/"],
     ["PalaceRadar", "https://www.palaceradar.co.uk/"],
