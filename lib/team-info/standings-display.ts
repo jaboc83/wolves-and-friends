@@ -12,6 +12,16 @@ export function clincherFlags(
   league: string,
 ): { playoffsClinched: boolean; homeAdvantageClinched: boolean } {
   const code = value.trim().toLowerCase();
+  if (league === "basketball/nba")
+    return {
+      playoffsClinched: ["x", "xp", "y", "z"].includes(code),
+      homeAdvantageClinched: code === "z",
+    };
+  if (league === "basketball/wnba")
+    return {
+      playoffsClinched: ["*", "x", "cx"].includes(code),
+      homeAdvantageClinched: code === "*",
+    };
   const isNfl = league === "football/nfl";
   const isNhl = league === "hockey/nhl";
   const isMlb = league === "baseball/mlb";

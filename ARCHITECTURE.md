@@ -128,6 +128,8 @@ Standings panels omit conferences or baseball leagues the selected team is not i
 
 The Lynx page requests ESPN's league-wide WNBA table (`level=1`) and draws a playoff line after eighth place. WNBA qualification is league-wide, not per conference; cached conference-only tables never receive that cutoff.
 
+The Wolves and Lynx standings also color playoff-clinched teams green and use the house for provider-confirmed home-court advantage (NBA conference clinchers and the WNBA best-record clincher). An NBA Play-In berth alone is not marked as a clinched playoff berth. Basketball keeps its existing playoff and Play-In cutoff lines rather than division or wild-card position symbols.
+
 ## 6. Where information is stored
 
 | Storage              | Contents                                                                   | Lifetime / purpose                                           |

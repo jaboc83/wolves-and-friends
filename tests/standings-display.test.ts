@@ -50,6 +50,44 @@ test("WNBA conference, preseason and postseason tables do not receive a league c
   }
 });
 
+test("NBA clinchers distinguish playoff berths and conference home court from play-in berths", () => {
+  for (const code of ["x", "xp", "y"]) {
+    assert.deepEqual(clincherFlags(code, "basketball/nba"), {
+      playoffsClinched: true,
+      homeAdvantageClinched: false,
+    });
+  }
+  assert.deepEqual(clincherFlags("z", "basketball/nba"), {
+    playoffsClinched: true,
+    homeAdvantageClinched: true,
+  });
+  for (const code of ["", "e", "pb"]) {
+    assert.deepEqual(clincherFlags(code, "basketball/nba"), {
+      playoffsClinched: false,
+      homeAdvantageClinched: false,
+    });
+  }
+});
+
+test("WNBA clinchers include Cup winners with playoff berths but reserve home court for best record", () => {
+  for (const code of ["x", "cx"]) {
+    assert.deepEqual(clincherFlags(code, "basketball/wnba"), {
+      playoffsClinched: true,
+      homeAdvantageClinched: false,
+    });
+  }
+  assert.deepEqual(clincherFlags("*", "basketball/wnba"), {
+    playoffsClinched: true,
+    homeAdvantageClinched: true,
+  });
+  for (const code of ["", "e", "c"]) {
+    assert.deepEqual(clincherFlags(code, "basketball/wnba"), {
+      playoffsClinched: false,
+      homeAdvantageClinched: false,
+    });
+  }
+});
+
 test("division tables use division-order ranks without changing their stats", () => {
   const division = table("NFC North", [
     {

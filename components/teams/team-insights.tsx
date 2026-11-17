@@ -72,6 +72,10 @@ export default function TeamInsights({
     t?.league === "football/nfl" ||
     t?.league === "hockey/nhl" ||
     t?.league === "baseball/mlb";
+  const showClinchLegend =
+    showPlayoffMarkers ||
+    t?.league === "basketball/nba" ||
+    t?.league === "basketball/wnba";
   const homeAdvantageLabel =
     t?.sportKind === "hockey"
       ? "Home-ice advantage clinched"
@@ -224,14 +228,18 @@ export default function TeamInsights({
             Division standings are temporarily unavailable.
           </p>
         )}
-        {showPlayoffMarkers && (
+        {showClinchLegend && (
           <p className="panel-note standings-marker-legend">
-            <span>
-              <b aria-hidden="true">●</b> Division playoff position
-            </span>
-            <span>
-              <b aria-hidden="true">w</b> Wild-card position
-            </span>
+            {showPlayoffMarkers && (
+              <>
+                <span>
+                  <b aria-hidden="true">●</b> Division playoff position
+                </span>
+                <span>
+                  <b aria-hidden="true">w</b> Wild-card position
+                </span>
+              </>
+            )}
             <span className="standings-clinched">Playoffs clinched</span>
             <span>
               <House size={12} aria-hidden="true" /> {homeAdvantageLabel}
