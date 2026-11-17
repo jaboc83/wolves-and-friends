@@ -240,6 +240,7 @@ export default function TeamInsights({
                           ↗
                         </small>
                         {revealResults &&
+                          match.metric !== "Series wins" &&
                           match.teams.some((p) => p.value !== undefined) && (
                             <small>{match.metric}</small>
                           )}
