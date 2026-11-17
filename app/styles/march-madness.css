@@ -174,15 +174,9 @@
   border-radius: 4px;
 }
 .bracket-match > .bracket-winner {
-  background: #f3e8ff;
-  border-left-color: #7e22ce;
-  color: #581c87;
+  background: var(--playoff-highlight-fill);
+  border-left-color: var(--playoff-highlight-outline);
   font-weight: 800;
-}
-.hub[data-mode="dark"] .bracket-match > .bracket-winner {
-  background: #3b2354;
-  border-left-color: #d8b4fe;
-  color: #e9d5ff;
 }
 .bracket-team-name {
   min-width: 0;

@@ -80,7 +80,7 @@ Postseason brackets fetch calendar months within the final 120 days of the provi
 
 Postseason layout groups parallel MLB league rounds and NBA/NHL/NFL conference rounds into the same stage column, with league/conference labels on the matchups. Earlier cards are ordered by their actual next-round participants, and arrow connectors follow shared team IDs rather than assuming adjacent boxes feed each other. Later rounds are vertically spaced to make progression easier to trace. Unconfirmed paths are not invented, including for byes and reseeding.
 
-Completed postseason winners have a high-contrast purple row highlight, bold text, and screen-reader winner status without a visible "Winner" label. Series require provider-confirmed completion and a higher series-win total; single-game matchups require a completed game and the provider's winner flag. Series-result summaries remain visible without a redundant "Series wins" caption. Unfinished series are never marked won merely because a game has ended. Hiding scores also hides winner status and highlights.
+Completed postseason winners use the same subtle page-theme fill, outline accent, and text color as clinched-playoff indicators in light and dark modes, with bold text and screen-reader winner status without a visible "Winner" label. Series require provider-confirmed completion and a higher series-win total; single-game matchups require a completed game and the provider's winner flag. Series-result summaries remain visible without a redundant "Series wins" caption. Unfinished series are never marked won merely because a game has ended. Hiding scores also hides winner status and highlights.
 
 ## 4. How provider data becomes page content
 

@@ -23,17 +23,21 @@
   align-items: center;
   gap: 4px;
 }
-.standings-clinched {
-  --standings-marker-outline: color-mix(
+.standings-clinched,
+.bracket-match > .bracket-winner {
+  --playoff-highlight-outline: color-mix(
     in srgb,
     var(--team-primary, #193346) 65%,
     var(--surface, #fff)
   );
-  --standings-marker-fill: color-mix(
+  --playoff-highlight-fill: color-mix(
     in srgb,
     var(--team-primary, #193346) 10%,
     var(--surface, #fff)
   );
+  color: var(--team-primary, #193346);
+}
+.standings-clinched {
   display: inline-flex;
   align-items: center;
   justify-content: center;
@@ -42,16 +46,16 @@
   min-width: 18px;
   height: 18px;
   padding: 0;
-  color: var(--team-primary, #193346);
   line-height: 1;
 }
-.hub[data-mode="dark"] .standings-clinched {
-  --standings-marker-outline: color-mix(
+.hub[data-mode="dark"] .standings-clinched,
+.hub[data-mode="dark"] .bracket-match > .bracket-winner {
+  --playoff-highlight-outline: color-mix(
     in srgb,
     var(--ink-team, #b3c0cc) 70%,
     var(--surface, #1b2028)
   );
-  --standings-marker-fill: color-mix(
+  --playoff-highlight-fill: color-mix(
     in srgb,
     var(--ink-team, #b3c0cc) 10%,
     var(--surface, #1b2028)
@@ -65,8 +69,8 @@
   height: 18px;
 }
 .standings-marker-disc {
-  fill: var(--standings-marker-fill);
-  stroke: var(--standings-marker-outline);
+  fill: var(--playoff-highlight-fill);
+  stroke: var(--playoff-highlight-outline);
   stroke-width: 1px;
 }
 .hub[data-mode="dark"] #team-standings .my-team {
