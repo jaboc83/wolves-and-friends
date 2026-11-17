@@ -292,14 +292,18 @@ export default function RosterPanel({
       <summary>{heading}</summary>
       {depth ? (
         <>
-          {(teamId === "wolves" || teamId === "wild") && (
+          {(teamId === "wolves" ||
+            teamId === "wild" ||
+            teamId === "vikings") && (
             <div className="roster-contracts-actions">
               <a
                 className="roster-contracts-button"
                 href={
                   teamId === "wolves"
                     ? "https://www.basketball-reference.com/contracts/MIN.html"
-                    : "https://puckpedia.com/team/minnesota-wild"
+                    : teamId === "wild"
+                      ? "https://puckpedia.com/team/minnesota-wild"
+                      : "https://www.spotrac.com/nfl/minnesota-vikings/contracts"
                 }
                 target="_blank"
                 rel="noreferrer"
@@ -312,7 +316,9 @@ export default function RosterPanel({
                 href={
                   teamId === "wolves"
                     ? "https://cleaningtheglass.com/stats/team/18"
-                    : "https://hockeyviz.com/team/MIN/2627"
+                    : teamId === "wild"
+                      ? "https://hockeyviz.com/team/MIN/2627"
+                      : "https://nflsavant.com/teams/MIN"
                 }
                 target="_blank"
                 rel="noreferrer"
