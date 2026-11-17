@@ -395,8 +395,8 @@ export default function Home() {
                     <h2>
                       Today’s{" "}
                       {active === DASHBOARD_PAGE_IDS.ALL
-                        ? terms.events
-                        : terms.event}{" "}
+                        ? terms.events.charAt(0).toUpperCase() + terms.events.slice(1)
+                        : terms.event.charAt(0).toUpperCase() + terms.event.slice(1)}{" "}
                       {active === DASHBOARD_PAGE_IDS.ALL && (
                         <small>{todayGames.length}</small>
                       )}

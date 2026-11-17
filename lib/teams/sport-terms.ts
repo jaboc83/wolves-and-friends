@@ -30,7 +30,7 @@ export function sportTerms(team: DashboardPageId) {
       : disc
         ? "Tournament calendar"
         : profile?.terms?.calendar ||
-          (soccer ? "Match calendar" : "Game calendar"),
+          (soccer ? "Match Calendar" : "Game Calendar"),
     stats: disc ? "Tournament results" : soccer ? "Match stats" : "Box score",
     tieCode: soccer ? "D" : "T",
     tieLabel: soccer ? "Draw" : "Tie",

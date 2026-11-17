@@ -16,7 +16,7 @@ outside the collapsed disclosure.
 
 Calendar-day boundaries and displayed timestamps in the dashboard use the browser's configured timezone. It is read locally for rendering only, is not persisted, and is never included in feed requests; server-side feed windows retain their fixed source timezone.
 
-The Today's games heading shows a game count on All teams only, not on individual team pages. This changes only the heading badge; all returned games remain visible.
+The Today's Games heading shows a game count on All teams only, not on individual team pages. This changes only the heading badge; all returned games remain visible.
 
 Game-card ribbons use a solid competition color with inherited white label text in both themes. Standalone badges keep their own theme colors without adding a separate background inside a ribbon.
 
