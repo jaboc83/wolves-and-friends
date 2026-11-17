@@ -27,12 +27,12 @@ export function markPlayoffPositions(
 ): { conferenceTables: Table[]; divisionTables: Table[] } {
   const conferenceIndex = conferenceTables.findIndex(
     (table) =>
-      /conference/i.test(table.name) &&
-      table.rows.some((row) => row.highlight),
+      /conference/i.test(table.name) && table.rows.some((row) => row.highlight),
   );
   if (conferenceIndex < 0) return { conferenceTables, divisionTables };
 
   const conference = conferenceTables[conferenceIndex];
+  if (conference.seasonType !== 2) return { conferenceTables, divisionTables };
   const divisionPlaces = league === "football/nfl" ? 1 : 3;
   const wildcardPlaces = league === "football/nfl" ? 3 : 2;
   const positions = new Map<string, "division" | "wildcard">();
@@ -65,10 +65,7 @@ export function markPlayoffPositions(
   };
 }
 
-export function withDivisionRanks(
-  table: Table,
-  divisionName?: string,
-): Table {
+export function withDivisionRanks(table: Table, divisionName?: string): Table {
   if (!divisionName || table.name !== divisionName) return table;
   return {
     ...table,

@@ -1,5 +1,6 @@
 // Normalizes league playoff schedules into rounds and team matchups.
 import { espnTeamLogoUrl } from "./march-madness";
+import type { RequestQueue } from "../feeds/request-queue";
 export type Postseason = {
   partial?: boolean;
   season: string;
@@ -200,17 +201,22 @@ function isResolvedPostseasonCompetitor(
 
 export async function fetchPostseason(
   league: string,
+  queueRequest: RequestQueue = async (request) => request(),
 ): Promise<Postseason | undefined> {
   if (!supported.has(league)) return;
-  const get = async (url: string): Promise<PostseasonFeed> => {
-    const r = await fetch(url, {
-      credentials: "omit",
-      referrerPolicy: "no-referrer",
-      signal: AbortSignal.timeout(10000),
+  const get = async (url: string): Promise<PostseasonFeed> =>
+    queueRequest(async () => {
+      const r = await fetch(url, {
+        credentials: "omit",
+        referrerPolicy: "no-referrer",
+        signal: AbortSignal.timeout(10000),
+      });
+      if (!r.ok) {
+        await r.body?.cancel();
+        throw Error("Postseason feed unavailable");
+      }
+      return (await r.json()) as PostseasonFeed;
     });
-    if (!r.ok) throw Error("Postseason feed unavailable");
-    return (await r.json()) as PostseasonFeed;
-  };
   const base =
     "https://site.api.espn.com/apis/site/v2/sports/" + league + "/scoreboard";
   const current = await get(base);

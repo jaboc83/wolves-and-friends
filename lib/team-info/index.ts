@@ -7,9 +7,11 @@ import {
 } from "./standings-display";
 export { decorateTable, tableSeasonType } from "./standings";
 import { teams } from "../teams/teams";
+import type { TeamProfile } from "../teams/team-types";
 import { teamProviders } from "../teams/providers";
 import { serverHooksFor } from "../teams/server";
 import { fetchPostseason, type Postseason } from "../games/postseason";
+import { createRequestQueue } from "../feeds/request-queue";
 import { rosterDetails, type RosterDetails } from "./roster-details";
 import { salarySourceForYear } from "./salaryswish";
 import { parsePowerRanking, powerRankingLeague } from "./power-rankings";
@@ -196,7 +198,7 @@ export function parseStandings(
   checked: string,
   rankDivisionGroups = false,
 ): Table[] {
-  const team = teams.find((t) => t.id === id)!;
+  const team: TeamProfile = teams.find((t) => t.id === id)!;
   const league = team.league;
   const result: Table[] = [];
   const cols = league.startsWith("soccer/")
@@ -311,6 +313,7 @@ export function parseStandings(
 }
 export async function fetchTeamInfo() {
   const checked = new Date().toISOString();
+  const queueRequest = createRequestQueue();
   const powerRankingCache = new Map<
     string,
     Promise<PowerRanking | undefined>
@@ -318,35 +321,43 @@ export async function fetchTeamInfo() {
   const get = async (
     url: string,
     timeoutMs = 10000,
-  ): Promise<ProviderResponse> => {
-    const r = await fetch(url, {
-      signal: AbortSignal.timeout(timeoutMs),
-      headers: {
-        Accept: "application/json",
-        "User-Agent": "WolvesAndFriends/1.0",
-      },
-      cache: "no-store",
+  ): Promise<ProviderResponse> =>
+    queueRequest(async () => {
+      const r = await fetch(url, {
+        signal: AbortSignal.timeout(timeoutMs),
+        headers: {
+          Accept: "application/json",
+          "User-Agent": "WolvesAndFriends/1.0",
+        },
+        cache: "no-store",
+      });
+      if (!r.ok) {
+        await r.body?.cancel();
+        throw Error("HTTP " + r.status);
+      }
+      return (await r.json()) as ProviderResponse;
     });
-    if (!r.ok) throw Error("HTTP " + r.status);
-    return (await r.json()) as ProviderResponse;
-  };
-  const getText = async (url: string) => {
-    const r = await fetch(url, {
-      signal: AbortSignal.timeout(
-        url.includes("eurohoops.net") ||
-          url.includes("thepwhl.com") ||
-          url.includes("lkl.lt")
-          ? 30000
-          : 10000,
-      ),
-      headers: {
-        Accept: "text/html",
-        "User-Agent": "WolvesAndFriends/1.0",
-      },
+  const getText = async (url: string) =>
+    queueRequest(async () => {
+      const r = await fetch(url, {
+        signal: AbortSignal.timeout(
+          url.includes("eurohoops.net") ||
+            url.includes("thepwhl.com") ||
+            url.includes("lkl.lt")
+            ? 30000
+            : 10000,
+        ),
+        headers: {
+          Accept: "text/html",
+          "User-Agent": "WolvesAndFriends/1.0",
+        },
+      });
+      if (!r.ok) {
+        await r.body?.cancel();
+        throw Error(String(r.status));
+      }
+      return r.text();
     });
-    if (!r.ok) throw Error(String(r.status));
-    return r.text();
-  };
   const getJsonp = async (
     params: Record<string, string>,
   ): Promise<ProviderResponse | ProviderResponse[]> => {
@@ -361,7 +372,7 @@ export async function fetchTeamInfo() {
       ProviderResponse | ProviderResponse[];
   };
   return Promise.all(
-    teams.map(async (t) => {
+    teams.map(async (t: TeamProfile) => {
       const info: TeamInfo = { id: t.id, tables: [], unavailable: [] };
       if (t.league) {
         const base =
@@ -372,7 +383,7 @@ export async function fetchTeamInfo() {
         await Promise.all([
           (async () => {
             try {
-              info.postseason = await fetchPostseason(t.league);
+              info.postseason = await fetchPostseason(t.league, queueRequest);
             } catch {
               info.unavailable.push("postseason");
             }
@@ -401,8 +412,8 @@ export async function fetchTeamInfo() {
                   );
                   let groupedTables = await parseTables(grouped, true);
                   if (
-                    seasonType === 2 &&
-                    (t.league === "football/nfl" || t.league === "hockey/nhl")
+                    t.league === "football/nfl" ||
+                    t.league === "hockey/nhl"
                   ) {
                     const marked = markPlayoffPositions(
                       currentTables,

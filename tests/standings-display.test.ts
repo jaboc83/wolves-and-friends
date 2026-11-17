@@ -11,6 +11,7 @@ import type { Table } from "../lib/team-info/types.ts";
 function table(name: string, rows: Table["rows"]): Table {
   return {
     name,
+    seasonType: 2,
     columns: ["#", "W", "L"],
     rows,
     source: "ESPN",
@@ -108,10 +109,7 @@ test("NFL marks division winners and the next three conference teams", () => {
   );
 
   assert.deepEqual(
-    marked.conferenceTables[0].rows.map((row) => [
-      row.id,
-      row.playoffPosition,
-    ]),
+    marked.conferenceTables[0].rows.map((row) => [row.id, row.playoffPosition]),
     [
       ["MIN", "division"],
       ["D2", "division"],
@@ -167,10 +165,7 @@ test("NHL marks the top three in each division and two wild cards", () => {
   );
 
   assert.deepEqual(
-    marked.conferenceTables[0].rows.map((row) => [
-      row.id,
-      row.playoffPosition,
-    ]),
+    marked.conferenceTables[0].rows.map((row) => [row.id, row.playoffPosition]),
     [
       ["MIN", "division"],
       ["A1", "division"],
@@ -184,6 +179,22 @@ test("NHL marks the top three in each division and two wild cards", () => {
       ["OUT", undefined],
     ],
   );
+});
+
+test("playoff positions are not inferred for preseason or postseason tables", () => {
+  const conference = table("National Football Conference", [
+    { id: "MIN", name: "Minnesota", url: "/", cells: ["1"], highlight: true },
+  ]);
+  const divisions = [table("NFC North", conference.rows)];
+
+  for (const seasonType of [1, 3, undefined]) {
+    const marked = markPlayoffPositions(
+      [{ ...conference, seasonType }],
+      divisions,
+      "football/nfl",
+    );
+    assert.equal(marked.conferenceTables[0].rows[0].playoffPosition, undefined);
+  }
 });
 
 test("clincher codes distinguish playoff status from top-seed home advantage", () => {

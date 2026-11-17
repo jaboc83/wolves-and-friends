@@ -74,6 +74,8 @@ The API also has support routes for validated team/social images and tournament 
 
 These feed and team-info caches are **request-driven, in-memory caches**. They can disappear when a Worker instance is restarted, and different instances need not share them. There is no background scheduler continuously refreshing the site while nobody is viewing it. The server cache lifetime also does not guarantee a provider has published newer information.
 
+Each team-info refresh shares a four-request queue across standings, rosters, power rankings, and postseason feeds. Slots remain occupied until response bodies are consumed, and network timeouts start only after a queued request begins. This avoids overwhelming the local Workers runtime with all teams' provider requests at once.
+
 ## 4. How provider data becomes page content
 
 The shared types are defined in [lib/feeds/feed-types.ts](lib/feeds/feed-types.ts):
@@ -122,7 +124,7 @@ Odds lookups are currently limited to eligible games within the next seven days 
 
 [MatchCalendar](components/games/match-calendar.tsx) owns the displayed month and selected day. Past dates are muted but remain clickable. Calendar entries themselves do not expose scores. Display dates and the definition of today use **America/Chicago**; source-time conversion can use the provider's timezone. Date-only events avoid inventing a start time.
 
-Standings panels omit conferences the selected team is not in and provide a button to the full standings page. The Vikings and Wild pages include division tables with division-order ranks; qualification notes and cut lines are scoped to the standings table they describe.
+Standings panels omit conferences the selected team is not in and provide a button to the full standings page. The Vikings and Wild pages include division tables with division-order ranks and symbols for current division playoff positions, wild cards, and provider-reported clinches. Position symbols use the conference table's regular-season metadata, since ESPN may omit the season type at the response root. Other leagues retain their table-scoped qualification notes and cut lines.
 
 ## 6. Where information is stored
 
