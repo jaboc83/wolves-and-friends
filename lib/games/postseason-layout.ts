@@ -46,6 +46,28 @@ function roundStage(name: string, league: string) {
     if (/^(NBA Finals|Stanley Cup Finals?)$/i.test(name))
       return { order: 3, name };
   }
+  if (league === "soccer/usa.1") {
+    const match =
+      /^(East|West) (Wild Card|Round One|Conference Semifinals|Conference Finals)$/i.exec(
+        name,
+      );
+    if (match) {
+      const order = [
+        "Wild Card",
+        "Round One",
+        "Conference Semifinals",
+        "Conference Finals",
+      ].findIndex((stage) => stage.toLowerCase() === match[2].toLowerCase());
+      return {
+        order,
+        name: match[2],
+        group: /^East/i.test(match[1])
+          ? "Eastern Conference"
+          : "Western Conference",
+      };
+    }
+    if (/^MLS Cup$/i.test(name)) return { order: 4, name };
+  }
   if (league === "football/nfl") {
     const match =
       /^(AFC|NFC) (Wild Card Playoffs|Divisional Playoffs|Championship)$/i.exec(
@@ -70,7 +92,11 @@ function roundStage(name: string, league: string) {
 }
 
 function sharesTeam(a: Matchup, b: Matchup) {
-  return a.teams.some((team) => b.teams.some((other) => other.id === team.id));
+  return (
+    a.teams.some((team) => b.teams.some((other) => other.id === team.id)) ||
+    // Projected rounds reference their feeder matchup as a placeholder team.
+    b.teams.some((team) => team.id === `winner:${a.id}`)
+  );
 }
 
 export function layoutPostseasonRounds(

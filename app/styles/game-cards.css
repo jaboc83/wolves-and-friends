@@ -54,6 +54,30 @@ body:has(.hub[data-mode="dark"]) .league-headlines-dialog {
   color: #edf2f7;
   border-color: #43505c;
 }
+.postseason-dialog {
+  max-height: 90vh;
+  overflow-y: auto;
+  background-color: #fffefb;
+  color: #192a3c;
+}
+.postseason-dialog .bracket-rounds {
+  gap: 16px;
+}
+.postseason-dialog .bracket-round {
+  flex-basis: 240px;
+}
+.postseason-dialog .bracket-match {
+  padding: 10px;
+}
+.postseason-dialog .bracket-match > span {
+  gap: 8px;
+  font-size: 14px;
+}
+.hub[data-mode="dark"] .postseason-dialog {
+  background-color: #1b2028;
+  color: #edf2f7;
+  border-color: #43505c;
+}
 .league-headlines-header {
   flex-direction: row;
   align-items: center;

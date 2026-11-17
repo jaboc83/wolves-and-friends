@@ -21,6 +21,7 @@ import { eventIsToday, eventLifecycle } from "../games/event-time";
 import { verifyAuthorFeed } from "./bylines";
 import { authorStories } from "./author-stories";
 import { mergeOfficial, mergeFallbackGames } from "./official-schedules";
+import { nflFixtureUrl, parseNflFixtures } from "./nfl-schedule";
 import { teams } from "../teams/teams";
 import { teamProviders } from "../teams/providers";
 import { serverHooksFor, teamServerHooks } from "../teams/server";
@@ -44,7 +45,9 @@ export async function leagueHeadlines(league: string): Promise<Story[]> {
   if (!teams.some((team) => team.league === league))
     throw new FeedError("invalid-league");
   const response = await providerGet(
-    "https://site.api.espn.com/apis/site/v2/sports/" + league + "/news?limit=20",
+    "https://site.api.espn.com/apis/site/v2/sports/" +
+      league +
+      "/news?limit=20",
   );
   const json = (await response.json()) as ESPNResponse;
   return normalizeLeagueHeadlines(json.articles || []);
@@ -245,10 +248,7 @@ async function premierLeaguePlaylistIds(url: string, signal: AbortSignal) {
         name: "Premier League injury club playlist",
         run: async (taskSignal) => {
           const childResponse = await providerGet(
-            new URL(
-              `/content/premierleague/playlist/en/${item.id}`,
-              url,
-            ).href,
+            new URL(`/content/premierleague/playlist/en/${item.id}`, url).href,
             AbortSignal.any([signal, taskSignal]),
           );
           const child =
@@ -260,8 +260,7 @@ async function premierLeaguePlaylistIds(url: string, signal: AbortSignal) {
   );
   const ids = new Map<string, number>();
   for (const playlist of playlists)
-    if (playlist.value?.title)
-      ids.set(playlist.value.title, playlist.value.id);
+    if (playlist.value?.title) ids.set(playlist.value.title, playlist.value.id);
   if (!ids.size) throw new FeedError("empty-injuries");
   cachedPremierLeaguePlaylistIds = { url, checkedAt: Date.now(), ids };
   return ids;
@@ -295,10 +294,7 @@ async function fetchPremierLeagueInjuries(
         name: "Premier League injury player",
         run: async (taskSignal) => {
           const promoResponse = await providerGet(
-            new URL(
-              `/content/premierleague/PROMO/en/${item.id}`,
-              hubUrl,
-            ).href,
+            new URL(`/content/premierleague/PROMO/en/${item.id}`, hubUrl).href,
             AbortSignal.any([signal, taskSignal]),
           );
           return (await promoResponse.json()) as PremierLeagueInjuryPromo;
@@ -558,6 +554,26 @@ export async function collect(
               )
             ).json();
             const parsed = parseGames(json, t.id, t.sport);
+            if (!parsed.length && t.league === "football/nfl") {
+              // ESPN's NFL team schedule is sometimes empty; use its next game plus a public full-season feed.
+              const teamJson = (await (
+                await get(scheduleUrl.replace(/\/schedule$/, ""))
+              ).json()) as { team?: { nextEvent?: unknown[] } };
+              parsed.push(
+                ...parseGames(
+                  { events: teamJson.team?.nextEvent || [] },
+                  t.id,
+                  t.sport,
+                ),
+              );
+              const fixtures = await (
+                await get(nflFixtureUrl(new Date().getFullYear()))
+              ).json();
+              mergeFallbackGames(
+                parsed,
+                parseNflFixtures(fixtures, t.id, t.name, checked),
+              );
+            }
             await hooks?.extendEspnSchedule?.({
               checked,
               get,

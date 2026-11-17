@@ -7,7 +7,7 @@ import {
   useState,
   type KeyboardEvent,
 } from "react";
-import { ExternalLink } from "lucide-react";
+import { ExternalLink, Users } from "lucide-react";
 import type { TeamInfo } from "../../lib/team-info";
 import { teamProfile } from "../../lib/teams/teams";
 import type { PlayerStats } from "../../lib/team-info/player-stats";
@@ -333,7 +333,10 @@ export default function RosterPanel({
         if (event.currentTarget.open) onRosterOpen(priorityKeys);
       }}
     >
-      <summary>{heading}</summary>
+      <summary>
+        <Users className="summary-icon" aria-hidden="true" />
+        {heading}
+      </summary>
       {depth ? (
         <>
           {externalLinks && (

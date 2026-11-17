@@ -49,6 +49,7 @@ export const wolvesProfile = {
   },
   competitionPanels: {
     label: "Emirates NBA Cup standings and bracket",
+    buttonLabel: "View NBA Cup",
     sections: [
       {
         title: "Emirates NBA Cup · 2026",

@@ -151,12 +151,7 @@ export default function NewsSection({
                     ),
                     ...sourceTeam.sources,
                   ].map(([name, url]) => (
-                    <a
-                      key={url}
-                      href={url}
-                      target="_blank"
-                      rel="noreferrer"
-                    >
+                    <a key={url} href={url} target="_blank" rel="noreferrer">
                       <Image
                         unoptimized
                         src={teamLogoPath(sourceTeam.id)}
@@ -273,7 +268,7 @@ export default function NewsSection({
               </h3>
               <p>
                 {state.olderCount > 0
-                  ? "Use View older to catch up on earlier articles."
+                  ? "Use View more to catch up on earlier articles."
                   : "Check External Links for more coverage."}
               </p>
             </div>
@@ -299,14 +294,14 @@ export default function NewsSection({
               {(state.olderCount > 0 || state.showOlder) && (
                 <button onClick={actions.toggleOlder}>
                   {!state.showOlder
-                    ? "View older (" + state.olderCount + ")"
+                    ? "View more (" + state.olderCount + ")"
                     : state.olderRemaining > 0
                       ? "View " +
                         Math.min(OLDER_BATCH_SIZE, state.olderRemaining) +
                         " more (" +
                         state.olderRemaining +
                         " left)"
-                      : "Hide older"}
+                      : "Show less"}
                 </button>
               )}
             </div>

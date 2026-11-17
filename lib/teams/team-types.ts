@@ -57,6 +57,7 @@ export type TeamProfile = {
   // Extra standings-panel sections for cups and continental competitions.
   competitionPanels?: {
     label: string;
+    buttonLabel: string;
     hideDuringPostseason?: boolean;
     sections: readonly {
       title: string;

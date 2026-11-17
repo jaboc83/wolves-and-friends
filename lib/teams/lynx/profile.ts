@@ -15,6 +15,10 @@ export const lynxProfile = {
   sources: [
     ["WNBA news", "https://www.wnba.com/news"],
     ["Canis Hoopus · Lynx", "https://www.canishoopus.com/minnesota-lynx"],
+    [
+      "The Athletic",
+      "https://www.nytimes.com/athletic/wnba/team/lynx/",
+    ],
     ["Official Lynx", "https://lynx.wnba.com/"],
   ],
   communities: [

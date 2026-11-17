@@ -1,6 +1,6 @@
 // Team detail panels: standings, power rankings, postseason, and roster.
 "use client";
-import { Fragment, useMemo, useState } from "react";
+import { Fragment, useCallback, useState } from "react";
 import { decorateTable } from "../../lib/team-info/standings";
 import { teamProfile, teams } from "../../lib/teams/teams";
 import { sportTerms } from "../../lib/teams/sport-terms";
@@ -19,7 +19,14 @@ import {
   standingsMarker,
   visibleTeamStandings,
 } from "../../lib/team-info/standings-display";
-import { ExternalLink } from "lucide-react";
+import { ExternalLink, ListOrdered, Zap } from "lucide-react";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from "@/components/ui/dialog";
 
 function ClinchedMarkerIcon({ symbol = "●" }: { symbol?: "●" | "w" | "p" }) {
   return (
@@ -86,6 +93,13 @@ export default function TeamInsights({
   } | null>(null);
   const standingsOpen =
     standingsOverride?.id === id ? standingsOverride.open : autoOpenStandings;
+  // Dialogs portal into the .hub root so its theme variables and dark mode still apply.
+  const [hubElement, setHubElement] = useState<HTMLElement | null>(null);
+  const setStandingsRef = useCallback(
+    (element: HTMLDetailsElement | null) =>
+      setHubElement(element?.closest<HTMLElement>(".hub") ?? null),
+    [],
+  );
   const [standingsGroupOverrides, setStandingsGroupOverrides] = useState<
     Record<string, boolean>
   >({});
@@ -99,10 +113,10 @@ export default function TeamInsights({
   const headings = sportTerms(active);
   const t = teamProfile(id);
   const info = data.find((i) => i.id === id);
-  const bracket = useMemo(
-    () =>
-      layoutPostseasonRounds(info?.postseason?.rounds ?? [], t?.league ?? ""),
-    [info?.postseason?.rounds, t?.league],
+  const postseason = info?.postseason ?? info?.projectedPostseason;
+  const bracket = layoutPostseasonRounds(
+    postseason?.rounds ?? [],
+    t?.league ?? "",
   );
   const standingsTables = visibleTeamStandings(info?.tables || []);
   const divisionStandingsUnavailable = Boolean(
@@ -131,6 +145,13 @@ export default function TeamInsights({
     ? "https://www.espn.com/" + league + "/team/roster/_/name/" + t?.espn
     : t?.rosterPage || "";
   const competitionPanels = t?.competitionPanels;
+  const showCompetitionPanels =
+    !!competitionPanels &&
+    !(competitionPanels.hideDuringPostseason && info?.postseason);
+  const competitionLinks =
+    competitionPanels?.sections.flatMap((section) => section.links) ?? [];
+  const singleCompetitionLink =
+    competitionLinks.length === 1 ? competitionLinks[0][1] : undefined;
   return (
     <section className="team-insights">
       {active === "all" && (
@@ -152,144 +173,233 @@ export default function TeamInsights({
       )}
       <details
         id="team-standings"
+        ref={setStandingsRef}
         className="data-panel"
         open={standingsOpen}
         onToggle={(event) =>
           setStandingsOverride({ id, open: event.currentTarget.open })
         }
       >
-        <summary>{headings.standings}</summary>
-        {tableUrl && (
+        <summary>
+          <ListOrdered className="summary-icon" aria-hidden="true" />
+          {headings.standings}
+        </summary>
+        {(tableUrl || postseason || showCompetitionPanels) && (
           <div className="roster-contracts-actions">
-            <a
-              className="roster-contracts-button"
-              href={tableUrl}
-              target="_blank"
-              rel="noreferrer"
-            >
-              <span>Full Standings</span>
-              <ExternalLink size={14} aria-hidden="true" />
-            </a>
+            {tableUrl && (
+              <a
+                className="roster-contracts-button"
+                href={tableUrl}
+                target="_blank"
+                rel="noreferrer"
+              >
+                <span>Full Standings</span>
+                <ExternalLink size={14} aria-hidden="true" />
+              </a>
+            )}
+            {postseason && (
+              <Dialog>
+                <DialogTrigger asChild>
+                  <button type="button" className="roster-contracts-button">
+                    <span>
+                      {postseason.projected
+                        ? "View projected playoff bracket"
+                        : "View post-season bracket"}
+                    </span>
+                  </button>
+                </DialogTrigger>
+                <DialogContent
+                  container={hubElement}
+                  className="postseason-dialog sm:max-w-[min(96vw,1100px)]"
+                >
+                  <DialogHeader>
+                    <DialogTitle>
+                      {postseason.projected
+                        ? "Projected playoff bracket"
+                        : `Postseason bracket · ${postseason.season}`}
+                    </DialogTitle>
+                  </DialogHeader>
+                  <section
+                    className="postseason-panel"
+                    aria-label="Postseason bracket"
+                  >
+                    <p className="panel-note">
+                      {postseason.note ??
+                        "Read left to right. Arrows connect confirmed matchups in successive rounds; later rounds appear as announced."}
+                      {postseason.partial &&
+                        " Some rounds could not be refreshed."}
+                    </p>
+                    <div
+                      className="bracket-rounds"
+                      tabIndex={0}
+                      role="region"
+                      aria-label="Postseason rounds"
+                    >
+                      {bracket.rounds.map((round) => (
+                        <section className="bracket-round" key={round.name}>
+                          <h4>{round.name}</h4>
+                          <div className="bracket-matches">
+                            {round.matchups.map((match) => (
+                              <a
+                                className={
+                                  match.tentative
+                                    ? "bracket-match bracket-tentative"
+                                    : "bracket-match"
+                                }
+                                key={match.id}
+                                data-bracket-match-id={match.id}
+                                href={match.url}
+                                target="_blank"
+                                rel="noreferrer"
+                              >
+                                {match.group && (
+                                  <small className="bracket-match-group">
+                                    {match.group}
+                                  </small>
+                                )}
+                                {match.teams.map((p) => (
+                                  <span
+                                    key={p.id}
+                                    className={
+                                      revealResults && p.winner
+                                        ? "bracket-winner"
+                                        : undefined
+                                    }
+                                  >
+                                    {p.tbd ? (
+                                      <span
+                                        className="bracket-team-logo"
+                                        aria-hidden="true"
+                                      />
+                                    ) : (
+                                      <Image
+                                        unoptimized
+                                        className="bracket-team-logo"
+                                        src={
+                                          p.logo ||
+                                          espnTeamLogoUrl(t?.league || "", p.id)
+                                        }
+                                        alt=""
+                                        width={22}
+                                        height={22}
+                                        loading="lazy"
+                                      />
+                                    )}
+                                    <span className="bracket-team-name">
+                                      {p.seed !== undefined && (
+                                        <span className="bracket-seed">
+                                          {p.seed}
+                                        </span>
+                                      )}
+                                      {p.name}
+                                      {revealResults && p.winner && (
+                                        <span className="visually-hidden">
+                                          {" "}
+                                          · Winner
+                                        </span>
+                                      )}
+                                    </span>
+                                    {revealResults && p.value !== undefined && (
+                                      <b>{p.value}</b>
+                                    )}
+                                  </span>
+                                ))}
+                                {(!revealResults ||
+                                  !match.summary ||
+                                  match.tentative) && (
+                                  <small className="bracket-status">
+                                    {revealResults || match.tentative
+                                      ? match.status
+                                      : "Results hidden"}
+                                  </small>
+                                )}
+                                {revealResults &&
+                                  match.metric !== "Series wins" &&
+                                  match.teams.some(
+                                    (p) => p.value !== undefined,
+                                  ) && <small>{match.metric}</small>}
+                              </a>
+                            ))}
+                          </div>
+                        </section>
+                      ))}
+                      <BracketConnectors
+                        key={postseason.checked}
+                        roundClass="bracket-round"
+                        matchClass="bracket-match"
+                        connections={bracket.connections}
+                      />
+                    </div>
+                    <p className="panel-note">
+                      {postseason.projected ? "ESPN standings" : "ESPN"} ·
+                      checked {formatInTimeZone(postseason.checked, timeZone)}{" "}
+                      {timeZoneLabel(timeZone, postseason.checked)}
+                    </p>
+                  </section>
+                </DialogContent>
+              </Dialog>
+            )}
+            {competitionPanels &&
+              showCompetitionPanels &&
+              singleCompetitionLink && (
+                <a
+                  className="roster-contracts-button"
+                  href={singleCompetitionLink}
+                  target="_blank"
+                  rel="noreferrer"
+                >
+                  <span>{competitionPanels.buttonLabel}</span>
+                  <ExternalLink size={14} aria-hidden="true" />
+                </a>
+              )}
+            {competitionPanels &&
+              showCompetitionPanels &&
+              !singleCompetitionLink && (
+                <Dialog>
+                  <DialogTrigger asChild>
+                    <button type="button" className="roster-contracts-button">
+                      <span>{competitionPanels.buttonLabel}</span>
+                    </button>
+                  </DialogTrigger>
+                  <DialogContent
+                    container={hubElement}
+                    className="postseason-dialog sm:max-w-2xl"
+                  >
+                    <DialogHeader>
+                      <DialogTitle>{competitionPanels.label}</DialogTitle>
+                    </DialogHeader>
+                    <section
+                      className="postseason-panel"
+                      aria-label={competitionPanels.label}
+                    >
+                      {competitionPanels.sections.map((section) => (
+                        <Fragment key={section.title}>
+                          <h3>{section.title}</h3>
+                          {section.note && (
+                            <p className="panel-note">{section.note}</p>
+                          )}
+                          <div className="roster-contracts-actions">
+                            {section.links.map(([label, url]) => (
+                              <a
+                                key={url}
+                                className="roster-contracts-button"
+                                href={url}
+                                target="_blank"
+                                rel="noreferrer"
+                              >
+                                <span>{label}</span>
+                                <ExternalLink size={14} aria-hidden="true" />
+                              </a>
+                            ))}
+                          </div>
+                        </Fragment>
+                      ))}
+                    </section>
+                  </DialogContent>
+                </Dialog>
+              )}
           </div>
         )}
-        {info?.postseason && (
-          <section className="postseason-panel" aria-label="Postseason bracket">
-            <h3>Postseason bracket · {info.postseason.season}</h3>
-            <p className="panel-note">
-              Read left to right. Arrows connect confirmed matchups in
-              successive rounds; later rounds appear as announced.
-              {info.postseason.partial &&
-                " Some rounds could not be refreshed."}
-            </p>
-            <div
-              className="bracket-rounds"
-              tabIndex={0}
-              role="region"
-              aria-label="Postseason rounds"
-            >
-              {bracket.rounds.map((round) => (
-                <section className="bracket-round" key={round.name}>
-                  <h4>{round.name}</h4>
-                  <div className="bracket-matches">
-                    {round.matchups.map((match) => (
-                      <a
-                        className="bracket-match"
-                        key={match.id}
-                        data-bracket-match-id={match.id}
-                        href={match.url}
-                        target="_blank"
-                        rel="noreferrer"
-                      >
-                        {match.group && (
-                          <small className="bracket-match-group">
-                            {match.group}
-                          </small>
-                        )}
-                        {match.teams.map((p) => (
-                          <span
-                            key={p.id}
-                            className={
-                              revealResults && p.winner
-                                ? "bracket-winner"
-                                : undefined
-                            }
-                          >
-                            <Image
-                              unoptimized
-                              className="bracket-team-logo"
-                              src={
-                                p.logo || espnTeamLogoUrl(t?.league || "", p.id)
-                              }
-                              alt=""
-                              width={22}
-                              height={22}
-                              loading="lazy"
-                            />
-                            <span className="bracket-team-name">
-                              {p.name}
-                              {revealResults && p.winner && (
-                                <span className="visually-hidden">
-                                  {" "}
-                                  · Winner
-                                </span>
-                              )}
-                            </span>
-                            <b>{revealResults ? p.value : ""}</b>
-                          </span>
-                        ))}
-                        {(!revealResults || !match.summary) && (
-                          <small>
-                            {revealResults ? match.status : "Results hidden"}
-                          </small>
-                        )}
-                        {revealResults &&
-                          match.metric !== "Series wins" &&
-                          match.teams.some((p) => p.value !== undefined) && (
-                            <small>{match.metric}</small>
-                          )}
-                      </a>
-                    ))}
-                  </div>
-                </section>
-              ))}
-              <BracketConnectors
-                key={info.postseason.checked}
-                roundClass="bracket-round"
-                matchClass="bracket-match"
-                connections={bracket.connections}
-              />
-            </div>
-            <p className="panel-note">
-              ESPN · checked{" "}
-              {formatInTimeZone(info.postseason.checked, timeZone)}{" "}
-              {timeZoneLabel(timeZone, info.postseason.checked)}
-            </p>
-          </section>
-        )}
-        {competitionPanels &&
-          !(competitionPanels.hideDuringPostseason && info?.postseason) && (
-            <section
-              className="postseason-panel"
-              aria-label={competitionPanels.label}
-            >
-              {competitionPanels.sections.map((section) => (
-                <Fragment key={section.title}>
-                  <h3>{section.title}</h3>
-                  {section.note && <p className="panel-note">{section.note}</p>}
-                  <p className="panel-note">
-                    {section.links.map(([label, url], index) => (
-                      <Fragment key={url}>
-                        {index > 0 && <br />}
-                        <a href={url} target="_blank" rel="noreferrer">
-                          {label} ↗
-                        </a>
-                      </Fragment>
-                    ))}
-                  </p>
-                </Fragment>
-              ))}
-            </section>
-          )}
         {divisionStandingsUnavailable && (
           <p className="panel-note" role="status">
             Division standings are temporarily unavailable.
@@ -468,6 +578,7 @@ export default function TeamInsights({
           }
         >
           <summary>
+            <Zap className="summary-icon" aria-hidden="true" />
             Power Rankings
             <small>
               {myPowerRanking ? myPowerRanking.cells[0] : "Ranking unavailable"}
@@ -528,11 +639,17 @@ export default function TeamInsights({
               </tbody>
             </table>
           </div>
+          <a
+            className="roster-contracts-button"
+            href={info.powerRanking.url}
+            target="_blank"
+            rel="noreferrer"
+          >
+            <span>Power Ranking Details</span>
+            <ExternalLink size={14} aria-hidden="true" />
+          </a>
           <p className="panel-note">
-            <a href={info.powerRanking.url} target="_blank" rel="noreferrer">
-              {info.powerRanking.source} ↗
-            </a>{" "}
-            · checked{" "}
+            {info.powerRanking.source} · checked{" "}
             {formatInTimeZone(info.powerRanking.checked, timeZone, {
               month: "short",
               day: "numeric",
