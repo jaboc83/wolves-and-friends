@@ -122,7 +122,7 @@ Odds lookups are currently limited to eligible games within the next seven days 
 
 [MatchCalendar](components/games/match-calendar.tsx) owns the displayed month and selected day. Past dates are muted but remain clickable. Calendar entries themselves do not expose scores. Display dates and the definition of today use **America/Chicago**; source-time conversion can use the provider's timezone. Date-only events avoid inventing a start time.
 
-Vikings standings include the NFC conference table and a supplemental NFC North table. Conference playoff cut lines and qualification notes apply only to the conference table.
+The Vikings and Wild pages include division tables alongside conference standings. Playoff qualification notes and cut lines are scoped to the standings table they describe.
 
 ## 6. Where information is stored
 
