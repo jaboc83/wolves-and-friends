@@ -1,5 +1,5 @@
 import type { Table } from "./index";
-import { teamProfile } from "../teams/teams";
+import { teamProfile } from "../teams/teams.ts";
 
 // Sorts standings and adds competition-specific postseason qualification markers.
 // Qualification lines use the table's rank scope, never a guessed division cutoff.

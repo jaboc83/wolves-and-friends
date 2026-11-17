@@ -7,6 +7,7 @@ import {
   withDivisionRanks,
 } from "../lib/team-info/standings-display.ts";
 import type { Table } from "../lib/team-info/types.ts";
+import { decorateTable } from "../lib/team-info/standings.ts";
 
 function table(name: string, rows: Table["rows"]): Table {
   return {
@@ -19,6 +20,35 @@ function table(name: string, rows: Table["rows"]): Table {
     checked: "2026-11-17T00:00:00.000Z",
   };
 }
+
+test("WNBA league standings draw the playoff cutoff after eighth place", () => {
+  const league = table(
+    "Women's National Basketball Assoc.",
+    Array.from({ length: 15 }, (_, index) => ({
+      id: String(index + 1),
+      name: `Team ${index + 1}`,
+      url: "/",
+      cells: [String(index + 1), "20", "10"],
+    })),
+  );
+  const decorated = decorateTable(league, "lynx");
+
+  assert.deepEqual(decorated.cuts, [{ after: 8, label: "Playoff places end" }]);
+  assert.match(decorated.qualification || "", /top 8 across the entire league/);
+  assert.equal(decorated.rows[7].cells[0], "8");
+  assert.equal(decorated.rows[8].cells[0], "9");
+});
+
+test("WNBA conference, preseason and postseason tables do not receive a league cutoff", () => {
+  const league = table("Women's National Basketball Assoc.", []);
+  for (const other of [
+    { ...league, name: "Western Conference" },
+    { ...league, seasonType: 1 },
+    { ...league, seasonType: 3 },
+  ]) {
+    assert.deepEqual(decorateTable(other, "lynx").cuts, []);
+  }
+});
 
 test("division tables use division-order ranks without changing their stats", () => {
   const division = table("NFC North", [

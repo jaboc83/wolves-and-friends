@@ -15,7 +15,7 @@ import type { DashboardPageId } from "../../lib/dashboard/page-id";
 import { useLocalTimeZone } from "../../hooks/use-local-time-zone";
 import { formatInTimeZone, timeZoneLabel } from "../../lib/browser/local-time";
 import { visibleTeamStandings } from "../../lib/team-info/standings-display";
-import { ExternalLink } from "lucide-react";
+import { ExternalLink, House } from "lucide-react";
 export default function TeamInsights({
   active,
   data,
@@ -72,6 +72,12 @@ export default function TeamInsights({
     t?.league === "football/nfl" ||
     t?.league === "hockey/nhl" ||
     t?.league === "baseball/mlb";
+  const homeAdvantageLabel =
+    t?.sportKind === "hockey"
+      ? "Home-ice advantage clinched"
+      : t?.sportKind === "basketball"
+        ? "Home-court advantage clinched"
+        : "Home-field advantage clinched";
   const tableUrl = league
     ? "https://www.espn.com/" + league + "/standings"
     : t?.standingsPage || "";
@@ -226,11 +232,9 @@ export default function TeamInsights({
             <span>
               <b aria-hidden="true">w</b> Wild-card position
             </span>
+            <span className="standings-clinched">Playoffs clinched</span>
             <span>
-              <b aria-hidden="true">✓</b> Playoffs clinched
-            </span>
-            <span>
-              <b aria-hidden="true">★</b> Home-field/ice advantage clinched
+              <House size={12} aria-hidden="true" /> {homeAdvantageLabel}
             </span>
           </p>
         )}
@@ -271,27 +275,15 @@ export default function TeamInsights({
                     </thead>
                     <tbody>
                       {table.rows.map((row) => {
-                        const markers: { symbol: string; label: string }[] = [];
-                        if (row.playoffPosition === "division")
-                          markers.push({
-                            symbol: "●",
-                            label: "Division playoff position",
-                          });
-                        if (row.playoffPosition === "wildcard")
-                          markers.push({
-                            symbol: "w",
-                            label: "Wild-card position",
-                          });
-                        if (row.playoffsClinched)
-                          markers.push({
-                            symbol: "✓",
-                            label: "Playoffs clinched",
-                          });
-                        if (row.homeAdvantageClinched)
-                          markers.push({
-                            symbol: "★",
-                            label: "Home-field/ice advantage clinched",
-                          });
+                        const playoffsClinched =
+                          row.playoffsClinched || row.homeAdvantageClinched;
+                        const markerLabel = row.homeAdvantageClinched
+                          ? homeAdvantageLabel
+                          : row.playoffPosition === "division"
+                            ? "Division playoff position"
+                            : row.playoffPosition === "wildcard"
+                              ? "Wild-card position"
+                              : "";
                         return (
                           <Fragment key={row.id}>
                             <tr className={row.highlight ? "my-team" : ""}>
@@ -301,25 +293,41 @@ export default function TeamInsights({
                                   href={row.url}
                                   target="_blank"
                                   rel="noreferrer"
+                                  className={
+                                    playoffsClinched
+                                      ? "standings-clinched"
+                                      : undefined
+                                  }
+                                  title={
+                                    playoffsClinched
+                                      ? "Playoffs clinched"
+                                      : undefined
+                                  }
                                 >
                                   {row.name} ↗
+                                  {playoffsClinched && (
+                                    <span className="visually-hidden">
+                                      {" "}
+                                      · Playoffs clinched
+                                    </span>
+                                  )}
                                 </a>
-                                {markers.length > 0 && (
+                                {markerLabel && (
                                   <span
                                     className="standings-markers"
                                     role="img"
-                                    aria-label={markers
-                                      .map((marker) => marker.label)
-                                      .join(", ")}
+                                    aria-label={markerLabel}
+                                    title={markerLabel}
                                   >
-                                    {markers.map((marker) => (
-                                      <span
-                                        key={marker.label}
-                                        aria-hidden="true"
-                                      >
-                                        {marker.symbol}
+                                    {row.homeAdvantageClinched ? (
+                                      <House size={12} aria-hidden="true" />
+                                    ) : (
+                                      <span aria-hidden="true">
+                                        {row.playoffPosition === "wildcard"
+                                          ? "w"
+                                          : "●"}
                                       </span>
-                                    ))}
+                                    )}
                                   </span>
                                 )}
                               </th>

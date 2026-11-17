@@ -124,7 +124,9 @@ Odds lookups are currently limited to eligible games within the next seven days 
 
 [MatchCalendar](components/games/match-calendar.tsx) owns the displayed month and selected day. Past dates are muted but remain clickable. Calendar entries themselves do not expose scores. Display dates and the definition of today use **America/Chicago**; source-time conversion can use the provider's timezone. Date-only events avoid inventing a start time.
 
-Standings panels omit conferences or baseball leagues the selected team is not in and provide a button to the full standings page. The Vikings, Wild, and Twins pages include division tables with division-order ranks and symbols for current division playoff positions, wild cards (lowercase `w`), and provider-reported clinches. MLB marks three division winners and three wild cards per league. Position symbols use the conference or league table's regular-season metadata, since ESPN may omit the season type at the response root. Other sports retain their table-scoped qualification notes and cut lines.
+Standings panels omit conferences or baseball leagues the selected team is not in and provide a button to the full standings page. The Vikings, Wild, and Twins pages include division tables with division-order ranks and symbols for current division playoff positions and wild cards (lowercase `w`). Clinched teams have green names with accessible status text. A house icon replaces the position symbol when home advantage is clinched, so each team has at most one marker. Clinches come only from the provider. MLB marks three division winners and three wild cards per league. Position symbols use the conference or league table's regular-season metadata, since ESPN may omit the season type at the response root. Other sports retain their table-scoped qualification notes and cut lines.
+
+The Lynx page requests ESPN's league-wide WNBA table (`level=1`) and draws a playoff line after eighth place. WNBA qualification is league-wide, not per conference; cached conference-only tables never receive that cutoff.
 
 ## 6. Where information is stored
 

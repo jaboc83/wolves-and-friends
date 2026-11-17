@@ -391,11 +391,14 @@ export async function fetchTeamInfo() {
           })(),
           (async () => {
             try {
-              const standingsUrl =
+              const standingsUrl = new URL(
                 "https://site.api.espn.com/apis/v2/sports/" +
-                t.league +
-                "/standings";
-              const x = await get(standingsUrl);
+                  t.league +
+                  "/standings",
+              );
+              if (t.league === "basketball/wnba")
+                standingsUrl.searchParams.set("level", "1");
+              const x = await get(standingsUrl.href);
               const parseTables = (
                 value: ProviderResponse,
                 rankDivisionGroups = false,
@@ -406,11 +409,12 @@ export async function fetchTeamInfo() {
               let divisionTables: Table[] = [];
               if (t.divisionStandings) {
                 try {
-                  const grouped = await get(
-                    standingsUrl +
-                      "?group=" +
-                      encodeURIComponent(String(t.divisionStandings.group)),
+                  const divisionUrl = new URL(standingsUrl);
+                  divisionUrl.searchParams.set(
+                    "group",
+                    String(t.divisionStandings.group),
                   );
+                  const grouped = await get(divisionUrl.href);
                   let groupedTables = await parseTables(grouped, true);
                   if (
                     t.league === "football/nfl" ||
@@ -453,12 +457,10 @@ export async function fetchTeamInfo() {
               // final seeding and qualification lines remain visible.
               if (seasonType === 3 && x.season?.year) {
                 try {
-                  const regular = await get(
-                    standingsUrl +
-                      "?season=" +
-                      encodeURIComponent(String(x.season.year)) +
-                      "&seasontype=2",
-                  );
+                  const regularUrl = new URL(standingsUrl);
+                  regularUrl.searchParams.set("season", String(x.season.year));
+                  regularUrl.searchParams.set("seasontype", "2");
+                  const regular = await get(regularUrl.href);
                   const regularTables = await parseTables(regular);
                   info.tables = [...regularTables, ...currentTables];
                 } catch {

@@ -18,11 +18,24 @@
   flex-wrap: wrap;
   gap: 4px 12px;
 }
+.standings-marker-legend > span {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+}
+.data-panel a.standings-clinched,
+.standings-marker-legend .standings-clinched {
+  color: #11673d;
+}
+.hub[data-mode="dark"] .standings-clinched {
+  color: #8fe0ac;
+}
 .standings-markers {
   display: inline-flex;
-  gap: 4px;
+  align-items: center;
   margin-left: 6px;
   white-space: nowrap;
+  vertical-align: middle;
 }
 .starter-badge {
   display: inline-block;
