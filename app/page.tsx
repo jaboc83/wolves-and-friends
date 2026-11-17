@@ -1,6 +1,13 @@
 // Home page for the app. Displays the dashboard with news, scores, and team insights.
 "use client";
-import { lazy, Suspense, useEffect, useState, type CSSProperties } from "react";
+import {
+  lazy,
+  Suspense,
+  useDeferredValue,
+  useEffect,
+  useState,
+  type CSSProperties,
+} from "react";
 import Link from "next/link";
 import Image from "next/image";
 import { Switch } from "../components/ui/switch";
@@ -81,6 +88,9 @@ export default function Home() {
     refreshRosterStats,
     selectPage,
   } = useDashboardFeeds(active);
+  // Heavy content follows the deferred page so the tab and header paint first.
+  const deferredActive = useDeferredValue(active);
+  const contentPending = deferredActive !== active;
   useEffect(() => {
     let alive = true;
     queueMicrotask(() => {
@@ -160,7 +170,7 @@ export default function Home() {
   const { compactNews, displayed, olderCount, olderRemaining, newest } =
     selectStories({
       newsData,
-      active,
+      active: deferredActive,
       search,
       readIds,
       showRead,
@@ -179,19 +189,19 @@ export default function Home() {
     data,
     oddsGames,
     liveGames,
-    active,
+    active: deferredActive,
     showOlderResults,
     timeZone,
   });
   const newsMode = newsDisplayMode(loading, displayed.length > 0, newsFailed);
   const socialPosts = unreadSocial(
     socialData.filter((post) => post.socialPlatform !== "youtube"),
-    active,
+    deferredActive,
     readIds,
   );
   const youtubeHeadlines = unreadSocial(
     socialData.filter((post) => post.socialPlatform === "youtube"),
-    active,
+    deferredActive,
     readIds,
   );
   const failed = [
@@ -203,8 +213,8 @@ export default function Home() {
     (h) =>
       h.name !== "BasketNews" &&
       h.status === "unavailable" &&
-      (active === DASHBOARD_PAGE_IDS.ALL ||
-        (isTeamId(active) && h.teams.includes(active))),
+      (deferredActive === DASHBOARD_PAGE_IDS.ALL ||
+        (isTeamId(deferredActive) && h.teams.includes(deferredActive))),
   );
   // Binds each game to its card and the dashboard's score-reveal state.
   function game(g: Game, compact = false, today = false) {
@@ -353,6 +363,13 @@ export default function Home() {
                 onToggleResults={toggleResults}
               />
             </Suspense>
+          ) : contentPending ? (
+            <div className="columns skeleton" aria-busy="true" role="status">
+              <span className="sr-only">Loading {team?.name ?? "page"}…</span>
+              <div className="skeleton-block skeleton-tall" />
+              <div className="skeleton-block skeleton-tall" />
+              <div className="skeleton-block" />
+            </div>
           ) : (
             <>
               {scheduleError && (

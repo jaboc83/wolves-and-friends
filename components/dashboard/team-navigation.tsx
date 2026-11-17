@@ -21,9 +21,7 @@ export default function TeamNavigation({
   const [open, setOpen] = useState(false);
   const activeTeam = teams.find((team) => team.id === active);
   const menuTitle =
-    active === "march-madness"
-      ? "March Madness"
-      : activeTeam?.short || "All teams";
+    active === "march-madness" ? "March Madness" : activeTeam?.short || "All teams";
 
   function choose(id: DashboardPageId) {
     setOpen(false);

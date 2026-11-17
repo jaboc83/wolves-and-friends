@@ -10,6 +10,14 @@ import type { DashboardPageId } from "./page-id";
 import { DASHBOARD_PAGE_IDS } from "./page-id";
 export const OLDER_BATCH_SIZE = 10;
 
+// Sorts newest first, parsing each date once rather than on every comparison.
+function newestFirst<T extends { date: string }>(items: T[]): T[] {
+  return items
+    .map((item) => ({ item, time: Date.parse(item.date) }))
+    .sort((a, b) => b.time - a.time)
+    .map(({ item }) => item);
+}
+
 export function selectStories({
   newsData,
   active,
@@ -29,7 +37,7 @@ export function selectStories({
   olderLimit?: number;
   timeZone?: string;
 }) {
-  const filtered = [
+  const filtered = newestFirst([
     ...new Map(
       [
         ...(newsData.stories || []).filter(
@@ -45,8 +53,7 @@ export function selectStories({
         ...authorStories(newsData.authors || []),
       ].map((s) => [s.url, s]),
     ).values(),
-  ]
-    .sort((a, b) => Date.parse(b.date) - Date.parse(a.date))
+  ])
     .filter(
       (s) =>
         s.kind !== "social" &&
