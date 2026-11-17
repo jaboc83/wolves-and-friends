@@ -293,18 +293,26 @@ export default function RosterPanel({
       {depth ? (
         <>
           {teamId === "wolves" && (
-            <a
-              className="roster-contracts-button"
-              href="https://www.basketball-reference.com/contracts/MIN.html"
-              target="_blank"
-              rel="noreferrer"
-            >
-              <span>Player Contracts</span>
-              <ExternalLink
-                size={14}
-                aria-hidden="true"
-              />
-            </a>
+            <div className="roster-contracts-actions">
+              <a
+                className="roster-contracts-button"
+                href="https://www.basketball-reference.com/contracts/MIN.html"
+                target="_blank"
+                rel="noreferrer"
+              >
+                <span>Player Contracts</span>
+                <ExternalLink size={14} aria-hidden="true" />
+              </a>
+              <a
+                className="roster-contracts-button"
+                href="https://cleaningtheglass.com/stats/team/18"
+                target="_blank"
+                rel="noreferrer"
+              >
+                <span>Advanced Stats</span>
+                <ExternalLink size={14} aria-hidden="true" />
+              </a>
+            </div>
           )}
           {note && (
             <p

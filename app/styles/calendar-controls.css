@@ -271,11 +271,16 @@ body:has(.score-choice[open]) {
 .roster-player-list li {
   padding: 4px;
 }
+.roster-contracts-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-bottom: 12px;
+}
 .roster-contracts-button {
   display: inline-flex;
   align-items: center;
   gap: 7px;
-  margin: 0 0 12px;
   padding: 7px 12px;
   border: 1px solid var(--team-primary, #21468b);
   border-left: 3px solid var(--team-accent, #9ab568);
