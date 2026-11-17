@@ -153,7 +153,29 @@
   display: flex;
   align-items: center;
   gap: 12px;
-  margin-bottom: 7px;
+  margin: 0 -6px 7px;
+  padding: 6px;
+  border-left: 3px solid transparent;
+  border-radius: 4px;
+}
+.bracket-match > .bracket-winner {
+  background: #f3e8ff;
+  border-left-color: #7e22ce;
+  color: #581c87;
+  font-weight: 800;
+}
+.hub[data-mode="dark"] .bracket-match > .bracket-winner {
+  background: #3b2354;
+  border-left-color: #d8b4fe;
+  color: #e9d5ff;
+}
+.bracket-team-name {
+  min-width: 0;
+}
+.bracket-winner-label {
+  display: block;
+  font-size: 10px;
+  font-weight: 700;
 }
 .bracket-match > span .bracket-team-logo {
   width: 22px;

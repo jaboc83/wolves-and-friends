@@ -150,7 +150,14 @@ export default function TeamInsights({
                       rel="noreferrer"
                     >
                       {match.teams.map((p) => (
-                        <span key={p.id}>
+                        <span
+                          key={p.id}
+                          className={
+                            revealResults && p.winner
+                              ? "bracket-winner"
+                              : undefined
+                          }
+                        >
                           <Image
                             unoptimized
                             className="bracket-team-logo"
@@ -162,7 +169,14 @@ export default function TeamInsights({
                             height={22}
                             loading="lazy"
                           />
-                          {p.name}
+                          <span className="bracket-team-name">
+                            {p.name}
+                            {revealResults && p.winner && (
+                              <span className="bracket-winner-label">
+                                Winner
+                              </span>
+                            )}
+                          </span>
                           <b>{revealResults ? p.value : ""}</b>
                         </span>
                       ))}

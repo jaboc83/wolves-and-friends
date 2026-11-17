@@ -78,6 +78,8 @@ Each team-info refresh shares a four-request queue across standings, rosters, po
 
 Postseason brackets fetch calendar months within the final 120 days of the provider's season window, through the next month or season end. This retains earlier rounds during the existing 14-day post-season grace period, even when ESPN relabels a completed postseason as regular season. Only confirmed postseason games for that season are displayed.
 
+Completed postseason winners have a high-contrast purple row highlight, bold text, and a visible "Winner" label. Series require provider-confirmed completion and a higher series-win total; single-game matchups require a completed game and the provider's winner flag. Unfinished series are never marked won merely because a game has ended. Hiding scores also hides winner labels and highlights.
+
 ## 4. How provider data becomes page content
 
 The shared types are defined in [lib/feeds/feed-types.ts](lib/feeds/feed-types.ts):

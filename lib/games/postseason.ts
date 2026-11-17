@@ -14,7 +14,13 @@ export type Postseason = {
       status: string;
       summary?: string;
       metric: string;
-      teams: { id: string; name: string; logo: string; value?: string }[];
+      teams: {
+        id: string;
+        name: string;
+        logo: string;
+        value?: string;
+        winner?: boolean;
+      }[];
     }[];
   }[];
 };
@@ -27,6 +33,7 @@ type SeasonData = {
 };
 type EventStatus = {
   state?: string;
+  completed?: boolean;
   shortDetail?: string;
   description?: string;
 };
@@ -41,6 +48,7 @@ type PostseasonTeam = {
 type PostseasonEventCompetitor = {
   team?: PostseasonTeam;
   score?: string | number;
+  winner?: boolean;
 };
 type ResolvedPostseasonCompetitor = PostseasonEventCompetitor & {
   team: PostseasonTeam & { id: string | number; displayName: string };
@@ -51,6 +59,7 @@ type PostseasonCompetition = {
   status?: { type?: EventStatus };
   series?: {
     summary?: string;
+    completed?: boolean;
     competitors?: PostseasonCompetitor[];
   };
 };
@@ -155,6 +164,12 @@ export function parsePostseason(
     const prior = group.get(id);
     // Prefer the latest played game over later unplayed placeholders.
     if (prior && status.state === "pre") continue;
+    const seriesWins = competitors.map((p) => {
+      const wins = c.series?.competitors?.find(
+        (team) => String(team.id) === String(p.team.id),
+      )?.wins;
+      return wins === undefined || wins === "" ? NaN : Number(wins);
+    });
     group.set(id, {
       id,
       url,
@@ -162,10 +177,15 @@ export function parsePostseason(
       status: status.shortDetail || status.description || "Scheduled",
       summary: c.series?.summary,
       metric: c.series ? "Series wins" : "Score",
-      teams: competitors.map((p) => ({
+      teams: competitors.map((p, index) => ({
         id: String(p.team.id),
         name: p.team.displayName,
         logo: espnTeamLogoUrl(league, String(p.team.id)),
+        winner: c.series
+          ? c.series.completed === true &&
+            seriesWins.every(Number.isFinite) &&
+            seriesWins[index] > seriesWins[1 - index]
+          : status.completed === true && p.winner === true,
         value: c.series
           ? String(
               c.series.competitors?.find(

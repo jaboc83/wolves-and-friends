@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import test from "node:test";
-import { fetchPostseason } from "../lib/games/postseason.ts";
+import { fetchPostseason, parsePostseason } from "../lib/games/postseason.ts";
 
 function game(round: string, date: string, year: number, teams = [1, 2]) {
   return {
@@ -19,6 +19,91 @@ function game(round: string, date: string, year: number, teams = [1, 2]) {
     ],
   };
 }
+
+const window = {
+  year: 2026,
+  name: "2026",
+  start: "2026-04-03T07:00:00Z",
+  end: "2026-11-05T07:59:00Z",
+};
+
+test("series winners require a completed series and an unambiguous series-win total", () => {
+  for (const { completed, wins, expected } of [
+    { completed: true, wins: ["1", "3"], expected: [false, true] },
+    { completed: false, wins: [2, 0], expected: [false, false] },
+    { completed: true, wins: [2, 2], expected: [false, false] },
+    { completed: true, wins: [undefined, 3], expected: [false, false] },
+  ]) {
+    const event = game("WNBA Semifinals", "2026-10-10T00:00:00Z", 2026);
+    const bracket = parsePostseason(
+      {
+        events: [
+          {
+            ...event,
+            status: { type: { state: "post", completed: true } },
+            competitions: event.competitions.map((competition) => ({
+              ...competition,
+              competitors: competition.competitors.map((team, index) => ({
+                ...team,
+                winner: index === 0,
+              })),
+              series: {
+                completed,
+                competitors: wins
+                  .map((count, index) => ({
+                    id: String(index + 1),
+                    wins: count,
+                  }))
+                  .reverse(),
+              },
+            })),
+          },
+        ],
+      },
+      window,
+      window.end,
+      "basketball/wnba",
+    );
+    assert.deepEqual(
+      bracket?.rounds[0].matchups[0].teams.map((team) => team.winner),
+      expected,
+    );
+  }
+});
+
+test("single-game winners require a final game and a provider winner flag", () => {
+  for (const { completed, winner, expected } of [
+    { completed: true, winner: true, expected: [false, true] },
+    { completed: false, winner: true, expected: [false, false] },
+    { completed: true, winner: false, expected: [false, false] },
+  ]) {
+    const event = game("Wild Card", "2026-10-10T00:00:00Z", 2026);
+    const bracket = parsePostseason(
+      {
+        events: [
+          {
+            ...event,
+            status: { type: { state: completed ? "post" : "in", completed } },
+            competitions: event.competitions.map((competition) => ({
+              ...competition,
+              competitors: competition.competitors.map((team, index) => ({
+                ...team,
+                winner: winner && index === 1,
+              })),
+            })),
+          },
+        ],
+      },
+      window,
+      window.end,
+      "football/nfl",
+    );
+    assert.deepEqual(
+      bracket?.rounds[0].matchups[0].teams.map((team) => team.winner),
+      expected,
+    );
+  }
+});
 
 test("WNBA retains all rounds after ESPN reverts the season phase to regular", async (t) => {
   t.mock.timers.enable({
