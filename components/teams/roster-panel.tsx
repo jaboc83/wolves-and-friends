@@ -295,7 +295,8 @@ export default function RosterPanel({
           {(teamId === "wolves" ||
             teamId === "wild" ||
             teamId === "vikings" ||
-            teamId === "twins") && (
+            teamId === "twins" ||
+            teamId === "loons") && (
             <div className="roster-contracts-actions">
               <a
                 className="roster-contracts-button"
@@ -306,7 +307,9 @@ export default function RosterPanel({
                       ? "https://puckpedia.com/team/minnesota-wild"
                       : teamId === "vikings"
                         ? "https://www.spotrac.com/nfl/minnesota-vikings/contracts"
-                        : "https://www.nbcsports.com/mlb/minnesota-twins/contracts"
+                          : teamId === "twins"
+                            ? "https://www.nbcsports.com/mlb/minnesota-twins/contracts"
+                            : "https://www.spotrac.com/mls/minnesota-united-fc/cap"
                 }
                 target="_blank"
                 rel="noreferrer"
@@ -323,7 +326,9 @@ export default function RosterPanel({
                       ? "https://hockeyviz.com/team/MIN/2627"
                       : teamId === "vikings"
                         ? "https://nflsavant.com/teams/MIN"
-                        : "https://www.baseball-reference.com/teams/MIN/"
+                          : teamId === "twins"
+                            ? "https://www.baseball-reference.com/teams/MIN/"
+                            : "https://www.mlssoccer.com/clubs/minnesota-united-fc/stats/"
                 }
                 target="_blank"
                 rel="noreferrer"
