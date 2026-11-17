@@ -37,7 +37,36 @@ type RosterPlayer = Depth["groups"][number]["players"][number] & {
 };
 type RosterSort = { column: string; direction: "asc" | "desc" };
 type Row = RosterStatRow<RosterPlayer>;
+type RosterExternalLinks = { contracts: string; advancedStats: string };
 const emptySalaries: Record<string, number> = {};
+const rosterExternalLinks: Partial<Record<string, RosterExternalLinks>> = {
+  wolves: {
+    contracts: "https://www.basketball-reference.com/contracts/MIN.html",
+    advancedStats: "https://cleaningtheglass.com/stats/team/18",
+  },
+  wild: {
+    contracts: "https://puckpedia.com/team/minnesota-wild",
+    advancedStats: "https://hockeyviz.com/team/MIN/2627",
+  },
+  vikings: {
+    contracts: "https://www.spotrac.com/nfl/minnesota-vikings/contracts",
+    advancedStats: "https://nflsavant.com/teams/MIN",
+  },
+  twins: {
+    contracts: "https://www.nbcsports.com/mlb/minnesota-twins/contracts",
+    advancedStats: "https://www.baseball-reference.com/teams/MIN/",
+  },
+  loons: {
+    contracts: "https://www.spotrac.com/mls/minnesota-united-fc/cap",
+    advancedStats:
+      "https://www.mlssoccer.com/clubs/minnesota-united-fc/stats/",
+  },
+  palace: {
+    contracts: "https://www.spotrac.com/epl/crystal-palace/yearly",
+    advancedStats:
+      "https://theanalyst.com/football/team/scm-31/crystal-palace/stats",
+  },
+};
 
 const defaultSortDirection = (column: string): "asc" | "desc" =>
   column === "Player" || column === "Position" ? "asc" : "desc";
@@ -280,6 +309,7 @@ export default function RosterPanel({
     [groups],
   );
   const note = league ? statusNotes[playerStatsStatus] : undefined;
+  const externalLinks = rosterExternalLinks[teamId];
 
   return (
     <details
@@ -292,25 +322,11 @@ export default function RosterPanel({
       <summary>{heading}</summary>
       {depth ? (
         <>
-          {(teamId === "wolves" ||
-            teamId === "wild" ||
-            teamId === "vikings" ||
-            teamId === "twins" ||
-            teamId === "loons") && (
+          {externalLinks && (
             <div className="roster-contracts-actions">
               <a
                 className="roster-contracts-button"
-                href={
-                  teamId === "wolves"
-                    ? "https://www.basketball-reference.com/contracts/MIN.html"
-                    : teamId === "wild"
-                      ? "https://puckpedia.com/team/minnesota-wild"
-                      : teamId === "vikings"
-                        ? "https://www.spotrac.com/nfl/minnesota-vikings/contracts"
-                          : teamId === "twins"
-                            ? "https://www.nbcsports.com/mlb/minnesota-twins/contracts"
-                            : "https://www.spotrac.com/mls/minnesota-united-fc/cap"
-                }
+                href={externalLinks.contracts}
                 target="_blank"
                 rel="noreferrer"
               >
@@ -319,17 +335,7 @@ export default function RosterPanel({
               </a>
               <a
                 className="roster-contracts-button"
-                href={
-                  teamId === "wolves"
-                    ? "https://cleaningtheglass.com/stats/team/18"
-                    : teamId === "wild"
-                      ? "https://hockeyviz.com/team/MIN/2627"
-                      : teamId === "vikings"
-                        ? "https://nflsavant.com/teams/MIN"
-                          : teamId === "twins"
-                            ? "https://www.baseball-reference.com/teams/MIN/"
-                            : "https://www.mlssoccer.com/clubs/minnesota-united-fc/stats/"
-                }
+                href={externalLinks.advancedStats}
                 target="_blank"
                 rel="noreferrer"
               >
