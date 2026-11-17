@@ -78,7 +78,9 @@ Each team-info refresh shares a four-request queue across standings, rosters, po
 
 Postseason brackets fetch calendar months within the final 120 days of the provider's season window, through the next month or season end. This retains earlier rounds during the existing 14-day post-season grace period, even when ESPN relabels a completed postseason as regular season. Only confirmed postseason games for that season are displayed.
 
-Completed postseason winners have a high-contrast purple row highlight, bold text, and a visible "Winner" label. Series require provider-confirmed completion and a higher series-win total; single-game matchups require a completed game and the provider's winner flag. Unfinished series are never marked won merely because a game has ended. Hiding scores also hides winner labels and highlights.
+Postseason layout groups parallel MLB league rounds and NBA/NHL/NFL conference rounds into the same stage column, with league/conference labels on the matchups. Earlier cards are ordered by their actual next-round participants, and arrow connectors follow shared team IDs rather than assuming adjacent boxes feed each other. Later rounds are vertically spaced to make progression easier to trace. Unconfirmed paths are not invented, including for byes and reseeding.
+
+Completed postseason winners have a high-contrast purple row highlight, bold text, and screen-reader winner status without a visible "Winner" label. Series require provider-confirmed completion and a higher series-win total; single-game matchups require a completed game and the provider's winner flag. Unfinished series are never marked won merely because a game has ended. Hiding scores also hides winner status and highlights.
 
 ## 4. How provider data becomes page content
 

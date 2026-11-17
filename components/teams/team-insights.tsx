@@ -1,12 +1,13 @@
 // Team detail panels: standings, power rankings, postseason, and roster.
 "use client";
-import { Fragment, useState } from "react";
+import { Fragment, useMemo, useState } from "react";
 import { decorateTable } from "../../lib/team-info/standings";
 import { teamProfile, teams } from "../../lib/teams/teams";
 import { sportTerms } from "../../lib/teams/sport-terms";
 import type { TeamInfo } from "../../lib/team-info";
 import type { PlayerStats } from "../../lib/team-info/player-stats";
 import { espnTeamLogoUrl } from "../../lib/games/march-madness";
+import { layoutPostseasonRounds } from "../../lib/games/postseason-layout";
 import BracketConnectors from "../games/bracket-connectors";
 import RosterPanel from "./roster-panel";
 import Image from "next/image";
@@ -56,6 +57,11 @@ export default function TeamInsights({
   const headings = sportTerms(active);
   const t = teamProfile(id);
   const info = data.find((i) => i.id === id);
+  const bracket = useMemo(
+    () =>
+      layoutPostseasonRounds(info?.postseason?.rounds ?? [], t?.league ?? ""),
+    [info?.postseason?.rounds, t?.league],
+  );
   const standingsTables = visibleTeamStandings(info?.tables || []);
   const divisionStandingsUnavailable = Boolean(
     t?.divisionStandings &&
@@ -128,7 +134,8 @@ export default function TeamInsights({
           <section className="postseason-panel" aria-label="Postseason bracket">
             <h3>Postseason bracket · {info.postseason.season}</h3>
             <p className="panel-note">
-              Confirmed matchups only. Later rounds appear as announced.
+              Read left to right. Arrows connect confirmed matchups in
+              successive rounds; later rounds appear as announced.
               {info.postseason.partial &&
                 " Some rounds could not be refreshed."}
             </p>
@@ -138,66 +145,76 @@ export default function TeamInsights({
               role="region"
               aria-label="Postseason rounds"
             >
-              {info.postseason.rounds.map((round) => (
+              {bracket.rounds.map((round) => (
                 <section className="bracket-round" key={round.name}>
                   <h4>{round.name}</h4>
-                  {round.matchups.map((match) => (
-                    <a
-                      className="bracket-match"
-                      key={match.id}
-                      href={match.url}
-                      target="_blank"
-                      rel="noreferrer"
-                    >
-                      {match.teams.map((p) => (
-                        <span
-                          key={p.id}
-                          className={
-                            revealResults && p.winner
-                              ? "bracket-winner"
-                              : undefined
-                          }
-                        >
-                          <Image
-                            unoptimized
-                            className="bracket-team-logo"
-                            src={
-                              p.logo || espnTeamLogoUrl(t?.league || "", p.id)
-                            }
-                            alt=""
-                            width={22}
-                            height={22}
-                            loading="lazy"
-                          />
-                          <span className="bracket-team-name">
-                            {p.name}
-                            {revealResults && p.winner && (
-                              <span className="bracket-winner-label">
-                                Winner
-                              </span>
-                            )}
-                          </span>
-                          <b>{revealResults ? p.value : ""}</b>
-                        </span>
-                      ))}
-                      <small>
-                        {revealResults
-                          ? match.summary || match.status
-                          : "Results hidden"}{" "}
-                        ↗
-                      </small>
-                      {revealResults &&
-                        match.teams.some((p) => p.value !== undefined) && (
-                          <small>{match.metric}</small>
+                  <div className="bracket-matches">
+                    {round.matchups.map((match) => (
+                      <a
+                        className="bracket-match"
+                        key={match.id}
+                        data-bracket-match-id={match.id}
+                        href={match.url}
+                        target="_blank"
+                        rel="noreferrer"
+                      >
+                        {match.group && (
+                          <small className="bracket-match-group">
+                            {match.group}
+                          </small>
                         )}
-                    </a>
-                  ))}
+                        {match.teams.map((p) => (
+                          <span
+                            key={p.id}
+                            className={
+                              revealResults && p.winner
+                                ? "bracket-winner"
+                                : undefined
+                            }
+                          >
+                            <Image
+                              unoptimized
+                              className="bracket-team-logo"
+                              src={
+                                p.logo || espnTeamLogoUrl(t?.league || "", p.id)
+                              }
+                              alt=""
+                              width={22}
+                              height={22}
+                              loading="lazy"
+                            />
+                            <span className="bracket-team-name">
+                              {p.name}
+                              {revealResults && p.winner && (
+                                <span className="visually-hidden">
+                                  {" "}
+                                  · Winner
+                                </span>
+                              )}
+                            </span>
+                            <b>{revealResults ? p.value : ""}</b>
+                          </span>
+                        ))}
+                        <small>
+                          {revealResults
+                            ? match.summary || match.status
+                            : "Results hidden"}{" "}
+                          ↗
+                        </small>
+                        {revealResults &&
+                          match.teams.some((p) => p.value !== undefined) && (
+                            <small>{match.metric}</small>
+                          )}
+                      </a>
+                    ))}
+                  </div>
                 </section>
               ))}
               <BracketConnectors
                 key={info.postseason.checked}
                 roundClass="bracket-round"
                 matchClass="bracket-match"
+                connections={bracket.connections}
               />
             </div>
             <p className="panel-note">

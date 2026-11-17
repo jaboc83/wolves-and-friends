@@ -2,9 +2,12 @@
 .bracket-rounds {
   position: relative;
   display: flex;
-  gap: 18px;
+  gap: 44px;
   overflow-x: auto;
   padding: 4px 18px 14px 2px;
+}
+.bracket-rounds > .bracket-connectors {
+  color: var(--muted, #526170);
 }
 .march-panel {
   background: var(--surface, #fffefb);
@@ -134,9 +137,21 @@
 .bracket-round {
   flex: 0 0 250px;
   max-width: 85vw;
+  display: flex;
+  flex-direction: column;
 }
 .bracket-round h4 {
   margin: 8px 0 14px;
+}
+.bracket-matches {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  justify-content: space-around;
+  gap: 16px;
+}
+.bracket-matches .bracket-match {
+  margin-bottom: 0;
 }
 .bracket-match {
   position: relative;
@@ -172,11 +187,6 @@
 .bracket-team-name {
   min-width: 0;
 }
-.bracket-winner-label {
-  display: block;
-  font-size: 10px;
-  font-weight: 700;
-}
 .bracket-match > span .bracket-team-logo {
   width: 22px;
   height: 22px;
@@ -201,6 +211,13 @@
   display: block;
   color: var(--muted, #64707a);
   margin-top: 8px;
+}
+.bracket-match .bracket-match-group {
+  margin: 0 0 10px;
+  font-size: 10px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
 }
 .section-links a {
   color: var(--ink, #192a3c);
