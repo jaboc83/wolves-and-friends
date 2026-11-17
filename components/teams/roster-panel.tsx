@@ -7,10 +7,9 @@ import {
   useState,
   type KeyboardEvent,
 } from "react";
-import { ExternalLink } from "lucide-react";
+import { DollarSign, ExternalLink } from "lucide-react";
 import type { TeamInfo } from "../../lib/team-info";
 import { teamProfile } from "../../lib/teams/teams";
-import { Button } from "../ui/button";
 import type { PlayerStats } from "../../lib/team-info/player-stats";
 import type { StatsStatus } from "../../lib/team-info/roster-stats-loader";
 import { useRosterSalaries } from "../../hooks/use-roster-salaries";
@@ -294,18 +293,21 @@ export default function RosterPanel({
       {depth ? (
         <>
           {teamId === "wolves" && (
-            <p className="panel-note">
-              <Button asChild size="sm" variant="outline">
-                <a
-                  href="https://www.basketball-reference.com/contracts/MIN.html"
-                  target="_blank"
-                  rel="noreferrer"
-                >
-                  Player Contracts
-                  <ExternalLink size={14} aria-hidden="true" />
-                </a>
-              </Button>
-            </p>
+            <a
+              className="roster-contracts-button"
+              href="https://www.basketball-reference.com/contracts/MIN.html"
+              target="_blank"
+              rel="noreferrer"
+            >
+              <span className="roster-contracts-button-icon">
+                <DollarSign size={16} aria-hidden="true" />
+              </span>
+              <span>Player Contracts</span>
+              <ExternalLink
+                size={14}
+                aria-hidden="true"
+              />
+            </a>
           )}
           {note && (
             <p
