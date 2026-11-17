@@ -237,12 +237,11 @@ export default function TeamInsights({
                             <b>{revealResults ? p.value : ""}</b>
                           </span>
                         ))}
-                        <small>
-                          {revealResults
-                            ? match.summary || match.status
-                            : "Results hidden"}{" "}
-                          ↗
-                        </small>
+                        {(!revealResults || !match.summary) && (
+                          <small>
+                            {revealResults ? match.status : "Results hidden"}
+                          </small>
+                        )}
                         {revealResults &&
                           match.metric !== "Series wins" &&
                           match.teams.some((p) => p.value !== undefined) && (
