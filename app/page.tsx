@@ -372,7 +372,10 @@ export default function Home() {
                 >
                   <div className="rail-heading today-heading">
                     <h2>
-                      Today’s {terms.events} <small>{todayGames.length}</small>
+                      Today’s {terms.events}{" "}
+                      {active === DASHBOARD_PAGE_IDS.ALL && (
+                        <small>{todayGames.length}</small>
+                      )}
                     </h2>
                     <span>
                       {localDateTime(new Date().toISOString(), {

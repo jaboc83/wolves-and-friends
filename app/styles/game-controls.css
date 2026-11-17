@@ -127,10 +127,11 @@
   box-shadow: 0 calc(0px - var(--fold)) 0 inset #0005;
   color: #fff;
 }
-  background: #355b4a;
+.game-card-ribbon .game-badges {
   justify-content: flex-end;
   max-width: 100%;
   margin: 0;
+}
 .game-card-ribbon:has(.badge-preseason) {
   background: #2e684f;
 }
@@ -167,7 +168,8 @@
 .game-card-ribbon:has(.badge-dgpt) {
   background: #385d3f;
 }
-.game-card-ribbon .game-badge {
+.game-card-ribbon .game-badge,
+.hub[data-mode="dark"] .game-card-ribbon .game-badge {
   padding: 3px 0;
   border: 0;
   background: transparent;
@@ -376,4 +378,3 @@
   position: relative;
   isolation: isolate;
 }
-

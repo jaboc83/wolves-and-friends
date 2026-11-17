@@ -16,6 +16,10 @@ outside the collapsed disclosure.
 
 Calendar-day boundaries and displayed timestamps in the dashboard use the browser's configured timezone. It is read locally for rendering only, is not persisted, and is never included in feed requests; server-side feed windows retain their fixed source timezone.
 
+The Today's games heading shows a game count on All teams only, not on individual team pages. This changes only the heading badge; all returned games remain visible.
+
+Game-card ribbons use a solid competition color with inherited white label text in both themes. Standalone badges keep their own theme colors without adding a separate background inside a ribbon.
+
 Fallback JSON is dynamically imported after mounting, outside the main client module. A fallback cannot overwrite successfully loaded/cached schedules or team information. Seed headlines remain excluded from news pages. Splitting chunks does not establish a total-transfer saving: the validation workflow compares all client JavaScript assets (including lazy chunks) against the pinned PR base, and browser timing must be measured separately.
 
 The Node regression suite is `pnpm test` (`tests/*.test.ts`). Its current coverage includes page-first refresh scheduling, local news partitioning, injury normalization, player statistics, roster responses and loading, and power-ranking data and fallbacks.
