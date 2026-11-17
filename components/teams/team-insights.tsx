@@ -15,7 +15,7 @@ import type { DashboardPageId } from "../../lib/dashboard/page-id";
 import { useLocalTimeZone } from "../../hooks/use-local-time-zone";
 import { formatInTimeZone, timeZoneLabel } from "../../lib/browser/local-time";
 import { visibleTeamStandings } from "../../lib/team-info/standings-display";
-import { ExternalLink, House } from "lucide-react";
+import { ExternalLink } from "lucide-react";
 export default function TeamInsights({
   active,
   data,
@@ -76,12 +76,6 @@ export default function TeamInsights({
     showPlayoffMarkers ||
     t?.league === "basketball/nba" ||
     t?.league === "basketball/wnba";
-  const homeAdvantageLabel =
-    t?.sportKind === "hockey"
-      ? "Home-ice advantage clinched"
-      : t?.sportKind === "basketball"
-        ? "Home-court advantage clinched"
-        : "Home-field advantage clinched";
   const tableUrl = league
     ? "https://www.espn.com/" + league + "/standings"
     : t?.standingsPage || "";
@@ -241,9 +235,6 @@ export default function TeamInsights({
               </>
             )}
             <span className="standings-clinched">Playoffs clinched</span>
-            <span>
-              <House size={12} aria-hidden="true" /> {homeAdvantageLabel}
-            </span>
           </p>
         )}
         {standingsTables.length ? (
@@ -285,9 +276,8 @@ export default function TeamInsights({
                       {table.rows.map((row) => {
                         const playoffsClinched =
                           row.playoffsClinched || row.homeAdvantageClinched;
-                        const markerLabel = row.homeAdvantageClinched
-                          ? homeAdvantageLabel
-                          : row.playoffPosition === "division"
+                        const markerLabel =
+                          row.playoffPosition === "division"
                             ? "Division playoff position"
                             : row.playoffPosition === "wildcard"
                               ? "Wild-card position"
@@ -327,15 +317,11 @@ export default function TeamInsights({
                                     aria-label={markerLabel}
                                     title={markerLabel}
                                   >
-                                    {row.homeAdvantageClinched ? (
-                                      <House size={12} aria-hidden="true" />
-                                    ) : (
-                                      <span aria-hidden="true">
-                                        {row.playoffPosition === "wildcard"
-                                          ? "w"
-                                          : "●"}
-                                      </span>
-                                    )}
+                                    <span aria-hidden="true">
+                                      {row.playoffPosition === "wildcard"
+                                        ? "w"
+                                        : "●"}
+                                    </span>
                                   </span>
                                 )}
                               </th>
