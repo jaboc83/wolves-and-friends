@@ -112,6 +112,15 @@ test("position stat preferences do not change other teams or leagues", () => {
   );
 });
 
+test("Frost roster groups render as position-only tables", () => {
+  for (const position of ["Forwards", "Defenders", "Goaltenders"]) {
+    assert.deepEqual(
+      visibleRosterStatColumns("frost", "", position, []),
+      { columns: [], positionOnly: true },
+    );
+  }
+});
+
 test("Timberwolves and Lynx positions share one roster table", () => {
   const groups = [
     { position: "Guard", players: ["guard"] },

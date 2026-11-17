@@ -181,7 +181,8 @@ export function visibleRosterStatColumns(
       league === "football/nfl"
         ? columns.filter((column) => column !== "GP")
         : columns,
-    positionOnly: preference?.length === 0,
+    positionOnly:
+      preference?.length === 0 || (teamId === "frost" && league === ""),
   };
 }
 

@@ -463,14 +463,6 @@ export default function RosterPanel({
                       .sort((a, b) => a.name.localeCompare(b.name))
                       .map((p) => (
                         <li key={p.url + p.name}>
-                          {teamId === "frost" && (
-                            <abbr
-                              className="roster-player-list-position"
-                              title={group.position}
-                            >
-                              {p.position}
-                            </abbr>
-                          )}
                           <a href={p.url} target="_blank" rel="noreferrer">
                             {p.name} ↗
                           </a>
