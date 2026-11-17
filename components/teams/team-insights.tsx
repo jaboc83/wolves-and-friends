@@ -14,6 +14,8 @@ import { isTeamId, TEAM_IDS, type TeamId } from "../../lib/teams/teams";
 import type { DashboardPageId } from "../../lib/dashboard/page-id";
 import { useLocalTimeZone } from "../../hooks/use-local-time-zone";
 import { formatInTimeZone, timeZoneLabel } from "../../lib/browser/local-time";
+import { visibleTeamStandings } from "../../lib/team-info/standings-display";
+import { ExternalLink } from "lucide-react";
 export default function TeamInsights({
   active,
   data,
@@ -54,6 +56,7 @@ export default function TeamInsights({
   const headings = sportTerms(active);
   const t = teamProfile(id);
   const info = data.find((i) => i.id === id);
+  const standingsTables = visibleTeamStandings(info?.tables || []);
   const divisionStandingsUnavailable = Boolean(
     t?.divisionStandings &&
       info?.unavailable.includes(`${t.divisionStandings.name} standings`),
@@ -100,6 +103,19 @@ export default function TeamInsights({
         }
       >
         <summary>{headings.standings}</summary>
+        {tableUrl && (
+          <div className="roster-contracts-actions">
+            <a
+              className="roster-contracts-button"
+              href={tableUrl}
+              target="_blank"
+              rel="noreferrer"
+            >
+              <span>Full Standings</span>
+              <ExternalLink size={14} aria-hidden="true" />
+            </a>
+          </div>
+        )}
         {info?.postseason && (
           <section className="postseason-panel" aria-label="Postseason bracket">
             <h3>Postseason bracket · {info.postseason.season}</h3>
@@ -198,8 +214,8 @@ export default function TeamInsights({
             Division standings are temporarily unavailable.
           </p>
         )}
-        {info?.tables.length ? (
-          info.tables.map((raw) => {
+        {standingsTables.length ? (
+          standingsTables.map((raw) => {
             const table = decorateTable(raw, id);
             const groupKey = `${id}:${table.name}`;
             const groupOpen =
@@ -293,10 +309,7 @@ export default function TeamInsights({
         ) : (
           <p className="panel-note">
             {t?.noStandingsNote ||
-              `No ${terms.standings.toLowerCase()} returned by the available feed.`}{" "}
-            <a href={tableUrl} target="_blank" rel="noreferrer">
-              Open official {terms.standings.toLowerCase()} ↗
-            </a>
+              `No ${terms.standings.toLowerCase()} returned by the available feed.`}
           </p>
         )}
       </details>

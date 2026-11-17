@@ -1,5 +1,6 @@
 // Fetches and combines public standings, rosters, postseason, and team-season data.
 import { decorateTable } from "./standings";
+import { withDivisionRanks } from "./standings-display";
 export { decorateTable, tableSeasonType } from "./standings";
 import { teams } from "../teams/teams";
 import { teamProviders } from "../teams/providers";
@@ -225,6 +226,7 @@ export function parseStandings(
   function walk(node: ESPNStandingsNode) {
     const standings = node.standings;
     const entries = standings?.entries || [];
+    const tableName = node.name || x.name || "Standings";
     const owns = (e: ESPNStandingEntry) =>
       String(e.team?.id) === team.espn ||
       e.team?.abbreviation?.toLowerCase() === team.espn;
@@ -235,7 +237,7 @@ export function parseStandings(
         standings.links?.find((l) => l.href?.startsWith("https:"))?.href ||
         "https://www.espn.com/" + league.split("/")[1] + "/standings";
       result.push({
-        name: node.name || x.name || "Standings",
+        name: tableName,
         columns: ["#", ...cols.map((c) => c[0])],
         rows: entries.map((e, i) => {
           const stat = (names: string[]) => {
@@ -285,7 +287,12 @@ export function parseStandings(
     for (const child of node.children || []) walk(child);
   }
   walk(x);
-  return result.map((table) => decorateTable(table, id));
+  return result.map((table) =>
+    decorateTable(
+      withDivisionRanks(table, team.divisionStandings?.name),
+      id,
+    ),
+  );
 }
 export async function fetchTeamInfo() {
   const checked = new Date().toISOString();
