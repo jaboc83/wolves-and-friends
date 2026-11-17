@@ -1,5 +1,5 @@
 // Normalizes league playoff schedules into rounds and team matchups.
-import { espnTeamLogoUrl } from "./march-madness";
+import { espnTeamLogoUrl } from "./march-madness.ts";
 import type { RequestQueue } from "../feeds/request-queue";
 export type Postseason = {
   partial?: boolean;
@@ -75,6 +75,7 @@ const supported = new Set([
   "baseball/mlb",
   "soccer/usa.1",
 ]);
+const postseasonLookbackMs = 120 * 86400000;
 const phase = (s: SeasonData | undefined) =>
   Number(typeof s?.type === "object" ? (s.type.type ?? s.type) : s?.type);
 
@@ -90,7 +91,7 @@ export function postseasonWindow(current: PostseasonFeed, now = Date.now()) {
     now > end + 14 * 86400000
   )
     return;
-  if (phase(s) === 2 && now < end - 120 * 86400000) return;
+  if (phase(s) === 2 && now < end - postseasonLookbackMs) return;
   return {
     year: s.year,
     name: s.displayName || String(s.year),
@@ -223,20 +224,28 @@ export async function fetchPostseason(
   const window = postseasonWindow(current);
   if (!window) return;
   // The scoreboard accepts calendar months; day-range queries fail for MLB.
-  // Fetch the postseason's recent rounds plus published upcoming matchups.
+  // ESPN can revert the league phase to regular season after the Finals.
+  // Anchor history to the season end so earlier rounds do not age out.
   const now = new Date();
-  const offsets =
-    phase(current.leagues?.[0]?.season) === 3 ? [-2, -1, 0, 1] : [0, 1];
-  const months = offsets
-    .map((offset) =>
-      new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth() + offset, 1))
-        .toISOString()
-        .slice(0, 7),
-    )
-    .filter(
-      (month) =>
-        month >= window.start.slice(0, 7) && month <= window.end.slice(0, 7),
+  const first = new Date(
+    Math.max(
+      Date.parse(window.start),
+      Date.parse(window.end) - postseasonLookbackMs,
+    ),
+  );
+  const last = Math.min(
+    Date.parse(window.end),
+    Date.UTC(now.getUTCFullYear(), now.getUTCMonth() + 1, 1),
+  );
+  const months: string[] = [];
+  for (
+    const month = new Date(
+      Date.UTC(first.getUTCFullYear(), first.getUTCMonth(), 1),
     );
+    month.getTime() <= last;
+    month.setUTCMonth(month.getUTCMonth() + 1)
+  )
+    months.push(month.toISOString().slice(0, 7));
   const results = await Promise.allSettled(
     months.map((month) =>
       get(base + "?dates=" + month.replace("-", "") + "&limit=1000"),

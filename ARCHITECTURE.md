@@ -76,6 +76,8 @@ These feed and team-info caches are **request-driven, in-memory caches**. They c
 
 Each team-info refresh shares a four-request queue across standings, rosters, power rankings, and postseason feeds. Slots remain occupied until response bodies are consumed, and network timeouts start only after a queued request begins. This avoids overwhelming the local Workers runtime with all teams' provider requests at once.
 
+Postseason brackets fetch calendar months within the final 120 days of the provider's season window, through the next month or season end. This retains earlier rounds during the existing 14-day post-season grace period, even when ESPN relabels a completed postseason as regular season. Only confirmed postseason games for that season are displayed.
+
 ## 4. How provider data becomes page content
 
 The shared types are defined in [lib/feeds/feed-types.ts](lib/feeds/feed-types.ts):
