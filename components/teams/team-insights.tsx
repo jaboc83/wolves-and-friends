@@ -15,8 +15,46 @@ import { isTeamId, TEAM_IDS, type TeamId } from "../../lib/teams/teams";
 import type { DashboardPageId } from "../../lib/dashboard/page-id";
 import { useLocalTimeZone } from "../../hooks/use-local-time-zone";
 import { formatInTimeZone, timeZoneLabel } from "../../lib/browser/local-time";
-import { visibleTeamStandings } from "../../lib/team-info/standings-display";
+import {
+  standingsMarker,
+  visibleTeamStandings,
+} from "../../lib/team-info/standings-display";
 import { ExternalLink } from "lucide-react";
+
+function ClinchedMarkerIcon({ wildcard = false }: { wildcard?: boolean }) {
+  return (
+    <svg
+      className="standings-marker-icon"
+      width={18}
+      height={18}
+      viewBox="0 0 18 18"
+      aria-hidden="true"
+      focusable="false"
+    >
+      <circle className="standings-marker-disc" cx={9} cy={9} r={8.5} />
+      {wildcard ? (
+        <path
+          className="standings-marker-symbol"
+          d="M4.5 6.5 6.5 11.5 9 7 11.5 11.5 13.5 6.5"
+          fill="none"
+          stroke="currentColor"
+          strokeWidth={1.7}
+          strokeLinecap="round"
+          strokeLinejoin="round"
+        />
+      ) : (
+        <circle
+          className="standings-marker-symbol"
+          cx={9}
+          cy={9}
+          r={2.5}
+          fill="currentColor"
+        />
+      )}
+    </svg>
+  );
+}
+
 export default function TeamInsights({
   active,
   data,
@@ -265,7 +303,12 @@ export default function TeamInsights({
                 </span>
               </>
             )}
-            <span className="standings-clinched">Playoffs clinched</span>
+            <span>
+              <b className="standings-clinched" aria-hidden="true">
+                <ClinchedMarkerIcon />
+              </b>
+              Playoffs clinched
+            </span>
           </p>
         )}
         {standingsTables.length ? (
@@ -305,14 +348,7 @@ export default function TeamInsights({
                     </thead>
                     <tbody>
                       {table.rows.map((row) => {
-                        const playoffsClinched =
-                          row.playoffsClinched || row.homeAdvantageClinched;
-                        const markerLabel =
-                          row.playoffPosition === "division"
-                            ? "Division playoff position"
-                            : row.playoffPosition === "wildcard"
-                              ? "Wild-card position"
-                              : "";
+                        const marker = standingsMarker(row);
                         return (
                           <Fragment key={row.id}>
                             <tr className={row.highlight ? "my-team" : ""}>
@@ -322,37 +358,30 @@ export default function TeamInsights({
                                   href={row.url}
                                   target="_blank"
                                   rel="noreferrer"
-                                  className={
-                                    playoffsClinched
-                                      ? "standings-clinched"
-                                      : undefined
-                                  }
-                                  title={
-                                    playoffsClinched
-                                      ? "Playoffs clinched"
-                                      : undefined
-                                  }
                                 >
                                   {row.name} ↗
-                                  {playoffsClinched && (
-                                    <span className="visually-hidden">
-                                      {" "}
-                                      · Playoffs clinched
-                                    </span>
-                                  )}
                                 </a>
-                                {markerLabel && (
+                                {marker && (
                                   <span
-                                    className="standings-markers"
+                                    className={
+                                      "standings-markers" +
+                                      (marker.clinched
+                                        ? " standings-clinched"
+                                        : "")
+                                    }
                                     role="img"
-                                    aria-label={markerLabel}
-                                    title={markerLabel}
+                                    aria-label={marker.label}
+                                    title={marker.label}
                                   >
-                                    <span aria-hidden="true">
-                                      {row.playoffPosition === "wildcard"
-                                        ? "w"
-                                        : "●"}
-                                    </span>
+                                    {marker.clinched ? (
+                                      <ClinchedMarkerIcon
+                                        wildcard={marker.symbol === "w"}
+                                      />
+                                    ) : (
+                                      <span aria-hidden="true">
+                                        {marker.symbol}
+                                      </span>
+                                    )}
                                   </span>
                                 )}
                               </th>

@@ -3,6 +3,29 @@ import type { Table } from "./types";
 export type PlayoffStandingsLeague =
   "football/nfl" | "hockey/nhl" | "baseball/mlb";
 
+export function standingsMarker(
+  row: Pick<
+    Table["rows"][number],
+    "playoffPosition" | "playoffsClinched" | "homeAdvantageClinched"
+  >,
+) {
+  const clinched = Boolean(row.playoffsClinched || row.homeAdvantageClinched);
+  const position =
+    row.playoffPosition === "division"
+      ? "Division playoff position"
+      : row.playoffPosition === "wildcard"
+        ? "Wild-card position"
+        : "";
+  if (!position && !clinched) return;
+  return {
+    symbol: row.playoffPosition === "wildcard" ? "w" : "●",
+    clinched,
+    label: [position, clinched ? "Playoffs clinched" : ""]
+      .filter(Boolean)
+      .join(" · "),
+  };
+}
+
 export function isConferenceOrLeagueTable(table: Table): boolean {
   return /conference|^(?:American|National) League$/i.test(table.name);
 }

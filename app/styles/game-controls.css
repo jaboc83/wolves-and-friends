@@ -23,12 +23,51 @@
   align-items: center;
   gap: 4px;
 }
-.data-panel a.standings-clinched,
-.standings-marker-legend .standings-clinched {
-  color: #581c87;
+.standings-clinched {
+  --standings-marker-outline: color-mix(
+    in srgb,
+    var(--team-primary, #193346) 65%,
+    var(--surface, #fff)
+  );
+  --standings-marker-fill: color-mix(
+    in srgb,
+    var(--team-primary, #193346) 10%,
+    var(--surface, #fff)
+  );
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  width: 18px;
+  min-width: 18px;
+  height: 18px;
+  padding: 0;
+  color: var(--team-primary, #193346);
+  line-height: 1;
 }
 .hub[data-mode="dark"] .standings-clinched {
-  color: #e9d5ff;
+  --standings-marker-outline: color-mix(
+    in srgb,
+    var(--ink-team, #b3c0cc) 70%,
+    var(--surface, #1b2028)
+  );
+  --standings-marker-fill: color-mix(
+    in srgb,
+    var(--ink-team, #b3c0cc) 10%,
+    var(--surface, #1b2028)
+  );
+  color: var(--ink-team, #b3c0cc);
+}
+.standings-marker-icon {
+  display: block;
+  flex-shrink: 0;
+  width: 18px;
+  height: 18px;
+}
+.standings-marker-disc {
+  fill: var(--standings-marker-fill);
+  stroke: var(--standings-marker-outline);
+  stroke-width: 1px;
 }
 .hub[data-mode="dark"] #team-standings .my-team {
   background: var(--raised, #252c35);

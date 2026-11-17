@@ -3,6 +3,7 @@ import test from "node:test";
 import {
   clincherFlags,
   markPlayoffPositions,
+  standingsMarker,
   visibleTeamStandings,
   withDivisionRanks,
 } from "../lib/team-info/standings-display.ts";
@@ -20,6 +21,45 @@ function table(name: string, rows: Table["rows"]): Table {
     checked: "2026-11-17T00:00:00.000Z",
   };
 }
+
+test("clinch styling belongs to the position marker and preserves division and wild-card symbols", () => {
+  assert.deepEqual(standingsMarker({ playoffPosition: "division" }), {
+    symbol: "●",
+    clinched: false,
+    label: "Division playoff position",
+  });
+  assert.deepEqual(
+    standingsMarker({ playoffPosition: "wildcard", playoffsClinched: true }),
+    {
+      symbol: "w",
+      clinched: true,
+      label: "Wild-card position · Playoffs clinched",
+    },
+  );
+  assert.deepEqual(
+    standingsMarker({ playoffPosition: "division", playoffsClinched: true }),
+    {
+      symbol: "●",
+      clinched: true,
+      label: "Division playoff position · Playoffs clinched",
+    },
+  );
+});
+
+test("clinched basketball teams get one dot without inventing provisional spots or restoring home indicators", () => {
+  for (const flags of [
+    { playoffsClinched: true },
+    { homeAdvantageClinched: true },
+  ]) {
+    assert.deepEqual(standingsMarker(flags), {
+      symbol: "●",
+      clinched: true,
+      label: "Playoffs clinched",
+    });
+  }
+  assert.equal(standingsMarker({}), undefined);
+  assert.equal(standingsMarker({ playoffsClinched: false }), undefined);
+});
 
 test("WNBA league standings draw the playoff cutoff after eighth place", () => {
   const league = table(
