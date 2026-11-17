@@ -1,6 +1,5 @@
-// Parses official Žalgiris/Frost news pages into the shared story shape.
+// Parses official Frost news pages into the shared story shape.
 import type { Story } from "./feed-types";
-import { zalgirisProviders } from "../teams/zalgiris/providers";
 import { frostProviders } from "../teams/frost/providers";
 type JsonObject = Record<string, unknown>;
 function object(value: unknown): JsonObject {
@@ -11,68 +10,6 @@ function walk(x: unknown, visit: (x: JsonObject) => void) {
   const record = object(x);
   visit(record);
   for (const v of Object.values(record)) walk(v, visit);
-}
-function flight(html: string) {
-  return [...html.matchAll(/self\.__next_f\.push\((\[[\s\S]*?\])\)/g)]
-    .map((m) => {
-      try {
-        return JSON.parse(m[1])[1];
-      } catch {
-        return "";
-      }
-    })
-    .join("");
-}
-export function parseZalgirisNews(html: string, checked: string): Story[] {
-  const posts = new Map<string, JsonObject>();
-  for (const line of flight(html).split("\n")) {
-    try {
-      walk(JSON.parse(line.slice(line.indexOf(":") + 1)), (x) => {
-        const category = object(x.subCategoryV2);
-        if (
-          x.__typename === "PostResource" &&
-          x.slug &&
-          category.slug === "naujienos" &&
-          x.id
-        ) {
-          posts.set(String(x.id), x);
-        }
-      });
-    } catch {}
-  }
-  return [...posts.values()].flatMap((x) => {
-    const publishedAgo =
-      typeof x.publishedAgo === "string" ? x.publishedAgo : "";
-    const slug = String(x.slug || "");
-    const title = String(x.title || "");
-    const age = publishedAgo.match(/(\d+)\s*(val|min|d\.|sav)/);
-    if (!age) return [];
-    const unit = age[2],
-      offset =
-        Number(age[1]) *
-        (unit === "min"
-          ? 60000
-          : unit === "val"
-            ? 3600000
-            : unit === "sav"
-              ? 7 * 86400000
-              : 86400000);
-    const url = zalgirisProviders.urls.officialNews + slug;
-    return [
-      {
-        id: url,
-        url,
-        title,
-        originalTitle: title,
-        date: new Date(Date.parse(checked) - offset).toISOString(),
-        dateApproximate: true,
-        source: "Official Žalgiris · Lithuanian",
-        teams: ["zalgiris"],
-        kind: x.isVideo ? "video" : "story",
-        premium: !!x.isPremium,
-      },
-    ];
-  });
 }
 export function parseFrostNews(html: string): Story[] {
   const raw = html.match(
@@ -104,43 +41,4 @@ export function parseFrostNews(html: string): Story[] {
     }
   });
   return [...found.values()];
-}
-const translations = new Map<string, string>();
-export async function translateHeadlines(stories: Story[]) {
-  await Promise.all(
-    stories.map(async (s) => {
-      if (!s.originalTitle) return;
-      let title = translations.get(s.originalTitle);
-      if (!title) {
-        try {
-          const r = await fetch(
-            "https://api.mymemory.translated.net/get?langpair=lt%7Cen&q=" +
-              encodeURIComponent(s.originalTitle),
-            { signal: AbortSignal.timeout(8000) },
-          );
-          if (!r.ok) throw Error();
-          const d = (await r.json()) as {
-            responseStatus?: number;
-            quotaFinished?: boolean;
-            responseData?: { translatedText?: string };
-          };
-          if (
-            d.responseStatus !== 200 ||
-            d.quotaFinished ||
-            !d.responseData?.translatedText
-          )
-            throw Error();
-          title = d.responseData.translatedText
-            .replace(/&quot;/g, '"')
-            .replace(/&#39;/g, "'")
-            .replace(/&amp;/g, "&");
-          translations.set(s.originalTitle, title!);
-        } catch {}
-      }
-      if (title) {
-        s.title = title;
-        s.source = "Official Žalgiris · English translation";
-      } else s.source = "Official Žalgiris · translation unavailable";
-    }),
-  );
 }

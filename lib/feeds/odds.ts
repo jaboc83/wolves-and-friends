@@ -1,5 +1,4 @@
 // Parses and enriches eligible upcoming games with readable public betting markets.
-import { enrichEuroleagueOdds } from "./euroleague-odds";
 import { teams } from "../teams/teams";
 import { teamPlaysCompetition } from "../teams/competitions";
 import type { Game } from "./feed-types";
@@ -158,7 +157,6 @@ export function oddsMatch(g: Game, event: unknown) {
   });
 }
 export async function enrichOdds(games: Game[], checked: string) {
-  await enrichEuroleagueOdds(games, checked);
   const jobs = new Map<string, { league: string; date: string }>();
   for (const g of games
     .filter(

@@ -64,7 +64,6 @@ const groups: [string, string, string][] = [
   ["hockey", "Golden Knights", "Vegas"],
 ];
 const clubs: [string, string, string][] = [
-  ["zalgiris|zalgiris kaunas", "Kaunas", "Lithuania"],
   ["anadolu efes|anadolu efes istanbul", "Istanbul", "Turkey"],
   ["fenerbahce|fenerbahce beko", "Istanbul", "Turkey"],
   ["olympiacos", "Piraeus", "Greece"],
@@ -200,13 +199,13 @@ export function teamLocation(
   isOwn = false,
 ): string {
   if (teamId === "disc") return "";
-  if (isOwn && teamId !== "zalgiris")
+  if (isOwn)
     return teams.find((t) => t.id === teamId)?.homeLocation || "";
   if (teamId === "frost") {
     const location = pwhlTeamLocation(name);
     if (location) return location;
   }
-  const normalized = key(isOwn && teamId === "zalgiris" ? "zalgiris" : name);
+  const normalized = key(name);
   const category = ["wolves", "lynx"].includes(teamId)
     ? "basketball"
     : ["wild", "frost"].includes(teamId)
@@ -223,7 +222,7 @@ export function teamLocation(
         ),
   );
   if (franchise) return franchise[2];
-  if (!["zalgiris", "palace"].includes(teamId)) return "";
+  if (teamId !== "palace") return "";
   const club = clubs.find(([aliases]) =>
     aliases.split("|").some((alias) => {
       const normalizedAlias = key(alias);

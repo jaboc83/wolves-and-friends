@@ -264,7 +264,7 @@ export default function Home() {
               />
               <div>
                 Wolves<span> & Friends</span>
-                <i>YOUR TEAMS. ONE PLACE.</i>
+                <i>From Tipoff to Puck Drop, It’s All Here.</i>
               </div>
             </Link>
             <div className="mast-controls">

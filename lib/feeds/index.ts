@@ -409,11 +409,7 @@ export async function collect(
             name,
             tagByContent ? undefined : ids,
           );
-          stories.push(
-            ...(name.startsWith("EuroLeague")
-              ? parsed.filter((s) => /zalgiris|žalgiris/i.test(s.title))
-              : parsed),
-          );
+          stories.push(...parsed);
           return parsed.length;
         }),
       ),

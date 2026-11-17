@@ -30,9 +30,7 @@ const patterns: Record<string, RegExp> = {
   loons: /minnesota|mnufc/i,
   palace: /palace/i,
   lynx: /lynx/i,
-  zalgiris: /žalgiris|zalgiris/i,
   frost: /frost/i,
-  usmnt: /united states|\busa\b|u\.s\./i,
 };
 export function matchup(g: Game) {
   const club = g.competitors.find((p) => patterns[g.team]?.test(p.name));

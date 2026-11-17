@@ -7,8 +7,8 @@
 `lib/dashboard/selectors.ts` derives team/read/search filters, merged games and result windows without owning request state. `components/stories/story-card.tsx` renders a story and receives device actions. `lib/team-info/standings.ts` isolates pure table decoration from server provider code.
 
 The news column's External Links section combines community links
-and source links from each team profile, including official league news pages
-(FIFA news for the USMNT). It is collapsed by default and uses a native disclosure
+and source links from each team profile, including official league news pages.
+It is collapsed by default and uses a native disclosure
 that supports mouse and keyboard interaction. All Teams groups links by team. Links open only
 when deliberately selected, in a new tab without referrers; adding a link does
 not add a feed, embed, or background request. Feed-status notices remain visible

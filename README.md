@@ -1,6 +1,6 @@
 # Wolves & Friends
 
-A public sports hub for Wolves, Wild, Vikings, Twins, Loons, Crystal Palace, Disc Golf, Lynx, Žalgiris, Frost, and USMNT.
+A public sports hub for Wolves, Wild, Vikings, Twins, Loons, Crystal Palace, Disc Golf, Lynx, and Frost.
 
 Live website: https://wolvesandfriends.moening.org/
 
