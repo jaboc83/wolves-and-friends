@@ -38,12 +38,17 @@ import { sportTerms } from "../lib/teams/sport-terms";
 import TeamInsights from "../components/teams/team-insights";
 import { teamThemes } from "../lib/teams/team-themes";
 import { unreadSocial } from "../lib/social/social-queue";
-import { teamProfile, teams } from "../lib/teams/teams";
-import { isTeamId } from "../lib/teams/teams";
+import { isTeamId, teamProfile, teams, type TeamId } from "../lib/teams/teams";
 import {
   DASHBOARD_PAGE_IDS,
   type DashboardPageId,
 } from "../lib/dashboard/page-id";
+import {
+  saveHiddenTeams,
+  storedHiddenTeams,
+  toggleHiddenTeam,
+  withVisibleTeams,
+} from "../lib/dashboard/hidden-teams";
 import type { Game } from "../lib/feeds";
 import { releaseCommitUrl, releaseMarker } from "../lib/release-info";
 import { downloadFeedDiagnostics } from "../lib/feeds/feed-diagnostics";
@@ -65,11 +70,12 @@ export default function Home() {
     [hideScores, setHideResults] = useState(false),
     [resultsReady, setResultsReady] = useState(false),
     [autoOpenStandings, setAutoOpenStandings] = useState(false),
-    [darkMode, setDarkMode] = useState(false);
+    [darkMode, setDarkMode] = useState(false),
+    [hiddenTeams, setHiddenTeams] = useState<TeamId[]>([]);
   const {
     data,
     teamInfo,
-    socialData,
+    socialData: rawSocialData,
     marchVideos,
     socialUnavailable,
     youtubeUnavailable,
@@ -97,7 +103,14 @@ export default function Home() {
     let alive = true;
     queueMicrotask(() => {
       if (!alive) return;
-      setActive(storedDashboardPage());
+      const hidden = storedHiddenTeams();
+      const storedPage = storedDashboardPage();
+      setHiddenTeams(hidden);
+      setActive(
+        isTeamId(storedPage) && hidden.includes(storedPage)
+          ? DASHBOARD_PAGE_IDS.ALL
+          : storedPage,
+      );
       setReadIds(readStored("wf-read", stringList, []));
       setDarkMode(browserStorage.getItem("wf-color-mode") === "dark");
       const preference = loadScorePreference(browserStorage);
@@ -119,6 +132,14 @@ export default function Home() {
     setOlderLimit(OLDER_BATCH_SIZE);
     setShowOlderResults(false);
     browserStorage.setItem("wf-team", id);
+  }
+
+  // Hides or restores a team; hiding the open team moves the reader to All teams.
+  function toggleTeamHidden(id: TeamId) {
+    const next = toggleHiddenTeam(hiddenTeams, id);
+    setHiddenTeams(next);
+    saveHiddenTeams(next);
+    if (next.includes(id) && active === id) choose(DASHBOARD_PAGE_IDS.ALL);
   }
 
   // Opens older stories one batch at a time; once all are shown, collapses them.
@@ -169,6 +190,7 @@ export default function Home() {
   const team = teams.find((t) => t.id === active);
   const activeScoreboardUrl = teamProfile(active)?.scoreboardUrl;
   const terms = sportTerms(active);
+  const socialData = withVisibleTeams(rawSocialData, hiddenTeams);
   const { compactNews, displayed, olderCount, olderRemaining, newest } =
     selectStories({
       newsData,
@@ -179,6 +201,7 @@ export default function Home() {
       showOlder,
       olderLimit,
       timeZone,
+      hiddenTeams,
     });
   const {
     teamsPlayingToday,
@@ -194,6 +217,7 @@ export default function Home() {
     active: deferredActive,
     showOlderResults,
     timeZone,
+    hiddenTeams,
   });
   const newsMode = newsDisplayMode(loading, displayed.length > 0, newsFailed);
   const socialPosts = unreadSocial(
@@ -220,7 +244,8 @@ export default function Home() {
       h.name !== "BasketNews" &&
       h.status === "unavailable" &&
       (deferredActive === DASHBOARD_PAGE_IDS.ALL ||
-        (isTeamId(deferredActive) && h.teams.includes(deferredActive))),
+        (isTeamId(deferredActive) && h.teams.includes(deferredActive))) &&
+      !(h.teams.length && h.teams.every((team) => hiddenTeams.includes(team))),
   );
   // Binds each game to its card and the dashboard's score-reveal state.
   function game(g: Game, compact = false, today = false) {
@@ -314,7 +339,9 @@ export default function Home() {
           <TeamNavigation
             active={active}
             teamsPlayingToday={teamsPlayingToday}
+            hiddenTeams={hiddenTeams}
             onChoose={choose}
+            onToggleHidden={toggleTeamHidden}
           />
           <div className="intro">
             <div>

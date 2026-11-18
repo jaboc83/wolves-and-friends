@@ -16,7 +16,6 @@ export const discProfile = {
     ["PDGA News", "https://www.pdga.com/news"],
     ["PDGA Live", "https://www.pdga.com/live"],
     ["Disc Golf Network", "https://www.discgolfnetwork.com/"],
-    ["Jomez Pro", "https://www.youtube.com/@JomezPro"],
   ],
   communities: [],
   injuryReportUrl: "",

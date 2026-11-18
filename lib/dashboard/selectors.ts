@@ -9,6 +9,7 @@ import type { DashboardPageId } from "./page-id";
 import { DASHBOARD_PAGE_IDS } from "./page-id";
 import { dedupeByTitle } from "./dedupe-stories";
 import { isPublication } from "../feeds/byline-source";
+import { withVisibleTeams } from "./hidden-teams";
 export const OLDER_BATCH_SIZE = 10;
 
 // Sorts ascending by a precomputed key so dates are parsed once per item, not per comparison.
@@ -32,6 +33,7 @@ export function selectStories({
   showOlder,
   olderLimit = Infinity,
   timeZone = "America/Chicago",
+  hiddenTeams = [],
 }: {
   newsData: HubData;
   active: DashboardPageId;
@@ -41,11 +43,13 @@ export function selectStories({
   showOlder: boolean;
   olderLimit?: number;
   timeZone?: string;
+  hiddenTeams?: readonly string[];
 }) {
+  const stories = withVisibleTeams(newsData.stories || [], hiddenTeams);
   const filtered = dedupeByTitle(sortByTime([
     ...new Map(
       [
-        ...(newsData.stories || []).filter(
+        ...stories.filter(
           (s) =>
             s.source !== "BasketNews" &&
             !(
@@ -96,7 +100,7 @@ export function selectStories({
   const olderRemaining = showOlder
     ? olderStories.length - olderVisible.size
     : olderCount;
-  const newest = (newsData.stories || [])
+  const newest = stories
     .filter(
       (s) =>
         s.kind !== "social" &&
@@ -117,6 +121,7 @@ export function selectGames({
   active,
   showOlderResults,
   timeZone = "America/Chicago",
+  hiddenTeams = [],
 }: {
   data: HubData | null;
   oddsGames: Game[];
@@ -124,10 +129,12 @@ export function selectGames({
   active: DashboardPageId;
   showOlderResults: boolean;
   timeZone?: string;
+  hiddenTeams?: readonly string[];
 }) {
   const now = new Date();
   const isToday = (game: Game) => eventIsToday(game, now, timeZone);
-  const liveTimes = new Map(liveGames.map((x) => [x, Date.parse(x.date)]));
+  const visibleLiveGames = liveGames.filter((g) => !hiddenTeams.includes(g.team));
+  const liveTimes = new Map(visibleLiveGames.map((x) => [x, Date.parse(x.date)]));
   const combinedGames = [
     ...(data?.games || []),
     ...discEvents.filter(
@@ -137,13 +144,16 @@ export function selectGames({
         ),
     ),
   ]
-    .filter((g) => teams.some((t) => t.id === g.team))
+    .filter(
+      (g) =>
+        teams.some((t) => t.id === g.team) && !hiddenTeams.includes(g.team),
+    )
     .map((original) => {
       const odds = oddsGames.find((x) => x.id === original.id)?.odds;
       const event = eventLifecycle(original, now, timeZone);
       const g = odds ? { ...event, odds } : event;
       const gTime = Date.parse(g.date);
-      const fresh = liveGames.find(
+      const fresh = visibleLiveGames.find(
         (x) =>
           x.id === g.id ||
           (x.team === g.team &&
@@ -157,7 +167,7 @@ export function selectGames({
           })
         : g;
     });
-  for (const g of liveGames)
+  for (const g of visibleLiveGames)
     if (!combinedGames.some((x) => x.id === g.id)) combinedGames.push(g);
   const teamsPlayingToday = new Set(
     combinedGames.filter(isToday).map((g) => g.team),

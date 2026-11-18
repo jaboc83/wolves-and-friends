@@ -59,6 +59,11 @@ export const wolvesProviders = {
       channel: "UCHQf4fxeaf1MHDz9fW2mhsw",
       playlist: "UULFHQf4fxeaf1MHDz9fW2mhsw",
     },
+    {
+      name: "Dane Moore",
+      channel: "UCrJDtuLC6O7KtMs2IrnuffQ",
+      playlist: "UULFrJDtuLC6O7KtMs2IrnuffQ",
+    },
   ],
   bluesky: {
     list: "at://did:plc:7giugsiydb7mj2j3a5u6nuyn/app.bsky.graph.list/3lal4p6r7w62f",
