@@ -52,7 +52,6 @@ const emptyHub: HubData = {
   stories: [],
   games: [],
   health: [],
-  authors: [],
 };
 function retainAvatars(next: HubData, previous?: HubData | null): HubData {
   const key = (s: Story) =>
