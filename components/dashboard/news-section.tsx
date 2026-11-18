@@ -264,7 +264,7 @@ export default function NewsSection({
                       })
                     : state.active === "all"
                       ? "No unread headlines from today."
-                      : "No unread headlines from the last week."}
+                      : "No unread headlines from the last 24 hours."}
               </h3>
               <p>
                 {state.olderCount > 0

@@ -15,8 +15,6 @@ export const discProfile = {
   sources: [
     ["PDGA News", "https://www.pdga.com/news"],
     ["PDGA Live", "https://www.pdga.com/live"],
-    ["Disc Golf Pro Tour · News", "https://www.dgpt.com/"],
-    ["Ultiworld Disc Golf", "https://discgolf.ultiworld.com/"],
     ["Disc Golf Network", "https://www.discgolfnetwork.com/"],
     ["Jomez Pro", "https://www.youtube.com/@JomezPro"],
   ],

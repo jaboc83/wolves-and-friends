@@ -9,6 +9,8 @@ import {
 import { palaceProviders } from "../teams/palace/providers";
 import { espnTeamUrl } from "../teams/espn-team-url";
 import type { Story, Game } from "./feed-types";
+import { categoryTeamIds } from "./feed-categories";
+import { bylineSource } from "./byline-source";
 type GameStatus = {
   completed?: boolean;
   state?: string;
@@ -154,7 +156,12 @@ export function parseNbaTeamNews(
   return stories;
 }
 
-export function parseFeed(xml: string, name: string, only?: TeamId[]): Story[] {
+export function parseFeed(
+  xml: string,
+  name: string,
+  only?: TeamId[],
+  categoryTeams?: Readonly<Record<string, TeamId>>,
+): Story[] {
   if (!/<rss[\s>]|<feed[\s>]|<rdf:RDF[\s>]/i.test(xml))
     throw new FeedError("invalid-feed");
   const blocks =
@@ -173,13 +180,20 @@ export function parseFeed(xml: string, name: string, only?: TeamId[]): Story[] {
         tag(b, "published") ||
         tag(b, "updated") ||
         tag(b, "dc:date");
-      const ids: TeamId[] = only || match(title + " " + tag(b, "description"));
+      // RSS dc:creator, RSS <author>, or Atom <author><name> (tag() strips nested tags).
+      // PDGA's creator is a site username, not a byline.
+      const creator =
+        name === "PDGA News" ? "" : tag(b, "dc:creator") || tag(b, "author");
+      // Category-mapped feeds tag a story only by its publisher categories.
+      const ids: TeamId[] = categoryTeams
+        ? categoryTeamIds(b, categoryTeams)
+        : only || match(title + " " + tag(b, "description"));
       return {
         id: url,
         title,
         url,
         date,
-        source: name,
+        source: bylineSource(name, creator),
         teams: ids,
         kind: name === "Howls and Growls" ? "video" : "story",
       };

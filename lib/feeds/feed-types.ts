@@ -68,27 +68,9 @@ export type Health = {
   /** Safe diagnostic code for operators; never contains request or visitor data. */
   error?: string;
 };
-export type AuthorFeed = {
-  name: string;
-  label: string;
-  url: string;
-  // Missing on device caches saved before authors carried a team.
-  team?: TeamId;
-  items: {
-    title: string;
-    url: string;
-    date: string;
-    originalId?: string;
-    bylineVerified?: boolean;
-    actualAuthors?: string[];
-  }[];
-  checked: string;
-  status: string;
-};
 export type HubData = {
   checked: string;
   stories: Story[];
   games: Game[];
   health: Health[];
-  authors?: AuthorFeed[];
 };

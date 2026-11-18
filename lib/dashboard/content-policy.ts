@@ -23,8 +23,5 @@ export function activeHub(d: HubData): HubData {
         h.name !== "Official Žalgiris news" &&
         h.name !== "EuroLeague · Google News index",
     ),
-    authors: d.authors?.filter(
-      (author) => !author.team || teams.some((t) => t.id === author.team),
-    ),
   };
 }

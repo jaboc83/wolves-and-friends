@@ -1,5 +1,5 @@
 // Coordinates public news/schedule providers, fallback data, caching, and feed aggregation.
-import { newsSources, authorSources } from "./news-sources";
+import { newsSources } from "./news-sources";
 import {
   safe,
   match,
@@ -18,8 +18,7 @@ export {
 import { runProviderTasks, type ProviderTask } from "./provider-tasks";
 import { fetchScoreboard } from "./scoreboard";
 import { eventIsToday, eventLifecycle } from "../games/event-time";
-import { verifyAuthorFeed } from "./bylines";
-import { authorStories } from "./author-stories";
+import { bylineSource, isPublication } from "./byline-source";
 import { mergeOfficial, mergeFallbackGames } from "./official-schedules";
 import { nflFixtureUrl, parseNflFixtures } from "./nfl-schedule";
 import { teams } from "../teams/teams";
@@ -29,7 +28,7 @@ import type { TeamFeedTask } from "../teams/server-types";
 import type { TeamId } from "../teams/teams";
 import { scoreboardLeagues, teamPlaysCompetition } from "../teams/competitions";
 import { enrichOdds } from "./odds";
-import type { Story, Game, Health, AuthorFeed, HubData } from "./feed-types";
+import type { Story, Game, Health, HubData } from "./feed-types";
 import {
   normalizeESPNInjuries,
   normalizePremierLeagueInjuries,
@@ -39,7 +38,7 @@ import {
   type PremierLeagueInjuryPromo,
 } from "./injuries";
 import { normalizeLeagueHeadlines } from "./league-news-data";
-export type { Story, Game, Health, AuthorFeed, HubData } from "./feed-types";
+export type { Story, Game, Health, HubData } from "./feed-types";
 
 export async function leagueHeadlines(league: string): Promise<Story[]> {
   if (!teams.some((team) => team.league === league))
@@ -58,7 +57,6 @@ const emptyHub: HubData = {
   stories: [],
   games: [],
   health: [],
-  authors: [],
 };
 type ESPNCompetitor = {
   team?: { id?: string; abbreviation?: string };
@@ -74,6 +72,7 @@ type ESPNResponse = {
     links?: { web?: { href?: string } };
     published?: string;
     type?: string;
+    byline?: string;
   }[];
   events?: ESPNEvent[];
   injuries?: ESPNInjuryGroup[];
@@ -119,11 +118,9 @@ async function providerGet(url: string, signal?: AbortSignal) {
           // without forwarding any visitor/browser identifiers.
           "User-Agent":
             // These publishers reject the URL-bearing identifier with HTTP 403.
-            [
-              "www.yardbarker.com",
-              "site.api.espn.com",
-              "site.web.api.espn.com",
-            ].includes(new URL(url).hostname)
+            ["site.api.espn.com", "site.web.api.espn.com"].includes(
+              new URL(url).hostname,
+            )
               ? "WolvesAndFriendsFeed/1.0"
               : "WolvesAndFriendsFeed/1.0 (+https://wolvesandfriends.moening.org)",
           Accept:
@@ -335,12 +332,10 @@ export async function collect(
   const games: Game[] = [];
   const injuriesByTeam: Partial<Record<TeamId, Game["injuries"]>> = {};
   const health: Health[] = [];
-  const authors: AuthorFeed[] = [];
   type Output = {
     stories: Story[];
     games: Game[];
     health: Health[];
-    authors: AuthorFeed[];
     injuries?: Game["injuries"];
     injuryTeam?: TeamId;
     count: number;
@@ -367,7 +362,6 @@ export async function collect(
           stories: [],
           games: [],
           health: [],
-          authors: [],
           count: 0,
         };
         output.count = await f(output, signal);
@@ -396,7 +390,7 @@ export async function collect(
     );
   if (section !== "schedules") {
     await Promise.all(
-      newsSources.map(({ name, url, teams: ids, tagByContent }) =>
+      newsSources.map(({ name, url, teams: ids, tagByContent, categoryTeams }) =>
         task(name, ids, async (output, signal) => {
           const { stories } = output;
           const get = (url: string) => providerGet(url, signal);
@@ -404,6 +398,7 @@ export async function collect(
             await (await get(url)).text(),
             name,
             tagByContent ? undefined : ids,
+            categoryTeams,
           );
           stories.push(...parsed);
           return parsed.length;
@@ -411,59 +406,6 @@ export async function collect(
       ),
     );
     await teamTasks("news");
-    await Promise.all(
-      authorSources
-        .filter((source) => !team || source.team === team)
-        .map(({ titleFilters, ...source }) =>
-          task(
-            "Author news · " + source.name,
-            [source.team],
-            async (output, signal) => {
-              const { authors } = output;
-              const get = (url: string) => providerGet(url, signal);
-              try {
-                const xml = await (await get(source.feed)).text();
-                const parsed = parseFeed(xml, source.name, [
-                  source.team,
-                ]).filter((s) =>
-                  titleFilters.every((filter) => filter.test(s.title)),
-                );
-                const author: AuthorFeed = {
-                  ...source,
-                  items: parsed.slice(0, 4).map(({ title, url, date }) => ({
-                    title,
-                    url,
-                    date,
-                    ...(source.publisherAuthorFeed
-                      ? { bylineVerified: true }
-                      : {}),
-                  })),
-                  checked,
-                  status: "ok",
-                };
-                await verifyAuthorFeed(author, signal);
-                authors.push(author);
-              } catch (error) {
-                output.failed = true;
-                output.error = safeFeedError(error);
-                const old = (cached?.authors || []).find(
-                  (a) => a.name === source.name,
-                );
-                authors.push({
-                  ...source,
-                  items: section === "news" ? [] : old?.items || [],
-                  checked: old?.checked || checked,
-                  status: "unavailable",
-                });
-              }
-              return authors.reduce(
-                (sum, author) => sum + author.items.length,
-                0,
-              );
-            },
-          ),
-        ),
-    );
     const sports = [
       ...new Set(
         teams
@@ -497,7 +439,7 @@ export async function collect(
                   title: x.headline,
                   url,
                   date: x.published,
-                  source: "ESPN",
+                  source: bylineSource("ESPN", x.byline),
                   teams: ids,
                   kind: x.type === "Media" ? "video" : "story",
                 });
@@ -658,7 +600,6 @@ export async function collect(
     });
     if (!output) continue;
     stories.push(...output.stories);
-    authors.push(...output.authors);
     health.push(...output.health);
     if (output.injuries) {
       const injuryTeam = taskTeams[index]?.[0];
@@ -762,9 +703,10 @@ export async function collect(
         ...baseline.stories.filter(
           (s) =>
             s.source === h.name ||
+            s.source.endsWith(" (" + h.name + ")") ||
             Boolean(teamFallback?.stories?.(s)) ||
             (h.name.startsWith("ESPN news") &&
-              s.source === "ESPN" &&
+              isPublication(s.source, "ESPN") &&
               s.teams.some((id) => h.teams.includes(id))),
         ),
       );
@@ -778,7 +720,6 @@ export async function collect(
       ),
     );
   }
-  stories.push(...authorStories(authors));
   const unique = new Map<string, Story>();
   for (const s of stories.sort(
     (a, b) => Date.parse(b.date) - Date.parse(a.date),
@@ -836,13 +777,12 @@ export async function collect(
   }
   return {
     checked,
-    authors,
     stories: [...unique.values()]
       .filter(
         (s) =>
           (!team || s.teams.includes(team)) &&
           !(
-            s.source === "ESPN" &&
+            isPublication(s.source, "ESPN") &&
             /\b(?:game|match|full[- ]game|extended) highlights?\b/i.test(
               s.title,
             )

@@ -76,17 +76,9 @@ export type TeamNewsFeed = {
   url: string;
   // Tag stories by matching every team's pattern instead of assigning this team.
   tagByContent?: boolean;
+  // Publisher category domain -> team; stories are tagged only by these categories.
+  categoryTeams?: Readonly<Record<string, TeamId>>;
   alsoFor?: readonly TeamId[];
-};
-
-export type TeamAuthorFeed = {
-  name: string;
-  label: string;
-  url: string;
-  feed: string;
-  publisherAuthorFeed?: boolean;
-  // Every pattern must match a headline for it to be kept.
-  titleFilters: readonly RegExp[];
 };
 
 export type TeamSeason = {
@@ -102,7 +94,6 @@ export type TeamSeason = {
 export type TeamProviders = {
   team: TeamId;
   newsFeeds?: readonly TeamNewsFeed[];
-  authors?: readonly TeamAuthorFeed[];
   youtube?: {
     name: string;
     channel?: string;

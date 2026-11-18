@@ -21,12 +21,6 @@ test("old cached content excludes retired teams without losing shared active sto
       { "name": "Eurohoops", "teams": ["zalgiris"] },
       { "name": "Stars and Stripes FC", "teams": ["usmnt"] },
       { "name": "ESPN", "teams": ["wolves"] }
-    ],
-    "authors": [
-      { "name": "Retired basketball", "team": "zalgiris" },
-      { "name": "Retired soccer", "team": "usmnt" },
-      { "name": "Active", "team": "wolves" },
-      { "name": "Legacy Wolves feed" }
     ]
   }`);
   const original = JSON.stringify(cached);
@@ -41,9 +35,5 @@ test("old cached content excludes retired teams without losing shared active sto
   );
   assert.deepEqual(filtered.games.map(({ team }) => team), ["frost"]);
   assert.deepEqual(filtered.health.map(({ name }) => name), ["ESPN"]);
-  assert.deepEqual(
-    filtered.authors?.map(({ name }) => name),
-    ["Active", "Legacy Wolves feed"],
-  );
   assert.equal(JSON.stringify(cached), original);
 });

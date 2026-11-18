@@ -9,6 +9,10 @@ export const twinsProviders = {
       url: "https://twinsdaily.com/rss/3-twins-daily-content.xml/",
     },
     { name: "Puckett's Pond", url: "https://puckettspond.com/feed/" },
+    {
+      name: "The Athletic",
+      url: "https://www.nytimes.com/athletic/rss/mlb/twins/",
+    },
   ],
   // Discover only social links published by the club, never search/fan channels.
   youtube: {

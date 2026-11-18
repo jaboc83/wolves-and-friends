@@ -43,26 +43,6 @@ const data: HubData = {
       teams: ["wild"],
     },
   ],
-  authors: [
-    {
-      name: "Wolves writer",
-      label: "Wolves",
-      url: "https://example.test/wolves-writer",
-      team: "wolves",
-      items: [],
-      checked: "2026-10-27T00:00:00.000Z",
-      status: "ok",
-    },
-    {
-      name: "Wild writer",
-      label: "Wild",
-      url: "https://example.test/wild-writer",
-      team: "wild",
-      items: [],
-      checked: "2026-10-27T00:00:00.000Z",
-      status: "ok",
-    },
-  ],
 };
 
 test("team news requests identify only the selected public team", () => {
@@ -82,19 +62,11 @@ test("generic news data is partitioned locally by team", () => {
     ["Wolves news"],
   );
   assert.deepEqual(
-    wolves.authors?.map((author) => author.name),
-    ["Wolves writer"],
-  );
-  assert.deepEqual(
     wild.stories.map((story) => story.id),
     ["wild-story"],
   );
   assert.deepEqual(
     wild.health.map((source) => source.name),
     ["Wild news"],
-  );
-  assert.deepEqual(
-    wild.authors?.map((author) => author.name),
-    ["Wild writer"],
   );
 });

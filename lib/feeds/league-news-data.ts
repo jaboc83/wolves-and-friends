@@ -1,8 +1,11 @@
+import { bylineSource } from "./byline-source.ts";
+
 export type ESPNNewsArticle = {
   headline?: string;
   published?: string;
   type?: string;
   links?: { web?: { href?: string } };
+  byline?: string;
 };
 
 export function normalizeLeagueHeadlines(
@@ -20,7 +23,7 @@ export function normalizeLeagueHeadlines(
               title: article.headline,
               url,
               date: article.published,
-              source: "ESPN",
+              source: bylineSource("ESPN", article.byline),
               teams: [],
               kind: article.type === "Media" ? "video" : "story",
             },

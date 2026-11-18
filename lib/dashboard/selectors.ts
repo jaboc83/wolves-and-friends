@@ -4,10 +4,11 @@ import { mergeScoreUpdate } from "../games/merge-score";
 import { discEvents } from "../games/event-seed";
 import { eventLifecycle, eventIsToday } from "../games/event-time";
 import { isTeamId, teams, teamPriority } from "../teams/teams";
-import { authorStories } from "../feeds/author-stories";
 import { recentStories } from "../browser/news-window";
 import type { DashboardPageId } from "./page-id";
 import { DASHBOARD_PAGE_IDS } from "./page-id";
+import { dedupeByTitle } from "./dedupe-stories";
+import { isPublication } from "../feeds/byline-source";
 export const OLDER_BATCH_SIZE = 10;
 
 // Sorts ascending by a precomputed key so dates are parsed once per item, not per comparison.
@@ -41,23 +42,22 @@ export function selectStories({
   olderLimit?: number;
   timeZone?: string;
 }) {
-  const filtered = sortByTime([
+  const filtered = dedupeByTitle(sortByTime([
     ...new Map(
       [
         ...(newsData.stories || []).filter(
           (s) =>
             s.source !== "BasketNews" &&
             !(
-              s.source === "ESPN" &&
+              isPublication(s.source, "ESPN") &&
               /\b(?:game|match|full[- ]game|extended) highlights?\b/i.test(
                 s.title,
               )
             ),
         ),
-        ...authorStories(newsData.authors || []),
       ].map((s) => [s.url, s]),
     ).values(),
-  ], (s) => -Date.parse(s.date))
+  ], (s) => -Date.parse(s.date)))
     .filter(
       (s) =>
         s.kind !== "social" &&
@@ -68,7 +68,7 @@ export function selectStories({
     );
   const compactNews = true;
   const recentStoriesForView = recentStories(filtered, active, { timeZone });
-  // Team pages show the five latest stories from today. The all-teams page
+  // Team pages show the five latest stories from the last 24 hours. The all-teams page
   // shows at most two per team so one team can't dominate; the rest stay
   // behind View more.
   const perTeam = new Map<string, number>();
@@ -81,14 +81,10 @@ export function selectStories({
           return true;
         })
       : recentStoriesForView.slice(0, 5);
-  // The all-teams page reveals older stories in batches; team pages show all.
+  // Older stories are revealed in batches on every page.
   const recentSet = new Set(recent);
   const olderStories = filtered.filter((s) => !recentSet.has(s));
-  const olderVisible = new Set(
-    active === DASHBOARD_PAGE_IDS.ALL
-      ? olderStories.slice(0, olderLimit)
-      : olderStories,
-  );
+  const olderVisible = new Set(olderStories.slice(0, olderLimit));
   const displayed =
     compactNews && !showOlder
       ? recent

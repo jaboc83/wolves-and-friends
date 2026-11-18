@@ -5,8 +5,12 @@ export const loonsProviders = {
   team: "loons",
   newsFeeds: [
     {
-      name: "Yard Barker · MNUFC",
-      url: "https://www.yardbarker.com/rss/team/17423",
+      name: "Pioneer Press · MNUFC",
+      url: "https://www.twincities.com/tag/minnesota-united/feed/",
+    },
+    {
+      name: "The Athletic",
+      url: "https://www.nytimes.com/athletic/rss/football/mnufc/",
     },
   ],
   youtube: { name: "Minnesota United FC", channel: "UCNTg0WSrMGrgAD1bY3Fuiug" },
