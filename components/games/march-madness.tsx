@@ -4,17 +4,21 @@ import { useState } from "react";
 import initial from "../../data/snapshots/march-madness-initial.json";
 import type { MarchData } from "../../lib/games/march-madness";
 import { espnTeamLogoUrl } from "../../lib/games/march-madness";
+import { marchHighlights } from "../../lib/games/march-media";
+import type { Story } from "../../lib/feeds/feed-types";
 import BracketConnectors from "./bracket-connectors";
 import Image from "next/image";
 import { useLocalTimeZone } from "../../hooks/use-local-time-zone";
 import { formatInTimeZone, timeZoneLabel } from "../../lib/browser/local-time";
 export default function MarchMadness({
   data: loadedData,
+  videos,
   unavailable,
   revealResults,
   onToggleResults,
 }: {
   data: MarchData | null;
+  videos: Story[];
   unavailable: boolean;
   revealResults: boolean;
   onToggleResults: () => void;
@@ -175,13 +179,33 @@ export default function MarchMadness({
                             {revealResults ? g.status : "Scores hidden"} ·{" "}
                             {g.completed ? "Box score" : "Game details"} ↗
                           </a>
+                          {revealResults &&
+                            g.completed &&
+                            (() => {
+                              const highlights = marchHighlights(
+                                g,
+                                videos,
+                                data.year,
+                              );
+                              return highlights ? (
+                                <a
+                                  className="march-highlights-link"
+                                  href={highlights.url}
+                                  target="_blank"
+                                  rel="noreferrer noopener"
+                                  title={highlights.title}
+                                >
+                                  ▶ Game highlights
+                                </a>
+                              ) : null;
+                            })()}
                         </article>
                       ))}
                     </section>
                   );
                 })}
               <BracketConnectors
-                key={data.checked + r}
+                key={data.checked + r + videos.length}
                 roundClass="march-round"
                 matchClass="march-game"
               />

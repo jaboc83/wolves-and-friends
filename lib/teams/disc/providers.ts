@@ -12,8 +12,9 @@ export const discProviders = {
   ],
   youtube: {
     name: "Disc Golf Pro Tour",
-    page: "https://www.youtube.com/@DiscGolfProTour",
+    channel: "UCw0WzNn6m2Na6ZW7rKqWI3g",
   },
+  extraYoutube: [{ name: "JomezPro", page: "https://www.youtube.com/@JomezPro" }],
   socialTags: ["#DGPT", "#PDGA"],
   season: {
     name: "2026–27 DGPT schedules",

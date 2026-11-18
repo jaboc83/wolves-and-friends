@@ -11,9 +11,8 @@ export const frostProviders = {
     },
   ],
   youtube: {
-    name: "Minnesota Frost / PWHL",
-    officialSite: "https://www.thepwhl.com/en/teams/minnesota-frost",
-    pattern: /Minnesota|\bFrost\b/i,
+    name: "Minnesota Frost",
+    page: "https://www.youtube.com/@PWHL_Minnesota",
   },
   socialTags: ["#MinnesotaFrost"],
   salarySeason: "2025-26",

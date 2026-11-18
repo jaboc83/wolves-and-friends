@@ -4,6 +4,9 @@ import type { TeamId } from "../teams/teams";
 import type { BlueskyQuote } from "../social/bluesky-quote";
 export type Story = {
   socialPlatform?: "youtube";
+  thumbnail?: string;
+  // Set when the video belongs to a team's per-game playlist.
+  gamePlaylist?: { id: string; title: string };
   avatar?: string;
   images?: { src: string; alt: string; width?: number; height?: number }[];
   quotedPost?: BlueskyQuote;

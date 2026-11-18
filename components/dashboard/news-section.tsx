@@ -3,6 +3,7 @@
 import type { ReactNode } from "react";
 import Image from "next/image";
 import StoryCard from "../stories/story-card";
+import VideoCarousel from "../stories/video-carousel";
 import { recentStories } from "../../lib/browser/news-window";
 import { OLDER_BATCH_SIZE } from "../../lib/dashboard/selectors";
 import { teamLogoPath } from "../../lib/teams/team-logo";
@@ -187,6 +188,20 @@ export default function NewsSection({
           </div>
         </div>
         <div className="headline-column">
+          {state.youtubeHeadlines.length > 0 && (
+            <VideoCarousel
+              videos={state.youtubeHeadlines}
+              readIds={state.readIds}
+              markRead={actions.markRead}
+            />
+          )}
+          {state.youtubeUnavailable.some(
+            (id) => state.active === "all" || state.active === id,
+          ) && (
+            <p className="feed-description">
+              Some official YouTube feeds are temporarily unavailable.
+            </p>
+          )}
           <div className="section-heading">
             <h2 className="latest-heading">
               Latest stories <small>{state.displayed.length}</small>
@@ -209,22 +224,6 @@ export default function NewsSection({
               />
             </label>
           </div>
-          {state.youtubeHeadlines.length > 0 && (
-            <section
-              className="youtube-headlines"
-              aria-label="Latest YouTube videos"
-            >
-              <h3>Latest videos</h3>
-              {state.youtubeHeadlines.map(story)}
-            </section>
-          )}
-          {state.youtubeUnavailable.some(
-            (id) => state.active === "all" || state.active === id,
-          ) && (
-            <p className="feed-description">
-              Some official YouTube feeds are temporarily unavailable.
-            </p>
-          )}
           {state.loading && state.displayed.length > 0 && (
             <p className="headline-loading" role="status">
               <span className="headline-spinner" aria-hidden="true" />
@@ -256,12 +255,7 @@ export default function NewsSection({
                       recentStories([state.newest], state.active, {
                         timeZone: state.timeZone,
                       }).length === 0
-                    ? "No news since " +
-                      localDateTime(state.newest.date, {
-                        month: "short",
-                        day: "numeric",
-                        year: "numeric",
-                      })
+                    ? "No news in the last 24 hours."
                     : state.active === "all"
                       ? "No unread headlines from today."
                       : "No unread headlines from the last 24 hours."}

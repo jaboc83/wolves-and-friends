@@ -24,7 +24,7 @@ import type { PlayerStats } from "../lib/team-info/player-stats";
 import type { HubData, Story, Game } from "../lib/feeds";
 import type { TeamInfo } from "../lib/team-info";
 import { activeHub, activeStories } from "../lib/dashboard/content-policy";
-import { socialQueue } from "../lib/social/social-queue";
+import { socialFeedQueue } from "../lib/social/social-queue";
 import { isLocalSocialImage } from "../lib/social/bluesky-images";
 import {
   loadedNewsData,
@@ -81,6 +81,7 @@ export function useDashboardFeeds(active: DashboardPageId) {
     Partial<Record<TeamId, "loading" | "ready" | "error">>
   >({});
   const [socialData, setSocialData] = useState<Story[]>([]);
+  const [marchVideos, setMarchVideos] = useState<Story[]>([]);
   const [socialUnavailable, setSocialUnavailable] = useState<string[]>([]);
   const [youtubeUnavailable, setYoutubeUnavailable] = useState<string[]>([]);
   const [liveGames, setLiveGames] = useState<Game[]>([]);
@@ -198,11 +199,12 @@ export function useDashboardFeeds(active: DashboardPageId) {
         if (!r.ok) throw Error();
         const d = (await r.json()) as {
           posts: Story[];
+          marchVideos?: Story[];
           unavailable: string[];
           youtubeUnavailable?: string[];
         };
         setSocialData((previous) => {
-          const next = socialQueue([...d.posts, ...previous]);
+          const next = socialFeedQueue([...d.posts, ...previous]);
           const merged = retainAvatars(
             { ...emptyHub, stories: activeStories(next) } as HubData,
             { ...emptyHub, stories: previous } as HubData,
@@ -213,6 +215,7 @@ export function useDashboardFeeds(active: DashboardPageId) {
           return merged;
         });
         setSocialUnavailable(d.unavailable);
+        if (d.marchVideos?.length) setMarchVideos(d.marchVideos);
         setYoutubeUnavailable(d.youtubeUnavailable || []);
       } catch (error) {
         void recordRequestDiagnostic(
@@ -540,6 +543,7 @@ export function useDashboardFeeds(active: DashboardPageId) {
     data,
     teamInfo,
     socialData,
+    marchVideos,
     socialUnavailable,
     youtubeUnavailable,
     liveGames,

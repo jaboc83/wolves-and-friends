@@ -8,6 +8,7 @@ import GameBadges from "./game-badges";
 import { gameBadges } from "../../lib/games/game-badges";
 import { useRef, useState } from "react";
 import type { Game } from "../../lib/feeds";
+import type { PostgameLink } from "../../lib/social/postgame-media";
 import Image from "next/image";
 import { ChevronDown, House, Plane } from "lucide-react";
 import { teamProfile } from "../../lib/teams/teams";
@@ -89,6 +90,7 @@ export default function GameCard({
   revealed,
   revealPast = false,
   today = false,
+  postgame = [],
   onReveal,
 }: {
   game: Game;
@@ -96,6 +98,7 @@ export default function GameCard({
   revealed: boolean;
   revealPast?: boolean;
   today?: boolean;
+  postgame?: PostgameLink[];
   onReveal: () => void;
 }) {
   const timeZone = useLocalTimeZone();
@@ -329,6 +332,7 @@ export default function GameCard({
         <span className="game-footer-actions">
           {g.url && (
             <a
+              className="roster-contracts-button"
               href={
                 g.eventOnly
                   ? tournamentScoresUrl(g)
@@ -348,6 +352,43 @@ export default function GameCard({
           )}
         </span>
       </div>
+      {(g.state !== "post" || scoreVisible) && postgame.length > 0 && (
+        <div className="game-media">
+          <b>Game media</b>
+          {(
+            [
+              ["highlights", "Highlights"],
+              ["pregame", "Pregame"],
+              ["shootaround", "Shootaround"],
+              ["postgame", "Postgame"],
+              ["week", "Game week"],
+              ["mpo", "MPO round coverage"],
+              ["fpo", "FPO round coverage"],
+            ] as const
+          ).map(([group, title]) => {
+            const links = postgame.filter((video) => video.group === group);
+            return links.length ? (
+              <div key={group} className={"game-media-group " + group}>
+                <span className="game-media-label">{title}</span>
+                <ul>
+                  {links.map((video) => (
+                    <li key={video.id}>
+                      <a
+                        href={video.url}
+                        target="_blank"
+                        rel="noreferrer"
+                        title={video.detail}
+                      >
+                        <span>{video.label}</span>
+                      </a>
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            ) : null;
+          })}
+        </div>
+      )}
       <GameCardExtras
         game={g}
         today={today}
@@ -372,6 +413,7 @@ export default function GameCard({
         className={
           "compact-game" +
           (g.state === "post" ? " past-game" : "") +
+          (g.eventOnly ? " event-game" : "") +
           (g.state === "post" && scoreVisible && result ? " result-shown" : "")
         }
         onToggle={(e) => {

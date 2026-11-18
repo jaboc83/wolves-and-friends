@@ -147,6 +147,16 @@
   max-width: none;
   white-space: nowrap;
 }
+/* Tournament cards: long names wrap, and winners stack in their own column. */
+.past-game.event-game .compact-match > span:not(.compact-name) {
+  white-space: normal;
+}
+.past-game.event-game .compact-date {
+  max-width: 150px;
+}
+.event-game .compact-date .event-winners span {
+  display: block;
+}
 .result-cap {
   position: absolute;
   top: 0;

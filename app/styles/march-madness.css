@@ -123,6 +123,12 @@
   padding-top: 10px;
   margin-top: 8px;
 }
+.march-game .march-highlights-link {
+  display: block;
+  margin-top: 6px;
+  font-size: 11px;
+  font-weight: 600;
+}
 .march-winner {
   font-weight: 800;
 }

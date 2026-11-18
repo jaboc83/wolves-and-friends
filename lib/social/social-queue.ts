@@ -37,10 +37,28 @@ export function socialQueue(
     });
 }
 
+export const VIDEO_QUEUE_LIMIT = 60;
+
+// Videos get their own queue per channel so frequent posts can't push them out.
+export function socialFeedQueue(posts: Story[]): Story[] {
+  const isVideo = (post: Story) => post.socialPlatform === "youtube";
+  return [
+    ...socialQueue(posts.filter((post) => !isVideo(post))),
+    ...[...new Set(posts.filter(isVideo).map((post) => post.source))].flatMap(
+      (source) =>
+        socialQueue(
+          posts.filter((post) => isVideo(post) && post.source === source),
+          VIDEO_QUEUE_LIMIT,
+        ),
+    ),
+  ];
+}
+
 export function unreadSocial(
   posts: Story[],
   active: DashboardPageId,
   readIds: string[],
+  limit = active === "all" ? 2 : 5,
 ) {
   const read = new Set(readIds);
   return socialQueue(posts)
@@ -50,5 +68,5 @@ export function unreadSocial(
           (active !== "march-madness" && post.teams.includes(active))) &&
         !read.has(post.id),
     )
-    .slice(0, active === "all" ? 2 : 5);
+    .slice(0, limit);
 }

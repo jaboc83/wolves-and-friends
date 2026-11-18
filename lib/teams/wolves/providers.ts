@@ -51,7 +51,15 @@ export const wolvesProviders = {
   youtube: {
     name: "Minnesota Timberwolves",
     channel: "UCXWDN5NKVFgnPt25CMh98Cg",
+    playlist: "UULFXWDN5NKVFgnPt25CMh98Cg",
   },
+  extraYoutube: [
+    {
+      name: "Howls And Growls",
+      channel: "UCHQf4fxeaf1MHDz9fW2mhsw",
+      playlist: "UULFHQf4fxeaf1MHDz9fW2mhsw",
+    },
+  ],
   bluesky: {
     list: "at://did:plc:7giugsiydb7mj2j3a5u6nuyn/app.bsky.graph.list/3lal4p6r7w62f",
     pattern:

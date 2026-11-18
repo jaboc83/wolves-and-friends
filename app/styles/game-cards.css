@@ -163,6 +163,9 @@ body:has(.hub[data-mode="dark"]) .league-headlines-footer a {
 .game-footer a {
   color: var(--muted, #3e6c75);
 }
+.game-footer a.roster-contracts-button {
+  color: #fff;
+}
 .event-time,
 .compact-date .event-time,
 .calendar-agenda .event-time {

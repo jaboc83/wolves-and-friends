@@ -17,7 +17,7 @@ export const twinsProviders = {
   // Discover only social links published by the club, never search/fan channels.
   youtube: {
     name: "Minnesota Twins",
-    officialSite: "https://www.mlb.com/twins",
+    channel: "UCkXEh3jSl4oB1mQqjIePfTg",
   },
   socialTags: ["#MNTwins"],
   espnTeamId: "9",

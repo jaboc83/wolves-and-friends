@@ -15,7 +15,11 @@ export const vikingsProviders = {
       url: "https://www.nytimes.com/athletic/rss/nfl/vikings/",
     },
   ],
-  youtube: { name: "Minnesota Vikings", channel: "UCpn2WAITh-6SP4PHBzj3seg" },
+  youtube: {
+    name: "Minnesota Vikings",
+    channel: "UCcsw_KrB_wg5lQ5nXWR_LFA",
+    gamePlaylists: true,
+  },
   socialTags: ["#Skol"],
   espnTeamId: "16",
   powerRankingSource: "cbs-nfl",

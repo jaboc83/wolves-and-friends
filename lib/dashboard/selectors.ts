@@ -66,7 +66,8 @@ export function selectStories({
         s.title.toLowerCase().includes(search.toLowerCase()) &&
         (showRead || !readIds.includes(s.id)),
     );
-  const compactNews = true;
+  // Searching shows every match, including stories normally hidden behind View more.
+  const compactNews = !search.trim();
   const recentStoriesForView = recentStories(filtered, active, { timeZone });
   // Team pages show the five latest stories from the last 24 hours. The all-teams page
   // shows at most two per team so one team can't dominate; the rest stay
@@ -86,7 +87,9 @@ export function selectStories({
   const olderStories = filtered.filter((s) => !recentSet.has(s));
   const olderVisible = new Set(olderStories.slice(0, olderLimit));
   const displayed =
-    compactNews && !showOlder
+    !compactNews
+      ? filtered
+      : !showOlder
       ? recent
       : filtered.filter((s) => recentSet.has(s) || olderVisible.has(s));
   const olderCount = olderStories.length;

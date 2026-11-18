@@ -1,4 +1,168 @@
 /* News and social styles */
+.game-media {
+  margin-top: 10px;
+  padding-top: 8px;
+  border-top: 1px solid var(--line, #d9dfd8);
+  font-size: 13px;
+}
+.game-media > b {
+  display: block;
+  margin-bottom: 4px;
+}
+.game-media-group {
+  margin-top: 8px;
+}
+.game-media-label {
+  display: block;
+  margin-bottom: 3px;
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--muted, #64717d);
+}
+.game-media ul {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px 6px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+.game-media-group.highlights ul {
+  flex-direction: column;
+  flex-wrap: nowrap;
+  gap: 6px;
+}
+.game-media-group.highlights li a {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  padding: 7px 10px;
+  border: 1px solid var(--line, #d9dfd8);
+  border-radius: 8px;
+  text-decoration: none;
+  line-height: 1.3;
+}
+.game-media-group.highlights li a::before {
+  content: "▶";
+  flex: none;
+  margin-top: 2px;
+  font-size: 10px;
+  color: var(--muted, #64717d);
+}
+.game-media-group.highlights li a {
+  transition:
+    background-color 150ms ease,
+    border-color 150ms ease;
+}
+.game-media-group.highlights li a:hover,
+.game-media-group.highlights li a:focus-visible {
+  border-color: var(--team-primary, var(--ink, #193346));
+  background: color-mix(in srgb, var(--team-primary, #193346) 12%, transparent);
+}
+.game-media-group:not(.highlights) li a {
+  display: inline-block;
+  padding: 2px 9px;
+  border: 1px solid var(--line, #d9dfd8);
+  border-radius: 14px;
+  text-decoration: none;
+  transition:
+    background-color 150ms ease,
+    border-color 150ms ease,
+    color 150ms ease;
+}
+.game-media-group:not(.highlights) li a:hover,
+.game-media-group:not(.highlights) li a:focus-visible {
+  border-color: var(--team-primary, var(--ink, #193346));
+  background: var(--team-primary, var(--ink, #193346));
+  color: #fff;
+  text-decoration: none;
+}
+.hub[data-mode="dark"] .game-media-group:not(.highlights) li a:hover,
+.hub[data-mode="dark"] .game-media-group:not(.highlights) li a:focus-visible {
+  border-color: var(--ink);
+  background: var(--ink);
+  color: var(--surface);
+}
+.video-carousel {
+  margin-bottom: 25px;
+}
+.video-carousel-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+.video-carousel-nav button {
+  width: 34px;
+  height: 34px;
+  margin-left: 6px;
+  border-radius: 50%;
+  border: 1px solid var(--line, #d9dfd8);
+  background: var(--surface, #fffefb);
+  color: inherit;
+  font-size: 20px;
+  line-height: 1;
+  cursor: pointer;
+}
+.video-carousel-track {
+  display: flex;
+  gap: 12px;
+  margin: 0;
+  padding: 4px 0 8px;
+  list-style: none;
+  overflow-x: auto;
+  scroll-snap-type: x mandatory;
+}
+.video-card {
+  flex: 0 0 220px;
+  scroll-snap-align: start;
+}
+.video-card a {
+  display: block;
+  color: inherit;
+  text-decoration: none;
+}
+.video-thumb {
+  display: block;
+  aspect-ratio: 16 / 9;
+  border-radius: 10px;
+  overflow: hidden;
+  background: var(--line, #d9dfd8);
+}
+.video-thumb img {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+.video-title {
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+  margin-top: 6px;
+  font-weight: 600;
+  font-size: 14px;
+  line-height: 1.3;
+}
+.video-card.video-read a {
+  opacity: 0.5;
+  transition: opacity 150ms ease;
+}
+.video-card.video-read a:hover,
+.video-card.video-read a:focus-visible {
+  opacity: 0.85;
+}
+.video-card a:hover .video-title {
+  text-decoration: underline;
+}
+.video-meta {
+  display: block;
+  margin-top: 2px;
+  font-size: 12px;
+  color: var(--muted, #64717d);
+}
 .today-group {
   background: var(--raised, #eaf0e2);
   border: 1px solid var(--line, #c7d6bb);

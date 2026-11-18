@@ -11,7 +11,7 @@ export const lynxProviders = {
   ],
   youtube: {
     name: "Minnesota Lynx",
-    page: "https://www.youtube.com/minnesotalynx",
+    channel: "UC3rZAG71b0xSrWdn6NCvbkQ",
   },
   socialTags: ["#MinnesotaLynx"],
   espnTeamId: "8",
