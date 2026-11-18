@@ -14,18 +14,7 @@ export const twinsProfile = {
   espn: "min",
   sources: [
     ["MLB news", "https://www.mlb.com/news"],
-    [
-      "Dan Hayes · The Athletic",
-      "https://www.nytimes.com/athletic/author/dan-hayes/",
-    ],
-    ["Twin Cities Territory", "https://omny.fm/shows/twin-cities-territory"],
-    [
-      "The Athletic",
-      "https://www.nytimes.com/athletic/mlb/team/twins/",
-    ],
     ["Official Twins", "https://www.mlb.com/twins"],
-    ["Twins Daily", "https://twinsdaily.com/"],
-    ["Puckett's Pond", "https://puckettspond.com/"],
   ],
   communities: [
     {

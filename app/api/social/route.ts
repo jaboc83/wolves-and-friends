@@ -1,11 +1,12 @@
 // API route for fetching social media posts. Returns the latest posts from various social platforms or an error if unavailable.
 import { socialTags } from "../../../lib/social/social-tags";
 import { taggedBluesky, wolvesBluesky } from "../../../lib/social/bluesky";
-import { socialQueue } from "../../../lib/social/social-queue";
+import { socialFeedQueue, socialQueue } from "../../../lib/social/social-queue";
 import type { Story } from "../../../lib/feeds/feed-types";
-import { officialYoutubePosts } from "../../../lib/feeds/youtube";
+import { marchMadnessVideos, officialYoutubePosts } from "../../../lib/feeds/youtube";
 type SocialData = {
   posts: Story[];
+  marchVideos: Story[];
   unavailable: string[];
   youtubeUnavailable: string[];
   checked: string;
@@ -17,7 +18,11 @@ async function collect(): Promise<SocialData> {
   const posts: Story[] = [],
     unavailable: string[] = [];
   let youtubeUnavailable: string[] = [];
+  let marchVideos: Story[] = [];
   await Promise.all([
+    marchMadnessVideos().then((videos) => {
+      marchVideos = videos;
+    }),
     officialYoutubePosts().then((data) => {
       posts.push(...data.posts);
       youtubeUnavailable = data.unavailable;
@@ -44,8 +49,10 @@ async function collect(): Promise<SocialData> {
       );
     }),
   ]);
+  const merged = [...posts, ...(cached?.posts || [])];
   return {
-    posts: socialQueue([...posts, ...(cached?.posts || [])]),
+    posts: socialFeedQueue(merged),
+    marchVideos: marchVideos.length ? marchVideos : cached?.marchVideos || [],
     unavailable,
     youtubeUnavailable,
     checked: new Date().toISOString(),

@@ -15,22 +15,7 @@ export const wolvesProfile = {
   espn: "min",
   sources: [
     ["NBA news", "https://www.nba.com/news"],
-    [
-      "Bluesky · Wolves starter pack",
-      "https://bsky.app/starter-pack/canishoopus.bsky.social/3lal4p6wu5o2a",
-    ],
-    ["Canis Hoopus", "https://www.canishoopus.com/"],
-    ["Dunking with Wolves", "https://dunkingwithwolves.com/"],
-    [
-      "Yard Barker",
-      "https://www.yardbarker.com/nba/teams/minnesota_timberwolves/83",
-    ],
     ["Howls and Growls", "https://www.youtube.com/@howlsandgrowlshoops"],
-    ["The Athletic", "https://www.nytimes.com/athletic/nba/team/timberwolves/"],
-    [
-      "Britt Robson · MinnPost",
-      "https://www.minnpost.com/author/britt-robson/",
-    ],
     ["Official Timberwolves", "https://www.nba.com/timberwolves/"],
   ],
   communities: [

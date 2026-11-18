@@ -4,6 +4,9 @@ import type { TeamId } from "../teams/teams";
 import type { BlueskyQuote } from "../social/bluesky-quote";
 export type Story = {
   socialPlatform?: "youtube";
+  thumbnail?: string;
+  // Set when the video belongs to a team's per-game playlist.
+  gamePlaylist?: { id: string; title: string };
   avatar?: string;
   images?: { src: string; alt: string; width?: number; height?: number }[];
   quotedPost?: BlueskyQuote;
@@ -68,27 +71,9 @@ export type Health = {
   /** Safe diagnostic code for operators; never contains request or visitor data. */
   error?: string;
 };
-export type AuthorFeed = {
-  name: string;
-  label: string;
-  url: string;
-  // Missing on device caches saved before authors carried a team.
-  team?: TeamId;
-  items: {
-    title: string;
-    url: string;
-    date: string;
-    originalId?: string;
-    bylineVerified?: boolean;
-    actualAuthors?: string[];
-  }[];
-  checked: string;
-  status: string;
-};
 export type HubData = {
   checked: string;
   stories: Story[];
   games: Game[];
   health: Health[];
-  authors?: AuthorFeed[];
 };

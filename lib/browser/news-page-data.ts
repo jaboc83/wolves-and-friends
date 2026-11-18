@@ -16,7 +16,6 @@ export function loadedNewsData(
         .filter(Boolean)
         .sort()[0] || "",
     stories: ids.flatMap((id) => pages[id]?.stories || []),
-    authors: ids.flatMap((id) => pages[id]?.authors || []),
     health: ids.flatMap((id) => pages[id]?.health || []),
     games: [],
   };
@@ -25,9 +24,6 @@ export function newsForTeam(data: HubData, team: TeamId): HubData {
   return {
     checked: data.checked,
     stories: data.stories.filter((story) => story.teams.includes(team)),
-    authors: (data.authors || []).filter(
-      (author) => (author.team || "wolves") === team,
-    ),
     health: data.health.filter((source) => source.teams.includes(team)),
     games: [],
   };

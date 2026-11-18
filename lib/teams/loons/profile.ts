@@ -14,20 +14,7 @@ export const loonsProfile = {
   espn: "17362",
   sources: [
     ["MLS news", "https://www.mlssoccer.com/news/"],
-    [
-      "The Athletic",
-      "https://www.nytimes.com/athletic/football/team/mnufc/",
-    ],
-    ["Official MNUFC schedule", "https://www.mnufc.com/schedule/matches"],
     ["Official MNUFC", "https://www.mnufc.com/news/"],
-    [
-      "Yard Barker",
-      "https://www.yardbarker.com/soccer/teams/minnesota_united/17423",
-    ],
-    [
-      "Andy Greder · Pioneer Press",
-      "https://www.twincities.com/author/andy-greder/",
-    ],
   ],
   communities: [
     {

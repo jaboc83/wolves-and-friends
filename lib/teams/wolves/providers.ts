@@ -6,8 +6,40 @@ export const wolvesProviders = {
   newsFeeds: [
     { name: "Dunking with Wolves", url: "https://dunkingwithwolves.com/feed/" },
     {
-      name: "Yard Barker · Timberwolves",
-      url: "https://www.yardbarker.com/rss/team/83",
+      name: "The Athletic",
+      url: "https://www.nytimes.com/athletic/rss/nba/timberwolves/",
+    },
+    {
+      name: "MPR News Sports",
+      url: "https://www.mprnews.org/feed/sports",
+      tagByContent: true,
+      alsoFor: ["wild", "twins", "vikings", "lynx", "loons", "frost"],
+    },
+    {
+      name: "MinnPost",
+      url: "https://www.minnpost.com/sports/feed/",
+      alsoFor: ["twins", "vikings", "wild", "lynx"],
+      categoryTeams: {
+        Timberwolves: "wolves",
+        "Minnesota Twins": "twins",
+        "Minnesota Vikings": "vikings",
+        "Minnesota Wild": "wild",
+        "Minnesota Lynx": "lynx",
+      },
+    },
+    {
+      name: "Star Tribune",
+      url: "https://www.startribune.com/sports/index.rss2",
+      alsoFor: ["wild", "twins", "vikings", "lynx", "loons", "frost"],
+      categoryTeams: {
+        "/sports/wolves": "wolves",
+        "/sports/wild": "wild",
+        "/sports/twins": "twins",
+        "/sports/vikings": "vikings",
+        "/sports/lynx": "lynx",
+        "/sports/loons": "loons",
+        "/sports/frost": "frost",
+      },
     },
     {
       name: "Canis Hoopus",
@@ -16,20 +48,18 @@ export const wolvesProviders = {
       alsoFor: ["lynx"],
     },
   ],
-  authors: [
-    {
-      name: "Britt Robson",
-      label: "MinnPost author feed",
-      url: "https://www.minnpost.com/author/britt-robson/",
-      feed: "https://www.minnpost.com/author/britt-robson/feed/",
-      publisherAuthorFeed: true,
-      titleFilters: [/timberwolves|wolves|edwards|finch/i],
-    },
-  ],
   youtube: {
     name: "Minnesota Timberwolves",
     channel: "UCXWDN5NKVFgnPt25CMh98Cg",
+    playlist: "UULFXWDN5NKVFgnPt25CMh98Cg",
   },
+  extraYoutube: [
+    {
+      name: "Howls And Growls",
+      channel: "UCHQf4fxeaf1MHDz9fW2mhsw",
+      playlist: "UULFHQf4fxeaf1MHDz9fW2mhsw",
+    },
+  ],
   bluesky: {
     list: "at://did:plc:7giugsiydb7mj2j3a5u6nuyn/app.bsky.graph.list/3lal4p6r7w62f",
     pattern:

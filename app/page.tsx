@@ -21,6 +21,7 @@ import {
   selectGames,
 } from "../lib/dashboard/selectors";
 import GameCard from "../components/games/game-card";
+import { isPostgameMedia, postgameMedia } from "../lib/social/postgame-media";
 import LeagueHeadlines from "../components/games/league-headlines";
 import BackToTop from "../components/dashboard/back-to-top";
 import NewsSection from "../components/dashboard/news-section";
@@ -69,6 +70,7 @@ export default function Home() {
     data,
     teamInfo,
     socialData,
+    marchVideos,
     socialUnavailable,
     youtubeUnavailable,
     liveGames,
@@ -199,10 +201,14 @@ export default function Home() {
     deferredActive,
     readIds,
   );
+  const allVideos = socialData.filter(
+    (post) => post.socialPlatform === "youtube",
+  );
   const youtubeHeadlines = unreadSocial(
-    socialData.filter((post) => post.socialPlatform === "youtube"),
+    allVideos.filter((post) => !isPostgameMedia(post)),
     deferredActive,
-    readIds,
+    [],
+    10,
   );
   const failed = [
     ...(data?.health || []).filter((h) =>
@@ -222,7 +228,7 @@ export default function Home() {
       <GameCard
         key={`${g.id}-${hideScores}`}
         game={g}
-        today={today}
+        postgame={postgameMedia(g, allVideos, data?.games)}
         compact={compact || g.state === "post"}
         revealPast={resultsReady && !hideScores}
         revealed={revealed.includes(g.id)}
@@ -358,6 +364,7 @@ export default function Home() {
             >
               <MarchMadness
                 data={marchData}
+                videos={marchVideos}
                 unavailable={marchUnavailable}
                 revealResults={resultsReady && !hideScores}
                 onToggleResults={toggleResults}

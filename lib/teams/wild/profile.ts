@@ -14,25 +14,7 @@ export const wildProfile = {
   espn: "min",
   sources: [
     ["NHL news", "https://www.nhl.com/news/"],
-    [
-      "Jess Myers · Pioneer Press",
-      "https://www.twincities.com/author/jess-myers/",
-    ],
-    [
-      "Michael Russo · The Athletic",
-      "https://www.nytimes.com/athletic/author/michael-russo/",
-    ],
-    [
-      "Joe Smith · The Athletic",
-      "https://www.nytimes.com/athletic/author/joe-smith/",
-    ],
-    [
-      "The Athletic",
-      "https://www.nytimes.com/athletic/nhl/team/wild/",
-    ],
     ["Official Wild", "https://www.nhl.com/wild/"],
-    ["Gone Puck Wild", "https://gonepuckwild.com/"],
-    ["Yard Barker", "https://www.yardbarker.com/nhl/teams/minnesota_wild/115"],
   ],
   communities: [
     {

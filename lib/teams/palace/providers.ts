@@ -3,6 +3,12 @@ import type { TeamProviders } from "../team-types";
 
 export const palaceProviders = {
   team: "palace",
+  newsFeeds: [
+    {
+      name: "The Athletic",
+      url: "https://www.nytimes.com/athletic/rss/football/crystal-palace/",
+    },
+  ],
   youtube: { name: "Crystal Palace FC", channel: "UCWB9N0012fG6bGyj486Qxmg" },
   socialTags: ["#CPFC"],
   espnTeamId: "384",

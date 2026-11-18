@@ -14,23 +14,6 @@ export const vikingsProfile = {
   espn: "min",
   sources: [
     ["NFL news", "https://www.nfl.com/news/"],
-    [
-      "Ben Goessling · Star Tribune",
-      "https://www.startribune.com/author/ben-goessling/6134708",
-    ],
-    [
-      "Alec Lewis · The Athletic",
-      "https://www.nytimes.com/athletic/author/alec-lewis/",
-    ],
-    [
-      "Will Ragatz · Vikings On SI",
-      "https://www.si.com/nfl/vikings/onsi/author/will-ragatz",
-    ],
-    ["Daily Norseman", "https://www.dailynorseman.com/"],
-    [
-      "The Athletic",
-      "https://www.nytimes.com/athletic/nfl/team/vikings/",
-    ],
     ["Official Vikings", "https://www.vikings.com/"],
   ],
   communities: [

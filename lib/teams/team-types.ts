@@ -76,17 +76,9 @@ export type TeamNewsFeed = {
   url: string;
   // Tag stories by matching every team's pattern instead of assigning this team.
   tagByContent?: boolean;
+  // Publisher category domain -> team; stories are tagged only by these categories.
+  categoryTeams?: Readonly<Record<string, TeamId>>;
   alsoFor?: readonly TeamId[];
-};
-
-export type TeamAuthorFeed = {
-  name: string;
-  label: string;
-  url: string;
-  feed: string;
-  publisherAuthorFeed?: boolean;
-  // Every pattern must match a headline for it to be kept.
-  titleFilters: readonly RegExp[];
 };
 
 export type TeamSeason = {
@@ -98,18 +90,25 @@ export type TeamSeason = {
   note?: string;
 };
 
+export type TeamYoutube = {
+  name: string;
+  channel?: string;
+  // Uploads playlist feed id; used instead of the channel feed when set.
+  playlist?: string;
+  page?: string;
+  officialSite?: string;
+  pattern?: RegExp;
+  // The channel keeps one "Week N | …" playlist per game; its videos become game media.
+  gamePlaylists?: boolean;
+};
+
 // Server-only: fetched by providers; never import from client code.
 export type TeamProviders = {
   team: TeamId;
   newsFeeds?: readonly TeamNewsFeed[];
-  authors?: readonly TeamAuthorFeed[];
-  youtube?: {
-    name: string;
-    channel?: string;
-    page?: string;
-    officialSite?: string;
-    pattern?: RegExp;
-  };
+  youtube?: TeamYoutube;
+  // Additional channels shown in the team's latest videos.
+  extraYoutube?: readonly TeamYoutube[];
   socialTags?: readonly string[];
   bluesky?: { list: string; pattern: RegExp };
   // Numeric ESPN team id (injuries API, own-team detection in game competitors).
