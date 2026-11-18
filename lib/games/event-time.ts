@@ -1,6 +1,6 @@
 // Applies calendar-day boundaries and lifecycle labels to calendar events.
 import type { Game } from "../feeds";
-import { dayInTimeZone } from "../browser/local-time";
+import { dayInTimeZone } from "../browser/local-time.ts";
 const defaultTimeZone = "America/Chicago";
 export const eventDay = (value: string | Date, timeZone = defaultTimeZone) =>
   dayInTimeZone(value, timeZone);

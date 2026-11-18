@@ -45,7 +45,7 @@ function ClinchedMarkerIcon({ symbol = "●" }: { symbol?: "●" | "w" | "p" }) 
           d={
             symbol === "w"
               ? "M4.5 6.5 6.5 11.5 9 7 11.5 11.5 13.5 6.5"
-              : "M6.25 12.75V5.25H9a2.75 2.75 0 0 1 0 5.5H6.25"
+              : "M6.5 5v8M6.5 7.5a2.5 2.5 0 1 1 5 0 2.5 2.5 0 1 1-5 0"
           }
           fill="none"
           stroke="currentColor"

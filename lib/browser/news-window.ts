@@ -2,8 +2,8 @@
 // or a rolling 24 hours (team pages).
 import type { Story } from "../feeds/feed-types";
 import type { DashboardPageId } from "../dashboard/page-id";
-import { DASHBOARD_PAGE_IDS } from "../dashboard/page-id";
-import { dayInTimeZone } from "./local-time";
+import { DASHBOARD_PAGE_IDS } from "../dashboard/page-id.ts";
+import { dayInTimeZone } from "./local-time.ts";
 const DAY_MS = 24 * 3600000;
 export function recentStories(
   stories: Story[],
