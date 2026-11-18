@@ -219,8 +219,8 @@ export default function NewsSection({
               <input
                 value={state.search}
                 onChange={(event) => actions.setSearch(event.target.value)}
-                placeholder="Find a headline"
-                aria-label="Search headlines"
+                placeholder="Find a headline or author"
+                aria-label="Search headlines or authors"
               />
             </label>
           </div>

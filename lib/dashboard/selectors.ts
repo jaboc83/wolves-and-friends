@@ -1,15 +1,15 @@
 // Derives visible stories and games from feed data plus the dashboard's local filters.
 import type { Game, HubData } from "../feeds/feed-types";
-import { mergeScoreUpdate } from "../games/merge-score";
-import { discEvents } from "../games/event-seed";
-import { eventLifecycle, eventIsToday } from "../games/event-time";
-import { isTeamId, teams, teamPriority } from "../teams/teams";
-import { recentStories } from "../browser/news-window";
+import { mergeScoreUpdate } from "../games/merge-score.ts";
+import { discEvents } from "../games/event-seed.ts";
+import { eventLifecycle, eventIsToday } from "../games/event-time.ts";
+import { isTeamId, teams, teamPriority } from "../teams/teams.ts";
+import { recentStories } from "../browser/news-window.ts";
 import type { DashboardPageId } from "./page-id";
-import { DASHBOARD_PAGE_IDS } from "./page-id";
-import { dedupeByTitle } from "./dedupe-stories";
-import { isPublication } from "../feeds/byline-source";
-import { withVisibleTeams } from "./hidden-teams";
+import { DASHBOARD_PAGE_IDS } from "./page-id.ts";
+import { dedupeByTitle } from "./dedupe-stories.ts";
+import { isPublication } from "../feeds/byline-source.ts";
+import { withVisibleTeams } from "./hidden-teams.ts";
 export const OLDER_BATCH_SIZE = 10;
 
 // Sorts ascending by a precomputed key so dates are parsed once per item, not per comparison.
@@ -45,6 +45,8 @@ export function selectStories({
   timeZone?: string;
   hiddenTeams?: readonly string[];
 }) {
+  const query = search.trim().toLowerCase();
+  const compactNews = !query;
   const stories = withVisibleTeams(newsData.stories || [], hiddenTeams);
   const filtered = dedupeByTitle(sortByTime([
     ...new Map(
@@ -67,11 +69,11 @@ export function selectStories({
         s.kind !== "social" &&
         (active === DASHBOARD_PAGE_IDS.ALL ||
           (isTeamId(active) && s.teams.includes(active))) &&
-        s.title.toLowerCase().includes(search.toLowerCase()) &&
-        (showRead || !readIds.includes(s.id)),
+        (s.title.toLowerCase().includes(query) ||
+          s.source.toLowerCase().includes(query)) &&
+        (!compactNews || showRead || !readIds.includes(s.id)),
     );
-  // Searching shows every match, including stories normally hidden behind View more.
-  const compactNews = !search.trim();
+  // Searching includes read stories and every match normally hidden behind View more.
   const recentStoriesForView = recentStories(filtered, active, { timeZone });
   // Team pages show the five latest stories from the last 24 hours. The all-teams page
   // shows at most two per team so one team can't dominate; the rest stay

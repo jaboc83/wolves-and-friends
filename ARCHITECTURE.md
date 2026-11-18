@@ -127,7 +127,7 @@ Odds lookups are currently limited to eligible games within the next seven days 
 
 - **Today's Games:** placed in the right rail on desktop and first in the mobile single-column content flow when games exist.
 - **Latest Social Media:** separate from the headlines, showing two unread posts for All Teams and up to five for a selected team, within what the feed returned.
-- **Headlines:** All Teams defaults to articles published today in Central Time and reveals older articles 10 at a time via View older. Individual teams default to the last 72 hours and View older shows the rest of the loaded articles at once. View older widens the window over the loaded articles; it does not search an unlimited archive.
+- **Headlines:** All Teams defaults to today's articles in the selected time zone, capped at two per team. Individual teams show the five latest stories from the last 24 hours. View more reveals the remaining loaded articles 10 at a time. Search matches headlines, authors, and publications across all loaded stories within the current team selection, including read stories and those behind View more; clearing the search restores the normal read and pagination filters. Hidden teams remain excluded. Search does not query an unlimited archive.
 - **Team insights and calendar:** expandable standings, rosters with player-profile links, and a month calendar containing the available past and upcoming fixtures.
 - **Communities/source links:** direct reference links to relevant communities and publishers.
 - **Coming up/recent results:** compact cards with expandable details. All Teams shows the next future event per team; selected-team views show more.
