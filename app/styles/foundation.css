@@ -125,6 +125,28 @@ summary:focus-visible {
   overflow-wrap: anywhere;
   line-height: 1.15;
 }
+.team-visibility {
+  flex-basis: 100%;
+  grid-column: 1 / -1;
+  font-size: 12px;
+  color: var(--muted, #536170);
+}
+.team-visibility summary {
+  cursor: pointer;
+  width: fit-content;
+}
+.team-visibility-options {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px 14px;
+  margin-top: 10px;
+}
+.team-visibility-options label {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  white-space: nowrap;
+}
 .dot {
   height: 7px;
   width: 7px;

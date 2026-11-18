@@ -4,24 +4,29 @@ import { useState } from "react";
 import Image from "next/image";
 import { sportTerms } from "../../lib/teams/sport-terms";
 import { teamLogoPath } from "../../lib/teams/team-logo";
-import { teamProfile, teams } from "../../lib/teams/teams";
+import { teamProfile, teams, type TeamId } from "../../lib/teams/teams";
 import type { DashboardPageId } from "../../lib/dashboard/page-id";
 
 type TeamNavigationProps = {
   active: DashboardPageId;
   teamsPlayingToday: ReadonlySet<string>;
+  hiddenTeams: readonly TeamId[];
   onChoose: (id: DashboardPageId) => void;
+  onToggleHidden: (id: TeamId) => void;
 };
 
 export default function TeamNavigation({
   active,
   teamsPlayingToday,
+  hiddenTeams,
   onChoose,
+  onToggleHidden,
 }: TeamNavigationProps) {
   const [open, setOpen] = useState(false);
   const activeTeam = teams.find((team) => team.id === active);
   const menuTitle =
     active === "march-madness" ? "March Madness" : activeTeam?.short || "All teams";
+  const shownTeams = teams.filter((team) => !hiddenTeams.includes(team.id));
 
   function choose(id: DashboardPageId) {
     setOpen(false);
@@ -62,7 +67,7 @@ export default function TeamNavigation({
           />
           <span>All teams</span>
         </button>
-        {teams.map((team) => (
+        {shownTeams.map((team) => (
           <button
             key={team.id}
             data-tab-team={team.id}
@@ -106,6 +111,21 @@ export default function TeamNavigation({
           />
           <span>March Madness</span>
         </button>
+        <details className="team-visibility">
+          <summary>Show or hide teams</summary>
+          <div className="team-visibility-options">
+            {teams.map((team) => (
+              <label key={team.id}>
+                <input
+                  type="checkbox"
+                  checked={!hiddenTeams.includes(team.id)}
+                  onChange={() => onToggleHidden(team.id)}
+                />
+                <span>{team.short}</span>
+              </label>
+            ))}
+          </div>
+        </details>
       </nav>
     </>
   );

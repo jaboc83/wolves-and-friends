@@ -15,7 +15,6 @@ export const wolvesProfile = {
   espn: "min",
   sources: [
     ["NBA news", "https://www.nba.com/news"],
-    ["Howls and Growls", "https://www.youtube.com/@howlsandgrowlshoops"],
     ["Official Timberwolves", "https://www.nba.com/timberwolves/"],
   ],
   communities: [

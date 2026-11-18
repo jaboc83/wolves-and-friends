@@ -149,7 +149,7 @@ The Wolves and Lynx standings use a single theme-colored dot badge for clinched 
 | Storage              | Contents                                                                   | Lifetime / purpose                                           |
 | -------------------- | -------------------------------------------------------------------------- | ------------------------------------------------------------ |
 | React state          | Current filters, expanded cards, visibility settings, and loaded responses | Current page session                                         |
-| Browser localStorage | `wf-team`, `wf-read`, `wf-saved`, and `wf-archive`                         | Device-only preferences and saved article snapshots          |
+| Browser localStorage | `wf-team`, `wf-read`, `wf-hidden-teams`, `wf-saved`, and `wf-archive`                         | Device-only preferences and saved article snapshots          |
 | Browser localStorage | `wf-cache` and `wf-social-cache`                                           | Device-only caches of public feed content and inline avatars |
 | Server module memory | Public feed responses, verification results, and avatar caches             | Temporary, shared public-data work within a Worker instance  |
 | Bundled JSON         | [march-madness-initial.json](data/snapshots/march-madness-initial.json)    | Public-data fallback for the tournament bracket              |
