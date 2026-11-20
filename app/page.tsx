@@ -253,6 +253,7 @@ export default function Home() {
       <GameCard
         key={`${g.id}-${hideScores}`}
         game={g}
+        today={today}
         postgame={postgameMedia(g, allVideos, data?.games)}
         compact={compact || g.state === "post"}
         revealPast={resultsReady && !hideScores}
